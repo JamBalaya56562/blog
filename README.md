@@ -1,5 +1,5 @@
-# Blog by Next.js
-My blog
+# Blog
+My blog created by Next.js
 
 ## Usage
 
