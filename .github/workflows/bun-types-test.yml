@@ -29,6 +29,7 @@ on:
       - "tailwind.config.ts"
       - "tsconfig.json"
       - "yarn.lock"
+  workflow_dispatch:
 
 jobs:
   build:
