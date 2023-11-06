@@ -7,8 +7,28 @@ concurrency:
 on:
   push:
     branches: [ "main" ]
+    paths:
+      - ".github/workflows/**"
+      - "app/**"
+      - "public/**"
+      - "next.config.js"
+      - "package.json"
+      - "postcss.config.js"
+      - "tailwind.config.ts"
+      - "tsconfig.json"
+      - "yarn.lock"
   pull_request:
     branches: [ "main" ]
+    paths:
+      - ".github/workflows/**"
+      - "app/**"
+      - "public/**"
+      - "next.config.js"
+      - "package.json"
+      - "postcss.config.js"
+      - "tailwind.config.ts"
+      - "tsconfig.json"
+      - "yarn.lock"
 
 jobs:
   build:
