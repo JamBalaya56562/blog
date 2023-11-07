@@ -38,32 +38,58 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout repo
-      uses: actions/checkout@v4
+      - name: Checkout repo
+        uses: actions/checkout@v4
       
-    - name: Use Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '20.x'
-        cache: 'yarn'
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'yarn'
 
-    - name: Get yarn cache directory path
-      id: yarn-cache-dir-path
-      run: echo "dir=$(yarn cache dir)" >> $GITHUB_OUTPUT
+      - name: Get yarn cache directory path
+        id: yarn-cache-dir-path
+        run: echo "dir=$(yarn cache dir)" >> $GITHUB_OUTPUT
     
-    - name: Cache node_modules
-      uses: actions/cache@v3
-      with:
-        path: ${{ steps.yarn-cache-dir-path.outputs.dir }}
-        key: node-cache-${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
-        restore-keys: |
-          node-cache-${{ runner.os }}-yarn-
+      - name: Cache node_modules
+        uses: actions/cache@v3
+        with:
+          path: ${{ steps.yarn-cache-dir-path.outputs.dir }}
+          key: node-cache-${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+          restore-keys: |
+            node-cache-${{ runner.os }}-yarn-
     
-    - name: Install dependencies
-      run: yarn --frozen-lockfile
+      - name: Install dependencies
+        run: yarn --frozen-lockfile
     
-    - name: Format app
-      run: npm run lint
+      - name: Format app
+        run: npm run lint
     
-    - name: Build app
-      run: npm run build --if-present
+      - name: Build app
+        run: npm run build --if-present
+
+      - name: Comment on PR
+        if: steps.test.outputs.failing_tests != '' && github.event_name == 'pull_request'
+        uses: thollander/actions-comment-pull-request@v2
+        with:
+          comment_tag: test-failures-${{ github.workflow }}
+          message: |
+            ❌ @${{ github.actor }} ${{ steps.test.outputs.failing_tests_count }} files with test failures on ${{ github.workflow }}:
+
+            ${{ steps.test.outputs.failing_tests }}
+
+            **[View test output](https://github.com/JamBalaya56562/Blog/actions/runs/${{ github.run_id }})**
+
+            <sup>[#${{ github.sha }}](https://github.com/JamBalaya56562/Blog/commits/${{ github.sha }})</sup>
+      
+      - name: Uncomment on PR
+        if: steps.test.outputs.failing_tests == '' && github.event_name == 'pull_request'
+        uses: thollander/actions-comment-pull-request@v2
+        with:
+          comment_tag: test-failures-${{ github.workflow }}
+          mode: upsert
+          create_if_not_exists: false
+          message: |
+            ✅ test failures on ${{ github.workflow }} have been resolved.
+
+            <sup>[#${{ github.sha }}](https://github.com/JamBalaya56562/Blog/commits/${{ github.sha }})</sup>
