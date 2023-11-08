@@ -61,9 +61,9 @@ jobs:
 
             ${{ steps.test.outputs.failing_tests }}
 
-            **[View test output](https://github.com/JamBalaya56562/Blog/actions/runs/${{ github.run_id }})**
+            **[View test output](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})**
 
-            <sup>[#${{ github.sha }}](https://github.com/JamBalaya56562/Blog/commits/${{ github.sha }})</sup>
+            <sup>[#${{ github.sha }}](https://github.com/${{ github.repository }}/commits/${{ github.sha }})</sup>
       
       - name: Uncomment on PR
         if: steps.test.outputs.failing_tests == '' && github.event_name == 'pull_request'
@@ -75,4 +75,4 @@ jobs:
           message: |
             ✅ test failures on ${{ github.workflow }} have been resolved.
 
-            <sup>[#${{ github.sha }}](https://github.com/JamBalaya56562/Blog/commits/${{ github.sha }})</sup>
+            <sup>[#${{ github.sha }}](https://github.com/${{ github.repository }}/commits/${{ github.sha }})</sup>
