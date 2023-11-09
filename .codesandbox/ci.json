@@ -1,3 +1,8 @@
 {
-  "sandboxes": ["new", "vanilla"]
+  "publishDirectory": {
+    "react": "node_modules/react",
+    "react-dom": "node_modules/react-dom",
+    "next": "node_modules/next"  
+  },
+  "sandboxes": ["new"]
 }

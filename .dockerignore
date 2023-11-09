@@ -1,0 +1,14 @@
+**/.next
+**/next-env.d.ts
+**/node_modules
+.editorconfig
+.eslintrc.json
+.git
+.github
+.gitignore
+.next
+.vscode
+CODE_OF_CONDUCT.md
+LICENSE
+README.md
+SECURITY.md
