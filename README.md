@@ -20,7 +20,7 @@
   </a>
 </p>
 <p align="center">
-  My blog created by Next.js
+  My blog created by <a href="https://nextjs.org/">Next.js</a>
 </p>
 
 ## Usage
