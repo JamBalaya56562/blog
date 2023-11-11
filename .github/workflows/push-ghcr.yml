@@ -16,27 +16,19 @@ on:
       - "tailwind.config.ts"
       - "tsconfig.json"
       - "yarn.lock"
-  pull_request:
-    branches: [ "main" ]
-    paths:
-      - "app/**"
-      - "public/**"
-      - "next.config.js"
-      - "package.json"
-      - "postcss.config.js"
-      - "tailwind.config.ts"
-      - "tsconfig.json"
-      - "yarn.lock"
   workflow_dispatch:
   
 jobs:
   build:
-    name: deploy
+    name: push
     runs-on: ubuntu-latest
-
+    outputs:
+      failing_tests: ${{ steps.test.outputs.failing_tests }}
+      failing_tests_count: ${{ steps.test.outputs.failing_tests_count }}
+    
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
       - name: Login to GitHub Container Registry
@@ -48,7 +40,6 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v5
         with:
-          context: .
           push: true
           tags: jambalaya/blog:latest
           cache-from: type=registry,ref=jambalaya/blog:latest
