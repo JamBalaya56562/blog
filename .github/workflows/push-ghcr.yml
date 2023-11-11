@@ -22,9 +22,6 @@ jobs:
   build:
     name: push
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
       
     steps:
       - name: Set up QEMU
@@ -48,5 +45,5 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=registry,ref=blog:latest
+          cache-from: type=registry,ref=jambalaya56562/blog:latest
           cache-to: type=inline
