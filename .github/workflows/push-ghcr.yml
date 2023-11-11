@@ -37,10 +37,16 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: jambalaya56562/blog
       - name: Build and push
         uses: docker/build-push-action@v5
         with:
           push: true
-          tags: blog:latest
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=registry,ref=blog:latest
           cache-to: type=inline
