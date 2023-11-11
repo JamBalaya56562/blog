@@ -22,6 +22,10 @@ jobs:
   build:
     name: push
     runs-on: ubuntu-latest
+    permissions:
+      actions: write
+      contents: read
+      packages: write
       
     steps:
       - name: Set up QEMU
