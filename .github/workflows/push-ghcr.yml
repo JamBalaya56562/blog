@@ -23,7 +23,6 @@ jobs:
     name: push
     runs-on: ubuntu-latest
     permissions:
-      actions: write
       contents: read
       packages: write
       
