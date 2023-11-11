@@ -41,6 +41,6 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           push: true
-          tags: jambalaya/blog:latest
-          cache-from: type=registry,ref=jambalaya/blog:latest
+          tags: jambalaya56562/blog:latest
+          cache-from: type=registry,ref=jambalaya56562/blog:latest
           cache-to: type=inline
