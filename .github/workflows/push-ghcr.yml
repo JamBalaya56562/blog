@@ -45,7 +45,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: downcase REPOSITORY
         run: |
-          echo "REPOSITORY=${GITHUB_REPOSITORY,,}" >>${GITHUB_ENV}
+          echo "REPOSITORY=${github.repository,,}" >> ${GITHUB_ENV}
       - name: Docker meta
         id: meta
         uses: docker/metadata-action@v5
@@ -59,6 +59,6 @@ jobs:
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=registry,ref=${{ REPOSITORY }}:latest
+          cache-from: type=registry,ref=${{ env.REPOSITORY }}:latest
           cache-to: type=inline
           outputs: type=image,name=target,annotation-index.org.opencontainers.image.description=My blog multi-arch image
