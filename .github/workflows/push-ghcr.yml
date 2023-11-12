@@ -43,7 +43,7 @@ jobs:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - name: downcase REPOSITORY
+      - name: Convert uppercase to lowercase
         run: |
           echo "REPOSITORY=${GITHUB_REPOSITORY,,}" >> ${GITHUB_ENV}
       - name: Docker meta
@@ -62,3 +62,4 @@ jobs:
           cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.REPOSITORY }}:latest
           cache-to: type=inline
           outputs: type=image,name=target,annotation-index.org.opencontainers.image.description=My blog multi-arch image
+          provenance: false
