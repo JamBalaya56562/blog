@@ -55,4 +55,4 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=registry,ref=${{ github.repository }}:latest
           cache-to: type=inline
-          outputs: type=image,name=target,annotation-index.org.opencontainers.image.description=My multi-arch image
+          outputs: type=image,name=target,annotation-index.org.opencontainers.image.description=My blog multi-arch image
