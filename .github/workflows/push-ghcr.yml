@@ -6,7 +6,7 @@ concurrency:
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ main ]
     tags: [ 'v*' ]
     paths:
       - "app/**"
@@ -17,6 +17,8 @@ on:
       - "tailwind.config.ts"
       - "tsconfig.json"
       - "yarn.lock"
+  pull_request:
+    branches: [ main ]
   workflow_dispatch:
 
 env:
@@ -50,7 +52,7 @@ jobs:
         with:
           context: .
           platforms: linux/amd64,linux/arm64
-          push: true
+          push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=registry,ref=${{ github.repository }}:latest

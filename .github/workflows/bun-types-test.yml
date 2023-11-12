@@ -6,7 +6,7 @@ concurrency:
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ main ]
     paths:
       - "app/**"
       - "public/**"
@@ -17,7 +17,7 @@ on:
       - "tsconfig.json"
       - "yarn.lock"
   pull_request:
-    branches: [ "main" ]
+    branches: [ main ]
     paths:
       - "app/**"
       - "public/**"
