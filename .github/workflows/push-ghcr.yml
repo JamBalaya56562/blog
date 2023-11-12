@@ -23,7 +23,6 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  REPOSITORY: ${{ github.repository }}
   
 jobs:
   build:
@@ -44,9 +43,9 @@ jobs:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - name: downcase REPO
+      - name: downcase REPOSITORY
         run: |
-          echo "REPO=${GITHUB_REPOSITORY,,}" >>${GITHUB_ENV}
+          echo "REPOSITORY=${GITHUB_REPOSITORY,,}" >>${GITHUB_ENV}
       - name: Docker meta
         id: meta
         uses: docker/metadata-action@v5
@@ -60,6 +59,6 @@ jobs:
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=registry,ref=${{ env.REPOSITORY }}:latest
+          cache-from: type=registry,ref=$REPOSITORY:latest
           cache-to: type=inline
           outputs: type=image,name=target,annotation-index.org.opencontainers.image.description=My blog multi-arch image
