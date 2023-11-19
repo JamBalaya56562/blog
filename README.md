@@ -23,7 +23,7 @@
   My blog created by <a href="https://nextjs.org/">Next.js</a>
 </p>
 
-## Usage
+## ⚒️ Usage
 
 To clone and run this application, you'll need [Git](https://git-scm.com) and [Bun](https://bun.sh/) installed on your computer. From your command line:
 
@@ -47,12 +47,12 @@ $ bun --bun run start
 $ bun --bun run lint
 ```
 
-## VSCode
+## ✍️ VSCode
 [VSCode](https://code.visualstudio.com/) is the recommended IDE for working on this project, as it has been configured.
 
 Once opening, you can run `Extensions: Show Recommended Extensions` to install the recommended extensions for good development is automatically configured.
 
-## Credits
+## 📦 Credits
 
 This software uses the following open source packages:
 
@@ -61,7 +61,7 @@ This software uses the following open source packages:
 - [Node.js](https://nodejs.org/)
 - [React](https://react.dev/)
 
-## License
+## 📄 License
 
 The MIT License Copyright (c) 2023 - [JamBalaya56562](https://github.com/JamBalaya56562).
 Please have a look at the [LICENSE](https://github.com/JamBalaya56562/Blog/blob/main/LICENSE) for more details.
