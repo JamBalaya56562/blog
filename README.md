@@ -25,7 +25,8 @@
 
 ## ⚒️ Usage
 
-To clone and run this application, you'll need [Git](https://git-scm.com) and [Bun](https://bun.sh/) installed on your computer. From your command line:
+To clone and run this application, you'll need [Git](https://git-scm.com) and [Bun](https://bun.sh/) installed on your computer.  
+From your command line:
 
 ```bash
 # Clone this repository
@@ -63,5 +64,5 @@ This software uses the following open source packages:
 
 ## 📄 License
 
-The MIT License Copyright (c) 2023 - [JamBalaya56562](https://github.com/JamBalaya56562).
+The MIT License Copyright (c) 2023 - [JamBalaya56562](https://github.com/JamBalaya56562).  
 Please have a look at the [LICENSE](https://github.com/JamBalaya56562/Blog/blob/main/LICENSE) for more details.
