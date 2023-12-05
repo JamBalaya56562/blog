@@ -1,0 +1,32 @@
+content:
+- changed-files:
+  - any-glob-to-any-file: 'app/**'
+dependencies:
+- changed-files:
+  - any-glob-to-any-file: ['bun.lockb', 'package.json', 'yarn.lock']
+docker:
+- changed-files:
+  - any-glob-to-any-file: ['.dockerignore', 'Dockerfile']
+documentation:
+- changed-files:
+  - any-glob-to-any-file: '**/*.md'
+git:
+- changed-files:
+  - any-glob-to-any-file: ['.gitattributes', '.gitignore']
+image:
+- changed-files:
+  - any-glob-to-any-file: 'public/**'
+infrastructure:
+- changed-files:
+  - any-glob-to-any-file: '.eslistrc.json'
+next:
+- changed-files:
+  - any-glob-to-any-file: ['.next/**', '*.config.js', '*.config.ts', 'tsconfig.json']
+ci:
+- changed-files:
+  - any-glob-to-any-file: ['.github/workflows/*.yml', '.github/dependabot.yml']
+vscode:
+- changed-files:
+  - any-glob-to-any-file: '.vscode/*'
+enhancement:
+ - head-branch: ['^feature', 'feature', '^enhancement', 'enhancement']
