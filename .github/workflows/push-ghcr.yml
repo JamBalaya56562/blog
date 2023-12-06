@@ -61,5 +61,5 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.REPOSITORY }}:latest
           cache-to: type=inline
-          outputs: type=image,name=target,annotation-index.org.opencontainers.image.description=blog multi-arch image
+          outputs: type=image,name=target,annotation-index.org.opencontainers.image.description=Jam Balaya blog multi-arch image
           provenance: false
