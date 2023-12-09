@@ -5,6 +5,7 @@
     "davidanson.vscode-markdownlint",
     "editorconfig.editorconfig",
     "eamodio.gitlens",
-    "github.vscode-github-actions"
+    "github.vscode-github-actions",
+    "github.vscode-pull-request-github"
   ]
 }
