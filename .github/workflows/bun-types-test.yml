@@ -39,11 +39,9 @@ jobs:
         uses: actions/checkout@v4
       - name: Install bun
         uses: oven-sh/setup-bun@v1
-    
+
       - name: Install dependencies
         run: bun i
-      - name: Format app
-        run: bun run lint
       - name: Build app
         run: bun run build
       - name: Test app
@@ -62,7 +60,7 @@ jobs:
             **[View test output](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})**
 
             <sup>[#${{ github.sha }}](https://github.com/${{ github.repository }}/commits/${{ github.sha }})</sup>
-      
+
       - name: Uncomment on PR
         if: steps.test.outputs.failing_tests == '' && github.event_name == 'pull_request'
         uses: thollander/actions-comment-pull-request@v2

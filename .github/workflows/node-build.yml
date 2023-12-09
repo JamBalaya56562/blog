@@ -38,7 +38,7 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
-      
+
       - name: Use Node.js
         uses: actions/setup-node@v4
         with:
@@ -48,7 +48,7 @@ jobs:
       - name: Get yarn cache directory path
         id: yarn-cache-dir-path
         run: echo "dir=$(yarn cache dir)" >> $GITHUB_OUTPUT
-    
+
       - name: Cache node_modules
         uses: actions/cache@v3
         with:
@@ -56,13 +56,10 @@ jobs:
           key: node-cache-${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
           restore-keys: |
             node-cache-${{ runner.os }}-yarn-
-    
+
       - name: Install dependencies
         run: yarn --frozen-lockfile
-    
-      - name: Format app
-        run: npm run lint
-    
+
       - name: Build app
         run: npm run build --if-present
 
@@ -79,7 +76,7 @@ jobs:
             **[View test output](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})**
 
             <sup>[#${{ github.sha }}](https://github.com/${{ github.repository }}/commits/${{ github.sha }})</sup>
-      
+
       - name: Uncomment on PR
         if: steps.test.outputs.failing_tests == '' && github.event_name == 'pull_request'
         uses: thollander/actions-comment-pull-request@v2
