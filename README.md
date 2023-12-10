@@ -9,11 +9,14 @@
   <a aria-label="react" href="https://react.dev/">
     <img src="https://img.shields.io/badge/-react-61DAFB.svg?logo=react&style=for-the-badge&labelColor=000000" alt="react">
   </a>
+  <a aria-label="tailwindcss" href="https://tailwindcss.com/">
+    <img src="https://img.shields.io/badge/-tailwind css-06B6D4.svg?logo=tailwindcss&style=for-the-badge&labelColor=000000" alt="tailwindcss">
+  </a>
   <a aria-label="typescript" href="https://www.typescriptlang.org/">
     <img src="https://img.shields.io/badge/-TypeScript-3178C6.svg?logo=typescript&style=for-the-badge&labelColor=000000" alt="typescript">
   </a>
   <a aria-label="vscode" href="https://code.visualstudio.com/">
-    <img src="https://img.shields.io/badge/-visual%20studio%20code-007ACC.svg?logo=visualstudiocode&style=for-the-badge&labelColor=000000" alt="vscode">
+    <img src="https://img.shields.io/badge/-visual studio code-007ACC.svg?logo=visualstudiocode&style=for-the-badge&labelColor=000000" alt="vscode">
   </a>
   <a aria-label="License" href="https://github.com/JamBalaya56562/Blog/blob/main/LICENSE">
     <img src="https://img.shields.io/github/license/JamBalaya56562/Blog?style=for-the-badge&labelColor=000000" alt="License">
@@ -45,7 +48,7 @@ $ bun --bun run build
 $ bun --bun run start
 
 # Format the app
-$ bun --bun run lint
+$ bunx @biomejs/biome check --apply-unsafe **
 ```
 
 ## ✍️ VSCode
@@ -73,10 +76,12 @@ by automatically forking the project and prompting to send a pull request too.
 
 This software uses the following open source packages:
 
+- [Biome](https://biomejs.dev/)
 - [Bun](https://bun.sh/)
 - [Next.js](https://nextjs.org/)
 - [Node.js](https://nodejs.org/)
 - [React](https://react.dev/)
+- [Tailwind CSS](https://tailwindcss.com/)
 
 ## 📄 License
 
