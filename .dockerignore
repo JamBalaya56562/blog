@@ -4,6 +4,7 @@
 .editorconfig
 .eslintrc.json
 .git
+.gitattributes
 .github
 .gitignore
 .next
