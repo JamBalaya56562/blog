@@ -26,7 +26,7 @@
   My blog created by <a href="https://nextjs.org/">Next.js</a>
 </p>
 
-## ⚒️ Usage
+## 📄 Usage
 
 To clone and run this application, you'll need [Git](https://git-scm.com) and [Bun](https://bun.sh/) installed on your computer.  
 From your command line:
@@ -56,7 +56,7 @@ $ bunx @biomejs/biome check --apply-unsafe **
 
 Once opening, you can run `Extensions: Show Recommended Extensions` to install the recommended extensions for good development is automatically configured.
 
-## 🤝 Contribute
+## 🫶 Contribute
 
 Here’s how we suggest you go about proposing a change to this project:
 
@@ -83,7 +83,7 @@ This software uses the following open source packages:
 - [React](https://react.dev/)
 - [Tailwind CSS](https://tailwindcss.com/)
 
-## 📄 License
+## ⚖️ License
 
 The MIT License Copyright (c) 2023 - [JamBalaya56562](https://github.com/JamBalaya56562).  
 Please have a look at the [LICENSE](https://github.com/JamBalaya56562/Blog/blob/main/LICENSE) for more details.
