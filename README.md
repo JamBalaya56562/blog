@@ -39,13 +39,13 @@ $ git clone https://github.com/JamBalaya56562/Blog.git
 $ cd Blog && bun i
 
 # Develop the app
-$ bun --bun run dev
+$ bun dev
 
 # Build the app
 $ bun --bun run build
 
 # Start the app
-$ bun --bun run start
+$ bun start
 
 # Format the app
 $ bunx @biomejs/biome check --apply-unsafe **
