@@ -19,6 +19,15 @@ on:
       - "yarn.lock"
   pull_request_target:
     branches: [ main ]
+    paths:
+      - "app/**"
+      - "public/**"
+      - "next.config.js"
+      - "package.json"
+      - "postcss.config.js"
+      - "tailwind.config.ts"
+      - "tsconfig.json"
+      - "yarn.lock"
   workflow_dispatch:
 
 env:
