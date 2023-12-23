@@ -32,12 +32,13 @@ on:
 
 env:
   REGISTRY: docker.io
-  
+  REPOSITORY: jambalaya56562/blog
+
 jobs:
   build:
     name: push
     runs-on: ubuntu-latest
-      
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -51,9 +52,6 @@ jobs:
         with:
           username: ${{ secrets.DOCKER_USER }}
           password: ${{ secrets.DOCKER_PAT }}
-      - name: Convert uppercase to lowercase
-        run: |
-          echo "REPOSITORY=${GITHUB_REPOSITORY,,}" >> ${GITHUB_ENV}
       - name: Docker meta
         id: meta
         uses: docker/metadata-action@v5
@@ -69,7 +67,7 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.REPOSITORY }}:latest
           cache-to: type=inline
-          outputs: type=image,name=target,annotation-index.org.opencontainers.image.description=Jam Balaya blog multi-arch image
+          outputs: type=image
           provenance: false
 
       - name: Docker Scout
