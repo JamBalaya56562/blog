@@ -1,4 +1,4 @@
-name: GitHub Packages CI
+name: Docker CI
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -17,7 +17,7 @@ on:
       - "tailwind.config.ts"
       - "tsconfig.json"
       - "yarn.lock"
-  pull_request:
+  pull_request_target:
     branches: [ main ]
     paths:
       - "app/**"
@@ -31,12 +31,14 @@ on:
   workflow_dispatch:
 
 env:
-  REGISTRY: ghcr.io
+  REPOSITORY_OWNER: JamBalaya56562
+  REGISTRY: docker.io
   REPOSITORY: jambalaya56562/blog
+  GHCR_REGISTRY: ghcr.io
 
 jobs:
   build:
-    name: push
+    name: docker
     runs-on: ubuntu-latest
 
     steps:
@@ -46,27 +48,43 @@ jobs:
         uses: docker/setup-qemu-action@v3
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-      - name: Login to GitHub Container Registry
-        if: github.event_name != 'pull_request'
+      - name: Login to Docker Hub
+        if: github.repository_owner == env.REPOSITORY_OWNER
         uses: docker/login-action@v3
         with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
+          username: ${{ secrets.DOCKER_USER }}
+          password: ${{ secrets.DOCKER_PAT }}
+      - name: Login to GitHub Container Registry
+        if: github.repository_owner == env.REPOSITORY_OWNER
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.GHCR_REGISTRY }}
+          username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Docker meta
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/${{ github.repository }}
+          images: |
+            ${{ env.REPOSITORY }}
+            ${{ env.GHCR_REGISTRY }}/${{ env.REPOSITORY }}
       - name: Build and push
         uses: docker/build-push-action@v5
         with:
           context: .
           platforms: linux/amd64,linux/arm64
-          push: ${{ github.event_name != 'pull_request' }}
+          push: ${{ github.repository_owner == env.REPOSITORY_OWNER }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.REPOSITORY }}:latest
+          cache-from: type=registry,ref=${{ env.REPOSITORY }}:main
           cache-to: type=inline
-          outputs: type=image,name=target,annotation-index.org.opencontainers.image.description=Jam Balaya blog multi-arch image
+          outputs: type=image,name=target,annotation-index.org.opencontainers.image.description=Jam Balaya blog multi-arch image🐶
           provenance: false
+      - name: Docker Scout
+        if: github.repository_owner == env.REPOSITORY_OWNER && github.event_name == 'pull_request_target'
+        uses: docker/scout-action@v1
+        with:
+          command: compare
+          image: ${{ env.REPOSITORY }}:${{ steps.meta.outputs.version }}
+          to: ${{ env.REGISTRY }}/${{ env.REPOSITORY }}:latest
+          only-severities: critical,high
