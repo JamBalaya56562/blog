@@ -1,8 +1,4 @@
-**/.next
-**/next-env.d.ts
-**/node_modules
 .editorconfig
-.eslintrc.json
 .git
 .gitattributes
 .github
@@ -10,6 +6,9 @@
 .next
 .vscode
 CODE_OF_CONDUCT.md
+CONTRIBUTING.md
 LICENSE
+next-env.d.ts
+node_modules
 README.md
 SECURITY.md
