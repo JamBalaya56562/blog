@@ -1,0 +1,61 @@
+name: 🚀 Feature Request
+description: Suggest an idea, feature, or enhancement
+title: "🚀 [Feature]: "
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for submitting an idea🤗
+        Please describe your suggestion in detail.
+
+        Please make sure this feature request hasn't been already
+        submitted by someone by looking through other [open issues](https://github.com/JamBalaya56562/Blog/issues)👀
+  - type: dropdown
+    id: type
+    attributes:
+      multiple: false
+      label: 👇 Type of Feature
+      description: Select the type of feature request.
+      options:
+        - "✨ New Feature"
+        - "📝 Documentation"
+        - "🎨 Style and UI"
+        - "🔨 Code Refactor"
+        - "⚡ Performance Improvements"
+        - "✅ New Test"
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: 😖 Is your feature request related to a problem?
+      description: A clear and concise description of what the problem is.
+      placeholder: Ex. I'm always frustrated when [...]
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: 🤔 Describe the solution you'd like
+      description: A clear and concise description of what you want to happen.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: 💬 What alternatives have you considered?
+      description: A clear and concise description of any alternative solutions or features you've considered.
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: 📝 Additional context
+      description: Add any other context or screenshots about the feature request here.
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: ⚖️ Code of Conduct
+      description: By submitting this issue, you agree to follow our [Code of Conduct](https://github.com/JamBalaya56562/Blog/blob/main/CONTRIBUTING.md)
+      options:
+        - label: I agree to follow this project's Code of Conduct
+          required: true
