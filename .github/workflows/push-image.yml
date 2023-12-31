@@ -69,7 +69,7 @@ jobs:
         with:
           images: |
             ${{ env.REPOSITORY }}
-            ${{ env.GHCR_REGISTRY }}/${{ env.GHCR_REPOSITORY }}
+            ${{ env.GHCR_REGISTRY }}/${{ env.REPOSITORY }}
       - name: Build and push
         if: github.event_name != 'pull_request_target'
         uses: docker/build-push-action@v5
