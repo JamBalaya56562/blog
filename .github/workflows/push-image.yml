@@ -11,6 +11,7 @@ on:
     paths:
       - "app/**"
       - "public/**"
+      - "bun.lockb"
       - "next.config.js"
       - "package.json"
       - "postcss.config.js"
@@ -22,6 +23,7 @@ on:
     paths:
       - "app/**"
       - "public/**"
+      - "bun.lockb"
       - "next.config.js"
       - "package.json"
       - "postcss.config.js"
@@ -55,7 +57,7 @@ jobs:
           username: ${{ secrets.DOCKER_USER }}
           password: ${{ secrets.DOCKER_PAT }}
       - name: Login to GitHub Container Registry
-        if: github.repository_owner == env.REPOSITORY_OWNER
+        if: github.repository_owner == env.REPOSITORY_OWNER && github.event_name != 'pull_request_target'
         uses: docker/login-action@v3
         with:
           registry: ${{ env.GHCR_REGISTRY }}
@@ -67,8 +69,9 @@ jobs:
         with:
           images: |
             ${{ env.REPOSITORY }}
-            ${{ env.GHCR_REGISTRY }}/${{ env.REPOSITORY }}
+            ${{ env.GHCR_REGISTRY }}/${{ env.GHCR_REPOSITORY }}
       - name: Build and push
+        if: github.event_name != 'pull_request_target'
         uses: docker/build-push-action@v5
         with:
           context: .
@@ -79,6 +82,17 @@ jobs:
           cache-from: type=registry,ref=${{ env.REPOSITORY }}:main
           cache-to: type=inline
           outputs: type=image,name=target,annotation-index.org.opencontainers.image.description=Jam Balaya blog multi-arch image🐶
+          provenance: false
+      - name: Build and load
+        if: github.repository_owner == env.REPOSITORY_OWNER && github.event_name == 'pull_request_target'
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          load: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=registry,ref=${{ env.REPOSITORY }}:main
+          cache-to: type=inline
           provenance: false
       - name: Docker Scout
         if: github.repository_owner == env.REPOSITORY_OWNER && github.event_name == 'pull_request_target'

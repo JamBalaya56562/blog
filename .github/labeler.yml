@@ -21,7 +21,7 @@ infrastructure:
   - any-glob-to-any-file: '.eslistrc.json'
 next:
 - changed-files:
-  - any-glob-to-any-file: ['.next/**', '*.config.js', '*.config.ts', 'tsconfig.json']
+  - any-glob-to-any-file: ['*.config.js', '*.config.ts', 'tsconfig.json']
 ci:
 - changed-files:
   - any-glob-to-any-file: ['.github/workflows/*.yml', '.github/dependabot.yml']
