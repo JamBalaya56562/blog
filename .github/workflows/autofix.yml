@@ -1,0 +1,22 @@
+name: autofix.ci
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  autofix:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install bun
+        uses: oven-sh/setup-bun@v1
+      - name: Install Dependencies
+        run: bun i
+      - name: Commit
+        uses: autofix-ci/action@d3e591514b99d0fca6779455ff8338516663f7cc
