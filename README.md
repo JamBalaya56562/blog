@@ -68,9 +68,9 @@ Once opening, you can run `Extensions: Show Recommended Extensions` to install t
 ## 🐳 Dev Containers
 
 A **dev container** is a running container with a well-defined tool/runtime stack and its prerequisites.  
-You can try out development containers with **[GitHub Codespaces](https://github.com/features/codespaces)** or **[Visual Studio Code Dev Containers](https://aka.ms/vscode-remote/containers)**.
+You can try out dev containers with **[GitHub Codespaces](https://github.com/features/codespaces)** or **[Visual Studio Code Dev Containers](https://aka.ms/vscode-remote/containers)**.
 
-### Setting up the development container
+### Setting up the dev container
 
 <details>
 <summary>GitHub Codespaces</summary>
@@ -92,7 +92,7 @@ Clicking these links will cause VSCode to automatically install the Dev Containe
 
 Follow these steps to open this project in a container using the VSCode Dev Containers extension:
 
-1. If this is your first time using a development container, please ensure your system meets the pre-reqs (i.e. have Docker installed) in the [getting started steps](https://aka.ms/vscode-remote/containers/getting-started).
+1. If this is your first time using a dev container, please ensure your system meets the pre-reqs (i.e. have Docker installed) in the [getting started steps](https://aka.ms/vscode-remote/containers/getting-started).
 
 2. To use this repository, open a locally cloned copy of the code:
 
