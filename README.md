@@ -106,12 +106,12 @@ Follow these steps to open this project in a container using the VSCode Dev Cont
 
 Want to report a bug, contribute some code, or improve the documentation? Excellent!  
 Read up on our guidelines for [contributing][contributing] and [Code of Conduct][coc].  
-Then check out one of our issues labeled as [help wanted][help] or [good first issue][gfi].
+Then check out one of our issues labeled as [😵‍💫help wanted][help] or [good first issue][gfi].
 
 [contributing]: https://github.com/JamBalaya56562/Blog/blob/main/CONTRIBUTING.md
 [coc]: https://github.com/JamBalaya56562/Blog/blob/main/CODE_OF_CONDUCT.md
 [gfi]: https://github.com/JamBalaya56562/Blog/labels/good%20first%20issue
-[help]: https://github.com/JamBalaya56562/Blog/labels/help%20wanted
+[help]: https://github.com/JamBalaya56562/Blog/labels/😵%E2%80%8D💫help%20wanted
 
 ## 📦 Credits
 
