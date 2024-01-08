@@ -2,17 +2,17 @@ changelog:
   categories:
     - title: 🚀 Exciting New Features
       labels:
-        - content
-        - enhancement
+        - 🚀enhancement
+        - ✨feature
     - title: 🐛 Bug Fixes
       labels:
-        - bug
+        - 🐛bug
     - title: 📖 Documentation
       labels:
-        - documentation
+        - 📝documentation
     - title: 🆙 Version Up
       labels:
-        - dependencies
+        - 📦dependencies
     - title: 🧰 Maintenance
       labels:
         - "*"
