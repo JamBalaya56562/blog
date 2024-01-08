@@ -12,24 +12,18 @@ on:
       - "app/**"
       - "public/**"
       - "bun.lockb"
-      - "next.config.js"
       - "package.json"
-      - "postcss.config.js"
-      - "tailwind.config.ts"
-      - "tsconfig.json"
       - "yarn.lock"
+      - "*config.*"
   pull_request_target:
     branches: [ main ]
     paths:
       - "app/**"
       - "public/**"
       - "bun.lockb"
-      - "next.config.js"
       - "package.json"
-      - "postcss.config.js"
-      - "tailwind.config.ts"
-      - "tsconfig.json"
       - "yarn.lock"
+      - "*config.*"
   workflow_dispatch:
 
 env:
