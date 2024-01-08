@@ -21,7 +21,7 @@
   - any-glob-to-any-file: '**/*.md'
 🚀enhancement:
  - head-branch: ['^feature', 'feature', '^enhancement', 'enhancement']
-🦾git:
+🪸git:
 - changed-files:
   - any-glob-to-any-file: ['.gitattributes', '.gitignore']
 🧰infrastructure:
