@@ -196,11 +196,7 @@
   dependencies:
     bun-types "1.0.18"
 
-<<<<<<< HEAD
 "@types/node@^20.10.7":
-=======
-"@types/node@^20.10.6":
->>>>>>> main
   version "20.10.7"
   resolved "https://registry.npmjs.org/@types/node/-/node-20.10.7.tgz"
   integrity sha512-fRbIKb8C/Y2lXxB5eVMj4IU7xpdox0Lh8bUPEdtLysaylsml1hOOx1+STloRs/B9nf7C6kPRmmg/V7aQW7usNg==
