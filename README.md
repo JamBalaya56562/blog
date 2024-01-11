@@ -1,7 +1,7 @@
 <h1 align="center">Blog</h1>
 <p align="center">
   <a aria-label="biome" href="https://biomejs.dev/">
-    <img src="https://img.shields.io/badge/-biome-F7B911.svg?logo=biome&style=for-the-badge&labelColor=000000" alt="biome">
+    <img src="https://img.shields.io/badge/-biome-60A5FA.svg?logo=biome&style=for-the-badge&labelColor=000000" alt="biome">
   </a>
   <a aria-label="bun" href="https://bun.sh/">
     <img src="https://img.shields.io/badge/-Bun-FBF0DF.svg?logo=bun&style=for-the-badge&labelColor=000000" alt="bun">
@@ -56,8 +56,8 @@ $ bun run build
 # Start the app
 $ bun start
 
-# Format the app
-$ bunx @biomejs/biome check --apply-unsafe **
+# Format and Lint the files
+$ bunx @biomejs/biome check --apply .
 ```
 
 ## 🆚 VSCode
