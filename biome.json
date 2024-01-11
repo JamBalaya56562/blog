@@ -1,19 +1,21 @@
 {
-  "$schema": "https://biomejs.dev/schemas/1.4.1/schema.json",
+  "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
+  "files": {
+    "ignoreUnknown": true
+  },
+  "vcs": {
+    "enabled": true,
+    "clientKind": "git",
+    "useIgnoreFile": true,
+    "defaultBranch": "main"
+  },
   "linter": {
-    "ignore": [".next", "node_modules"],
     "rules": {
-      "nursery": {
-        "all": true
-      }
+      "all": true
     }
   },
   "formatter": {
-    "ignore": [".next", "node_modules"],
     "indentStyle": "space"
-  },
-  "organizeImports": {
-    "enabled": true
   },
   "javascript": {
     "parser": {
@@ -30,7 +32,6 @@
       "allowComments": true
     },
     "formatter": {
-      "enabled": true,
       "indentStyle": "space"
     }
   }
