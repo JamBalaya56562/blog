@@ -10,7 +10,7 @@
   "customizations": {
     "vscode": {
       "extensions": [
-        "biomejs.biome-nightly",
+        "biomejs.biome",
         "Codeium.codeium",
         "eamodio.gitlens",
         "editorconfig.editorconfig",
