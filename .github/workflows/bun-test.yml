@@ -26,43 +26,18 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
-    name: tests
+  test:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repo
+      - name: Checkout
         uses: actions/checkout@v4
+
       - name: Install bun
         uses: oven-sh/setup-bun@v1
 
       - name: Install dependencies
         run: bun i
+
       - name: Test app
         run: bun test
-
-      - name: Comment on PR
-        if: steps.test.outputs.failing_tests != '' && github.event_name == 'pull_request'
-        uses: thollander/actions-comment-pull-request@v2
-        with:
-          comment_tag: test-failures-${{ github.workflow }}
-          message: |
-            ❌ @${{ github.actor }} ${{ steps.test.outputs.failing_tests_count }} files with test failures on ${{ github.workflow }}:
-
-            ${{ steps.test.outputs.failing_tests }}
-
-            **[View test output](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})**
-
-            <sup>[#${{ github.sha }}](https://github.com/${{ github.repository }}/commits/${{ github.sha }})</sup>
-
-      - name: Uncomment on PR
-        if: steps.test.outputs.failing_tests == '' && github.event_name == 'pull_request'
-        uses: thollander/actions-comment-pull-request@v2
-        with:
-          comment_tag: test-failures-${{ github.workflow }}
-          mode: upsert
-          create_if_not_exists: false
-          message: |
-            ✅ test failures on ${{ github.workflow }} have been resolved.
-
-            <sup>[#${{ github.sha }}](https://github.com/${{ github.repository }}/commits/${{ github.sha }})</sup>
