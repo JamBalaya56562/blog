@@ -1,12 +1,21 @@
 name: cleanup caches by a branch
+
 on:
   pull_request_target:
+    paths:
+      - "app/**"
+      - "public/**"
+      - "bun.lockb"
+      - "package.json"
+      - "yarn.lock"
+      - "*config.*"
     types:
       - closed
 
 jobs:
   cleanup:
     runs-on: ubuntu-latest
+
     steps:
       - name: Cleanup
         run: |
