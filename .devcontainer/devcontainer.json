@@ -1,6 +1,6 @@
 {
   "name": "Blog",
-  "image": "mcr.microsoft.com/devcontainers/typescript-node:1-20-bullseye",
+  "image": "mcr.microsoft.com/devcontainers/typescript-node:dev-20",
   "features": {
     "ghcr.io/devcontainers/features/github-cli:1": {}
   },
