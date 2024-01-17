@@ -17,6 +17,6 @@ jobs:
       - name: Install bun
         uses: oven-sh/setup-bun@v1
       - name: Install Dependencies
-        run: bun i
+        run: bun i -y
       - name: Commit
         uses: autofix-ci/action@d3e591514b99d0fca6779455ff8338516663f7cc
