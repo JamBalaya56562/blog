@@ -57,7 +57,7 @@ $ bun run build
 $ bun start
 
 # Format and Lint the files
-$ bunx @biomejs/biome check --apply .
+$ bun lint
 ```
 
 ## 🆚 VSCode
