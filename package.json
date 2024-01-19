@@ -9,7 +9,7 @@
     "lint": "bunx @biomejs/biome check --apply ."
   },
   "dependencies": {
-    "next": "^14.0.4",
+    "next": "^14.1.0",
     "react": "canary",
     "react-dom": "canary"
   },
