@@ -20,7 +20,7 @@ jobs:
 
     steps:
     - name: Auto-assign issue
-      if: github.repository_owner == JamBalaya56562
+      if: github.repository_owner == 'JamBalaya56562'
       uses: pozil/auto-assign-issue@v1
       with:
           assignees: JamBalaya56562
