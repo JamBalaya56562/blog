@@ -13,6 +13,9 @@ changelog:
     - title: 🆙 Version Up
       labels:
         - 📦dependencies
+    - title: ✅ Test
+      labels:
+        - ✅test
     - title: 🧰 Maintenance
       labels:
         - "*"

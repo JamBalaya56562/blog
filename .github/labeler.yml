@@ -7,9 +7,6 @@
 ⚙️config:
 - changed-files:
   - any-glob-to-any-file: '*config.*'
-✨feature:
-- changed-files:
-  - any-glob-to-any-file: 'app/**'
 📦dependencies:
 - changed-files:
   - any-glob-to-any-file: ['bun.lockb', 'package.json', 'yarn.lock']
@@ -21,12 +18,20 @@
   - any-glob-to-any-file: '**/*.md'
 🚀enhancement:
  - head-branch: ['^feature', 'feature', '^enhancement', 'enhancement']
+✨feature:
+- all:
+  - changed-files:
+    - any-glob-to-any-file: 'app/**'
+    - all-globs-to-all-files: '!app/**/*.test.tsx'
 🪸git:
 - changed-files:
   - any-glob-to-any-file: ['.gitattributes', '.gitignore']
 🧰infrastructure:
 - changed-files:
-  - any-glob-to-any-file: ['.devcontainer/*', '.editorconfig', 'biome.json']
+  - any-glob-to-any-file: ['.devcontainer/*', '.editorconfig', 'biome.json', 'bunfig.toml']
+✅test:
+- changed-files:
+  - any-glob-to-any-file: ['happydom.ts', 'app/**/*.test.tsx']
 🆚vscode:
 - changed-files:
   - any-glob-to-any-file: '.vscode/*'

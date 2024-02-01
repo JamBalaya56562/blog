@@ -7,5 +7,6 @@
   },
   "[dockerfile]": {
     "editor.defaultFormatter": "ms-azuretools.vscode-docker"
-  }
+  },
+  "remote.autoForwardPortsFallback": 0
 }
