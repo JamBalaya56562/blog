@@ -65,6 +65,10 @@ jobs:
           images: |
             ${{ env.REPOSITORY }}
             ${{ env.GHCR_REGISTRY }}/${{ env.REPOSITORY }}
+          tags: |
+            type=ref,event=tag
+            type=ref,event=pr,prefix=pr-
+            type=raw,value=canary,enable=${{ github.event_name == 'push' }}
 
       - name: Build and push
         uses: docker/build-push-action@v5
@@ -74,7 +78,7 @@ jobs:
           push: ${{ github.event_name == 'push' && github.repository_owner == env.REPOSITORY_OWNER }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=registry,ref=${{ env.REPOSITORY }}:main
+          cache-from: type=registry,ref=${{ env.REPOSITORY }}:canary
           cache-to: type=inline
           outputs: ${{ github.event_name == 'push' && 'type=image,name=target,annotation-index.org.opencontainers.image.description=caravan-kidstec multi-arch image' || 'type=docker' }}
           provenance: false
