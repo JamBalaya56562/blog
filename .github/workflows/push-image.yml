@@ -51,7 +51,7 @@ jobs:
           password: ${{ secrets.DOCKER_PAT }}
 
       - name: Login to GitHub Container Registry
-        if: github.repository_owner == env.REPOSITORY_OWNER && github.event_name != 'pull_request_target'
+        if: github.repository_owner == env.REPOSITORY_OWNER && github.event_name == 'push'
         uses: docker/login-action@v3
         with:
           registry: ${{ env.GHCR_REGISTRY }}
@@ -67,29 +67,16 @@ jobs:
             ${{ env.GHCR_REGISTRY }}/${{ env.REPOSITORY }}
 
       - name: Build and push
-        if: github.event_name != 'pull_request_target'
         uses: docker/build-push-action@v5
         with:
           context: .
-          platforms: linux/amd64,linux/arm64
-          push: ${{ github.repository_owner == env.REPOSITORY_OWNER }}
+          platforms: ${{ github.event_name == 'push' && 'linux/amd64,linux/arm64' || 'linux/amd64' }}
+          push: ${{ github.event_name == 'push' && github.repository_owner == env.REPOSITORY_OWNER }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=registry,ref=${{ env.REPOSITORY }}:main
           cache-to: type=inline
-          outputs: type=image,name=target,annotation-index.org.opencontainers.image.description=Jam Balaya blog multi-arch image🐶
-          provenance: false
-
-      - name: Build and load
-        if: github.repository_owner == env.REPOSITORY_OWNER && github.event_name == 'pull_request_target'
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          load: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=registry,ref=${{ env.REPOSITORY }}:main
-          cache-to: type=inline
+          outputs: ${{ github.event_name == 'push' && 'type=image,name=target,annotation-index.org.opencontainers.image.description=caravan-kidstec multi-arch image' || 'type=docker' }}
           provenance: false
 
       - name: Docker Scout
