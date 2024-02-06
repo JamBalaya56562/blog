@@ -6,12 +6,9 @@
 .gitignore
 .next
 .vscode
-app/**/*.test.tsx
 biome.json
-bunfig.toml
 CODE_OF_CONDUCT.md
 CONTRIBUTING.md
-happydom.ts
 LICENSE
 next-env.d.ts
 node_modules
