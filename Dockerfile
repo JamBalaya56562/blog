@@ -5,11 +5,11 @@ RUN npm install -g bun
 FROM base AS deps
 COPY package.json bun.lockb ./
 RUN bun i --frozen-lockfile
-RUN bun test
 
 FROM base AS builder
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+RUN bun test
 ENV NODE_ENV=production
 RUN bun run build
 
