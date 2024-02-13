@@ -15,13 +15,15 @@ RUN bun run build
 
 FROM oven/bun:canary-distroless
 WORKDIR /usr/src/app
+COPY --from=public.ecr.aws/awsguru/aws-lambda-adapter:0.8.1 /lambda-adapter /opt/extensions/lambda-adapter
+
 ENV NODE_ENV=production
 COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nonroot:nonroot /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 
 USER nonroot
-EXPOSE 80
-ENV PORT 80
+EXPOSE 3000
+ENV PORT 3000
 ENV HOSTNAME "0.0.0.0"
 CMD ["run", "server.js"]
