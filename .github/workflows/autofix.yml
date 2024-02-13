@@ -20,8 +20,8 @@ jobs:
       - name: Install bun
         uses: oven-sh/setup-bun@v1
 
-      - name: Install dependencies
-        run: bun i -y
+      - name: Delete lock files
+        run: rm bun.lockb yarn.lock
 
       - name: Update dependencies
         run: bun update -y
