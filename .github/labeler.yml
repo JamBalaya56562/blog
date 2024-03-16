@@ -10,7 +10,7 @@
 📦dependencies:
 - changed-files:
   - any-glob-to-any-file: ['bun.lockb', 'package.json', 'yarn.lock']
-🐳docker:
+docker:
 - changed-files:
   - any-glob-to-any-file: ['.dockerignore', 'Dockerfile']
 📝documentation:
