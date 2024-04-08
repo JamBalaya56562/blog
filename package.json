@@ -16,10 +16,10 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^1.6.4",
-    "@happy-dom/global-registrator": "^14.5.1",
+    "@happy-dom/global-registrator": "^14.7.1",
     "@testing-library/react": "^14.2.2",
     "@types/bun": "^1.0.12",
-    "@types/node": "^20.12.4",
+    "@types/node": "^20.12.5",
     "@types/react": "^18.2.74",
     "@types/react-dom": "^18.2.24",
     "postcss": "^8.4.38",
