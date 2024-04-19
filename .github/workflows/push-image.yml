@@ -22,12 +22,22 @@ on:
       - "yarn.lock"
       - "*config.*"
   workflow_dispatch:
+    inputs:
+      push:
+        description: 'whether to push image'
+        required: true
+        default: false
+        type: boolean
 
 env:
-  REPOSITORY_OWNER: JamBalaya56562
   REGISTRY: docker.io
   REPOSITORY: jambalaya56562/blog
   GHCR_REGISTRY: ghcr.io
+  GHCR_REPOSITORY: jambalaya56562/blog
+  AWS_REGION: ap-northeast-1
+  ECR_REPOSITORY: blog
+  LAMBDA_FUNCTION_NAME: blog
+  IS_PUSH: ${{ inputs.push || github.event_name == 'push' && github.repository_owner == 'jambalaya56562' && github.ref_name == 'main' }}
 
 jobs:
   build:
@@ -44,47 +54,74 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       - name: Login to Docker Hub
-        if: github.repository_owner == env.REPOSITORY_OWNER
+        if: github.repository_owner == 'jambalaya56562'
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USER }}
           password: ${{ secrets.DOCKER_PAT }}
 
       - name: Login to GitHub Container Registry
-        if: github.repository_owner == env.REPOSITORY_OWNER && github.event_name == 'push'
+        if: env.IS_PUSH
         uses: docker/login-action@v3
         with:
           registry: ${{ env.GHCR_REGISTRY }}
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Docker meta
+      - name: Configure AWS credentials
+        if: env.IS_PUSH
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        if: env.IS_PUSH
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Docker Meta
         id: meta
         uses: docker/metadata-action@v5
         with:
           images: |
             ${{ env.REPOSITORY }}
-            ${{ env.GHCR_REGISTRY }}/${{ env.REPOSITORY }}
+            ${{ env.GHCR_REGISTRY }}/${{ env.GHCR_REPOSITORY }}
           tags: |
             type=ref,event=tag
             type=ref,event=pr,prefix=pr-
-            type=raw,value=canary,enable=${{ github.event_name == 'push' }}
+            type=raw,value=canary,enable=${{ env.IS_PUSH }}
+        env:
+          DOCKER_METADATA_ANNOTATIONS_LEVELS: manifest,index
 
-      - name: Build and push
+      - name: Build and Push
         uses: docker/build-push-action@v5
         with:
           context: .
-          platforms: ${{ github.event_name == 'push' && 'linux/amd64,linux/arm64' || 'linux/amd64' }}
-          push: ${{ github.event_name == 'push' && github.ref_name == 'main' && github.repository_owner == env.REPOSITORY_OWNER }}
+          platforms: ${{ env.IS_PUSH && 'linux/amd64,linux/arm64' || 'linux/amd64' }}
+          push: ${{ env.IS_PUSH }}
+          load: ${{ !env.IS_PUSH }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=registry,ref=${{ env.REPOSITORY }}:canary
-          cache-to: type=inline
-          outputs: ${{ github.event_name == 'push' && 'type=image,name=target,annotation-index.org.opencontainers.image.description=Jam Balaya blog multi-arch image🐶' || 'type=docker' }}
+          annotations: ${{ steps.meta.outputs.annotations }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
           provenance: false
 
+      - name: Build and Push Image to Amazon ECR
+        if: env.IS_PUSH
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build --platform linux/arm64 -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          aws lambda update-function-code --function-name $LAMBDA_FUNCTION_NAME \
+          --architectures arm64 --image-uri $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+
       - name: Docker Scout
-        if: github.repository_owner == env.REPOSITORY_OWNER && github.event_name == 'pull_request_target'
+        if: github.repository_owner == 'jambalaya56562' && github.event_name == 'pull_request_target'
         uses: docker/scout-action@v1
         with:
           command: compare
