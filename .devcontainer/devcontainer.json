@@ -12,7 +12,6 @@
       "extensions": [
         "biomejs.biome",
         "Codeium.codeium",
-        "eamodio.gitlens",
         "editorconfig.editorconfig",
         "github.vscode-github-actions",
         "GitHub.vscode-pull-request-github",
