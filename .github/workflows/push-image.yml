@@ -91,7 +91,7 @@ jobs:
           tags: |
             type=ref,event=tag
             type=ref,event=pr,prefix=pr-
-            type=raw,value=canary,enable=${{ env.IS_PUSH }}
+            type=raw,value=canary,enable=${{ github.repository_owner == 'jambalaya56562' && github.ref_name == 'main' }}
         env:
           DOCKER_METADATA_ANNOTATIONS_LEVELS: ${{ fromJSON(env.IS_PUSH) && 'manifest,index' || 'manifest' }}
 
