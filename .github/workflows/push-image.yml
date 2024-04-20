@@ -93,7 +93,7 @@ jobs:
             type=ref,event=pr,prefix=pr-
             type=raw,value=canary,enable=${{ env.IS_PUSH }}
         env:
-          DOCKER_METADATA_ANNOTATIONS_LEVELS: manifest,index
+          DOCKER_METADATA_ANNOTATIONS_LEVELS: ${{ fromJSON(env.IS_PUSH) && 'manifest,index' || 'manifest' }}
 
       - name: Build and Push
         uses: docker/build-push-action@v5
