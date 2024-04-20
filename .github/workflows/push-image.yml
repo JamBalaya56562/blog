@@ -126,4 +126,5 @@ jobs:
         with:
           command: compare
           image: ${{ env.REPOSITORY }}:${{ steps.meta.outputs.version }}
+          to: ${{ env.REPOSITORY }}:canary
           only-severities: critical,high
