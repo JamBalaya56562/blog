@@ -37,7 +37,7 @@ env:
   AWS_REGION: ap-northeast-1
   ECR_REPOSITORY: blog
   LAMBDA_FUNCTION_NAME: blog
-  IS_PUSH: ${{ inputs.push || github.event_name == 'push' && github.repository_owner == 'jambalaya56562' && github.ref_name == 'main' }}
+  IS_PUSH: ${{ fromJson(inputs.push || github.event_name == 'push' && github.repository_owner == 'jambalaya56562' && github.ref_name == 'main') }}
 
 jobs:
   build:
