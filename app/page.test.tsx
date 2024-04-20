@@ -13,7 +13,7 @@ test('p test', () => {
   expect(p[2]?.innerText).toEqual(
     'Learn about Next.js in an interactive course with\u00A0quizzes!',
   )
-  expect(p[3]?.innerText).toEqual('Explore the Next.js 13 playground.')
+  expect(p[3]?.innerText).toEqual('Explore starter templates for Next.js.')
   expect(p[4]?.innerText).toEqual(
     'Instantly deploy your Next.js site to a shareable URL with Vercel.',
   )
