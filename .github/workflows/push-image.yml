@@ -126,5 +126,4 @@ jobs:
         with:
           command: compare
           image: ${{ env.REPOSITORY }}:${{ steps.meta.outputs.version }}
-          to: ${{ env.REGISTRY }}/${{ env.REPOSITORY }}:latest
           only-severities: critical,high
