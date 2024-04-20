@@ -32,7 +32,8 @@ on:
 env:
   REPOSITORY_OWNER: jambalaya56562
   REPOSITORY: jambalaya56562/blog
-  GHCR_REPOSITORY: ghcr.io/jambalaya56562/blog
+  GHCR_REGISTRY: ghcr.io
+  GHCR_REPOSITORY: jambalaya56562/blog
   AWS_REGION: ap-northeast-1
   ECR_REPOSITORY: blog
   LAMBDA_FUNCTION_NAME: blog
@@ -86,11 +87,11 @@ jobs:
         with:
           images: |
             ${{ env.REPOSITORY }}
-            ${{ env.GHCR_REPOSITORY }}
+            ${{ env.GHCR_REGISTRY }}/${{ env.GHCR_REPOSITORY }}
           tags: |
             type=ref,event=tag
             type=ref,event=pr,prefix=pr-
-            type=raw,value=canary,enable=${{ github.repository_owner == env.REPOSITORY_OWNER && github.ref_name == 'main' }}
+            type=raw,value=canary,enable=${{ github.event_name != 'pull_request_target' }}
         env:
           DOCKER_METADATA_ANNOTATIONS_LEVELS: ${{ fromJSON(env.IS_PUSH) && 'manifest,index' || 'manifest' }}
 
@@ -125,5 +126,4 @@ jobs:
         with:
           command: compare
           image: ${{ env.REPOSITORY }}:${{ steps.meta.outputs.version }}
-          to: ${{ env.GHCR_REPOSITORY }}:canary
           only-severities: critical,high
