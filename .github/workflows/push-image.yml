@@ -30,10 +30,9 @@ on:
         type: boolean
 
 env:
-  REGISTRY: docker.io
+  REPOSITORY_OWNER: jambalaya56562
   REPOSITORY: jambalaya56562/blog
-  GHCR_REGISTRY: ghcr.io
-  GHCR_REPOSITORY: jambalaya56562/blog
+  GHCR_REPOSITORY: ghcr.io/jambalaya56562/blog
   AWS_REGION: ap-northeast-1
   ECR_REPOSITORY: blog
   LAMBDA_FUNCTION_NAME: blog
@@ -54,7 +53,7 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       - name: Login to Docker Hub
-        if: github.repository_owner == 'jambalaya56562'
+        if: github.repository_owner == env.REPOSITORY_OWNER
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USER }}
@@ -87,11 +86,11 @@ jobs:
         with:
           images: |
             ${{ env.REPOSITORY }}
-            ${{ env.GHCR_REGISTRY }}/${{ env.GHCR_REPOSITORY }}
+            ${{ env.GHCR_REPOSITORY }}
           tags: |
             type=ref,event=tag
             type=ref,event=pr,prefix=pr-
-            type=raw,value=canary,enable=${{ github.repository_owner == 'jambalaya56562' && github.ref_name == 'main' }}
+            type=raw,value=canary,enable=${{ github.repository_owner == env.REPOSITORY_OWNER && github.ref_name == 'main' }}
         env:
           DOCKER_METADATA_ANNOTATIONS_LEVELS: ${{ fromJSON(env.IS_PUSH) && 'manifest,index' || 'manifest' }}
 
@@ -121,10 +120,10 @@ jobs:
           --architectures arm64 --image-uri $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
 
       - name: Docker Scout
-        if: github.repository_owner == 'jambalaya56562' && github.event_name == 'pull_request_target'
+        if: github.repository_owner == env.REPOSITORY_OWNER && github.event_name == 'pull_request_target'
         uses: docker/scout-action@v1
         with:
           command: compare
           image: ${{ env.REPOSITORY }}:${{ steps.meta.outputs.version }}
-          to: ${{ env.REPOSITORY }}:canary
+          to: ${{ env.GHCR_REPOSITORY }}:canary
           only-severities: critical,high
