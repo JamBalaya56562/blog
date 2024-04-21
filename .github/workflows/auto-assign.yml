@@ -25,7 +25,7 @@ jobs:
     steps:
     - name: Auto-assign Issue
       if: github.event_name == 'issues'
-      run: gh issue edit ${{ github.event.number }} --add-assignee JamBalaya56562 --repo ${{ github.repository }}
+      run: gh issue edit ${{ github.event.issue.number }} --add-assignee JamBalaya56562 --repo ${{ github.repository }}
 
     - name: Auto-assign Pull Request
       if: github.event_name == 'pull_request'
