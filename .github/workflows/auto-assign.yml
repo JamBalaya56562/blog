@@ -1,27 +1,26 @@
 name: Auto Assign
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 on:
   issues:
-    types:
-      - opened
-      - reopened
-  pull_request_target:
-    types:
-      - opened
-      - reopened
+    types: opened
+  pull_request:
+    types: opened
 
 permissions:
   issues: write
   pull-requests: write
+  repository-projects: read
 
 jobs:
-  run:
+  assign:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Auto-assign issue
-      if: github.repository_owner == 'JamBalaya56562'
-      uses: pozil/auto-assign-issue@v1
-      with:
-          assignees: JamBalaya56562
-          numOfAssignee: 1
+    - name: Auto-assign
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: gh pr edit ${{ github.event.number }} --add-assignee JamBalaya56562 --repo ${{ github.repository }}
