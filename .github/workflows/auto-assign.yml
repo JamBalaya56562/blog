@@ -15,12 +15,18 @@ permissions:
   pull-requests: write
   repository-projects: read
 
+env:
+  GH_TOKEN: ${{ github.token }}
+
 jobs:
   assign:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Auto-assign
-      env:
-        GH_TOKEN: ${{ github.token }}
-      run: gh pr edit ${{ github.event.number }} --add-assignee JamBalaya56562 --repo ${{ github.repository }}
+    - name: Auto-assign Issue
+      if: github.event_name == 'issues'
+      run: gh pr edit ${{ github.event.number }} --add-assignee @me
+
+    - name: Auto-assign Pull Request
+      if: github.event_name == 'pull_request'
+      run: gh issue edit ${{ github.event.number }} --add-assignee @me
