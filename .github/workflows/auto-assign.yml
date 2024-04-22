@@ -6,9 +6,13 @@ concurrency:
 
 on:
   issues:
-    types: opened
+    types:
+      - opened
+      - reopened
   pull_request:
-    types: opened
+    types:
+      - opened
+      - reopened
 
 permissions:
   issues: write
@@ -23,10 +27,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Auto-assign Issue
-      if: github.event_name == 'issues'
+    - name: Assign Issue
+      if: github.event_name == 'issues' && toJSON(github.event.issue.assignees) == '[]'
       run: gh issue edit ${{ github.event.issue.number }} --add-assignee JamBalaya56562 --repo ${{ github.repository }}
 
-    - name: Auto-assign Pull Request
-      if: github.event_name == 'pull_request'
+    - name: Assign Pull Request
+      if: github.event_name == 'pull_request' && toJSON(github.event.pull_request.assignees) == '[]'
       run: gh pr edit ${{ github.event.number }} --add-assignee JamBalaya56562 --repo ${{ github.repository }}
