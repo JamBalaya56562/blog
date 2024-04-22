@@ -24,7 +24,7 @@ jobs:
         run: rm bun.lockb yarn.lock
 
       - name: Update dependencies
-        run: bun update -y
+        run: bun update
 
       - name: Run Biome
         run: bunx @biomejs/biome ci .
