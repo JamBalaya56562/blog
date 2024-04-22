@@ -4,7 +4,9 @@
 .gitattributes
 .github
 .gitignore
+.jj
 .next
+.sl
 .vscode
 biome.json
 CODE_OF_CONDUCT.md
