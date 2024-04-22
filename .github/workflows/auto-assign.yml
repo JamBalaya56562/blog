@@ -33,4 +33,4 @@ jobs:
 
     - name: Assign Pull Request
       if: github.event_name == 'pull_request' && toJSON(github.event.pull_request.assignees) == '[]'
-      run: gh pr edit ${{ github.event.number }} --add-assignee JamBalaya56562 --repo ${{ github.repository }}
+      run: gh pr edit ${{ github.event.pull_request.number }} --add-assignee JamBalaya56562 --repo ${{ github.repository }}
