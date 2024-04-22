@@ -9,7 +9,7 @@ FROM base AS builder
 COPY --from=deps /usr/src/app/node_modules ./node_modules
 COPY . .
 RUN bun test
-RUN NODE_ENV=production bun run build
+RUN bun run build
 
 FROM oven/bun:canary-distroless
 WORKDIR /usr/src/app
