@@ -50,8 +50,8 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-nextjs-${{ hashFiles('**/yarn.lock') }}-
 
-      - name: Install dependencies
-        run: yarn --frozen-lockfile
+      - name: Install sharp
+        run: yarn add sharp --ignore-engines
 
       - name: Build app
         run: npm run build --if-present
