@@ -12,8 +12,7 @@
   "dependencies": {
     "next": "canary",
     "react": "canary",
-    "react-dom": "canary",
-    "sharp": "^0.33.3"
+    "react-dom": "canary"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.7.1",
