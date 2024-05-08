@@ -39,6 +39,12 @@ env:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      attestations: write
+      contents: read
+      id-token: write
+      packages: write
+      pull-requests: write
 
     steps:
       - name: Checkout
@@ -81,6 +87,7 @@ jobs:
 
       - name: Build and Push
         uses: docker/build-push-action@v5
+        id: push
         with:
           context: .
           platforms: ${{ fromJSON(env.IS_PUSH) && 'linux/amd64,linux/arm64' || 'linux/amd64' }}
@@ -91,7 +98,14 @@ jobs:
           annotations: ${{ steps.meta.outputs.annotations }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          provenance: false
+          provenance: ${{ fromJSON(env.IS_PUSH) && 'mode=max' || false }}
+
+      - name: Attest
+        if: fromJSON(env.IS_PUSH)
+        uses: actions/attest-build-provenance@v1
+        with:
+          subject-name: ${{ env.GHCR_REGISTRY }}/${{ env.GHCR_REPOSITORY }}
+          subject-digest: ${{ steps.push.outputs.digest }}
 
       - name: Docker Scout
         if: github.repository_owner == env.REPOSITORY_OWNER && github.event_name == 'pull_request_target'
