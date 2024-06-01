@@ -1,5 +1,5 @@
-# syntax=docker/dockerfile:labs
-FROM oven/bun:canary as base
+# syntax=docker.io/docker/dockerfile-upstream:1.8.0-rc1
+FROM oven/bun:canary AS base
 WORKDIR /usr/src/app
 
 FROM base AS deps
