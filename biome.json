@@ -22,9 +22,17 @@
       "unsafeParameterDecoratorsEnabled": true
     },
     "formatter": {
-      "quoteStyle": "single",
       "semicolons": "asNeeded",
       "indentStyle": "space"
+    }
+  },
+  "css": {
+    "formatter": {
+      "enabled": true,
+      "indentStyle": "space"
+    },
+    "linter": {
+      "enabled": true
     }
   },
   "json": {
