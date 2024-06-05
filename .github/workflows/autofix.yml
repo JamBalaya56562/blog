@@ -27,7 +27,7 @@ jobs:
         run: bun update
 
       - name: Run Biome
-        run: bunx @biomejs/biome ci .
+        run: bunx biome ci
 
       - name: Commit
         uses: autofix-ci/action@d3e591514b99d0fca6779455ff8338516663f7cc
