@@ -7,7 +7,7 @@
     "dev-win": "WATCHPACK_POLLING=true next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "bunx @biomejs/biome check --apply ."
+    "lint": "bunx biome check --write"
   },
   "dependencies": {
     "next": "canary",

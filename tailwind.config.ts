@@ -1,12 +1,12 @@
-import type { Config } from 'tailwindcss'
+import type { Config } from "tailwindcss"
 
 const config: Config = {
-  content: ['./app/**/*.{js,ts,jsx,tsx,mdx}'],
+  content: ["./app/**/*.{js,ts,jsx,tsx,mdx}"],
   theme: {
     extend: {
       colors: {
-        background: 'var(--background)',
-        foreground: 'var(--foreground)',
+        background: "var(--background)",
+        foreground: "var(--foreground)",
       },
     },
   },
