@@ -1,4 +1,4 @@
-# syntax=docker.io/docker/dockerfile-upstream:1.8.0-rc1
+# syntax=docker.io/docker/dockerfile-upstream:1.8.0-rc2
 FROM oven/bun:canary AS base
 WORKDIR /usr/src/app
 
