@@ -203,10 +203,10 @@ Breaking Change section should start with the phrase "BREAKING CHANGE: " followe
 Similarly, a Deprecation section should start with "DEPRECATED: " followed by a short description of what is deprecated, a blank line, and a detailed description of the deprecation that also mentions the recommended update path.
 
 [branch]: https://help.github.com/articles/creating-and-deleting-branches-within-your-repository
-[coc]: https://github.com/JamBalaya56562/Blog/blob/main/CODE_OF_CONDUCT.md
+[coc]: https://github.com/JamBalaya56562/blog/blob/main/CODE_OF_CONDUCT.md
 [commit-message-format]: https://docs.google.com/document/d/1QrDFcIiPjSLDn3EL15IJygNPiHORgU1_OOAqWjiDU5Y/edit#
-[Blog-pr]: https://github.com/JamBalaya56562/Blog/pulls
+[Blog-pr]: https://github.com/JamBalaya56562/blog/pulls
 [fork]: https://help.github.com/articles/fork-a-repo/
-[issue-template]: https://github.com/JamBalaya56562/Blog/tree/main/.github/ISSUE_TEMPLATE
+[issue-template]: https://github.com/JamBalaya56562/blog/tree/main/.github/ISSUE_TEMPLATE
 [pr]: https://help.github.com/articles/using-pull-requests/
 [so]: https://stackoverflow.com
