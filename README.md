@@ -21,11 +21,11 @@
   <a aria-label="vscode" href="https://code.visualstudio.com/">
     <img src="https://img.shields.io/badge/-visual%20studio%20code-007ACC.svg?logo=visualstudiocode&style=for-the-badge&labelColor=000000" alt="vscode">
   </a>
-  <a aria-label="devcontainer" href="https://vscode.dev/redirect?url=vscode://ms-vscode-remote.remote-containers/cloneInVolume?url=https://github.com/JamBalaya56562/Blog">
-    <img src="https://img.shields.io/badge/-open-007ACC.svg?label=dev%20containers&logo=visualstudiocode&style=for-the-badge&labelColor=000000" alt="vscode">
+  <a aria-label="devcontainer" href="https://vscode.dev/redirect?url=vscode://ms-vscode-remote.remote-containers/cloneInVolume?url=https://github.com/JamBalaya56562/blog">
+    <img src="https://img.shields.io/badge/-open-007ACC.svg?label=dev%20containers&logo=visualstudiocode&style=for-the-badge&labelColor=000000" alt="devcontainer">
   </a>
-  <a aria-label="License" href="https://github.com/JamBalaya56562/Blog/blob/main/LICENSE">
-    <img src="https://img.shields.io/github/license/JamBalaya56562/Blog?style=for-the-badge&labelColor=000000" alt="License">
+  <a aria-label="License" href="https://github.com/JamBalaya56562/blog/blob/main/LICENSE">
+    <img src="https://img.shields.io/github/license/JamBalaya56562/blog?style=for-the-badge&labelColor=000000" alt="License">
   </a>
 </p>
 <p align="center">
@@ -39,10 +39,10 @@ From your command line:
 
 ```bash
 # Clone this repository
-$ git clone https://github.com/JamBalaya56562/Blog.git
+$ git clone https://github.com/JamBalaya56562/blog.git
 
 # Install dependencies with bun
-$ cd Blog && bun i
+$ cd blog && bun i
 
 # Develop the app
 $ bun dev
@@ -87,7 +87,7 @@ For more info, check out the [GitHub documentation](https://docs.github.com/en/f
 <details>
 <summary>VSCode Dev Containers</summary>
   
-If you already have VSCode and [Docker](https://www.docker.com/) installed, you can click the badge above or [here](https://vscode.dev/redirect?url=vscode://ms-vscode-remote.remote-containers/cloneInVolume?url=https://github.com/JamBalaya56562/Blog) to get started.  
+If you already have VSCode and [Docker](https://www.docker.com/) installed, you can click the badge above or [here](https://vscode.dev/redirect?url=vscode://ms-vscode-remote.remote-containers/cloneInVolume?url=https://github.com/JamBalaya56562/blog) to get started.  
 Clicking these links will cause VSCode to automatically install the Dev Containers extension if needed, clone the source code into a container volume, and spin up a dev container for use.
 
 Follow these steps to open this project in a container using the VSCode Dev Containers extension:
@@ -108,10 +108,10 @@ Want to report a bug, contribute some code, or improve the documentation? Excell
 Read up on our guidelines for [contributing][contributing] and [Code of Conduct][coc].  
 Then check out one of our issues labeled as [😵‍💫help wanted][help] or [good first issue][gfi].
 
-[contributing]: https://github.com/JamBalaya56562/Blog/blob/main/CONTRIBUTING.md
-[coc]: https://github.com/JamBalaya56562/Blog/blob/main/CODE_OF_CONDUCT.md
-[gfi]: https://github.com/JamBalaya56562/Blog/labels/good%20first%20issue
-[help]: https://github.com/JamBalaya56562/Blog/labels/😵%E2%80%8D💫help%20wanted
+[contributing]: https://github.com/JamBalaya56562/blog/blob/main/CONTRIBUTING.md
+[coc]: https://github.com/JamBalaya56562/blog/blob/main/CODE_OF_CONDUCT.md
+[gfi]: https://github.com/JamBalaya56562/blog/labels/good%20first%20issue
+[help]: https://github.com/JamBalaya56562/blog/labels/😵%E2%80%8D💫help%20wanted
 
 ## 📦 Credits
 
@@ -127,4 +127,4 @@ This software uses the following open source packages:
 ## ⚖️ License
 
 The MIT License Copyright (c) 2023 - [JamBalaya56562](https://github.com/JamBalaya56562).  
-Please have a look at the [LICENSE](https://github.com/JamBalaya56562/Blog/blob/main/LICENSE) for more details.
+Please have a look at the [LICENSE](https://github.com/JamBalaya56562/blog/blob/main/LICENSE) for more details.
