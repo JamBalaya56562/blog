@@ -99,7 +99,7 @@
   dependencies:
     tslib "^2.4.0"
 
-"@happy-dom/global-registrator@^14.12.0":
+"@happy-dom/global-registrator@^14.12.3":
   version "14.12.3"
   resolved "https://registry.npmjs.org/@happy-dom/global-registrator/-/global-registrator-14.12.3.tgz"
   integrity sha512-VL6mjnIhqD1l9zYBmdIx5Q3qNiNY0ZBByrDV2Z7hHDMsjhqwaVI2/uQZ7uyCsgRWvubSG1yZ74sEK2inDBBw/w==
