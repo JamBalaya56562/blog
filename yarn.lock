@@ -38,7 +38,7 @@
   dependencies:
     regenerator-runtime "^0.14.0"
 
-"@biomejs/biome@^1.8.2":
+"@biomejs/biome@^1.8.3":
   version "1.8.3"
   resolved "https://registry.npmjs.org/@biomejs/biome/-/biome-1.8.3.tgz"
   integrity sha512-/uUV3MV+vyAczO+vKrPdOW0Iaet7UnJMU4bNMinggGJTAnBPjCoLEYcyYtYHNnUNYlv4xZMH6hVIQCAozq8d5w==
