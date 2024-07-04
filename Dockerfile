@@ -1,4 +1,4 @@
-# syntax=docker.io/docker/dockerfile-upstream:1.8.0-rc2
+# syntax=docker.io/docker/dockerfile-upstream:1.9.0-rc1-labs
 FROM oven/bun:canary AS base
 WORKDIR /usr/src/app
 
@@ -22,4 +22,4 @@ COPY --from=builder /usr/src/app/.next/static ./.next/static
 
 EXPOSE 3000
 ENV AWS_LWA_ENABLE_COMPRESSION=true AWS_LWA_INVOKE_MODE=response_stream HOSTNAME=0.0.0.0 PORT=3000
-CMD ["server.js"]
+ENTRYPOINT [ "/nodejs/bin/node", "server.js"]
