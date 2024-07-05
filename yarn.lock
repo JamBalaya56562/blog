@@ -346,7 +346,7 @@
   dependencies:
     tslib "^2.4.0"
 
-"@testing-library/dom@^10.0.0", "@testing-library/dom@^10.3.0":
+"@testing-library/dom@^10.0.0", "@testing-library/dom@^10.3.1":
   version "10.3.1"
   resolved "https://registry.npmjs.org/@testing-library/dom/-/dom-10.3.1.tgz"
   integrity sha512-q/WL+vlXMpC0uXDyfsMtc1rmotzLV8Y0gq6q1gfrrDjQeHoeLrqHbxdPvPNAh1i+xuJl7+BezywcXArz7vLqKQ==
