@@ -1,10 +1,11 @@
 {
   "name": "Blog",
-  "image": "mcr.microsoft.com/devcontainers/typescript-node:dev-20",
+  "image": "mcr.microsoft.com/devcontainers/typescript-node:dev-22",
   "features": {
     "ghcr.io/devcontainers/features/github-cli:1": {}
   },
   "forwardPorts": [3000],
+  "remoteUser": "root",
   "postCreateCommand": "npm install -g bun && bun i",
   "postStartCommand": "bun dev",
   "customizations": {
