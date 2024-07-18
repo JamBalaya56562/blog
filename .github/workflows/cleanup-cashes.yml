@@ -7,7 +7,6 @@ on:
       - "public/**"
       - "bun.lockb"
       - "package.json"
-      - "yarn.lock"
       - "*config.*"
     types:
       - closed

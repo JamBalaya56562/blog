@@ -1,5 +1,2 @@
-[install.lockfile]
-print = "yarn"
-
 [test]
 preload = "./happydom.ts"

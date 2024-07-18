@@ -22,11 +22,11 @@ jobs:
         with:
           bun-version: canary
 
-      - name: Delete lock files
-        run: rm bun.lockb yarn.lock
+      - name: Delete bun.lockb
+        run: rm bun.lockb
 
       - name: Update dependencies
-        run: bun update && bun i
+        run: bun update
 
       - name: Run Biome
         run: bunx biome ci --reporter=github
