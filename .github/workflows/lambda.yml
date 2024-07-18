@@ -12,7 +12,6 @@ on:
       - "public/**"
       - "bun.lockb"
       - "package.json"
-      - "yarn.lock"
       - "*config.*"
   workflow_dispatch:
 
