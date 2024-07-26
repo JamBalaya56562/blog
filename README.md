@@ -1,14 +1,14 @@
 <h1 align="center">Blog</h1>
 <p align="center">
-  <a aria-label="biome" href="https://biomejs.dev/"><img src="https://img.shields.io/badge/-biome-60A5FA.svg?logo=biome&style=for-the-badge&labelColor=000000" alt="biome"></a>
-  <a aria-label="bun" href="https://bun.sh/"><img src="https://img.shields.io/badge/-Bun-FBF0DF.svg?logo=bun&style=for-the-badge&labelColor=000000" alt="bun"></a>
-  <a aria-label="next.js" href="https://nextjs.org/"><img src="https://img.shields.io/badge/-next.js-000000.svg?logo=next.js&style=for-the-badge&labelColor=000000" alt="next.js"></a>
-  <a aria-label="react" href="https://react.dev/"><img src="https://img.shields.io/badge/-react-61DAFB.svg?logo=react&style=for-the-badge&labelColor=000000" alt="react"></a>
-  <a aria-label="tailwindcss" href="https://tailwindcss.com/"><img src="https://img.shields.io/badge/-tailwind%20css-06B6D4.svg?logo=tailwindcss&style=for-the-badge&labelColor=000000" alt="tailwindcss"></a>
-  <a aria-label="typescript" href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/-TypeScript-3178C6.svg?logo=typescript&style=for-the-badge&labelColor=000000" alt="typescript"></a>
-  <a aria-label="vscode" href="https://code.visualstudio.com/"><img src="https://img.shields.io/badge/-visual%20studio%20code-007ACC.svg?logo=visualstudiocode&style=for-the-badge&labelColor=000000" alt="vscode"></a>
-  <a aria-label="devcontainer" href="https://vscode.dev/redirect?url=vscode://ms-vscode-remote.remote-containers/cloneInVolume?url=https://github.com/JamBalaya56562/blog"><img src="https://img.shields.io/badge/-open-007ACC.svg?label=dev%20containers&logo=visualstudiocode&style=for-the-badge&labelColor=000000" alt="devcontainer"></a>
-  <a aria-label="License" href="https://github.com/JamBalaya56562/blog/blob/main/LICENSE"><img src="https://img.shields.io/github/license/JamBalaya56562/blog?style=for-the-badge&labelColor=000000" alt="License"></a>
+  <a aria-label="biome" href="https://biomejs.dev/"><img src="https://img.shields.io/badge/biome-60A5FA?labelColor=000000&logo=biome&style=for-the-badge" alt="biome"></a>
+  <a aria-label="bun" href="https://bun.sh/"><img src="https://img.shields.io/badge/bun-FBF0DF?labelColor=000000&logo=bun&style=for-the-badge" alt="bun"></a>
+  <a aria-label="next.js" href="https://nextjs.org/"><img src="https://img.shields.io/badge/next.js-000000?labelColor=000000&logo=next.js&style=for-the-badge" alt="next.js"></a>
+  <a aria-label="react" href="https://react.dev/"><img src="https://img.shields.io/badge/react-61DAFB?labelColor=000000&logo=react&style=for-the-badge" alt="react"></a>
+  <a aria-label="tailwindcss" href="https://tailwindcss.com/"><img src="https://img.shields.io/badge/tailwind%20css-06B6D4?labelColor=000000&logo=tailwindcss&style=for-the-badge" alt="tailwindcss"></a>
+  <a aria-label="typescript" href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/typescript-3178C6?labelColor=000000&logo=typescript&style=for-the-badge" alt="typescript"></a>
+  <a aria-label="vscode" href="https://code.visualstudio.com/"><img src="https://img.shields.io/badge/visual%20studio%20code-007ACC?labelColor=000000&style=for-the-badge" alt="vscode"></a>
+  <a aria-label="devcontainer" href="https://vscode.dev/redirect?url=vscode://ms-vscode-remote.remote-containers/cloneInVolume?url=https://github.com/JamBalaya56562/blog"><img src="https://img.shields.io/badge/open-007ACC?label=dev%20containers&labelColor=000000&style=for-the-badge" alt="devcontainer"></a>
+  <a aria-label="License" href="https://github.com/JamBalaya56562/blog/blob/main/LICENSE"><img src="https://img.shields.io/github/license/JamBalaya56562/blog?labelColor=000000&style=for-the-badge" alt="License"></a>
 </p>
 <p align="center">
   My blog created by <a href="https://nextjs.org/">Next.js</a>
