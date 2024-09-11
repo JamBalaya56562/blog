@@ -46,6 +46,12 @@ jobs:
       id: login-ecr
       uses: aws-actions/amazon-ecr-login@v2
 
+    - name: Get an old ImageTag
+      id: get-old-image-tag
+      run: |
+        echo "OLD_IMAGE_TAG=$(aws ecr list-images --repository-name $ECR_REPOSITORY \
+        --query 'imageIds[0].imageTag' --output text)" >> $GITHUB_OUTPUT
+
     - name: Build and Push
       uses: docker/build-push-action@v6
       with:
@@ -64,3 +70,10 @@ jobs:
       run: |
         aws lambda update-function-code --function-name $LAMBDA_FUNCTION_NAME \
         --architectures arm64 --image-uri $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+
+    - name: Delete an old Image
+      env:
+        OLD_IMAGE_TAG: ${{ steps.get-old-image-tag.outputs.OLD_IMAGE_TAG }}
+      run: |
+        aws ecr batch-delete-image --repository-name $ECR_REPOSITORY \
+        --image-ids imageTag=$OLD_IMAGE_TAG
