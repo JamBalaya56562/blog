@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test"
 import { render } from "@testing-library/react"
-import Home from "./page"
+import Home from "./page.ts"
 
 render(<Home />)
 
