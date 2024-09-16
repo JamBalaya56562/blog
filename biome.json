@@ -11,7 +11,10 @@
   },
   "linter": {
     "rules": {
-      "all": true
+      "all": true,
+      "suspicious": {
+        "noReactSpecificProps": "off"
+      }
     }
   },
   "formatter": {
