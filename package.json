@@ -10,7 +10,7 @@
     "lint": "bunx biome check --write"
   },
   "dependencies": {
-    "next": "canary",
+    "next": "15.0.0-canary.158",
     "react": "canary",
     "react-dom": "canary"
   },
