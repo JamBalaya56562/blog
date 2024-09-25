@@ -32,6 +32,7 @@ env:
   REPOSITORY: jambalaya56562/blog
   GHCR_REGISTRY: ghcr.io
   GHCR_REPOSITORY: jambalaya56562/blog
+  SHA: ${{ github.event.pull_request.head.sha || github.event.after }}
   IS_PUSH: ${{ inputs.push || github.event_name == 'push' && github.repository_owner == 'jambalaya56562' && github.ref_name == 'main' }}
 
 jobs:
@@ -47,6 +48,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ env.SHA }}
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -74,8 +77,9 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: |
-            ${{ env.REPOSITORY }}
-            ${{ env.GHCR_REGISTRY }}/${{ env.GHCR_REPOSITORY }}
+            name=${{ env.REPOSITORY }}
+            name=${{ env.GHCR_REGISTRY }}/${{ env.GHCR_REPOSITORY }},enable=${{ fromJSON(env.IS_PUSH) }}
+          labels: org.opencontainers.image.revision=${{ env.SHA }}
           tags: |
             type=ref,event=tag
             type=ref,event=pr,prefix=pr-
@@ -97,6 +101,7 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           provenance: ${{ fromJSON(env.IS_PUSH) && 'mode=max' || false }}
+          sbom: ${{ fromJSON(env.IS_PUSH) && true || false }}
 
       - name: Attest
         if: fromJSON(env.IS_PUSH)
@@ -109,7 +114,7 @@ jobs:
         if: github.repository_owner == env.REPOSITORY_OWNER && github.event_name == 'pull_request_target'
         uses: docker/scout-action@v1
         with:
-          command: compare
-          image: ${{ env.REPOSITORY }}:${{ steps.meta.outputs.version }}
-          to: ${{ env.GHCR_REGISTRY }}/${{ env.GHCR_REPOSITORY }}:canary
+          command: compare,cves,recommendations
+          image: ${{ steps.meta.outputs.tags }}
+          to: ${{ env.REPOSITORY }}:canary
           only-severities: critical,high
