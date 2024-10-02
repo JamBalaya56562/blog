@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbo",
-    "dev-win": "WATCHPACK_POLLING=true next dev",
+    "dev-win": "WATCHPACK_POLLING=true next dev --turbo",
     "build": "next build",
     "start": "next start",
     "lint": "bunx biome check --write"
@@ -15,7 +15,7 @@
     "react-dom": "canary"
   },
   "devDependencies": {
-    "@biomejs/biome": "^1.9.2",
+    "@biomejs/biome": "^1.9.3",
     "@happy-dom/global-registrator": "^15.7.4",
     "@testing-library/dom": "^10.4.0",
     "@testing-library/react": "^16.0.1",
