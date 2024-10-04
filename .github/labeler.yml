@@ -1,6 +1,6 @@
 🍱asset:
 - changed-files:
-  - any-glob-to-any-file: 'public/**'
+  - any-glob-to-any-file: ['app/favicon.ico', 'public/**', 'app/**/*.png', 'app/**/*.svg']
 ♻️ci:
 - changed-files:
   - any-glob-to-any-file: '.github/**/*.yml'
@@ -15,7 +15,7 @@ docker:
   - any-glob-to-any-file: ['.dockerignore', 'Dockerfile']
 📝documentation:
 - changed-files:
-  - any-glob-to-any-file: '**/*.md'
+  - any-glob-to-any-file: ['**/*.md', '**/*.txt']
 🚀enhancement:
  - head-branch: ['^feature', 'feature', '^enhancement', 'enhancement']
 ✨feature:

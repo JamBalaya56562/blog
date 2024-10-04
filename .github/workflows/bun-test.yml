@@ -5,18 +5,22 @@ concurrency:
   cancel-in-progress: true
 
 on:
-  push:
-    paths:
-      - "app/**"
-      - "public/**"
-      - "bun.lockb"
-      - "package.json"
-      - "*config.*"
   pull_request:
     paths:
       - "app/**"
       - "public/**"
+      - ".dockerignore"
       - "bun.lockb"
+      - "Dockerfile"
+      - "package.json"
+      - "*config.*"
+  push:
+    paths:
+      - "app/**"
+      - "public/**"
+      - ".dockerignore"
+      - "bun.lockb"
+      - "Dockerfile"
       - "package.json"
       - "*config.*"
   workflow_dispatch:
@@ -31,6 +35,8 @@ jobs:
 
       - name: Install bun
         uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: canary
 
       - name: Install dependencies
         run: bun i

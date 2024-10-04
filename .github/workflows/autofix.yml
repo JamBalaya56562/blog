@@ -5,9 +5,13 @@ concurrency:
   cancel-in-progress: true
 
 on:
-  push:
   pull_request:
+  push:
+    branches: main
   workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
   quality:
@@ -21,9 +25,6 @@ jobs:
         uses: oven-sh/setup-bun@v2
         with:
           bun-version: canary
-
-      - name: Delete bun.lockb
-        run: rm bun.lockb
 
       - name: Update dependencies
         run: bun update
