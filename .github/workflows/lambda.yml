@@ -10,7 +10,9 @@ on:
     paths:
       - "app/**"
       - "public/**"
+      - ".dockerignore"
       - "bun.lockb"
+      - "Dockerfile"
       - "package.json"
       - "*config.*"
   workflow_dispatch:

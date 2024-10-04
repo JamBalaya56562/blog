@@ -5,18 +5,23 @@ concurrency:
   cancel-in-progress: true
 
 on:
-  push:
-    paths:
-      - "app/**"
-      - "public/**"
-      - "bun.lockb"
-      - "package.json"
-      - "*config.*"
   pull_request_target:
     paths:
       - "app/**"
       - "public/**"
+      - ".dockerignore"
       - "bun.lockb"
+      - "Dockerfile"
+      - "package.json"
+      - "*config.*"
+  push:
+    branches: main
+    paths:
+      - "app/**"
+      - "public/**"
+      - ".dockerignore"
+      - "bun.lockb"
+      - "Dockerfile"
       - "package.json"
       - "*config.*"
   workflow_dispatch:
@@ -27,23 +32,24 @@ on:
         default: false
         type: boolean
 
+permissions:
+  attestations: write
+  contents: read
+  id-token: write
+  packages: write
+  pull-requests: write
+
 env:
-  REPOSITORY_OWNER: jambalaya56562
   REPOSITORY: jambalaya56562/blog
   GHCR_REGISTRY: ghcr.io
   GHCR_REPOSITORY: jambalaya56562/blog
   SHA: ${{ github.event.pull_request.head.sha || github.event.after }}
-  IS_PUSH: ${{ inputs.push || github.event_name == 'push' && github.repository_owner == 'jambalaya56562' && github.ref_name == 'main' }}
+  IS_PUSH: ${{ inputs.push || github.event_name == 'push' || github.ref_type == 'tag' }}
 
 jobs:
   build:
     runs-on: ubuntu-24.04
-    permissions:
-      attestations: write
-      contents: read
-      id-token: write
-      packages: write
-      pull-requests: write
+    if: github.repository_owner == 'jambalaya56562'
 
     steps:
       - name: Checkout
@@ -58,7 +64,6 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       - name: Login to Docker Hub
-        if: github.repository_owner == env.REPOSITORY_OWNER
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USER }}
@@ -111,7 +116,7 @@ jobs:
           subject-digest: ${{ steps.push.outputs.digest }}
 
       - name: Docker Scout
-        if: github.repository_owner == env.REPOSITORY_OWNER && github.event_name == 'pull_request_target'
+        if: github.event_name == 'pull_request_target'
         uses: docker/scout-action@v1
         with:
           command: compare,cves,recommendations
