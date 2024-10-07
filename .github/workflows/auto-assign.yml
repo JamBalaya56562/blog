@@ -9,7 +9,7 @@ on:
     types:
       - opened
       - reopened
-  pull_request:
+  pull_request_target:
     types:
       - opened
       - reopened
@@ -17,7 +17,6 @@ on:
 permissions:
   issues: write
   pull-requests: write
-  repository-projects: read
 
 env:
   GH_TOKEN: ${{ github.token }}
