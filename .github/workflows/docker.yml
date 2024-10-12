@@ -119,7 +119,7 @@ jobs:
         if: github.event_name == 'pull_request_target'
         uses: docker/scout-action@v1
         with:
-          command: compare,cves,recommendations
+          command: compare
           image: ${{ steps.meta.outputs.tags }}
           to: ${{ env.REPOSITORY }}:canary
           only-severities: critical,high
