@@ -20,6 +20,7 @@ permissions:
 
 env:
   GH_TOKEN: ${{ github.token }}
+  REPO: ${{ github.repository }}
 
 jobs:
   assign:
@@ -28,8 +29,12 @@ jobs:
     steps:
     - name: Assign Issue
       if: github.event_name == 'issues' && toJSON(github.event.issue.assignees) == '[]'
-      run: gh issue edit ${{ github.event.issue.number }} --add-assignee JamBalaya56562 --repo ${{ github.repository }}
+      env:
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+      run: gh issue edit $ISSUE_NUMBER --add-assignee JamBalaya56562 --repo $REPO
 
     - name: Assign Pull Request
       if: github.event_name == 'pull_request' && toJSON(github.event.pull_request.assignees) == '[]'
-      run: gh pr edit ${{ github.event.pull_request.number }} --add-assignee JamBalaya56562 --repo ${{ github.repository }}
+      env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+      run: gh pr edit $PR_NUMBER --add-assignee JamBalaya56562 --repo $REPO
