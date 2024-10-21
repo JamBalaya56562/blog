@@ -1,4 +1,4 @@
-name: Bun CI
+name: Test
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
