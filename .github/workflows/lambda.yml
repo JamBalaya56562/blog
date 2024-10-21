@@ -1,4 +1,4 @@
-name: Lambda CI
+name: Build and Deploy to AWS Lambda
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
