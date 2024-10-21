@@ -1,9 +1,5 @@
 name: Auto Assign
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
-
 on:
   issues:
     types:
@@ -24,7 +20,7 @@ env:
 
 jobs:
   assign:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
 
     steps:
     - name: Assign Issue
