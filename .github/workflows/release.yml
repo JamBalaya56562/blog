@@ -14,25 +14,24 @@ on:
 permissions:
   contents: write
 
+env:
+  VERSION: ${{ github.event.inputs.version || github.ref_name }}
+
 jobs:
   release:
     runs-on: ubuntu-latest
-    if: github.repository_owner == 'jambalaya56562'
+    if: github.repository_owner == 'openup-labtakizawa'
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Check if the tag has already been released
-        run: |
-          if [[ $(git tag -l $VERSION) ]]; then
-            echo TAG_EXISTS=true >> $GITHUB_ENV
-          fi
+      - name: Check if the release has already been created
+        run: echo RELEASE_EXISTS=$(gh release list | grep "$VERSION") >> $GITHUB_ENV
 
       - name: Create release
-        if: env.TAG_EXISTS != 'true'
-        run: gh release create $VERSION --generate-notes -t "$REPO_NAME $VERSION"
+        if: env.RELEASE_EXISTS == ''
+        run: gh release create "$VERSION" --generate-notes -t "$REPO_NAME $VERSION"
         env:
           GH_TOKEN: ${{ github.token }}
           REPO_NAME: ${{ github.event.repository.name }}
-          VERSION: ${{ github.event.inputs.version || github.ref_name }}
