@@ -24,6 +24,8 @@ on:
       - "Dockerfile"
       - "package.json"
       - "*config.*"
+    tags:
+      - "v*.*.*"
   release:
     types:
       - published
@@ -95,7 +97,9 @@ jobs:
             name=${{ env.GHCR_REGISTRY }}/${{ env.GHCR_REPOSITORY }},enable=${{ fromJSON(env.IS_PUSH) }}
           labels: org.opencontainers.image.revision=${{ env.SHA }}
           tags: |
-            type=ref,event=tag
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}},enable=${{ !startsWith(github.ref, 'refs/tags/v0.') }}
             type=ref,event=pr,prefix=pr-
             type=raw,value=canary,enable=${{ github.event_name != 'pull_request_target' }}
         env:
