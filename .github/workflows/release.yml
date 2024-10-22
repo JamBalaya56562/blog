@@ -23,7 +23,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Check if the tag has already been released
+        run: |
+          if [[ $(git tag -l $VERSION) ]]; then
+            echo TAG_EXISTS=true >> $GITHUB_ENV
+          fi
+
       - name: Create release
+        if: env.TAG_EXISTS != 'true'
         run: gh release create $VERSION --generate-notes -t "$REPO_NAME $VERSION"
         env:
           GH_TOKEN: ${{ github.token }}

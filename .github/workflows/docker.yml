@@ -26,9 +26,6 @@ on:
       - "*config.*"
     tags:
       - "v*.*.*"
-  release:
-    types:
-      - published
   workflow_dispatch:
     inputs:
       no-cache:
@@ -54,7 +51,7 @@ env:
   GHCR_REGISTRY: ghcr.io
   GHCR_REPOSITORY: jambalaya56562/blog
   SHA: ${{ github.event.pull_request.head.sha || github.sha }}
-  IS_PUSH: ${{ github.event_name == 'push' || github.ref_type == 'tag' || inputs.push == true }}
+  IS_PUSH: ${{ github.event_name == 'push' || inputs.push == true }}
 
 jobs:
   build:
