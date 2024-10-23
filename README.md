@@ -3,6 +3,7 @@
   
   <a href="https://biomejs.dev/"><img src="https://img.shields.io/badge/biome-60A5FA?labelColor=000000&logo=biome&style=for-the-badge" alt="Biome"></a>
   <a href="https://bun.sh/"><img src="https://img.shields.io/badge/bun-FBF0DF?labelColor=000000&logo=bun&style=for-the-badge" alt="Bun"></a>
+<a href="https://app.fossa.com/projects/git%2Bgithub.com%2FJamBalaya56562%2Fblog?ref=badge_shield" alt="FOSSA Status"><img src="https://app.fossa.com/api/projects/git%2Bgithub.com%2FJamBalaya56562%2Fblog.svg?type=shield"/></a>
   <a href="https://nextjs.org/"><img src="https://img.shields.io/badge/next.js-000000?labelColor=000000&logo=next.js&style=for-the-badge" alt="Next.js"></a>
   <a href="https://react.dev/"><img src="https://img.shields.io/badge/react-61DAFB?labelColor=000000&logo=react&style=for-the-badge" alt="React"></a>
   <a href="https://tailwindcss.com/"><img src="https://img.shields.io/badge/tailwind%20css-06B6D4?labelColor=000000&logo=tailwindcss&style=for-the-badge" alt="Tailwind CSS"></a>
@@ -15,6 +16,9 @@
     JamBalaya56562's blog created by <a href="https://nextjs.org/">Next.js</a>
   </p>
 </div>
+
+
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2FJamBalaya56562%2Fblog.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2FJamBalaya56562%2Fblog?ref=badge_large)
 
 ## 📄 Usage
 
