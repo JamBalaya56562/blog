@@ -101,12 +101,15 @@ Then check out one of our issues labeled as [😵‍💫help wanted][help] or [g
 
 This software uses the following open source packages:
 
+- [AWS Lambda Web Adapter](https://github.com/awslabs/aws-lambda-web-adapter)
 - [Biome](https://biomejs.dev/)
 - [Bun](https://bun.sh/)
+- [HAPPY DOM](https://github.com/capricorn86/happy-dom)
 - [Next.js](https://nextjs.org/)
 - [Node.js](https://nodejs.org/)
 - [React](https://react.dev/)
 - [Tailwind CSS](https://tailwindcss.com/)
+- [TypeScript](https://www.typescriptlang.org/)
 
 ## ⚖️ License
 
