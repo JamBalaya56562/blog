@@ -5,7 +5,7 @@ concurrency:
   cancel-in-progress: true
 
 on:
-  pull_request:
+  pull_request_target:
     paths:
       - "app/**"
       - "public/**"
@@ -24,6 +24,9 @@ on:
       - "package.json"
       - "*config.*"
   workflow_dispatch:
+
+permissions:
+  pull-requests: write
 
 jobs:
   test:
@@ -77,8 +80,8 @@ jobs:
             echo 'EOF'
           } >> $GITHUB_ENV
 
-      - name: Update or Add a test comment
-        if: github.event_name == 'pull_request' && env.STATUS == 1
+      - name: Add a test comment
+        if: github.event_name == 'pull_request_target' && env.STATUS == 1
         uses: actions/github-script@v7
         with:
           script: |
@@ -91,18 +94,43 @@ jobs:
               return comment.user.type === 'Bot' && comment.body.includes('# ❌Test Failed')
             })
             if (testComment) {
-              github.rest.issues.updateComment({
+              github.rest.issues.deleteComment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 comment_id: testComment.id,
-                body: process.env.TEST_COMMENT
               })
-            } else {
+            }
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: process.env.TEST_COMMENT
+            })
+
+      - name: Add a Fixed comment
+        if: github.event_name == 'pull_request_target' && env.STATUS == 0
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            })
+            const testComment = comments.find(comment => {
+              return comment.user.type === 'Bot' && comment.body.includes('# ❌Test Failed')
+            })
+            const body = `# ✅Test Passed
+
+            Failed tests were fixed.
+            <!-- generated-comment [Test]($WORKFLOW_REF) -->`
+
+            if (testComment) {
               github.rest.issues.createComment({
                 issue_number: context.issue.number,
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                body: process.env.TEST_COMMENT
+                body: body
               })
             }
 
