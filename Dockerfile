@@ -1,13 +1,10 @@
-# syntax=docker.io/docker/dockerfile-upstream:1.10.0
-FROM oven/bun:canary AS base
+# syntax=docker.io/docker/dockerfile-upstream:1.11.0-rc2-labs
+FROM oven/bun:canary AS builder
 WORKDIR /usr/src/app
-
-FROM base AS deps
-COPY package.json bun.lockb ./
-RUN bun i --frozen-lockfile
-
-FROM base AS builder
-COPY --from=deps /usr/src/app/node_modules ./node_modules
+RUN --mount=type=bind,source=package.json,target=package.json \
+  --mount=type=bind,source=bun.lockb,target=bun.lockb \
+  --mount=type=cache,target=/root/.bun \
+  bun i --frozen-lockfile
 COPY . .
 RUN bun test
 RUN bun run build
@@ -22,4 +19,4 @@ COPY --from=builder /usr/src/app/.next/static ./.next/static
 
 EXPOSE 3000
 ENV AWS_LWA_ENABLE_COMPRESSION=true AWS_LWA_INVOKE_MODE=response_stream HOSTNAME=0.0.0.0 PORT=3000
-ENTRYPOINT [ "/nodejs/bin/node", "server.js"]
+ENTRYPOINT ["/nodejs/bin/node", "server.js"]
