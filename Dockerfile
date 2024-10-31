@@ -1,4 +1,4 @@
-# syntax=docker.io/docker/dockerfile-upstream:1.11.0-rc2-labs
+# syntax=docker.io/docker/dockerfile-upstream:1.11.0-labs
 FROM oven/bun:canary AS builder
 WORKDIR /usr/src/app
 RUN --mount=type=bind,source=package.json,target=package.json \
