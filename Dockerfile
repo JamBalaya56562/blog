@@ -6,7 +6,7 @@ RUN --mount=type=bind,source=package.json,target=package.json \
   --mount=type=cache,target=/root/.bun \
   bun i --frozen-lockfile
 COPY . .
-RUN bun test
+RUN bun test:app
 RUN bun run build
 
 FROM gcr.io/distroless/nodejs22-debian12:nonroot
