@@ -5,6 +5,7 @@ on:
     paths:
       - "app/**"
       - "public/**"
+      - "test/**"
       - ".dockerignore"
       - "bun.lockb"
       - "Dockerfile"

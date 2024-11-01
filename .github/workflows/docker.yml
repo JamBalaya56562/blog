@@ -9,6 +9,7 @@ on:
     paths:
       - "app/**"
       - "public/**"
+      - "test/**"
       - ".dockerignore"
       - "bun.lockb"
       - "Dockerfile"
@@ -19,6 +20,7 @@ on:
     paths:
       - "app/**"
       - "public/**"
+      - "test/**"
       - ".dockerignore"
       - "bun.lockb"
       - "Dockerfile"

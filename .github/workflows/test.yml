@@ -9,6 +9,7 @@ on:
     paths:
       - "app/**"
       - "public/**"
+      - "test/**"
       - ".dockerignore"
       - "bun.lockb"
       - "Dockerfile"
@@ -18,6 +19,7 @@ on:
     paths:
       - "app/**"
       - "public/**"
+      - "test/**"
       - ".dockerignore"
       - "bun.lockb"
       - "Dockerfile"
@@ -46,7 +48,7 @@ jobs:
 
       - name: Test app
         run: |
-          bun test &> >(tee -p test.log) || echo STATUS=$? >> $GITHUB_ENV
+          bun test:app &> >(tee -p test.log) || echo STATUS=$? >> $GITHUB_ENV
           {
             echo 'RESULT<<EOF'
             cat test.log
