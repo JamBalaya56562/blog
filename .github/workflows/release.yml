@@ -20,7 +20,7 @@ env:
 jobs:
   release:
     runs-on: ubuntu-latest
-    if: github.repository_owner == 'openup-labtakizawa'
+    if: github.repository_owner == 'jambalaya56562'
 
     steps:
       - name: Checkout
