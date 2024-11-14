@@ -1,17 +1,16 @@
 import type { Metadata } from "next"
-import localFont from "next/font/local"
+import type { NextFontWithVariable } from "next/dist/compiled/@next/font"
+import { Geist, Geist_Mono } from "next/font/google"
 import type React from "react"
 import "./globals.css"
 
-const geistSans = localFont({
-  src: "./fonts/GeistVF.woff",
+const geistSans: NextFontWithVariable = Geist({
   variable: "--font-geist-sans",
-  weight: "100 900",
+  subsets: ["latin"],
 })
-const geistMono = localFont({
-  src: "./fonts/GeistMonoVF.woff",
+const geistMono: NextFontWithVariable = Geist_Mono({
   variable: "--font-geist-mono",
-  weight: "100 900",
+  subsets: ["latin"],
 })
 
 export const metadata: Metadata = {
