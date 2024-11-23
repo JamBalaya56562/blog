@@ -113,10 +113,11 @@ jobs:
           cache-to: type=gha,mode=max
           context: .
           labels: ${{ steps.meta.outputs.labels }}
+          load: ${{ !fromJSON(env.IS_PUSH) }}
           no-cache: ${{ inputs.no-cache == true }}
           platforms: ${{ fromJSON(env.IS_PUSH) && 'linux/amd64,linux/arm64' || 'linux/amd64' }}
           provenance: ${{ fromJSON(env.IS_PUSH) && 'mode=max' }}
-          push: true
+          push: ${{ fromJSON(env.IS_PUSH) }}
           sbom: ${{ fromJSON(env.IS_PUSH) }}
           tags: ${{ steps.meta.outputs.tags }}
 
