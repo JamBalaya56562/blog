@@ -14,8 +14,8 @@
   },
   "dependencies": {
     "next": "canary",
-    "react": "canary",
-    "react-dom": "canary"
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
@@ -23,10 +23,10 @@
     "@playwright/test": "next",
     "@tailwindcss/postcss": "^4.0.0-beta.5",
     "@testing-library/dom": "^10.4.0",
-    "@testing-library/react": "^16.0.1",
+    "@testing-library/react": "^16.1.0",
     "@types/bun": "^1.1.14",
-    "@types/react": "^18.3.13",
-    "@types/react-dom": "^18.3.1",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
     "babel-plugin-react-compiler": "experimental",
     "postcss": "^8.4.49",
     "tailwindcss": "^4.0.0-beta.5",
