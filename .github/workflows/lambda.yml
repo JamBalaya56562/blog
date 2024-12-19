@@ -12,7 +12,7 @@ on:
       - "public/**"
       - "test/**"
       - ".dockerignore"
-      - "bun.lockb"
+      - "bun.lock"
       - "Dockerfile"
       - "package.json"
       - "*config.*"
