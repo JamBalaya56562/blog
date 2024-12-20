@@ -3,7 +3,7 @@
 FROM oven/bun:canary AS builder
 WORKDIR /usr/src/app
 RUN --mount=type=bind,source=package.json,target=package.json \
-  --mount=type=bind,source=bun.lockb,target=bun.lockb \
+  --mount=type=bind,source=bun.lock,target=bun.lock \
   --mount=type=cache,target=/root/.bun \
   bun i --frozen-lockfile
 COPY . .

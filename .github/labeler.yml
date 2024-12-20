@@ -9,7 +9,7 @@
   - any-glob-to-any-file: '*config.*'
 📦dependencies:
 - changed-files:
-  - any-glob-to-any-file: ['bun.lockb', 'package.json']
+  - any-glob-to-any-file: ['bun.lock', 'package.json']
 docker:
 - changed-files:
   - any-glob-to-any-file: ['.dockerignore', 'Dockerfile']
