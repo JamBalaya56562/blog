@@ -19,7 +19,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
-    "@happy-dom/global-registrator": "^15.11.7",
+    "@happy-dom/global-registrator": "^16.0.0",
     "@playwright/test": "next",
     "@tailwindcss/postcss": "^4.0.0-beta.8",
     "@testing-library/dom": "^10.4.0",
