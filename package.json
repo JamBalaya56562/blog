@@ -19,18 +19,18 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
-    "@happy-dom/global-registrator": "^16.0.0",
+    "@happy-dom/global-registrator": "^16.5.3",
     "@playwright/test": "next",
-    "@tailwindcss/postcss": "^4.0.0-beta.8",
+    "@tailwindcss/postcss": "^4.0.0-beta.9",
     "@testing-library/dom": "^10.4.0",
     "@testing-library/react": "^16.1.0",
-    "@types/bun": "^1.1.14",
-    "@types/react": "^19.0.2",
-    "@types/react-dom": "^19.0.2",
+    "@types/bun": "^1.1.16",
+    "@types/react": "^19.0.6",
+    "@types/react-dom": "^19.0.3",
     "babel-plugin-react-compiler": "experimental",
-    "postcss": "^8.4.49",
-    "tailwindcss": "^4.0.0-beta.8",
-    "typescript": "^5.7.2"
+    "postcss": "^8.5.0",
+    "tailwindcss": "^4.0.0-beta.9",
+    "typescript": "^5.7.3"
   },
   "trustedDependencies": ["@biomejs/biome", "sharp"]
 }
