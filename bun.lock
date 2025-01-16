@@ -14,7 +14,7 @@
         "@playwright/test": "next",
         "@tailwindcss/postcss": "^4.0.0-beta.9",
         "@testing-library/dom": "^10.4.0",
-        "@testing-library/react": "^16.1.0",
+        "@testing-library/react": "^16.2.0",
         "@types/bun": "^1.1.16",
         "@types/react": "^19.0.7",
         "@types/react-dom": "^19.0.3",
@@ -102,25 +102,25 @@
 
     "@img/sharp-win32-x64": ["@img/sharp-win32-x64@0.33.5", "", { "os": "win32", "cpu": "x64" }, "sha512-MpY/o8/8kj+EcnxwvrP4aTJSWw/aZ7JIGR4aBeZkZw5B7/Jn+tY9/VNwtcoGmdT7GfggGIU4kygOMSbYnOrAbg=="],
 
-    "@next/env": ["@next/env@15.2.0-canary.11", "", {}, "sha512-dpuGWdSubYeEFXVuwt7ObzkpRfqGX3NMNoMVF3PQMfnb63ZPVxGHiFzpb5Bd+ifPOQ4LbBGd3yfNsbExxWAb0A=="],
+    "@next/env": ["@next/env@15.2.0-canary.12", "", {}, "sha512-QROcneclOKgx5bPz/Ae/tokhwaabbDBuXGf1OvFOhFE484ZP0H+p6bxf+jbP0ANP6bXYvrHDDWnplfi9Y33gKA=="],
 
-    "@next/swc-darwin-arm64": ["@next/swc-darwin-arm64@15.2.0-canary.11", "", { "os": "darwin", "cpu": "arm64" }, "sha512-IWohMjAO4L5IAFNQEotF7DD5ERUzpuPaNzIQW8tTDe/3+kL2bwWTkd6Z68OH+yWZoWxy3N97aBh3Z8n0kF84Kg=="],
+    "@next/swc-darwin-arm64": ["@next/swc-darwin-arm64@15.2.0-canary.12", "", { "os": "darwin", "cpu": "arm64" }, "sha512-pMyI06D0qN0930CavbCTsFOUtcw6eHXy6QA1dy+9dk64Ed5QRZm3pXA0AO93qhFY8+Z17KBMg5VKxvzqoK93Yg=="],
 
-    "@next/swc-darwin-x64": ["@next/swc-darwin-x64@15.2.0-canary.11", "", { "os": "darwin", "cpu": "x64" }, "sha512-0BwL3SDZV9TXutxnHUmlZl4q7zL4EMSSNEfBhOEFcM6qTB4t+aBEluXP0ni+eDEeJhLCgbY/7mMDQyeUYaLZ2g=="],
+    "@next/swc-darwin-x64": ["@next/swc-darwin-x64@15.2.0-canary.12", "", { "os": "darwin", "cpu": "x64" }, "sha512-pZMhYlq9LutJTuEevIERN3tSgHPLfS/IAgqZdDw4VDUHKKzCEGqUNTnyJE7kJiF/AcaW9OxDjtKzM5SZ3BRgWA=="],
 
-    "@next/swc-linux-arm64-gnu": ["@next/swc-linux-arm64-gnu@15.2.0-canary.11", "", { "os": "linux", "cpu": "arm64" }, "sha512-Z/rNVNk70OzORADhUiTVGiKZTAzOaVt3ZnTglG3xdussutxhVT0A2UVuZiftpYVVIvz0tOEeUW6OGm7WRVcnIg=="],
+    "@next/swc-linux-arm64-gnu": ["@next/swc-linux-arm64-gnu@15.2.0-canary.12", "", { "os": "linux", "cpu": "arm64" }, "sha512-sWPENLhbW40NY4EnVJ1Fl3P1YO9PCicG1fvygr7XM5U0QOwiZzgkKuS7nMEFgkSKwLBQBScHGM/Fvz38T1qtlw=="],
 
-    "@next/swc-linux-arm64-musl": ["@next/swc-linux-arm64-musl@15.2.0-canary.11", "", { "os": "linux", "cpu": "arm64" }, "sha512-cu0JGHjxTCtSIbQ5c+jQdf+PQVO4mLzRf0i9i7adEbCnluByrNCGGBHg3hOiX/C2wHOIKz0cWaEoEwos7pAe2Q=="],
+    "@next/swc-linux-arm64-musl": ["@next/swc-linux-arm64-musl@15.2.0-canary.12", "", { "os": "linux", "cpu": "arm64" }, "sha512-vRqNP7Bv14+Kqu11/9+pgL2PDEzGYe9rC9VJx83JgrJbab/8FCdFS6PHiMjGJmYLKgjtNP0CK3lu+9CuFTp90w=="],
 
-    "@next/swc-linux-x64-gnu": ["@next/swc-linux-x64-gnu@15.2.0-canary.11", "", { "os": "linux", "cpu": "x64" }, "sha512-6QTPtnXXCtZ773oZlBmRW2Zm1+FIZ6vOuWEUCZaPFlzDdmLpbF3GJYoO1v8/B84Bdn/6gtNbnZ9zDpZCuzIYQQ=="],
+    "@next/swc-linux-x64-gnu": ["@next/swc-linux-x64-gnu@15.2.0-canary.12", "", { "os": "linux", "cpu": "x64" }, "sha512-njFDHJBP5EymQVzuFQusM+IRne2197MO7+ObaRtPIaL38uaaK7sr9WDzBZkCQKP8uLuDefwPHqQPPS2U2WStfw=="],
 
-    "@next/swc-linux-x64-musl": ["@next/swc-linux-x64-musl@15.2.0-canary.11", "", { "os": "linux", "cpu": "x64" }, "sha512-PqnATjFX2HROHPvVWBsU/CDODN6nfrVdFUWgGCrkjbFo6UNTeQO/d/MVEOtgrauf1MzUCB6HTREp7ekwdvUEWg=="],
+    "@next/swc-linux-x64-musl": ["@next/swc-linux-x64-musl@15.2.0-canary.12", "", { "os": "linux", "cpu": "x64" }, "sha512-C7cLHlf8FxHosAB7IWu5xMz/zMZCcH0q86tU8HCZNJu1wXLDZHla56mF5WeAqH8ohLO5fw2l0Nu2DKe3OGqm1A=="],
 
-    "@next/swc-win32-arm64-msvc": ["@next/swc-win32-arm64-msvc@15.2.0-canary.11", "", { "os": "win32", "cpu": "arm64" }, "sha512-6W5v9GN0JJ20tVlkOIfMxksIP+s8Mcesmotu5vyJqWG4VMbhgcpzstvb22imjOMtp4TcqtaD1fN10Lj9k6QZuQ=="],
+    "@next/swc-win32-arm64-msvc": ["@next/swc-win32-arm64-msvc@15.2.0-canary.12", "", { "os": "win32", "cpu": "arm64" }, "sha512-cHwlngpGkO8io/unOURrclS4v3Yem1xZjntrs4G8StQ1AwHPr+XqDhH4k4QBk6P+ianL8yroIi7nK+By3sUe4w=="],
 
-    "@next/swc-win32-x64-msvc": ["@next/swc-win32-x64-msvc@15.2.0-canary.11", "", { "os": "win32", "cpu": "x64" }, "sha512-QMql37dWQCdmeqRoO8uElj9n5puhtuAgiP53qXnJZQ+9iKDpS4gzb0j5QhIAE1zzWKqQBPm4//dgLVGTyu2zwA=="],
+    "@next/swc-win32-x64-msvc": ["@next/swc-win32-x64-msvc@15.2.0-canary.12", "", { "os": "win32", "cpu": "x64" }, "sha512-9SSJ5YhvN9JYdnsMKL8jojFcUqPgC7n4hhvqXOruZzt/SzmwgEyeIbxQQ/ICLJRz1LJCY/ytUNvLcbQkDqKQfA=="],
 
-    "@playwright/test": ["@playwright/test@1.50.0-alpha-2025-01-15", "", { "dependencies": { "playwright": "1.50.0-alpha-2025-01-15" }, "bin": { "playwright": "cli.js" } }, "sha512-a5Lx11Yk1k8rCnxKfVoPGUApoZr6k0usKUdFZLaHhU6NPrMKUC8Ag6fLe7AQnx6DQw7y//129F5mpOZHHhBdNA=="],
+    "@playwright/test": ["@playwright/test@1.50.0-alpha-2025-01-16", "", { "dependencies": { "playwright": "1.50.0-alpha-2025-01-16" }, "bin": { "playwright": "cli.js" } }, "sha512-8SdZ0O9LM91ioWbQKsRILm1KEK9ZeuWZ0seylCDk4cXTV0GlEIeAbBfCWGqS1X2/EKHlSqddf0+dY/4h18Hy7g=="],
 
     "@swc/counter": ["@swc/counter@0.1.3", "", {}, "sha512-e2BR4lsJkkRlKZ/qCHPw9ZaSxc0MVUd7gtbtaB7aMvHeJVYe8sOB8DBZkP2DtISHGSku9sCK6T6cnY0CtXrOCQ=="],
 
@@ -156,7 +156,7 @@
 
     "@testing-library/dom": ["@testing-library/dom@10.4.0", "", { "dependencies": { "@babel/code-frame": "^7.10.4", "@babel/runtime": "^7.12.5", "@types/aria-query": "^5.0.1", "aria-query": "5.3.0", "chalk": "^4.1.0", "dom-accessibility-api": "^0.5.9", "lz-string": "^1.5.0", "pretty-format": "^27.0.2" } }, "sha512-pemlzrSESWbdAloYml3bAJMEfNh1Z7EduzqPKprCH5S341frlpYnUEW0H72dLxa6IsYr+mPno20GiSm+h9dEdQ=="],
 
-    "@testing-library/react": ["@testing-library/react@16.1.0", "", { "dependencies": { "@babel/runtime": "^7.12.5" }, "peerDependencies": { "@testing-library/dom": "^10.0.0", "@types/react": "^18.0.0 || ^19.0.0", "@types/react-dom": "^18.0.0 || ^19.0.0", "react": "^18.0.0 || ^19.0.0", "react-dom": "^18.0.0 || ^19.0.0" }, "optionalPeers": ["@types/react", "@types/react-dom"] }, "sha512-Q2ToPvg0KsVL0ohND9A3zLJWcOXXcO8IDu3fj11KhNt0UlCWyFyvnCIBkd12tidB2lkiVRG8VFqdhcqhqnAQtg=="],
+    "@testing-library/react": ["@testing-library/react@16.2.0", "", { "dependencies": { "@babel/runtime": "^7.12.5" }, "peerDependencies": { "@testing-library/dom": "^10.0.0", "@types/react": "^18.0.0 || ^19.0.0", "@types/react-dom": "^18.0.0 || ^19.0.0", "react": "^18.0.0 || ^19.0.0", "react-dom": "^18.0.0 || ^19.0.0" }, "optionalPeers": ["@types/react", "@types/react-dom"] }, "sha512-2cSskAvA1QNtKc8Y9VJQRv0tm3hLVgxRGDB+KYhIaPQJ1I+RHbhIXcM+zClKXzMes/wshsMVzf4B9vS4IZpqDQ=="],
 
     "@types/aria-query": ["@types/aria-query@5.0.4", "", {}, "sha512-rfT93uj5s0PRL7EzccGMs3brplhcrghnDoV26NqKhCAS1hVo+WdNsPvE/yb6ilfr5hi2MEk6d5EWJTKdxg8jVw=="],
 
@@ -246,13 +246,13 @@
 
     "nanoid": ["nanoid@3.3.8", "", { "bin": { "nanoid": "bin/nanoid.cjs" } }, "sha512-WNLf5Sd8oZxOm+TzppcYk8gVOgP+l58xNy58D0nbUnOxOWRWvlcCV4kUF7ltmI6PsrLl/BgKEyS4mqsGChFN0w=="],
 
-    "next": ["next@15.2.0-canary.11", "", { "dependencies": { "@next/env": "15.2.0-canary.11", "@swc/counter": "0.1.3", "@swc/helpers": "0.5.15", "busboy": "1.6.0", "caniuse-lite": "^1.0.30001579", "postcss": "8.4.31", "styled-jsx": "5.1.6" }, "optionalDependencies": { "@next/swc-darwin-arm64": "15.2.0-canary.11", "@next/swc-darwin-x64": "15.2.0-canary.11", "@next/swc-linux-arm64-gnu": "15.2.0-canary.11", "@next/swc-linux-arm64-musl": "15.2.0-canary.11", "@next/swc-linux-x64-gnu": "15.2.0-canary.11", "@next/swc-linux-x64-musl": "15.2.0-canary.11", "@next/swc-win32-arm64-msvc": "15.2.0-canary.11", "@next/swc-win32-x64-msvc": "15.2.0-canary.11", "sharp": "^0.33.5" }, "peerDependencies": { "@opentelemetry/api": "^1.1.0", "@playwright/test": "^1.41.2", "babel-plugin-react-compiler": "*", "react": "^18.2.0 || 19.0.0-rc-de68d2f4-20241204 || ^19.0.0", "react-dom": "^18.2.0 || 19.0.0-rc-de68d2f4-20241204 || ^19.0.0", "sass": "^1.3.0" }, "optionalPeers": ["@opentelemetry/api", "@playwright/test", "babel-plugin-react-compiler", "sass"], "bin": { "next": "dist/bin/next" } }, "sha512-Fj5FFfG7E55MrRkyGwDGnNc/k5WvAj0Oei/ZKE9MLG/74saU276SUPZdjIB8waq4UIhUc/pMGwa/3WZHMQ/jCA=="],
+    "next": ["next@15.2.0-canary.12", "", { "dependencies": { "@next/env": "15.2.0-canary.12", "@swc/counter": "0.1.3", "@swc/helpers": "0.5.15", "busboy": "1.6.0", "caniuse-lite": "^1.0.30001579", "postcss": "8.4.31", "styled-jsx": "5.1.6" }, "optionalDependencies": { "@next/swc-darwin-arm64": "15.2.0-canary.12", "@next/swc-darwin-x64": "15.2.0-canary.12", "@next/swc-linux-arm64-gnu": "15.2.0-canary.12", "@next/swc-linux-arm64-musl": "15.2.0-canary.12", "@next/swc-linux-x64-gnu": "15.2.0-canary.12", "@next/swc-linux-x64-musl": "15.2.0-canary.12", "@next/swc-win32-arm64-msvc": "15.2.0-canary.12", "@next/swc-win32-x64-msvc": "15.2.0-canary.12", "sharp": "^0.33.5" }, "peerDependencies": { "@opentelemetry/api": "^1.1.0", "@playwright/test": "^1.41.2", "babel-plugin-react-compiler": "*", "react": "^18.2.0 || 19.0.0-rc-de68d2f4-20241204 || ^19.0.0", "react-dom": "^18.2.0 || 19.0.0-rc-de68d2f4-20241204 || ^19.0.0", "sass": "^1.3.0" }, "optionalPeers": ["@opentelemetry/api", "@playwright/test", "babel-plugin-react-compiler", "sass"], "bin": { "next": "dist/bin/next" } }, "sha512-pWl5u2pFPxvEFURX6dz3YIrEEJgRR/May2YvY4iwvLEmLGyYBwDOjy4A8SbWzvpDQXDsFSJGe+WQIOZ00/G8vQ=="],
 
     "picocolors": ["picocolors@1.1.1", "", {}, "sha512-xceH2snhtb5M9liqDsmEw56le376mTZkEX/jEb/RxNFyegNul7eNslCXP9FDj/Lcu0X8KEyMceP2ntpaHrDEVA=="],
 
-    "playwright": ["playwright@1.50.0-alpha-2025-01-15", "", { "dependencies": { "playwright-core": "1.50.0-alpha-2025-01-15" }, "optionalDependencies": { "fsevents": "2.3.2" }, "bin": { "playwright": "cli.js" } }, "sha512-kU3U8AQYSgpK2nyHr7fyWJj7A0+f/vG+kFGnlBgPsboPUUalmVJkllSpepfEGt4PTt6l2ubNNzQGNE0goYcdAg=="],
+    "playwright": ["playwright@1.50.0-alpha-2025-01-16", "", { "dependencies": { "playwright-core": "1.50.0-alpha-2025-01-16" }, "optionalDependencies": { "fsevents": "2.3.2" }, "bin": { "playwright": "cli.js" } }, "sha512-N2IwPTi4IWiJfkIizUBqBmEiZ32Ba7aCtSdy+4rT5O7JFdKOpWceTrMiifN8DZ6xU1WrtFwbah3tvQXl2/54yg=="],
 
-    "playwright-core": ["playwright-core@1.50.0-alpha-2025-01-15", "", { "bin": { "playwright-core": "cli.js" } }, "sha512-9dsakcVUl1bYZd4KWmh8yPI4gjFLMwyGs7Xpo4hOaiDDsr8ej/wsjzTkJLrsnqHwZu2CS0YU8b5filUOqSAr+w=="],
+    "playwright-core": ["playwright-core@1.50.0-alpha-2025-01-16", "", { "bin": { "playwright-core": "cli.js" } }, "sha512-Ln9L148Qt4FbdFUk1Lo0kG0isIhqdMRcycjExpjZKVvq5WGLAKJZY0keXNmGnj+x5jYT5VxsWreXgqy/vyXpEA=="],
 
     "postcss": ["postcss@8.5.1", "", { "dependencies": { "nanoid": "^3.3.8", "picocolors": "^1.1.1", "source-map-js": "^1.2.1" } }, "sha512-6oz2beyjc5VMn/KV1pPw8fliQkhBXrVn1Z3TVyqZxU8kZpzEKhBdmCFqI6ZbmGtamQvQGuU1sgPTk8ZrXDD7jQ=="],
 
