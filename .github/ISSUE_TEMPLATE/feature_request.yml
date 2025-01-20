@@ -1,7 +1,7 @@
 name: 🚀 Feature Request
 description: Suggest an idea, feature, or enhancement
 title: "🚀Feature[scope]: "
-type: Feature
+labels: ["🚀enhancement"]
 body:
   - type: markdown
     attributes:
