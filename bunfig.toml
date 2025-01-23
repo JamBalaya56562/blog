@@ -1,5 +1,2 @@
-[install]
-saveTextLockfile = true
-
 [test]
 preload = "./happydom.tsx"
