@@ -89,7 +89,7 @@ Follow these steps to open this project in a Codespace:
 2. Click on the **Codespaces** tab.  
 3. Click **Create codespace on main**.
 
-For more info, check out the [GitHub documentation](https://docs.github.com/en/free-pro-team@latest/github/developing-online-with-codespaces/creating-a-codespace#creating-a-codespace).
+For more info, check out the [GitHub documentation](https://docs.github.com/en/codespaces/developing-in-a-codespace/creating-a-codespace-for-a-repository#creating-a-codespace).
 
 </details>
 
