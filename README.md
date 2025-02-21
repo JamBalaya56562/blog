@@ -16,39 +16,61 @@
   </p>
 </div>
 
-## 📄 Usage
+## 📄 Get Started
 
 To clone and run this application, you'll need [Git](https://git-scm.com) and [Bun](https://bun.sh/) installed on your computer.  
 From your command line:
 
+### 1. Clone this repository
+
 ```bash
-# Clone this repository
-$ git clone https://github.com/JamBalaya56562/blog.git
+git clone https://github.com/JamBalaya56562/blog.git
+```
 
-# Install dependencies with bun
-$ cd blog && bun i
+### 2. Install dependencies with bun
 
-# Develop the app
-$ bun dev
+```bash
+cd blog && bun i
+```
 
-# Test the app
-$ bun test:app
+### 3. Develop the app
 
-# E2E Test
-$ bun test:e2e
+```bash
+bun dev
+```
 
-# Build the app
-$ bun run build
+### 4. Test the app
 
-# Start the app
-$ bun start
+```bash
+bun test:app
+```
 
-# Format and Lint the files
-$ bun lint
+### 5. E2E Test
+```bash
+bun test:e2e
+```
+
+### 6. Format and Lint the files
+
+```bash
+bun lint
+```
+
+### 7. Build the app
+
+```bash
+bun run build
+```
+
+### 8. Start the app
+
+```bash
+bun start
 ```
 
 ## 🆚 VSCode
-[VSCode](https://code.visualstudio.com/) is the recommended IDE for working on this project, as it has been configured.
+
+[Visual Studio Code](https://code.visualstudio.com/) is the recommended IDE for working on this project, as it has been configured.
 
 Once opening, you can run `Extensions: Show Recommended Extensions` to install the recommended extensions for good development is automatically configured.
 
@@ -67,7 +89,7 @@ Follow these steps to open this project in a Codespace:
 2. Click on the **Codespaces** tab.  
 3. Click **Create codespace on main**.
 
-For more info, check out the [GitHub documentation](https://docs.github.com/en/free-pro-team@latest/github/developing-online-with-codespaces/creating-a-codespace#creating-a-codespace).
+For more info, check out the [GitHub documentation](https://docs.github.com/en/codespaces/developing-in-a-codespace/creating-a-codespace-for-a-repository#creating-a-codespace).
 
 </details>
 
@@ -118,5 +140,5 @@ This software uses the following open source packages:
 
 [![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2FJamBalaya56562%2Fblog.svg?type=large&issueType=license)](https://app.fossa.com/projects/git%2Bgithub.com%2FJamBalaya56562%2Fblog?ref=badge_large&issueType=license)
 
-The MIT License Copyright (c) 2023 - [JamBalaya56562](https://github.com/JamBalaya56562).  
+The MIT License Copyright (c) 2025 - [JamBalaya56562](https://github.com/JamBalaya56562).
 Please have a look at the [LICENSE](https://github.com/JamBalaya56562/blog/blob/main/LICENSE) for more details.
