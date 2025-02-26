@@ -5,7 +5,6 @@ const nextConfig: NextConfig = {
     inlineCss: true,
     ppr: true,
     reactCompiler: true,
-    streamingMetadata: true,
     viewTransition: true,
   },
   output: "standalone",
