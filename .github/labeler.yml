@@ -17,8 +17,6 @@ docker:
 - changed-files:
   - any-glob-to-any-file: ['**/*.md', '**/*.txt']
 🚀enhancement:
- - head-branch: ['^feature', 'feature', '^enhancement', 'enhancement']
-✨feature:
 - all:
   - changed-files:
     - any-glob-to-any-file: 'app/**'
