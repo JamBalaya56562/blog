@@ -1,9 +1,8 @@
 changelog:
   categories:
-    - title: 🚀 Exciting New Features
+    - title: ✨ Exciting New Features
       labels:
         - 🚀enhancement
-        - ✨feature
     - title: 🐛 Bug Fixes
       labels:
         - 🐛bug
