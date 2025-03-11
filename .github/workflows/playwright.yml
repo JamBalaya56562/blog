@@ -1,4 +1,4 @@
-name: Playwright Tests
+name: 🎭 Playwright Tests
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -33,30 +33,32 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: 📥 Checkout
+        uses: actions/checkout@v4
         with:
           ref: ${{ env.SHA }}
         env:
           SHA: ${{ github.event.pull_request.head.sha || github.sha }}
 
-      - name: Install bun
+      - name: 🐣 Install bun
         uses: oven-sh/setup-bun@v2
         with:
           bun-version: canary
 
-      - name: Install dependencies
+      - name: 📦 Install dependencies
         run: bun i
 
-      - name: Build app
+      - name: 🧩 Build app
         run: bun run build
 
-      - name: Install Playwright Browsers
+      - name: 🎭 Install Playwright Browsers
         run: bunx playwright install --with-deps
 
-      - name: Run Playwright tests
+      - name: 🧪 Run Playwright tests
         run: bunx playwright test
 
-      - uses: actions/upload-artifact@v4
+      - name: 🆙 Upload Test Report
+        uses: actions/upload-artifact@v4
         if: ${{ !cancelled() }}
         with:
           name: playwright-report
