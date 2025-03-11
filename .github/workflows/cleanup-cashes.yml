@@ -1,4 +1,4 @@
-name: Cleanup caches by a branch
+name: 🗑️ Cleanup caches by a branch
 
 on:
   pull_request:
@@ -19,7 +19,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Cleanup
+      - name: 🗑️ Cleanup
         run: |
           gh extension install actions/gh-actions-cache
 

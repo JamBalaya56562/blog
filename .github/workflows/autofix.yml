@@ -18,19 +18,19 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
+      - name: 📥 Checkout
         uses: actions/checkout@v4
 
-      - name: Install bun
+      - name: 🐣 Install bun
         uses: oven-sh/setup-bun@v2
         with:
           bun-version: canary
 
-      - name: Update dependencies
+      - name: 📦 Update dependencies
         run: bun update
 
-      - name: Run Biome
+      - name: 🔷 Run Biome
         run: bun lint && bunx biome ci --reporter=github
 
-      - name: Commit
+      - name: 💾 Commit
         uses: autofix-ci/action@v1.3.1
