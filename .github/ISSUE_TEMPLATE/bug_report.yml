@@ -2,6 +2,8 @@ name: 🐛 Bug Report
 description: File a bug report
 title: "🐛Bug[scope]: "
 labels: ["🐛bug"]
+assignees:
+  - JamBalaya56562
 body:
   - type: markdown
     attributes:
