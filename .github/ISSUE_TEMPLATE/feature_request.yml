@@ -2,6 +2,8 @@ name: 🚀 Feature Request
 description: Suggest an idea, feature, or enhancement
 title: "🚀Feature[scope]: "
 labels: ["🚀enhancement"]
+assignees:
+  - JamBalaya56562
 body:
   - type: markdown
     attributes:
