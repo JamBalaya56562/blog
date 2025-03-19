@@ -1,3 +1,4 @@
+import withRspack from "@next/plugin-rspack"
 import type { NextConfig } from "next"
 
 const nextConfig: NextConfig = {
@@ -10,4 +11,4 @@ const nextConfig: NextConfig = {
   output: "standalone",
 }
 
-export default nextConfig
+export default withRspack(nextConfig)
