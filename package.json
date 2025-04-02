@@ -5,8 +5,8 @@
   "scripts": {
     "dev": "next dev --turbopack",
     "dev-win": "WATCHPACK_POLLING=true next dev --turbopack",
-    "build": "next build",
-    "start": "next start",
+    "build": "next build --turbopack",
+    "start": "next start --turbopack",
     "lint": "bunx biome check --write",
     "test:app": "bun test test/app",
     "test:e2e": "bun playwright test",
