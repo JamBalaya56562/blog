@@ -20,4 +20,4 @@ COPY --from=builder /usr/src/app/.next/static ./.next/static
 
 EXPOSE 3000
 ENV AWS_LWA_ENABLE_COMPRESSION=true AWS_LWA_INVOKE_MODE=response_stream HOSTNAME=0.0.0.0 PORT=3000
-ENTRYPOINT ["/nodejs/bin/node", "server.js"]
+ENTRYPOINT ["TURBOPACK=1", "/nodejs/bin/node", "server.js"]
