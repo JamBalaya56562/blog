@@ -1,5 +1,16 @@
 version: 2
 updates:
+  - package-ecosystem: "bun"
+    directory: "/"
+    schedule:
+      interval: "daily"
+    commit-message:
+      prefix: "build"
+      include: "scope"
+    groups:
+      dependencies:
+        patterns:
+          - "*"
   - package-ecosystem: "devcontainers"
     directory: "/"
     schedule:
@@ -28,16 +39,5 @@ updates:
       prefix: "ci"
     groups:
       ci:
-        patterns:
-          - "*"
-  - package-ecosystem: "bun"
-    directory: "/"
-    schedule:
-      interval: "daily"
-    commit-message:
-      prefix: "build"
-      include: "scope"
-    groups:
-      dependencies:
         patterns:
           - "*"
