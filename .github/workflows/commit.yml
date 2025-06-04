@@ -1,4 +1,4 @@
-name: 📝 Check Conventional Commit
+name: 📝 Check Conventional CommitAdd commentMore actions
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -25,12 +25,15 @@ jobs:
         uses: oven-sh/setup-bun@735343b667d3e6f658f44d0eca948eb6282f2b76
         with:
           bun-version: canary
-      - name: 📦 Install dependencies
-        run: bun i
+      - name: 📦 Install commitlint
+        run: bun add -d @commitlint/cli @commitlint/config-conventional
+      - name: 📝 Create commitlint config
+        run: |
+          echo 'export default { extends: ["@commitlint/config-conventional"] }' > commitlint.config.ts
 
-      - name: 👀 Validate pushed commits with commitlint
+      - name: 👀 Validate current commit (last commit) with commitlint
         if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
-        run: bunx commitlint --from ${{ github.event.before }} --to ${{ github.sha }} --verbose
+        run: bunx commitlint --last --verbose
 
       - name: 👀 Validate PR commits with commitlint
         if: github.event_name == 'pull_request'
