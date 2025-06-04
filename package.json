@@ -20,7 +20,9 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
-    "@happy-dom/global-registrator": "^17.6.1",
+    "@commitlint/cli": "^19.8.1",
+    "@commitlint/config-conventional": "^19.8.1",
+    "@happy-dom/global-registrator": "^17.6.3",
     "@playwright/test": "next",
     "@tailwindcss/postcss": "^4.1.8",
     "@testing-library/dom": "^10.4.0",
