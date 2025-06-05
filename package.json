@@ -7,10 +7,10 @@
     "dev-win": "WATCHPACK_POLLING=true next dev --turbopack",
     "build": "next build --turbopack",
     "start": "next start",
-    "lint": "bunx biome check --write",
+    "lint": "biome check --write",
     "test:app": "bun test test/app",
-    "test:e2e": "bun playwright test",
-    "test:report": "bunx playwright show-report"
+    "test:e2e": "playwright test",
+    "test:report": "playwright show-report"
   },
   "dependencies": {
     "next": "canary",
