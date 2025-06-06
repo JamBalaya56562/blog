@@ -8,7 +8,7 @@
     "build": "next build --turbopack",
     "start": "next start",
     "lint": "biome check --write",
-    "test:app": "bun test test/app",
+    "test:app": "bun test test/app --preload ./happydom.tsx",
     "test:e2e": "playwright test",
     "test:report": "playwright show-report"
   },
