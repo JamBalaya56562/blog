@@ -29,7 +29,8 @@ jobs:
         run: bun add -d @commitlint/cli @commitlint/config-conventional
       - name: 📝 Create commitlint config
         run: |
-          echo 'export default { extends: ["@commitlint/config-conventional"] }' > commitlint.config.ts
+          echo 'export default { extends: ["@commitlint/config-conventional"],
+          ignores: [(message) => message.includes("Signed-off-by: dependabot[bot]")] }' > commitlint.config.ts
 
       - name: 👀 Validate current commit (last commit) with commitlint
         if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
