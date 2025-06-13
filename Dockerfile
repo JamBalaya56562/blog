@@ -1,4 +1,4 @@
-# syntax=docker.io/docker/dockerfile-upstream:1.16.0-labs
+# syntax=docker.io/docker/dockerfile-upstream:1.17.0-rc1-labs
 # check=error=true
 FROM oven/bun:canary AS builder
 WORKDIR /usr/src/app
