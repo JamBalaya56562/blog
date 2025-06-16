@@ -1,5 +1,4 @@
 import type { NextConfig } from "next"
-import withRspack from "next-rspack"
 
 const nextConfig: NextConfig = {
   experimental: {
@@ -12,4 +11,4 @@ const nextConfig: NextConfig = {
   output: "standalone",
 }
 
-export default withRspack(nextConfig)
+export default nextConfig
