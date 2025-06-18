@@ -18,7 +18,7 @@
     "react-dom": "^19.1.0"
   },
   "devDependencies": {
-    "@biomejs/biome": "^1.9.4",
+    "@biomejs/biome": "^2.0.0",
     "@happy-dom/global-registrator": "^18.0.1",
     "@playwright/test": "next",
     "@tailwindcss/postcss": "^4.1.10",
@@ -32,5 +32,8 @@
     "tailwindcss": "^4.1.10",
     "typescript": "^5.8.3"
   },
-  "trustedDependencies": ["@biomejs/biome", "sharp"]
+  "trustedDependencies": [
+    "@biomejs/biome",
+    "sharp"
+  ]
 }
