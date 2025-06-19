@@ -7,6 +7,12 @@
     "defaultBranch": "main"
   },
   "linter": {
+    "rules": {
+      "style": {
+        "noUselessElse": "error",
+        "useBlockStatements": "error"
+      }
+    },
     "domains": {
       "next": "all"
     }
