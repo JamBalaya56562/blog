@@ -16,6 +16,7 @@ jobs:
   commitlint:
     name: Commitlint
     runs-on: ubuntu-latest
+    if: github.ref_name != 'sapling-pr-archive-*'
     steps:
       - name: 📥 Checkout
         uses: actions/checkout@v4
