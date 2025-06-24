@@ -136,7 +136,7 @@
 
     "@next/swc-win32-x64-msvc": ["@next/swc-win32-x64-msvc@15.4.0-canary.94", "", { "os": "win32", "cpu": "x64" }, "sha512-TDtg2y6IhdB8ADPALaDYMqWV6UdzRPn3n65vSuNnl0AM0WbkoKnECqbHIOjadM6t0WTSQ0BA3ldNpVsC5wvSpA=="],
 
-    "@playwright/test": ["@playwright/test@1.54.0-alpha-2025-06-23", "", { "dependencies": { "playwright": "1.54.0-alpha-2025-06-23" }, "bin": { "playwright": "cli.js" } }, "sha512-DPbNqSuZys9IvxDMZsYynHL/BLFjGRvkpaYT98Z2cqNEgEfP1XDHKlgtm3QdzgBuHuyjAYqaTqjkscQy7MDr0g=="],
+    "@playwright/test": ["@playwright/test@1.54.0-alpha-2025-06-24", "", { "dependencies": { "playwright": "1.54.0-alpha-2025-06-24" }, "bin": { "playwright": "cli.js" } }, "sha512-kiwx3zYMG4lYFpPR7tTt2rg7Gsll5s3Xl979ZdK1wORamgMa9Inty/GfMnxCkgSu5EkO8rut/A6CWh2NOiJLxw=="],
 
     "@swc/helpers": ["@swc/helpers@0.5.15", "", { "dependencies": { "tslib": "^2.8.0" } }, "sha512-JQ5TuMi45Owi4/BIMAJBoSQoOJu12oOk/gADqlcUL9JEdHB8vyjUSsxqeNXnmXHjYKMi2WcYtezGEEhqUI/E2g=="],
 
@@ -274,9 +274,9 @@
 
     "picocolors": ["picocolors@1.1.1", "", {}, "sha512-xceH2snhtb5M9liqDsmEw56le376mTZkEX/jEb/RxNFyegNul7eNslCXP9FDj/Lcu0X8KEyMceP2ntpaHrDEVA=="],
 
-    "playwright": ["playwright@1.54.0-alpha-2025-06-23", "", { "dependencies": { "playwright-core": "1.54.0-alpha-2025-06-23" }, "optionalDependencies": { "fsevents": "2.3.2" }, "bin": { "playwright": "cli.js" } }, "sha512-TsaHVhZXvyaPFk0RIoxisit3PRQ3DUvwihGYKFW2GLeQJt8G5e6Oke/0VQ6VKzqltpTXJeDRIzc4MPRr9HjRDw=="],
+    "playwright": ["playwright@1.54.0-alpha-2025-06-24", "", { "dependencies": { "playwright-core": "1.54.0-alpha-2025-06-24" }, "optionalDependencies": { "fsevents": "2.3.2" }, "bin": { "playwright": "cli.js" } }, "sha512-9ZhwSRGGQ8/7DxuYhfIjdL6Cp5QY3nR7FkcxbWmQTgKi09bxkVVYAkjZdeZI4tHExrWRZKxFgMqZTyf6YXSMZQ=="],
 
-    "playwright-core": ["playwright-core@1.54.0-alpha-2025-06-23", "", { "bin": { "playwright-core": "cli.js" } }, "sha512-bhIwCBEYtGYxre6BZyTA1/nk8QlgfMoJy5NWoIj63j3J7QP84nIzAQDmnXiamn53CA8ajTVUTPgxo2bhE7GLKw=="],
+    "playwright-core": ["playwright-core@1.54.0-alpha-2025-06-24", "", { "bin": { "playwright-core": "cli.js" } }, "sha512-VqM628GsVtxdHM9ywucpRtaa/fUKHplGrkWRgmHBg/Ue+D75CCeihk/QUxAs4qhWaJYJwCCteja+htozr6PgPQ=="],
 
     "postcss": ["postcss@8.5.6", "", { "dependencies": { "nanoid": "^3.3.11", "picocolors": "^1.1.1", "source-map-js": "^1.2.1" } }, "sha512-3Ybi1tAuwAP9s0r1UQ2J4n5Y0G05bJkpUIO0/bI9MhwmD70S5aTWbXGBwxHrelT+XM1k6dM0pk+SwNkpTRN7Pg=="],
 
