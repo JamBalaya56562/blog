@@ -8,6 +8,9 @@
   },
   "linter": {
     "rules": {
+      "correctness": {
+        "noUnusedImports": "error"
+      },
       "style": {
         "noUselessElse": "error",
         "useBlockStatements": "error"
