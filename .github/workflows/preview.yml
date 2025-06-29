@@ -32,5 +32,5 @@ jobs:
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: '[![Open in Codeflow](https://developer.stackblitz.com/img/open_in_codeflow.svg)](https://pr.new/${{ github.repository }}/${{ github.event.pull_request.number }})'
+              body: '[![Open in Codeflow](https://developer.stackblitz.com/img/open_in_codeflow.svg)](https://pr.new/${{ github.repository }}/pull/${{ github.event.pull_request.number }}) *Run & review this pull request in [StackBlitz Codeflow](https://pr.new/${{ github.repository }}/pull/${{ github.event.pull_request.number }}).*'
             })
