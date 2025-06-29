@@ -1,6 +1,26 @@
 {
   "name": "@jambalaya56562/blog",
   "version": "0.7.0",
+  "private": true,
+  "description": "JamBalaya56562's blog built with Next.js",
+  "keywords": [
+    "biome",
+    "bun",
+    "nextjs",
+    "react",
+    "tailwindcss",
+    "typescript"
+  ],
+  "author": "Jam Balaya <jambalaya.pyoncafe@outlook.jp> (https://github.com/JamBalaya56562)",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/JamBalaya56562/blog.git"
+  },
+  "funding": {
+    "type": "github",
+    "url": "https://github.com/sponsors/JamBalaya56562"
+  },
   "scripts": {
     "dev": "next dev --turbopack",
     "dev-win": "WATCHPACK_POLLING=true next dev --turbopack",
