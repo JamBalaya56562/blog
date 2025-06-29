@@ -131,6 +131,7 @@ This software uses the following open source packages:
 - [HAPPY DOM](https://github.com/capricorn86/happy-dom)
 - [Next.js](https://nextjs.org/)
 - [Node.js](https://nodejs.org/)
+- [Playwright](https://playwright.dev/)
 - [React](https://react.dev/)
 - [Tailwind CSS](https://tailwindcss.com/)
 - [TypeScript](https://www.typescriptlang.org/)
