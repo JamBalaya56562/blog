@@ -1,7 +1,6 @@
 {
-  "name": "blog",
+  "name": "@jambalaya56562/blog",
   "version": "0.7.0",
-  "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
     "dev-win": "WATCHPACK_POLLING=true next dev --turbopack",
@@ -33,7 +32,6 @@
     "typescript": "^5.8.3"
   },
   "trustedDependencies": [
-    "@biomejs/biome",
     "sharp"
   ]
 }
