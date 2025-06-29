@@ -1,0 +1,33 @@
+name: 📢 Publish Any Pull Request
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout
+        uses: actions/checkout@v4
+
+      - name: 🐣 Install bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: canary
+
+      - name: 📦 Install dependencies
+        run: bun i
+
+      - name: 🧩 Build app
+        run: bun run build
+
+      - name: 📢 Publish
+        run: bunx pkg-pr-new publish
