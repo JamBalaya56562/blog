@@ -62,12 +62,6 @@ jobs:
     if: github.repository_owner == 'jambalaya56562'
 
     steps:
-      - name: 📥 Checkout
-        if: github.event_name == 'pull_request_target'
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ env.SHA }}
-
       - name: 🐋 Login to Docker Hub
         uses: docker/login-action@v3
         with:
@@ -112,7 +106,6 @@ jobs:
           annotations: ${{ steps.meta.outputs.annotations }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          context: ${{ github.event_name == 'pull_request_target' && '.' || false }}
           labels: ${{ steps.meta.outputs.labels }}
           load: ${{ !fromJSON(env.IS_PUSH) }}
           no-cache: ${{ inputs.no-cache == true }}
@@ -135,5 +128,5 @@ jobs:
         with:
           command: compare
           image: ${{ steps.meta.outputs.tags }}
-          to: ${{ env.REPOSITORY }}:canary
+          to: ${{ env.GHCR_REGISTRY }}/${{ env.GHCR_REPOSITORY }}:canary
           only-severities: critical,high
