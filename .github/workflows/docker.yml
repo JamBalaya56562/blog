@@ -128,5 +128,5 @@ jobs:
         with:
           command: compare
           image: ${{ steps.meta.outputs.tags }}
-          to: ${{ env.GHCR_REGISTRY }}/${{ env.GHCR_REPOSITORY }}:canary
+          to: ${{ env.REPOSITORY }}:canary
           only-severities: critical,high
