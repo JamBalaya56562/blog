@@ -37,12 +37,21 @@ const mapNextImageSrcToString = (
 
 function MockNextImage({
   alt,
+  className,
   height,
   src: nextImageSrc,
   width,
 }: Readonly<ImageProps>): ReactElement {
   const imgSrc: string = mapNextImageSrcToString(nextImageSrc)
-  return <img alt={alt} height={height} src={imgSrc} width={width} />
+  return (
+    <img
+      alt={alt}
+      className={className}
+      height={height}
+      src={imgSrc}
+      width={width}
+    />
+  )
 }
 
 mock.module("next/image", (): EsModuleDefault<ComponentType<ImageProps>> => {
