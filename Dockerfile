@@ -1,6 +1,5 @@
 # syntax=docker.io/docker/dockerfile-upstream:1.17.1-labs
 # check=error=true
-ARG BUILDKIT_SBOM_SCAN_CONTEXT=true
 FROM oven/bun:canary AS builder
 WORKDIR /usr/src/app
 RUN --mount=type=bind,source=package.json,target=package.json \
