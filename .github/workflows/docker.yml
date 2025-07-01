@@ -53,6 +53,7 @@ env:
   GHCR_REGISTRY: ghcr.io
   GHCR_REPOSITORY: jambalaya56562/blog
   SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+  CONTEXT: ${{ github.server_url }}/${{ github.repository }}.git#${{ github.sha }}
   IS_PUSH: ${{ github.event_name == 'push' || inputs.push == true }}
 
 jobs:
@@ -62,6 +63,12 @@ jobs:
     if: github.repository_owner == 'jambalaya56562'
 
     steps:
+      - name: 📥 Checkout
+        if: github.event_name != 'pull_request_target'
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.SHA }}
+
       - name: 🐋 Login to Docker Hub
         uses: docker/login-action@v3
         with:
@@ -106,6 +113,7 @@ jobs:
           annotations: ${{ steps.meta.outputs.annotations }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          context: ${{ github.event_name == 'pull_request_target' && env.CONTEXT || '.' }}
           labels: ${{ steps.meta.outputs.labels }}
           load: ${{ !fromJSON(env.IS_PUSH) }}
           no-cache: ${{ inputs.no-cache == true }}
