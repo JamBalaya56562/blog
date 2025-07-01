@@ -43,12 +43,12 @@ on:
 
 permissions:
   attestations: write
-  contents: read
   id-token: write
   packages: write
   pull-requests: write
 
 env:
+  DOCKERHUB_USERNAME: jambalaya56562
   REPOSITORY: jambalaya56562/blog
   GHCR_REGISTRY: ghcr.io
   GHCR_REPOSITORY: jambalaya56562/blog
@@ -65,8 +65,8 @@ jobs:
       - name: 🐋 Login to Docker Hub
         uses: docker/login-action@v3
         with:
-          username: ${{ secrets.DOCKER_USER }}
-          password: ${{ secrets.DOCKER_PAT }}
+          username: ${{ env.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: 🚢 Login to GitHub Container Registry
         if: fromJSON(env.IS_PUSH)
