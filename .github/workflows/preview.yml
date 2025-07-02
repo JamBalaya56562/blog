@@ -6,16 +6,6 @@ concurrency:
 
 on:
   pull_request_target:
-    types: [opened]
-    paths:
-      - "app/**"
-      - "public/**"
-      - "test/**"
-      - ".dockerignore"
-      - "bun.lock"
-      - "Dockerfile"
-      - "package.json"
-      - "*config.*"
 
 permissions:
   pull-requests: write
@@ -28,9 +18,20 @@ jobs:
       - uses: actions/github-script@v7
         with:
           script: |
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
+            const { data: comments } = await github.rest.issues.listComments({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: '[![Open in Codeflow](https://developer.stackblitz.com/img/open_in_codeflow.svg)](https://pr.new/${{ github.repository }}/pull/${{ github.event.pull_request.number }}) *Run & review this pull request in [StackBlitz Codeflow](https://pr.new/${{ github.repository }}/pull/${{ github.event.pull_request.number }}).*'
+              issue_number: context.issue.number,
             })
+            const previewComment = comments.find(comment => {
+              return comment.user.type === 'Bot' && comment.body.includes('Open in Codeflow')
+            })
+
+            if (!previewComment) {
+              github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: '[![Open in Codeflow](https://developer.stackblitz.com/img/open_in_codeflow.svg)](https://pr.new/${{ github.repository }}/pull/${{ github.event.pull_request.number }}) *Run & review this pull request in [StackBlitz Codeflow](https://pr.new/${{ github.repository }}/pull/${{ github.event.pull_request.number }}).*'
+              })
+            }
