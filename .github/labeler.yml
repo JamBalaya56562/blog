@@ -1,6 +1,6 @@
 🍱asset:
 - changed-files:
-  - any-glob-to-any-file: ['app/favicon.ico', 'public/**', 'app/**/*.png', 'app/**/*.svg']
+  - any-glob-to-any-file: ['**/*.avif', '**/*.ico', '**/*.png', '**/*.svg']
 ♻️ci:
 - changed-files:
   - any-glob-to-any-file: '.github/**/*.yml'
@@ -15,7 +15,7 @@ docker:
   - any-glob-to-any-file: ['.dockerignore', 'Dockerfile']
 📝documentation:
 - changed-files:
-  - any-glob-to-any-file: ['**/*.md', '**/*.txt']
+  - any-glob-to-any-file: ['**/*.md']
 🚀enhancement:
 - all:
   - changed-files:
@@ -26,7 +26,7 @@ docker:
   - any-glob-to-any-file: ['.gitattributes', '.gitignore']
 🧰infrastructure:
 - changed-files:
-  - any-glob-to-any-file: ['.devcontainer/*', '.editorconfig', 'biome.json', 'bunfig.toml']
+  - any-glob-to-any-file: ['.devcontainer/*', '.editorconfig', 'biome.json']
 ✅test:
 - changed-files:
   - any-glob-to-any-file: ['happydom.ts', 'test/**']
