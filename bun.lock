@@ -191,7 +191,7 @@
 
     "aria-query": ["aria-query@5.3.0", "", { "dependencies": { "dequal": "^2.0.3" } }, "sha512-b0P0sZPKtyu8HkeRAfCq0IfURZK+SuwMjY1UXGBU27wpAiTwQAIlq56IbIO+ytk/JjS1fMR14ee5WBBfKi5J6A=="],
 
-    "babel-plugin-react-compiler": ["babel-plugin-react-compiler@0.0.0-experimental-0566679-20250709", "", { "dependencies": { "@babel/types": "^7.26.0" } }, "sha512-hmaX7GAsWRy4dSEX8eE0KJqLPJKEhHxj9dULwsVM1H2K0wB9PZ+Quj+RZ3G9hLeUmK882nwe1yb+P9hDbMM5Lg=="],
+    "babel-plugin-react-compiler": ["babel-plugin-react-compiler@0.0.0-experimental-acd39a6-20250709", "", { "dependencies": { "@babel/types": "^7.26.0" } }, "sha512-gfffB+GZwts8tHQ37jvmnZKtOyB4Sy4GLSzVkyBfdLGcDvixVQ6d9HDDy4yZC3Ba6E0Uc42DVKODmMuaJmG0ig=="],
 
     "bun-types": ["bun-types@1.2.18", "", { "dependencies": { "@types/node": "*" }, "peerDependencies": { "@types/react": "^19" } }, "sha512-04+Eha5NP7Z0A9YgDAzMk5PHR16ZuLVa83b26kH5+cp1qZW4F6FmAURngE7INf4tKOvCE69vYvDEwoNl1tGiWw=="],
 
