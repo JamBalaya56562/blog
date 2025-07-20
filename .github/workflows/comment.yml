@@ -36,7 +36,7 @@ jobs:
       - name: ⚙️ Setup Environment
         run: |
           echo "PR_NUMBER=$(cat pr_number.txt | tr -cd '0-9')" >> $GITHUB_ENV
-          echo "TITLE=$(cat title.txt | tr -cd '\n')" >> $GITHUB_ENV
+          echo "TITLE=$(cat title.txt)" >> $GITHUB_ENV
           UUID=$(uuidgen)
           {
             echo "COMMENT<<EOF$UUID"
@@ -71,13 +71,12 @@ jobs:
                   issue_number: process.env.PR_NUMBER,
                   body: process.env.COMMENT
                 })
+                return
               }
             }
-            if (!process.env.IS_SUCCESS) {
-              await github.rest.issues.createComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: process.env.PR_NUMBER,
-                body: process.env.COMMENT
-              })
-            }
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: process.env.PR_NUMBER,
+              body: process.env.COMMENT
+            })
