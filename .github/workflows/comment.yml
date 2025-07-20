@@ -86,7 +86,7 @@ jobs:
             })
             const body = `# ✅ Test Passed
             Failed tests were fixed.
-            <!-- generated-comment [Comment](${{ github.workflow_ref }}) -->`
+            <!-- generated-comment [Comment](https://github.com/${{ github.repository }}/.github/workflows/comment.yml) -->`
 
             if (testComment) {
               await github.rest.issues.deleteComment({

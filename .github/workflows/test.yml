@@ -89,7 +89,7 @@ jobs:
           \`\`\`
           </details>
           [View in Actions](https://github.com/$REPO/actions/runs/$RUN_ID)
-          <!-- generated-comment [Test]($WORKFLOW_REF) -->
+          <!-- generated-comment [Test](https://github.com/$REPO/.github/workflows/test.yml) -->
           EOF
           echo "$PR_NUMBER" > pr_number.txt
 
