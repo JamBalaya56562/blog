@@ -67,7 +67,7 @@ jobs:
             })
 
             const body = `# ❌ Commitlint Failed
-            @${{ github.actor }}, your commit $SHA failed the commitlint check.
+            @${{ github.actor }}, your commit ${{ github.event.pull_request.head.sha }} failed the commitlint check.
 
             <details>
             <summary><strong>Commitlint Log</strong></summary>
