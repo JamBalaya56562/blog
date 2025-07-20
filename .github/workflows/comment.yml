@@ -1,0 +1,100 @@
+name: 💬 Comment on the pull request
+
+on:
+  workflow_run:
+    workflows:
+      - 🧪 Test
+    types:
+      - completed
+
+permissions:
+  pull-requests: write
+
+jobs:
+  test-comment:
+    runs-on: ubuntu-latest
+    if: >
+      github.event.workflow_run.event == 'pull_request' &&
+      github.event.workflow_run.conclusion == 'failure'
+    steps:
+      - name: 📥 Download result
+        uses: actions/download-artifact@v4
+        with:
+          name: test_comment.txt
+          github-token: ${{ github.token }}
+          run-id: ${{ github.event.workflow_run.id }}
+      - name: 📥 Download pull request number
+        uses: actions/download-artifact@v4
+        with:
+          name: pr-number.txt
+          github-token: ${{ github.token }}
+          run-id: ${{ github.event.workflow_run.id }}
+      - name: ⚙️ Setup Environment
+        run: |
+          echo "PR_NUMBER=$(cat pr_number.txt)" >> $GITHUB_ENV
+          echo "TEST_COMMENT=$(cat test_comment.txt)" >> $GITHUB_ENV
+
+      - name: ❌ Add a test comment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            })
+            const testComment = comments.find(comment => {
+              return comment.user.type === 'Bot' && comment.body.includes('# ❌ Test Failed')
+            })
+            if (testComment) {
+              await github.rest.issues.deleteComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: testComment.id,
+              })
+            }
+            await github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: $TEST_COMMENT
+            })
+
+  fixed-test-comment:
+    runs-on: ubuntu-latest
+    if: >
+      github.event.workflow_run.event == 'pull_request' &&
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.name == '🧪 Test'
+    steps:
+      - name: ✅ Add a Fixed comment
+        uses: actions/github-script@v7
+        env:
+          WORKFLOW_REF: ${{ github.workflow_ref }}
+        with:
+          script: |
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            })
+            const testComment = comments.find(comment => {
+              return comment.user.type === 'Bot' && comment.body.includes('# ❌ Test Failed')
+            })
+            const body = `# ✅ Test Passed
+            Failed tests were fixed.
+            <!-- generated-comment [Comment]($WORKFLOW_REF) -->`
+
+            if (testComment) {
+              await github.rest.issues.deleteComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: testComment.id,
+              })
+              await github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: body
+              })
+            }

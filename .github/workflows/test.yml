@@ -5,7 +5,7 @@ concurrency:
   cancel-in-progress: true
 
 on:
-  pull_request_target:
+  pull_request:
     paths:
       - "app/**"
       - "public/**"
@@ -28,17 +28,18 @@ on:
   workflow_dispatch:
 
 permissions:
-  pull-requests: write
+  contents: read
 
 jobs:
   test:
     runs-on: ubuntu-latest
+    outputs:
+      did_fail: ${{ steps.test.outputs.did_fail }}
+      test_log: ${{ steps.test.outputs.test_log }}
 
     steps:
       - name: 📥 Checkout
         uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: 🐣 Install bun
         uses: oven-sh/setup-bun@v2
@@ -49,101 +50,53 @@ jobs:
         run: bun i
 
       - name: 🧪 Test app
+        id: test
         run: |
-          bun test:app &> >(tee -p test.log) || echo STATUS=$? >> $GITHUB_ENV
-          {
-            echo 'RESULT<<EOF'
-            cat test.log
-            echo EOF
-          } >> $GITHUB_ENV
+          bun test:app &> test.log
+          echo did_fail=$? >> $GITHUB_OUTPUT
+          echo "test_log=$(cat test.log)" >> $GITHUB_OUTPUT
 
+      - name: 💔 Fail if test failed
+        if: steps.test.outputs.did_fail == '1'
+        run: exit 1
+
+  upload:
+    runs-on: ubuntu-latest
+    needs: test
+    if: always() && github.event_name == 'pull_request' && needs.test.outputs.did_fail == '1'
+
+    steps:
       - name: 💬 Create test comment
-        if: github.event_name == 'pull_request_target' && env.STATUS == 1
         env:
           ACTOR: ${{ github.actor }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
           REPO: ${{ github.repository }}
           RUN_ID: ${{ github.run_id }}
           SHA: ${{ github.event.pull_request.head.sha }}
+          TEST_LOG: ${{ needs.test.outputs.test_log }}
           WORKFLOW_REF: ${{ github.workflow_ref }}
         run: |
-          {
-            echo 'TEST_COMMENT<<EOF'
-            echo '# ❌ Test Failed'
-            echo "@$ACTOR, your commit $SHA failed the test."
-            echo '<details>'
-            echo '<summary><strong>Test Log</strong></summary>'
-            echo ''
-            echo "\`\`\`shell"
-            echo "$RESULT"
-            echo "\`\`\`"
-            echo ''
-            echo '</details>'
-            echo ''
-            echo "👀[View in Actions](https://github.com/$REPO/actions/runs/$RUN_ID)"
-            echo "<!-- generated-comment [Bun CI]($WORKFLOW_REF) -->"
-            echo 'EOF'
-          } >> $GITHUB_ENV
+          cat <<EOF > test_comment.txt
+          # ❌ Test Failed
+          @$ACTOR, your commit $SHA failed the test.
+          <details>
+          <summary><strong>Test Log</strong></summary>
+          \`\`\`shell
+          $TEST_LOG
+          \`\`\`
+          </details>
+          [View in Actions](https://github.com/$REPO/actions/runs/$RUN_ID)
+          <!-- generated-comment [Test]($WORKFLOW_REF) -->
+          EOF
+          echo "$PR_NUMBER" > pr_number.txt
 
-      - name: ❌ Add a test comment
-        if: github.event_name == 'pull_request_target' && env.STATUS == 1
-        uses: actions/github-script@v7
+      - name: 🆙 Upload test comment
+        uses: actions/upload-artifact@v4
         with:
-          script: |
-            const { data: comments } = await github.rest.issues.listComments({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.issue.number,
-            })
-            const testComment = comments.find(comment => {
-              return comment.user.type === 'Bot' && comment.body.includes('# ❌ Test Failed')
-            })
-            if (testComment) {
-              await github.rest.issues.deleteComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                comment_id: testComment.id,
-              })
-            }
-            await github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: $TEST_COMMENT
-            })
-
-      - name: ✅ Add a Fixed comment
-        if: github.event_name == 'pull_request_target' && env.STATUS == 0
-        uses: actions/github-script@v7
-        env:
-          WORKFLOW_REF: ${{ github.workflow_ref }}
+          name: test_comment.txt
+          path: test_comment.txt
+      - name: 🆙 Upload pull request number
+        uses: actions/upload-artifact@v4
         with:
-          script: |
-            const { data: comments } = await github.rest.issues.listComments({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.issue.number,
-            })
-            const testComment = comments.find(comment => {
-              return comment.user.type === 'Bot' && comment.body.includes('# ❌ Test Failed')
-            })
-            const body = `# ✅ Test Passed
-            Failed tests were fixed.
-            <!-- generated-comment [Test]($WORKFLOW_REF) -->`
-
-            if (testComment) {
-              await github.rest.issues.deleteComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                comment_id: testComment.id,
-              })
-              await github.rest.issues.createComment({
-                issue_number: context.issue.number,
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                body: body
-              })
-            }
-
-      - name: 💔 Fail if test failed
-        if: env.STATUS == 1
-        run: exit 1
+          name: pr_number.txt
+          path: pr_number.txt
