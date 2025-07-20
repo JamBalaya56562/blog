@@ -66,7 +66,7 @@ jobs:
         run: |
           {
             echo 'TEST_COMMENT<<EOF'
-            echo '# ❌Test Failed'
+            echo '# ❌ Test Failed'
             echo "@$ACTOR, your commit $SHA failed the test."
             echo '<details>'
             echo '<summary><strong>Test Log</strong></summary>'
@@ -93,7 +93,7 @@ jobs:
               issue_number: context.issue.number,
             })
             const testComment = comments.find(comment => {
-              return comment.user.type === 'Bot' && comment.body.includes('# ❌Test Failed')
+              return comment.user.type === 'Bot' && comment.body.includes('# ❌ Test Failed')
             })
             if (testComment) {
               github.rest.issues.deleteComment({
@@ -120,9 +120,9 @@ jobs:
               issue_number: context.issue.number,
             })
             const testComment = comments.find(comment => {
-              return comment.user.type === 'Bot' && comment.body.includes('# ❌Test Failed')
+              return comment.user.type === 'Bot' && comment.body.includes('# ❌ Test Failed')
             })
-            const body = `# ✅Test Passed
+            const body = `# ✅ Test Passed
 
             Failed tests were fixed.
             <!-- generated-comment [Test]($WORKFLOW_REF) -->`

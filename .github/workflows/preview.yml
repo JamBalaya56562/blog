@@ -15,7 +15,8 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/github-script@v7
+      - name: 🪄 Add a comment
+        uses: actions/github-script@v7
         with:
           script: |
             const { data: comments } = await github.rest.issues.listComments({
@@ -24,14 +25,20 @@ jobs:
               issue_number: context.issue.number,
             })
             const previewComment = comments.find(comment => {
-              return comment.user.type === 'Bot' && comment.body.includes('Open in Codeflow')
+              return comment.user.type === 'Bot' && comment.body.includes('# 🪄 Deploy Preview for ready!')
             })
+            const body = `# 🪄 Deploy Preview for ready!
+
+            [![Open in Codeflow](https://developer.stackblitz.com/img/open_in_codeflow.svg)](https://pr.new/${{ github.repository }}/pull/${{ github.event.pull_request.number }})
+
+            *Run & review this pull request in [StackBlitz Codeflow](https://pr.new/${{ github.repository }}/pull/${{ github.event.pull_request.number }}).*
+            <!-- generated-comment [Preview]($WORKFLOW_REF) -->`
 
             if (!previewComment) {
               github.rest.issues.createComment({
                 issue_number: context.issue.number,
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                body: '[![Open in Codeflow](https://developer.stackblitz.com/img/open_in_codeflow.svg)](https://pr.new/${{ github.repository }}/pull/${{ github.event.pull_request.number }})\n*Run & review this pull request in [StackBlitz Codeflow](https://pr.new/${{ github.repository }}/pull/${{ github.event.pull_request.number }}).*'
+                body: body
               })
             }
