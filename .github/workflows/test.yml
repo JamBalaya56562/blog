@@ -96,13 +96,13 @@ jobs:
               return comment.user.type === 'Bot' && comment.body.includes('# ❌ Test Failed')
             })
             if (testComment) {
-              github.rest.issues.deleteComment({
+              await github.rest.issues.deleteComment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 comment_id: testComment.id,
               })
             }
-            github.rest.issues.createComment({
+            await github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -128,7 +128,7 @@ jobs:
             <!-- generated-comment [Test]($WORKFLOW_REF) -->`
 
             if (testComment) {
-              github.rest.issues.createComment({
+              await github.rest.issues.createComment({
                 issue_number: context.issue.number,
                 owner: context.repo.owner,
                 repo: context.repo.repo,
