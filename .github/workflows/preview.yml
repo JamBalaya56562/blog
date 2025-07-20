@@ -31,7 +31,7 @@ jobs:
 
             [![Open in Codeflow](https://developer.stackblitz.com/img/open_in_codeflow.svg)](https://pr.new/${{ github.repository }}/pull/${{ github.event.pull_request.number }})
 
-            *Run & review this pull request in [StackBlitz Codeflow](https://pr.new/${{ github.repository }}/pull/${{ github.event.pull_request.number }}).*
+            *Learn more about [StackBlitz Codeflow](https://stackblitz.com/codeflow/).*
             <!-- generated-comment [Preview]($WORKFLOW_REF) -->`
 
             if (!previewComment) {
