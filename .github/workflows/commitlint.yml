@@ -90,9 +90,9 @@ jobs:
               })
             }
             await github.rest.issues.createComment({
-              issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
+              issue_number: context.issue.number,
               body: body
             })
 
@@ -120,9 +120,9 @@ jobs:
                 comment_id: commitlintComment.id,
               })
               await github.rest.issues.createComment({
-                issue_number: context.issue.number,
                 owner: context.repo.owner,
                 repo: context.repo.repo,
+                issue_number: context.issue.number,
                 body: body
               })
             }
