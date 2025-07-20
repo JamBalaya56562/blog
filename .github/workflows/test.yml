@@ -56,7 +56,7 @@ jobs:
           } >> $GITHUB_ENV
 
       - name: 💬 Create test comment
-        if: github.event_name == 'pull_request' && env.STATUS == 1
+        if: github.event_name == 'pull_request_target' && env.STATUS == 1
         env:
           ACTOR: ${{ github.actor }}
           REPO: ${{ github.repository }}
