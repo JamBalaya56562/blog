@@ -36,6 +36,8 @@ jobs:
       - name: ❌ Add a lint comment
         uses: actions/github-script@v7
         if: always() && (steps.lint_pr_title.outputs.error_message != null)
+        env:
+          ERROR_MESSAGE: ${{ steps.lint_pr_title.outputs.error_message }}
         with:
           script: |
             const { data: comments } = await github.rest.issues.listComments({
@@ -55,7 +57,7 @@ jobs:
             Details:
 
             \`\`\`yaml
-            ${JSON.stringify(steps.lint_pr_title.outputs.error_message)}
+            ${process.env.ERROR_MESSAGE}
             \`\`\`
 
             Please update the title of this pull request to follow the specification.
