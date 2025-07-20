@@ -22,7 +22,7 @@ jobs:
       - name: 📥 Checkout
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
       - name: 🐣 Install bun
         uses: oven-sh/setup-bun@735343b667d3e6f658f44d0eca948eb6282f2b76
         with:
@@ -67,7 +67,7 @@ jobs:
             })
 
             const body = `# ❌ Commitlint Failed
-            @${{ github.actor }}, your commit $SHA failed the commitlint check.
+            @${{ github.actor }}, your commit ${{ github.event.pull_request.head.sha }} failed the commitlint check.
 
             <details>
             <summary><strong>Commitlint Log</strong></summary>
