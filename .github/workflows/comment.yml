@@ -26,7 +26,7 @@ jobs:
       - name: 📥 Download pull request number
         uses: actions/download-artifact@v4
         with:
-          name: pr-number.txt
+          name: pr_number.txt
           github-token: ${{ github.token }}
           run-id: ${{ github.event.workflow_run.id }}
       - name: ⚙️ Setup Environment
