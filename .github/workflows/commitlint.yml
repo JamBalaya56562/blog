@@ -80,7 +80,7 @@ jobs:
 
             Please update the commit message to follow the [Conventional Commits specification](https://www.conventionalcommits.org/en/v1.0.0/).
             👀[View in Actions](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
-            <!-- generated-comment [Commitlint](${{ github.workflow_ref }}) -->`
+            <!-- generated-comment [Commitlint](https://github.com/${{ github.repository }}/.github/workflows/commitlint.yml) -->`
 
             if (commitlintComment) {
               await github.rest.issues.deleteComment({
@@ -111,7 +111,7 @@ jobs:
             })
             const body = `# ✅ Commitlint Passed
             Thank you for updating the commit message to follow the [Conventional Commits specification](https://www.conventionalcommits.org/en/v1.0.0/).
-            <!-- generated-comment [Commitlint](${{ github.workflow_ref }}) -->`
+            <!-- generated-comment [Commitlint](https://github.com/${{ github.repository }}/.github/workflows/commitlint.yml) -->`
 
             if (commitlintComment) {
               await github.rest.issues.deleteComment({

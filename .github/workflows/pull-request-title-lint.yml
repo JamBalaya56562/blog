@@ -61,7 +61,7 @@ jobs:
 
             Please update the title of this pull request to follow the specification.
             👀[View in Actions](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
-            <!-- generated-comment [Title-Lint](${{ github.workflow_ref }}) -->`
+            <!-- generated-comment [Title-Lint](https://github.com/${{ github.repository }}/.github/workflows/pull-request-title-lint.yml) -->`
 
             if (!lintTitleComment) {
               await github.rest.issues.createComment({

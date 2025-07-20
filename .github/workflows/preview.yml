@@ -30,7 +30,7 @@ jobs:
             const body = `# 🪄 Deploy Preview for ready!
             [![Open in Codeflow](https://developer.stackblitz.com/img/open_in_codeflow.svg)](https://pr.new/${{ github.repository }}/pull/${{ github.event.pull_request.number }})
             *Learn more about [StackBlitz Codeflow](https://stackblitz.com/codeflow/).*
-            <!-- generated-comment [Preview](${{ github.workflow_ref }}) -->`
+            <!-- generated-comment [Preview](https://github.com/${{ github.repository }}/.github/workflows/preview.yml) -->`
 
             if (!previewComment) {
               await github.rest.issues.createComment({
