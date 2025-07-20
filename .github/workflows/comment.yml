@@ -31,8 +31,13 @@ jobs:
           run-id: ${{ github.event.workflow_run.id }}
       - name: ⚙️ Setup Environment
         run: |
-          echo "PR_NUMBER=$(cat pr_number.txt)" >> $GITHUB_ENV
-          echo "TEST_COMMENT=$(cat test_comment.txt)" >> $GITHUB_ENV
+          echo "PR_NUMBER=$(cat pr_number.txt | tr -d '\n')" >> $GITHUB_ENV
+          UUID=$(uuidgen)
+          {
+            echo "TEST_COMMENT<<EOF$UUID"
+            cat test_comment.txt
+            echo "EOF$UUID"
+          } >> "$GITHUB_ENV"
 
       - name: ❌ Add a test comment
         uses: actions/github-script@v7
