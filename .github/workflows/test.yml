@@ -53,9 +53,12 @@ jobs:
         id: test
         continue-on-error: true
         run: |
-          bun test:app &> test.log
-          echo did_fail=$? >> $GITHUB_OUTPUT
+          bun test:app &> >(tee -p test.log) && echo did_fail=$? >> $GITHUB_OUTPUT
           echo "test_log=$(cat test.log)" >> $GITHUB_OUTPUT
+
+      - name: 💔 Fail if test failed
+        if: steps.test.outputs.did_fail == '1'
+        run: exit 1
 
   upload:
     runs-on: ubuntu-latest
