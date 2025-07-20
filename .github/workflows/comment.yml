@@ -1,9 +1,5 @@
 name: 💬 Comment on the pull request
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
-
 on:
   workflow_run:
     workflows:
@@ -69,6 +65,7 @@ jobs:
                 comment_id: oldComment.id,
               })
               if (process.env.IS_SUCCESS) {
+                console.log("Skipping comment creation as the test passed.")
                 await github.rest.issues.createComment({
                   owner: context.repo.owner,
                   repo: context.repo.repo,
@@ -78,6 +75,7 @@ jobs:
                 return
               }
             }
+            console.log("Creating a new comment.")
             await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
