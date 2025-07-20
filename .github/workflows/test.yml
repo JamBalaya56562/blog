@@ -37,6 +37,8 @@ jobs:
     steps:
       - name: 📥 Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: 🐣 Install bun
         uses: oven-sh/setup-bun@v2
@@ -47,8 +49,6 @@ jobs:
         run: bun i
 
       - name: 🧪 Test app
-        env:
-          GITHUB_EVENT_NAME: ${{ github.event_name }}
         run: |
           bun test:app &> >(tee -p test.log) || echo STATUS=$? >> $GITHUB_ENV
           {
@@ -56,7 +56,6 @@ jobs:
             cat test.log
             echo EOF
           } >> $GITHUB_ENV
-          echo ${GITHUB_EVENT_NAME}
 
       - name: 💬 Create test comment
         if: github.event_name == 'pull_request_target' && env.STATUS == 1
