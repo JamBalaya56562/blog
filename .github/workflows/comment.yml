@@ -72,6 +72,16 @@ jobs:
       github.event.workflow_run.conclusion == 'success' &&
       github.event.workflow_run.name == '🧪 Test'
     steps:
+      - name: 📥 Download pull request number
+        uses: actions/download-artifact@v4
+        with:
+          name: pr_number.txt
+          github-token: ${{ github.token }}
+          run-id: ${{ github.event.workflow_run.id }}
+      - name: ⚙️ Setup Environment
+        run: |
+          echo "PR_NUMBER=$(cat pr_number.txt | tr -cd '0-9')" >> $GITHUB_ENV
+
       - name: ✅ Add a Fixed comment
         uses: actions/github-script@v7
         with:
