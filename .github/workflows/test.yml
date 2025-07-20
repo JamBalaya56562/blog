@@ -82,13 +82,17 @@ jobs:
           cat <<EOF > test_comment.txt
           # ❌ Test Failed
           @$ACTOR, your commit $SHA failed the test.
+
           <details>
           <summary><strong>Test Log</strong></summary>
+
           \`\`\`shell
           $TEST_LOG
           \`\`\`
+
           </details>
-          [View in Actions](https://github.com/$REPO/actions/runs/$RUN_ID)
+
+          👀[View in Actions](https://github.com/$REPO/actions/runs/$RUN_ID)
           <!-- generated-comment [Test](https://github.com/$REPO/.github/workflows/test.yml) -->
           EOF
           echo "$PR_NUMBER" > pr_number.txt
