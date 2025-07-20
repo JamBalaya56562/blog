@@ -114,6 +114,8 @@ jobs:
       - name: ✅ Add a Fixed comment
         if: github.event_name == 'pull_request_target' && env.STATUS == 0
         uses: actions/github-script@v7
+        env:
+          WORKFLOW_REF: ${{ github.workflow_ref }}
         with:
           script: |
             const { data: comments } = await github.rest.issues.listComments({
@@ -125,7 +127,6 @@ jobs:
               return comment.user.type === 'Bot' && comment.body.includes('# ❌ Test Failed')
             })
             const body = `# ✅ Test Passed
-
             Failed tests were fixed.
             <!-- generated-comment [Test]($WORKFLOW_REF) -->`
 
