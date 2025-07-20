@@ -39,6 +39,9 @@ jobs:
         env:
           ACTOR: ${{ github.actor }}
           ERROR_MESSAGE: ${{ steps.lint_pr_title.outputs.error_message }}
+          REPO: ${{ github.repository }}
+          RUN_ID: ${{ github.run_id }}
+          WORKFLOW_REF: ${{ github.workflow_ref }}
         with:
           script: |
             const { data: comments } = await github.rest.issues.listComments({
@@ -50,18 +53,20 @@ jobs:
               return comment.user.type === 'Bot' && comment.body.includes('# ❌ Pull Request Title Linting Failed')
             })
             const body = `# ❌ Pull Request Title Linting Failed
-
             @$ACTOR, thank you for opening this pull request 👋🏼
-
             We require pull request titles to follow the [Conventional Commits specification](https://www.conventionalcommits.org/en/v1.0.0/) and it looks like your proposed title needs to be adjusted.
 
-            Details:
+            <details>
+            <summary><strong>Test Log</strong></summary>
 
+            \`\`\`shell
+            $ERROR_MESSAGE
             \`\`\`
-            ${process.env.ERROR_MESSAGE}
-            \`\`\`
+
+            </details>
 
             Please update the title of this pull request to follow the specification.
+            👀[View in Actions](https://github.com/$REPO/actions/runs/$RUN_ID)
             <!-- generated-comment [Title-Lint]($WORKFLOW_REF) -->`
 
             if (!lintTitleComment) {
@@ -76,6 +81,8 @@ jobs:
       - name: ✅ Add a Fixed comment
         uses: actions/github-script@v7
         if: ${{ steps.lint_pr_title.outputs.error_message == null }}
+        env:
+          WORKFLOW_REF: ${{ github.workflow_ref }}
         with:
           script: |
             const { data: comments } = await github.rest.issues.listComments({
@@ -87,9 +94,7 @@ jobs:
               return comment.user.type === 'Bot' && comment.body.includes('# ❌ Pull Request Title Linting Failed')
             })
             const body = `# ✅ Pull Request Title Linting Passed
-
             Thank you for updating the title of this pull request to follow the [Conventional Commits specification](https://www.conventionalcommits.org/en/v1.0.0/).
-
             <!-- generated-comment [Title-Lint]($WORKFLOW_REF) -->`
 
             if (lintTitleComment) {
