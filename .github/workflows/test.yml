@@ -52,7 +52,7 @@ jobs:
       - name: 🧪 Test app
         id: test
         run: |
-          bun test:app &> >(tee -p test.log) && echo did_fail=$? >> $GITHUB_OUTPUT
+          bun test:app &> >(tee -p test.log) || echo did_fail=$? >> $GITHUB_OUTPUT
           {
             echo 'test_log<<EOF'
             cat test.log
