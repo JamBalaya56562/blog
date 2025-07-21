@@ -22,8 +22,6 @@ jobs:
         with:
           github-token: ${{ github.token }}
           run-id: ${{ github.event.workflow_run.id }}
-      - name: Display structure of downloaded files
-        run: ls -R
       - name: ⚙️ Setup Environment
         run: |
           echo "PR_NUMBER=$(cat pr_number/pr_number.txt | tr -cd '0-9')" >> $GITHUB_ENV
