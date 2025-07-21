@@ -11,7 +11,7 @@ permissions:
   pull-requests: write
 
 jobs:
-  comment:
+  preview-comment:
     runs-on: ubuntu-latest
 
     steps:
