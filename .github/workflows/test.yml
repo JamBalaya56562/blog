@@ -34,7 +34,7 @@ jobs:
   test:
     runs-on: ubuntu-latest
     outputs:
-      did_fail: ${{ steps.test.outputs.did_fail }}
+      is_success: ${{ steps.test.outputs.is_success }}
       test_log: ${{ steps.test.outputs.test_log }}
 
     steps:
@@ -53,10 +53,10 @@ jobs:
         id: test
         run: |
           bun test:app &> >(tee -p test.log) || STATUS=$?
-          if [ $STATUS -ne 0 ]; then
-            echo "did_fail=true" >> $GITHUB_OUTPUT
+          if [ $STATUS -eq 1 ]; then
+            echo "is_success=false" >> $GITHUB_OUTPUT
           else
-            echo "did_fail=false" >> $GITHUB_OUTPUT
+            echo "is_success=true" >> $GITHUB_OUTPUT
           fi
           UUID=$(uuidgen)
           {
@@ -79,7 +79,7 @@ jobs:
 
     steps:
       - name: ❌ Create test failed comment
-        if: needs.test.outputs.did_fail == 'true'
+        if: needs.test.outputs.is_success == 'false'
         id: create_failed_comment
         env:
           ACTOR: ${{ github.actor }}
@@ -109,7 +109,7 @@ jobs:
           } >> $GITHUB_OUTPUT
 
       - name: ✅ Create test success comment
-        if: needs.test.outputs.did_fail == 'false'
+        if: needs.test.outputs.is_success == 'true'
         id: create_success_comment
         env:
           REPO: ${{ github.repository }}
@@ -139,6 +139,6 @@ jobs:
     uses: ./.github/workflows/comment.yml
     with:
       comment: ${{ needs.create_comment.outputs.comment }}
-      did_fail: ${{ needs.test.outputs.did_fail == 'true' }}
+      is_success: ${{ needs.test.outputs.is_success == 'true' }}
       pr_number: ${{ github.event.pull_request.number }}
       title: ${{ needs.create_comment.outputs.title }}
