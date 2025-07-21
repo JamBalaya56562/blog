@@ -75,10 +75,10 @@ jobs:
               })
               return
             }
-            console.log(CONCLUSION, process.env.CONCLUSION)
-            console.log(IS_FAILURE, process.env.IS_FAILURE)
-            console.log(IS_TRUE, process.env.IS_FAILURE === true)
-            console.log(IS_STRING_TRUE, process.env.IS_FAILURE === 'true')
+            console.log("CONCLUSION: ", process.env.CONCLUSION)
+            console.log("IS_FAILURE: ", process.env.IS_FAILURE)
+            console.log("IS_TRUE: ", process.env.IS_FAILURE === true)
+            console.log("IS_STRING_TRUE: ", process.env.IS_FAILURE === 'true')
             if (process.env.IS_FAILURE === 'true') {
               await github.rest.issues.createComment({
                 owner: context.repo.owner,
