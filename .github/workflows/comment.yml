@@ -7,8 +7,8 @@ on:
         description: "Comment to add to the pull request"
         required: true
         type: string
-      did_fail:
-        description: "Indicates if the previous job failed"
+      is_success:
+        description: "Indicates if the previous job succeeded"
         required: true
         type: boolean
       pr_number:
@@ -31,7 +31,7 @@ jobs:
         uses: actions/github-script@v7
         env:
           COMMENT: ${{ inputs.comment }}
-          DID_FAIL: ${{ inputs.did_fail }}
+          IS_SUCCESS: ${{ inputs.is_success }}
           PR_NUMBER: ${{ inputs.pr_number }}
           TITLE: ${{ inputs.title }}
         with:
@@ -58,7 +58,7 @@ jobs:
               })
               return
             }
-            if (process.env.DID_FAIL) {
+            if (!process.env.IS_SUCCESS) {
               await github.rest.issues.createComment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
