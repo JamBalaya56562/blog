@@ -69,7 +69,7 @@ jobs:
         if: steps.test.outputs.is_success == 'false'
         run: exit 1
 
-  create_comment:
+  upload:
     runs-on: ubuntu-latest
     needs: test
     outputs:
@@ -89,24 +89,22 @@ jobs:
           TEST_LOG: ${{ needs.test.outputs.test_log }}
         run: |
           UUID=$(uuidgen)
-          {
-            echo "comment<<EOF_$UUID"
-            echo "# ❌ Test Failed"
-            echo "@$ACTOR, your commit $SHA failed the test."
-            echo ""
-            echo "<details>"
-            echo "<summary><strong>Test Log</strong></summary>"
-            echo ""
-            echo "\`\`\`shell"
-            echo "$TEST_LOG"
-            echo "\`\`\`"
-            echo ""
-            echo "</details>"
-            echo ""
-            echo "👀[View in Actions](https://github.com/$REPO/actions/runs/$RUN_ID)"
-            echo "<!-- generated-comment [Test](https://github.com/$REPO/.github/workflows/test.yml) -->"
-            echo "EOF_$UUID"
-          } >> $GITHUB_OUTPUT
+          cat <<EOF_$UUID > comment.txt
+          # ❌ Test Failed
+          @$ACTOR, your commit $SHA failed the test.
+
+          <details>
+          <summary><strong>Test Log</strong></summary>
+
+          \`\`\`shell
+          $TEST_LOG
+          \`\`\`
+
+          </details>
+
+          👀[View in Actions](https://github.com/$REPO/actions/runs/$RUN_ID)
+          <!-- generated-comment [Test](https://github.com/$REPO/.github/workflows/test.yml) -->
+          EOF_$UUID
 
       - name: ✅ Create test success comment
         if: needs.test.outputs.is_success == 'true'
@@ -115,29 +113,31 @@ jobs:
           REPO: ${{ github.repository }}
         run: |
           UUID=$(uuidgen)
-          {
-            echo "comment<<EOF_$UUID"
-            echo "# ✅ Test Passed"
-            echo "All tests passed successfully."
-            echo ""
-            echo "<!-- generated-comment [Test](https://github.com/$REPO/.github/workflows/test.yml) -->"
-            echo "EOF_$UUID"
-          } >> $GITHUB_OUTPUT
+          cat <<EOF_$UUID > comment.txt
+          # ✅ Test Passed
+          Failed tests were fixed.
+          <!-- generated-comment [Comment](https://github.com/$REPO/.github/workflows/comment.yml) -->
+          EOF_$UUID
 
-      - name: 🏳️ Set up comment title
-        id: title
+      - name: 🔢 Create pull request number and title
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
-          echo "title=# ❌ Test Failed" >> $GITHUB_OUTPUT
+          echo "$PR_NUMBER" > pr_number.txt
+          echo "# ❌ Test Failed" > title.txt
 
-  add_comment:
-    needs:
-      - create_comment
-      - test
-    permissions:
-      pull-requests: write
-    if: always() && github.event_name == 'pull_request'
-    uses: ./.github/workflows/comment.yml
-    with:
-      comment: ${{ needs.create_comment.outputs.comment }}
-      is_success: ${{ needs.test.outputs.is_success == 'true' }}
-      title: ${{ needs.create_comment.outputs.title }}
+      - name: 🆙 Upload test comment
+        uses: actions/upload-artifact@v4
+        with:
+          name: comment.txt
+          path: comment.txt
+      - name: 🆙 Upload pull request number
+        uses: actions/upload-artifact@v4
+        with:
+          name: pr_number.txt
+          path: pr_number.txt
+      - name: 🆙 Upload title
+        uses: actions/upload-artifact@v4
+        with:
+          name: title.txt
+          path: title.txt
