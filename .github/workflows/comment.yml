@@ -17,22 +17,9 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event.workflow_run.event == 'pull_request'
     steps:
-      - name: 📥 Download comment
+      - name: 📥 Download artifacts
         uses: actions/download-artifact@v4
         with:
-          name: comment.txt
-          github-token: ${{ github.token }}
-          run-id: ${{ github.event.workflow_run.id }}
-      - name: 📥 Download pull request number
-        uses: actions/download-artifact@v4
-        with:
-          name: pr_number.txt
-          github-token: ${{ github.token }}
-          run-id: ${{ github.event.workflow_run.id }}
-      - name: 📥 Download title
-        uses: actions/download-artifact@v4
-        with:
-          name: title.txt
           github-token: ${{ github.token }}
           run-id: ${{ github.event.workflow_run.id }}
       - name: ⚙️ Setup Environment
