@@ -139,6 +139,6 @@ jobs:
     uses: ./.github/workflows/comment.yml
     with:
       comment: ${{ needs.create_comment.outputs.comment }}
-      did_fail: ${{ needs.test.outputs.did_fail }}
+      did_fail: ${{ needs.test.outputs.did_fail == 'true' }}
       pr_number: ${{ github.event.pull_request.number }}
       title: ${{ needs.create_comment.outputs.title }}
