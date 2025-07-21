@@ -101,7 +101,7 @@ jobs:
           EOF_$UUID
 
       - name: ✅ Create test success comment
-        if: needs.commitlint.outputs.did_fail != '1'
+        if: needs.commitlint.outputs.did_fail == '0'
         env:
           REPO: ${{ github.repository }}
         run: |
