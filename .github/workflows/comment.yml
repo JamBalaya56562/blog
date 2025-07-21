@@ -58,7 +58,7 @@ jobs:
               })
               return
             }
-            if (process.env.DID_FAIL == 'true') {
+            if (process.env.DID_FAIL) {
               await github.rest.issues.createComment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
