@@ -75,12 +75,11 @@ jobs:
     outputs:
       comment: ${{ steps.create_failed_comment.outputs.comment || steps.create_success_comment.outputs.comment }}
       title: ${{ steps.title.outputs.title }}
-      did_fail: ${{ needs.test.outputs.did_fail }}
     if: always() && github.event_name == 'pull_request'
 
     steps:
       - name: ❌ Create test failed comment
-        if: needs.test.outputs.did_fail == '1'
+        if: needs.test.outputs.did_fail == 'true'
         id: create_failed_comment
         env:
           ACTOR: ${{ github.actor }}
@@ -110,7 +109,7 @@ jobs:
           } >> $GITHUB_OUTPUT
 
       - name: ✅ Create test success comment
-        if: needs.test.outputs.did_fail == '0'
+        if: needs.test.outputs.did_fail == 'false'
         id: create_success_comment
         env:
           REPO: ${{ github.repository }}
@@ -131,13 +130,15 @@ jobs:
           echo "title=# ❌ Test Failed" >> $GITHUB_OUTPUT
 
   add_comment:
-    needs: create_comment
+    needs:
+      - create_comment
+      - test
     permissions:
       pull-requests: write
     if: always() && github.event_name == 'pull_request'
     uses: ./.github/workflows/comment.yml
     with:
       comment: ${{ needs.create_comment.outputs.comment }}
-      did_fail: ${{ needs.create_comment.outputs.did_fail }}
+      did_fail: ${{ needs.test.outputs.did_fail }}
       pr_number: ${{ github.event.pull_request.number }}
       title: ${{ needs.create_comment.outputs.title }}
