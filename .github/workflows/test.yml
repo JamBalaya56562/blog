@@ -53,7 +53,7 @@ jobs:
         id: test
         run: |
           bun test:app &> >(tee -p test.log) || STATUS=$?
-          if [ $STATUS -eq 1 ]; then
+          if [ $STATUS -ne 0 ]; then
             echo "is_success=false" >> $GITHUB_OUTPUT
           else
             echo "is_success=true" >> $GITHUB_OUTPUT
