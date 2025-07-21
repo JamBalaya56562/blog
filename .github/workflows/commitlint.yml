@@ -6,18 +6,20 @@ concurrency:
 
 on:
   push:
-  pull_request_target:
+  pull_request:
   workflow_dispatch:
 
 permissions:
   contents: read
-  pull-requests: write
 
 jobs:
   commitlint:
-    name: Commitlint
     runs-on: ubuntu-latest
+    outputs:
+      did_fail: ${{ steps.commitlint.outputs.did_fail }}
+      commitlint_log: ${{ steps.commitlint.outputs.commitlint_log }}
     if: startsWith(github.ref_name, 'sapling-pr-archive-') == false
+
     steps:
       - name: 📥 Checkout
         uses: actions/checkout@v4
@@ -39,90 +41,96 @@ jobs:
         run: bunx commitlint --last --verbose
 
       - name: 👀 Validate PR commits with commitlint
-        if: github.event_name == 'pull_request_target'
+        if: github.event_name == 'pull_request'
+        id: commitlint
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
           bunx commitlint --from $BASE_SHA --to $HEAD_SHA --verbose \
-          &> >(tee -p commitlint.log) || echo STATUS=$? >> $GITHUB_ENV
+          &> >(tee -p commitlint.log) || STATUS=$?
+          if [ $STATUS -ne 0 ]; then
+            echo "did_fail=1" >> $GITHUB_OUTPUT
+          else
+            echo "did_fail=0" >> $GITHUB_OUTPUT
+          fi
+          UUID=$(uuidgen)
           {
-            echo 'RESULT<<EOF'
+            echo "commitlint_log<<EOF_$UUID"
             cat commitlint.log
-            echo EOF
-          } >> $GITHUB_ENV
+            echo "EOF_$UUID"
+          } >> $GITHUB_OUTPUT
 
-      - name: ❌ Add a commitlint comment
-        if: github.event_name == 'pull_request_target' && env.STATUS == 1
-        uses: actions/github-script@v7
+      - name: 💔 Fail if test failed
+        if: steps.commitlint.outputs.did_fail == '1'
+        run: exit 1
+
+
+  upload:
+    runs-on: ubuntu-latest
+    needs: commitlint
+    if: always() && github.event_name == 'pull_request'
+
+    steps:
+      - name: ❌ Create test failed comment
+        if: needs.commitlint.outputs.did_fail == '1'
+        env:
+          ACTOR: ${{ github.actor }}
+          COMMITLINT_LOG: ${{ needs.commitlint.outputs.commitlint_log }}
+          REPO: ${{ github.repository }}
+          RUN_ID: ${{ github.run_id }}
+          SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          UUID=$(uuidgen)
+          cat <<EOF_$UUID > comment.txt
+          # ❌ Commitlint Failed
+          @$ACTOR, your commit $SHA failed the commitlint check.
+
+          <details>
+          <summary><strong>Commitlint Log</strong></summary>
+
+          \`\`\`shell
+          $COMMITLINT_LOG
+          \`\`\`
+
+          </details>
+
+          Please update the commit message to follow the [Conventional Commits specification](https://www.conventionalcommits.org/en/v1.0.0/).
+          👀[View in Actions](https://github.com/$REPO/actions/runs/$RUN_ID)
+          <!-- generated-comment [Commitlint](https://github.com/$REPO/.github/workflows/commitlint.yml) -->
+          EOF_$UUID
+
+      - name: ✅ Create test success comment
+        if: needs.commitlint.outputs.did_fail != '1'
+        env:
+          REPO: ${{ github.repository }}
+        run: |
+          UUID=$(uuidgen)
+          cat <<EOF_$UUID > comment.txt
+          # ✅ Commitlint Passed
+          Thank you for updating the commit message to follow the [Conventional Commits specification](https://www.conventionalcommits.org/en/v1.0.0/).
+          <!-- generated-comment [Commitlint](https://github.com/$REPO/.github/workflows/commitlint.yml) -->
+          EOF_$UUID
+
+      - name: 🔢 Create pull request number and title
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          echo "$PR_NUMBER" > pr_number.txt
+          echo "# ❌ Commitlint Failed" > title.txt
+
+      - name: 🆙 Upload test comment
+        uses: actions/upload-artifact@v4
         with:
-          script: |
-            const { data: comments } = await github.rest.issues.listComments({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.issue.number,
-            })
-            const commitlintComment = comments.find(comment => {
-              return comment.user.type === 'Bot' && comment.body.includes('# ❌ Commitlint Failed')
-            })
-
-            const body = `# ❌ Commitlint Failed
-            @${{ github.actor }}, your commit ${{ github.event.pull_request.head.sha }} failed the commitlint check.
-
-            <details>
-            <summary><strong>Commitlint Log</strong></summary>
-
-            \`\`\`shell
-            process.env.RESULT
-            \`\`\`
-
-            </details>
-
-            Please update the commit message to follow the [Conventional Commits specification](https://www.conventionalcommits.org/en/v1.0.0/).
-            👀[View in Actions](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
-            <!-- generated-comment [Commitlint](https://github.com/${{ github.repository }}/.github/workflows/commitlint.yml) -->`
-
-            if (commitlintComment) {
-              await github.rest.issues.deleteComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                comment_id: commitlintComment.id,
-              })
-            }
-            await github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.issue.number,
-              body: body
-            })
-
-      - name: ✅ Add a Fixed comment
-        uses: actions/github-script@v7
-        if: github.event_name == 'pull_request_target' && env.STATUS == 0
+          name: comment.txt
+          path: comment.txt
+      - name: 🆙 Upload pull request number
+        uses: actions/upload-artifact@v4
         with:
-          script: |
-            const { data: comments } = await github.rest.issues.listComments({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.issue.number,
-            })
-            const commitlintComment = comments.find(comment => {
-              return comment.user.type === 'Bot' && comment.body.includes('# ❌ Commitlint Failed')
-            })
-            const body = `# ✅ Commitlint Passed
-            Thank you for updating the commit message to follow the [Conventional Commits specification](https://www.conventionalcommits.org/en/v1.0.0/).
-            <!-- generated-comment [Commitlint](https://github.com/${{ github.repository }}/.github/workflows/commitlint.yml) -->`
-
-            if (commitlintComment) {
-              await github.rest.issues.deleteComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                comment_id: commitlintComment.id,
-              })
-              await github.rest.issues.createComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: context.issue.number,
-                body: body
-              })
-            }
+          name: pr_number.txt
+          path: pr_number.txt
+      - name: 🆙 Upload title
+        uses: actions/upload-artifact@v4
+        with:
+          name: title.txt
+          path: title.txt
