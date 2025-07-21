@@ -53,7 +53,7 @@ jobs:
         id: test
         run: |
           bun test:app &> >(tee -p test.log) || STATUS=$?
-          if [ $STATUS -ne 0 ]; then
+          if [ $STATUS -eq 1 ]; then
             echo "is_success=false" >> $GITHUB_OUTPUT
           else
             echo "is_success=true" >> $GITHUB_OUTPUT
@@ -66,7 +66,7 @@ jobs:
           } >> $GITHUB_OUTPUT
 
       - name: 💔 Fail if test failed
-        if: steps.test.outputs.did_fail == 'true'
+        if: steps.test.outputs.is_success == 'false'
         run: exit 1
 
   create_comment:
