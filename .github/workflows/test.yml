@@ -65,14 +65,22 @@ jobs:
             echo "EOF_$UUID"
           } >> $GITHUB_OUTPUT
 
+      - name: 💔 Fail if test failed
+        if: steps.test.outputs.did_fail == '1'
+        run: exit 1
+
   create_comment:
     runs-on: ubuntu-latest
     needs: test
-    if: github.event_name == 'pull_request'
+    outputs:
+      comment: ${{ steps.create_failed_comment.outputs.comment || steps.create_success_comment.outputs.comment }}
+      title: ${{ steps.title.outputs.title }}
+    if: always() && github.event_name == 'pull_request'
 
     steps:
       - name: ❌ Create test failed comment
         if: needs.test.outputs.did_fail == '1'
+        id: create_failed_comment
         env:
           ACTOR: ${{ github.actor }}
           REPO: ${{ github.repository }}
@@ -82,7 +90,7 @@ jobs:
         run: |
           UUID=$(uuidgen)
           {
-            echo "COMMENT<<EOF_$UUID"
+            echo "comment<<EOF_$UUID"
             echo "# ❌ Test Failed"
             echo "@$ACTOR, your commit $SHA failed the test."
             echo ""
@@ -98,35 +106,33 @@ jobs:
             echo "👀[View in Actions](https://github.com/$REPO/actions/runs/$RUN_ID)"
             echo "<!-- generated-comment [Test](https://github.com/$REPO/.github/workflows/test.yml) -->"
             echo "EOF_$UUID"
-          } >> $GITHUB_ENV
+          } >> $GITHUB_OUTPUT
 
       - name: ✅ Create test success comment
         if: needs.test.outputs.did_fail == '0'
+        id: create_success_comment
         env:
           REPO: ${{ github.repository }}
         run: |
           UUID=$(uuidgen)
           {
-            echo "COMMENT<<EOF_$UUID"
+            echo "comment<<EOF_$UUID"
             echo "# ✅ Test Passed"
             echo "All tests passed successfully."
             echo ""
             echo "<!-- generated-comment [Test](https://github.com/$REPO/.github/workflows/test.yml) -->"
             echo "EOF_$UUID"
-          } >> $GITHUB_ENV
+          } >> $GITHUB_OUTPUT
 
       - name: 🏳️ Set up comment title
         id: title
         run: |
           echo "title=# ❌ Test Failed" >> $GITHUB_OUTPUT
 
-      - name: 💬 Add a comment
-        uses: ./.github/workflows/comment.yml
-        with:
-          comment: ${{ env.COMMENT }}
-          pr_number: ${{ github.event.pull_request.number }}
-          title: ${{ steps.title.outputs.title }}
-
-      - name: 💔 Fail if test failed
-        if: steps.test.outputs.did_fail == '1'
-        run: exit 1
+  add_comment:
+    needs: create_comment
+    uses: ./.github/workflows/comment.yml
+    with:
+      comment: ${{ needs.create_comment.outputs.comment }}
+      pr_number: ${{ github.event.pull_request.number }}
+      title: ${{ needs.create_comment.outputs.title }}
