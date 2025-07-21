@@ -8,7 +8,6 @@ test("Image test", () => {
   const img = document.querySelectorAll("img")
 
   expect(img[0]?.alt).toEqual("Next.js logo")
-
   expect(img[0]?.className).toEqual("dark:invert")
   expect(img[0]?.src).toEqual("/next.svg")
 
