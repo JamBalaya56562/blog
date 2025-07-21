@@ -72,9 +72,6 @@ jobs:
   upload:
     runs-on: ubuntu-latest
     needs: test
-    outputs:
-      comment: ${{ steps.create_failed_comment.outputs.comment || steps.create_success_comment.outputs.comment }}
-      title: ${{ steps.title.outputs.title }}
     if: always() && github.event_name == 'pull_request'
 
     steps:

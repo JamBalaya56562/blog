@@ -16,7 +16,7 @@ jobs:
   commitlint:
     runs-on: ubuntu-latest
     outputs:
-      did_fail: ${{ steps.commitlint.outputs.did_fail }}
+      is_success: ${{ steps.commitlint.outputs.is_success }}
       commitlint_log: ${{ steps.commitlint.outputs.commitlint_log }}
     if: startsWith(github.ref_name, 'sapling-pr-archive-') == false
 
@@ -50,9 +50,9 @@ jobs:
           bunx commitlint --from $BASE_SHA --to $HEAD_SHA --verbose \
           &> >(tee -p commitlint.log) || STATUS=$?
           if [ $STATUS -ne 0 ]; then
-            echo "did_fail=1" >> $GITHUB_OUTPUT
+            echo "is_success=false" >> $GITHUB_OUTPUT
           else
-            echo "did_fail=0" >> $GITHUB_OUTPUT
+            echo "is_success=true" >> $GITHUB_OUTPUT
           fi
           UUID=$(uuidgen)
           {
@@ -62,9 +62,8 @@ jobs:
           } >> $GITHUB_OUTPUT
 
       - name: 💔 Fail if test failed
-        if: steps.commitlint.outputs.did_fail == '1'
+        if: steps.commitlint.outputs.is_success == 'false'
         run: exit 1
-
 
   upload:
     runs-on: ubuntu-latest
@@ -73,7 +72,7 @@ jobs:
 
     steps:
       - name: ❌ Create test failed comment
-        if: needs.commitlint.outputs.did_fail == '1'
+        if: needs.commitlint.outputs.is_success == 'false'
         env:
           ACTOR: ${{ github.actor }}
           COMMITLINT_LOG: ${{ needs.commitlint.outputs.commitlint_log }}
@@ -101,7 +100,7 @@ jobs:
           EOF_$UUID
 
       - name: ✅ Create test success comment
-        if: needs.commitlint.outputs.did_fail == '0'
+        if: needs.commitlint.outputs.is_success == 'true'
         env:
           REPO: ${{ github.repository }}
         run: |
