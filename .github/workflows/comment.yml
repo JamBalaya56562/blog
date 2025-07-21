@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event.workflow_run.event == 'pull_request'
     steps:
-      - name: 📥 Download artifacts
+      - name: 📥 Download artifact
         uses: actions/download-artifact@v4
         with:
           github-token: ${{ github.token }}
@@ -26,12 +26,12 @@ jobs:
         run: ls -R
       - name: ⚙️ Setup Environment
         run: |
-          echo "PR_NUMBER=$(cat pr_number.txt | tr -cd '0-9')" >> $GITHUB_ENV
-          echo "TITLE=$(cat title.txt)" >> $GITHUB_ENV
+          echo "PR_NUMBER=$(cat artifact/pr_number.txt | tr -cd '0-9')" >> $GITHUB_ENV
+          echo "TITLE=$(cat artifact/title.txt)" >> $GITHUB_ENV
           UUID=$(uuidgen)
           {
             echo "COMMENT<<EOF_$UUID"
-            cat comment.txt
+            cat artifact/comment.txt
             echo "EOF_$UUID"
           } >> "$GITHUB_ENV"
 
