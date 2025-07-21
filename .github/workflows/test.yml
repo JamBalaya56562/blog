@@ -54,9 +54,9 @@ jobs:
         run: |
           bun test:app &> >(tee -p test.log) || STATUS=$?
           if [ $STATUS -ne 0 ]; then
-            echo "did_fail=1" >> $GITHUB_OUTPUT
+            echo "did_fail=true" >> $GITHUB_OUTPUT
           else
-            echo "did_fail=0" >> $GITHUB_OUTPUT
+            echo "did_fail=false" >> $GITHUB_OUTPUT
           fi
           UUID=$(uuidgen)
           {
@@ -66,7 +66,7 @@ jobs:
           } >> $GITHUB_OUTPUT
 
       - name: 💔 Fail if test failed
-        if: steps.test.outputs.did_fail == '1'
+        if: steps.test.outputs.did_fail == 'true'
         run: exit 1
 
   create_comment:
@@ -75,6 +75,7 @@ jobs:
     outputs:
       comment: ${{ steps.create_failed_comment.outputs.comment || steps.create_success_comment.outputs.comment }}
       title: ${{ steps.title.outputs.title }}
+      did_fail: ${{ needs.test.outputs.did_fail }}
     if: always() && github.event_name == 'pull_request'
 
     steps:
@@ -137,5 +138,6 @@ jobs:
     uses: ./.github/workflows/comment.yml
     with:
       comment: ${{ needs.create_comment.outputs.comment }}
+      did_fail: ${{ needs.create_comment.outputs.did_fail }}
       pr_number: ${{ github.event.pull_request.number }}
       title: ${{ needs.create_comment.outputs.title }}
