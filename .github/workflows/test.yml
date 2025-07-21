@@ -52,11 +52,12 @@ jobs:
       - name: 🧪 Test app
         id: test
         run: |
-          bun test:app &> >(tee -p test.log) || echo did_fail=$? >> $GITHUB_OUTPUT
+          bun test:app &> >(tee -p test.log) || echo "did_fail=$?" >> $GITHUB_OUTPUT
+          UUID=$(uuidgen)
           {
-            echo 'test_log<<EOF'
+            echo "test_log<<EOF_$UUID"
             cat test.log
-            echo EOF
+            echo "EOF_$UUID"
           } >> $GITHUB_OUTPUT
 
       - name: 💔 Fail if test failed
@@ -78,7 +79,8 @@ jobs:
           SHA: ${{ github.event.pull_request.head.sha }}
           TEST_LOG: ${{ needs.test.outputs.test_log }}
         run: |
-          cat <<EOF > comment.txt
+          UUID=$(uuidgen)
+          cat <<EOF_$UUID > comment.txt
           # ❌ Test Failed
           @$ACTOR, your commit $SHA failed the test.
 
@@ -93,22 +95,25 @@ jobs:
 
           👀[View in Actions](https://github.com/$REPO/actions/runs/$RUN_ID)
           <!-- generated-comment [Test](https://github.com/$REPO/.github/workflows/test.yml) -->
-          EOF
+          EOF_$UUID
 
       - name: ✅ Create test success comment
         if: needs.test.outputs.did_fail != '1'
         env:
           REPO: ${{ github.repository }}
         run: |
-          cat <<EOF > comment.txt
+          UUID=$(uuidgen)
+          cat <<EOF_$UUID > comment.txt
           # ✅ Test Passed
           Failed tests were fixed.
           <!-- generated-comment [Comment](https://github.com/$REPO/.github/workflows/comment.yml) -->
-          EOF
+          EOF_$UUID
 
       - name: 🔢 Create pull request number and title
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
-          echo "${{ github.event.pull_request.number }}" > pr_number.txt
+          echo "$PR_NUMBER" > pr_number.txt
           echo "# ❌ Test Failed" > title.txt
 
       - name: 🆙 Upload test comment
