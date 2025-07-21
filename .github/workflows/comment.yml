@@ -39,9 +39,9 @@ jobs:
           echo "TITLE=$(cat title.txt)" >> $GITHUB_ENV
           UUID=$(uuidgen)
           {
-            echo "COMMENT<<EOF$UUID"
+            echo "COMMENT<<EOF_$UUID"
             cat comment.txt
-            echo "EOF$UUID"
+            echo "EOF_$UUID"
           } >> "$GITHUB_ENV"
 
       - name: 💬 Add a comment
