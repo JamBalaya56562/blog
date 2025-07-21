@@ -11,10 +11,6 @@ on:
         description: "Indicates if the previous job succeeded"
         required: true
         type: boolean
-      pr_number:
-        description: "Pull request number"
-        required: true
-        type: string
       title:
         description: "Pull request title"
         required: true
@@ -32,7 +28,6 @@ jobs:
         env:
           COMMENT: ${{ inputs.comment }}
           IS_SUCCESS: ${{ inputs.is_success }}
-          PR_NUMBER: ${{ inputs.pr_number }}
           TITLE: ${{ inputs.title }}
         with:
           script: |
@@ -53,7 +48,7 @@ jobs:
               await github.rest.issues.createComment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                issue_number: process.env.PR_NUMBER,
+                issue_number: context.issue.number,
                 body: process.env.COMMENT
               })
               return
@@ -62,7 +57,7 @@ jobs:
               await github.rest.issues.createComment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                issue_number: process.env.PR_NUMBER,
+                issue_number: context.issue.number,
                 body: process.env.COMMENT
               })
             }

@@ -140,5 +140,4 @@ jobs:
     with:
       comment: ${{ needs.create_comment.outputs.comment }}
       is_success: ${{ needs.test.outputs.is_success == 'true' }}
-      pr_number: ${{ github.event.pull_request.number }}
       title: ${{ needs.create_comment.outputs.title }}
