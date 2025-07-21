@@ -11,7 +11,7 @@ permissions:
   pull-requests: write
 
 jobs:
-  test-comment:
+  comment:
     runs-on: ubuntu-latest
     if: github.event.workflow_run.event == 'pull_request'
     steps:
