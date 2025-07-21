@@ -136,3 +136,6 @@ jobs:
       comment: ${{ needs.create_comment.outputs.comment }}
       pr_number: ${{ github.event.pull_request.number }}
       title: ${{ needs.create_comment.outputs.title }}
+    permissions:
+      pull-requests: write
+      issues: write
