@@ -77,7 +77,6 @@ jobs:
     steps:
       - name: ❌ Create test failed comment
         if: needs.test.outputs.is_success == 'false'
-        id: create_failed_comment
         env:
           ACTOR: ${{ github.actor }}
           REPO: ${{ github.repository }}
@@ -105,7 +104,6 @@ jobs:
 
       - name: ✅ Create test success comment
         if: needs.test.outputs.is_success == 'true'
-        id: create_success_comment
         env:
           REPO: ${{ github.repository }}
         run: |
