@@ -111,7 +111,7 @@ jobs:
           cat <<EOF_$UUID > comment.txt
           # ✅ Test Passed
           Failed tests were fixed.
-          <!-- generated-comment [Comment](https://github.com/$REPO/.github/workflows/comment.yml) -->
+          <!-- generated-comment [Test](https://github.com/$REPO/.github/workflows/test.yml) -->
           EOF_$UUID
 
       - name: 🔢 Create pull request number and title
