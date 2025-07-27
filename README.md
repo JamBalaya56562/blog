@@ -100,9 +100,6 @@ For more info, check out the [GitHub documentation](https://docs.github.com/en/c
 <details>
 <summary>VSCode Dev Containers</summary>
   
-If you already have VSCode and [Docker](https://www.docker.com/) installed, you can click the badge above or [here](https://vscode.dev/redirect?url=vscode://ms-vscode-remote.remote-containers/cloneInVolume?url=https://github.com/JamBalaya56562/blog) to get started.  
-Clicking these links will cause VSCode to automatically install the Dev Containers extension if needed, clone the source code into a container volume, and spin up a dev container for use.
-
 Follow these steps to open this project in a container using the VSCode Dev Containers extension:
 
 1. If this is your first time using a dev container, please ensure your system meets the pre-reqs (i.e. have Docker installed) in the [getting started steps](https://aka.ms/vscode-remote/containers/getting-started).
