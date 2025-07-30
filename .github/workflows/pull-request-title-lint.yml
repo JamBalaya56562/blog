@@ -13,6 +13,7 @@ permissions:
 jobs:
   lint-title:
     runs-on: ubuntu-latest
+    if: github.actor != 'dependabot'
     outputs:
       is_success: ${{ steps.commitlint.outputs.is_success }}
       commitlint_log: ${{ steps.commitlint.outputs.commitlint_log }}
@@ -58,7 +59,7 @@ jobs:
   upload:
     runs-on: ubuntu-latest
     needs: lint-title
-    if: always()
+    if: always() && github.actor != 'dependabot'
 
     steps:
       - name: ❌ Create test failed comment
