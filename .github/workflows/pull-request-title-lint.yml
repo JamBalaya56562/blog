@@ -39,7 +39,7 @@ jobs:
         env:
           TITLE: ${{ github.event.pull_request.title }}
         run: |
-          echo "$TITLE" | bunx commitlint --verbose &> >(tee -p commitlint.log) || STATUS=$?
+          echo "$TITLE" | bun commitlint --verbose &> >(tee -p commitlint.log) || STATUS=$?
           if [ $STATUS -ne 0 ]; then
             echo "is_success=false" >> $GITHUB_OUTPUT
           else
