@@ -56,10 +56,10 @@ jobs:
         run: bun run build
 
       - name: 🎭 Install Playwright Browsers
-        run: bunx playwright install --with-deps
+        run: bun playwright install --with-deps
 
       - name: 🧪 Run Playwright tests
-        run: bunx playwright test
+        run: bun playwright test
 
       - name: 🆙 Upload Test Report
         uses: actions/upload-artifact@v4
