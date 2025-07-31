@@ -38,7 +38,7 @@ jobs:
 
       - name: 👀 Validate current commit (last commit) with commitlint
         if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
-        run: bunx commitlint --last --verbose
+        run: bun commitlint --last --verbose
 
       - name: 👀 Validate PR commits with commitlint
         if: github.event_name == 'pull_request'
@@ -47,7 +47,7 @@ jobs:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
-          bunx commitlint --from $BASE_SHA --to $HEAD_SHA --verbose \
+          bun commitlint --from $BASE_SHA --to $HEAD_SHA --verbose \
           &> >(tee -p commitlint.log) || STATUS=$?
           if [ $STATUS -ne 0 ]; then
             echo "is_success=false" >> $GITHUB_OUTPUT
