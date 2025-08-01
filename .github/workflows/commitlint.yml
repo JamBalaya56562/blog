@@ -68,7 +68,7 @@ jobs:
   upload:
     runs-on: ubuntu-latest
     needs: commitlint
-    if: always() && github.event_name == 'pull_request'
+    if: success() || failure() && github.event_name == 'pull_request'
 
     steps:
       - name: ❌ Create test failed comment
