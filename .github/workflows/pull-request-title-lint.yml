@@ -59,7 +59,7 @@ jobs:
   upload:
     runs-on: ubuntu-latest
     needs: lint-title
-    if: always() && github.actor != 'dependabot'
+    if: (success() || failure()) && github.actor != 'dependabot'
 
     steps:
       - name: ❌ Create test failed comment
