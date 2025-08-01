@@ -13,7 +13,7 @@ permissions:
 jobs:
   lint-title:
     runs-on: ubuntu-latest
-    if: github.actor != 'dependabot'
+    if: github.event.pull_request.user.login != 'dependabot[bot]'
     outputs:
       is_success: ${{ steps.commitlint.outputs.is_success }}
       commitlint_log: ${{ steps.commitlint.outputs.commitlint_log }}
