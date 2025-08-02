@@ -29,7 +29,7 @@ docker:
   - any-glob-to-any-file: ['.devcontainer/*', '.editorconfig', 'biome.json']
 ✅test:
 - changed-files:
-  - any-glob-to-any-file: ['happydom.ts', 'test/**']
+  - any-glob-to-any-file: ['happydom.tsx', 'test/**']
 🆚vscode:
 - changed-files:
   - any-glob-to-any-file: '.vscode/*'
