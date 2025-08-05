@@ -11,7 +11,7 @@ changelog:
         - 📝documentation
     - title: 🆙 Version Up
       labels:
-        - 📦dependencies
+        - dependencies
     - title: ✅ Test
       labels:
         - ✅test

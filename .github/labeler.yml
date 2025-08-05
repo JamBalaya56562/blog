@@ -7,7 +7,7 @@
 ⚙️config:
 - changed-files:
   - any-glob-to-any-file: '*config.*'
-📦dependencies:
+dependencies:
 - changed-files:
   - any-glob-to-any-file: ['bun.lock', 'package.json']
 docker:
