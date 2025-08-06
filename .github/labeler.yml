@@ -1,6 +1,8 @@
 🍱asset:
 - changed-files:
   - any-glob-to-any-file: ['**/*.avif', '**/*.ico', '**/*.png', '**/*.svg']
+🐛bug:
+- head-branch: ['^fix', 'fix']
 ♻️ci:
 - changed-files:
   - any-glob-to-any-file: '.github/**/*.yml'
