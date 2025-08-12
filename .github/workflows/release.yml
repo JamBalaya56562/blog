@@ -24,7 +24,7 @@ jobs:
 
     steps:
       - name: 📥 Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: ✅ Check if the release has already been created
         run: echo RELEASE_EXISTS=$(gh release list | grep "$VERSION") >> $GITHUB_ENV
