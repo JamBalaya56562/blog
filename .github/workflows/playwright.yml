@@ -40,6 +40,7 @@ jobs:
       - name: 📥 Checkout
         uses: actions/checkout@v5
         with:
+          persist-credentials: false
           ref: ${{ env.SHA }}
         env:
           SHA: ${{ github.event.pull_request.head.sha || github.sha }}
