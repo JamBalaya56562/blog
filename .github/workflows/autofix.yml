@@ -20,6 +20,8 @@ jobs:
     steps:
       - name: 📥 Checkout
         uses: actions/checkout@v5
+        with:
+          persist-credentials: false
 
       - name: 🐣 Install bun
         uses: oven-sh/setup-bun@v2
