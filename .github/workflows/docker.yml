@@ -67,6 +67,7 @@ jobs:
         if: github.event_name != 'pull_request_target'
         uses: actions/checkout@v5
         with:
+          persist-credentials: false
           ref: ${{ env.SHA }}
 
       - name: 🐋 Login to Docker Hub

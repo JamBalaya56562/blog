@@ -23,6 +23,7 @@ jobs:
         uses: actions/checkout@v5
         with:
           fetch-depth: 0
+          persist-credentials: false
       - name: 🐣 Install bun
         uses: oven-sh/setup-bun@735343b667d3e6f658f44d0eca948eb6282f2b76
         with:
@@ -35,7 +36,6 @@ jobs:
           ignores: [(message: string) => message.includes("Signed-off-by: dependabot[bot]")] }' > commitlint.config.ts
 
       - name: 👀 Validate PR title with commitlint
-        if: github.event_name == 'pull_request'
         id: commitlint
         env:
           TITLE: ${{ github.event.pull_request.title }}
