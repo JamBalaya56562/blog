@@ -5,10 +5,10 @@ const nextConfig: NextConfig = {
     inlineCss: true,
     isrFlushToDisk: false,
     ppr: true,
-    reactCompiler: true,
     viewTransition: true,
   },
   output: "standalone",
+  reactCompiler: true,
   typedRoutes: true,
 }
 
