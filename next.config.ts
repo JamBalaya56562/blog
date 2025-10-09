@@ -2,9 +2,9 @@ import type { NextConfig } from "next"
 
 const nextConfig: NextConfig = {
   experimental: {
+    cacheComponents: true,
     inlineCss: true,
     isrFlushToDisk: false,
-    ppr: true,
     viewTransition: true,
   },
   output: "standalone",
