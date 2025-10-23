@@ -2,11 +2,11 @@ import type { NextConfig } from "next"
 
 const nextConfig: NextConfig = {
   experimental: {
-    cacheComponents: true,
     inlineCss: true,
     isrFlushToDisk: false,
     viewTransition: true,
   },
+  cacheComponents: true,
   output: "standalone",
   reactCompiler: true,
   typedRoutes: true,
