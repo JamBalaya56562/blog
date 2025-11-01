@@ -19,7 +19,7 @@ jobs:
 
     steps:
       - name: 📥 Download artifact
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           github-token: ${{ github.token }}
           run-id: ${{ github.event.workflow_run.id }}
