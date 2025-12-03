@@ -1,5 +1,6 @@
 {
   "lockfileVersion": 1,
+  "configVersion": 0,
   "workspaces": {
     "": {
       "name": "@jambalaya56562/blog",
@@ -193,7 +194,7 @@
 
     "aria-query": ["aria-query@5.3.0", "", { "dependencies": { "dequal": "^2.0.3" } }, "sha512-b0P0sZPKtyu8HkeRAfCq0IfURZK+SuwMjY1UXGBU27wpAiTwQAIlq56IbIO+ytk/JjS1fMR14ee5WBBfKi5J6A=="],
 
-    "babel-plugin-react-compiler": ["babel-plugin-react-compiler@0.0.0-experimental-4698ed0-20251121", "", { "dependencies": { "@babel/types": "^7.26.0" } }, "sha512-ZacOoYKPWryFfQkMf9cmG1NtWv0HhttSq/WkTQDjKC4uN5LmS9Oacub6hfp8bxgkZeWLrR76WgCryafsGrrTrQ=="],
+    "babel-plugin-react-compiler": ["babel-plugin-react-compiler@0.0.0-experimental-5a324de-20251201", "", { "dependencies": { "@babel/types": "^7.26.0" } }, "sha512-WwHXVGMuVPMNLrxlvX6NwmxCrRmRWzZkVohuruXKrh5jBuTkBwpimcvIceivC4ge2OOSvtuj6HZrBGbUOAHYyA=="],
 
     "baseline-browser-mapping": ["baseline-browser-mapping@2.8.32", "", { "bin": { "baseline-browser-mapping": "dist/cli.js" } }, "sha512-OPz5aBThlyLFgxyhdwf/s2+8ab3OvT7AdTNvKHBwpXomIYeXqpUUuT8LrdtxZSsWJ4R4CU1un4XGh5Ez3nlTpw=="],
 
