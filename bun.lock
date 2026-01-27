@@ -142,7 +142,7 @@
 
     "@next/swc-win32-x64-msvc": ["@next/swc-win32-x64-msvc@16.2.0-canary.13", "", { "os": "win32", "cpu": "x64" }, "sha512-tmUSVsBmAxT3pt0XBg7mXfsARgvNXixfCL0unj48qKwFI07i1t4401goTtQeWALpImNMoeZafhGTu59pnmubUA=="],
 
-    "@playwright/test": ["@playwright/test@1.59.0-alpha-1769452054000", "", { "dependencies": { "playwright": "1.59.0-alpha-1769452054000" }, "bin": { "playwright": "cli.js" } }, "sha512-RoLK8rEDtLkfNuRMQtMGFLU+wgBNVHMgUq2/6v9Lh00jucTLsrO0Z4QcPmbo9mGo1jjKmEPIfBas23bJWkN1Jg=="],
+    "@playwright/test": ["@playwright/test@1.59.0-alpha-2026-01-27", "", { "dependencies": { "playwright": "1.59.0-alpha-2026-01-27" }, "bin": { "playwright": "cli.js" } }, "sha512-qJHKVLuA0BfW+uUsSaOlA86Ay/y43SXYZOsZMMLOZg4AkT0dHoo1LzHu+rVrvLCOPtyVIk/CUNadUoZvAZPMTw=="],
 
     "@swc/helpers": ["@swc/helpers@0.5.15", "", { "dependencies": { "tslib": "^2.8.0" } }, "sha512-JQ5TuMi45Owi4/BIMAJBoSQoOJu12oOk/gADqlcUL9JEdHB8vyjUSsxqeNXnmXHjYKMi2WcYtezGEEhqUI/E2g=="],
 
@@ -266,9 +266,9 @@
 
     "picocolors": ["picocolors@1.1.1", "", {}, "sha512-xceH2snhtb5M9liqDsmEw56le376mTZkEX/jEb/RxNFyegNul7eNslCXP9FDj/Lcu0X8KEyMceP2ntpaHrDEVA=="],
 
-    "playwright": ["playwright@1.59.0-alpha-1769452054000", "", { "dependencies": { "playwright-core": "1.59.0-alpha-1769452054000" }, "optionalDependencies": { "fsevents": "2.3.2" }, "bin": { "playwright": "cli.js" } }, "sha512-emHM/Pt6ACb0zZOOZNNQg6ahAbpiRKgWxmXeqhcmXWYbZ8zk+GIXavyBHYe5O3KC7GEHizECu83x1EldD3vs7Q=="],
+    "playwright": ["playwright@1.59.0-alpha-2026-01-27", "", { "dependencies": { "playwright-core": "1.59.0-alpha-2026-01-27" }, "optionalDependencies": { "fsevents": "2.3.2" }, "bin": { "playwright": "cli.js" } }, "sha512-EEtgfjT1nt53L6fvopy+TresR3ywVqqne7pMEEh2utMXU0mFv69qJ3TbHBLusT9R8S1q02Axvb5s5yEq9IGhiA=="],
 
-    "playwright-core": ["playwright-core@1.59.0-alpha-1769452054000", "", { "bin": { "playwright-core": "cli.js" } }, "sha512-JulA7CBOf/Ks/MrXVpylMn9NLKRI933ZOR7A6lqW+VsAgSxrAE+j5BsxArSBaO1dUI1EfrVl0hDzVs4ftnWhaw=="],
+    "playwright-core": ["playwright-core@1.59.0-alpha-2026-01-27", "", { "bin": { "playwright-core": "cli.js" } }, "sha512-tgDTZ4P5p7nw4EYybUzv5QwL273Ni58JdXS+RT0fhoLQLUac1Lp5EgTV4WamCNdUuuQZw6wV78Q48PdwNbSM5g=="],
 
     "postcss": ["postcss@8.5.6", "", { "dependencies": { "nanoid": "^3.3.11", "picocolors": "^1.1.1", "source-map-js": "^1.2.1" } }, "sha512-3Ybi1tAuwAP9s0r1UQ2J4n5Y0G05bJkpUIO0/bI9MhwmD70S5aTWbXGBwxHrelT+XM1k6dM0pk+SwNkpTRN7Pg=="],
 
