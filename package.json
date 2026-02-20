@@ -44,7 +44,7 @@
     "react-dom": "^19.2.4"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.4.2",
+    "@biomejs/biome": "^2.4.3",
     "@happy-dom/global-registrator": "^20.6.3",
     "@playwright/test": "next",
     "@tailwindcss/postcss": "^4.2.0",
