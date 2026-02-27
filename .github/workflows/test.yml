@@ -124,17 +124,17 @@ jobs:
           echo "# ❌ Test Failed" > title.txt
 
       - name: 🆙 Upload test comment
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: comment
           path: comment.txt
       - name: 🆙 Upload pull request number
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: pr_number
           path: pr_number.txt
       - name: 🆙 Upload title
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: title
           path: title.txt
