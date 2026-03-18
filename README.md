@@ -149,5 +149,5 @@ This software uses the following open source packages:
 
 [![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2FJamBalaya56562%2Fblog.svg?type=large&issueType=license)](https://app.fossa.com/projects/git%2Bgithub.com%2FJamBalaya56562%2Fblog?ref=badge_large&issueType=license)
 
-The MIT License Copyright (c) 2025 - [JamBalaya56562](https://github.com/JamBalaya56562).
+The MIT License Copyright (c) 2026 - [JamBalaya56562](https://github.com/JamBalaya56562).
 Please have a look at the [LICENSE](https://github.com/JamBalaya56562/blog/blob/main/LICENSE) for more details.
