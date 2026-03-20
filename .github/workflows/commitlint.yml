@@ -72,17 +72,25 @@ jobs:
     if: (success() || failure()) && github.event_name == 'pull_request'
 
     steps:
-      - name: ❌ Create test failed comment
-        if: needs.commitlint.outputs.is_success == 'false'
+      - name: 📝 Create comment
         env:
           ACTOR: ${{ github.actor }}
           COMMITLINT_LOG: ${{ needs.commitlint.outputs.commitlint_log }}
+          IS_SUCCESS: ${{ needs.commitlint.outputs.is_success }}
           REPO: ${{ github.repository }}
           RUN_ID: ${{ github.run_id }}
           SHA: ${{ github.event.pull_request.head.sha }}
+          WORKFLOW_NAME: ${{ github.workflow }}
         run: |
           UUID=$(uuidgen)
-          cat <<EOF_$UUID > comment.txt
+          if [ "$IS_SUCCESS" = "true" ]; then
+            cat <<EOF_$UUID > comment.txt
+          # ✅ Commitlint Passed
+          Thank you for updating the commit message to follow the [Conventional Commits specification](https://www.conventionalcommits.org/en/v1.0.0/).
+          <!-- generated-comment [$WORKFLOW_NAME](https://github.com/$REPO/.github/workflows/commitlint.yml) -->
+          EOF_$UUID
+          else
+            cat <<EOF_$UUID > comment.txt
           # ❌ Commitlint Failed
           @$ACTOR, your commit $SHA failed the commitlint check.
 
@@ -97,40 +105,24 @@ jobs:
 
           Please update the commit message to follow the [Conventional Commits specification](https://www.conventionalcommits.org/en/v1.0.0/).
           👀[View in Actions](https://github.com/$REPO/actions/runs/$RUN_ID)
-          <!-- generated-comment [Commitlint](https://github.com/$REPO/.github/workflows/commitlint.yml) -->
+          <!-- generated-comment [$WORKFLOW_NAME](https://github.com/$REPO/.github/workflows/commitlint.yml) -->
           EOF_$UUID
+          fi
 
-      - name: ✅ Create test success comment
-        if: needs.commitlint.outputs.is_success == 'true'
-        env:
-          REPO: ${{ github.repository }}
-        run: |
-          UUID=$(uuidgen)
-          cat <<EOF_$UUID > comment.txt
-          # ✅ Commitlint Passed
-          Thank you for updating the commit message to follow the [Conventional Commits specification](https://www.conventionalcommits.org/en/v1.0.0/).
-          <!-- generated-comment [Commitlint](https://github.com/$REPO/.github/workflows/commitlint.yml) -->
-          EOF_$UUID
-
-      - name: 🔢 Create pull request number and title
+      - name: 🔢 Create pull request number
         env:
           PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
           echo "$PR_NUMBER" > pr_number.txt
-          echo "# ❌ Commitlint Failed" > title.txt
 
       - name: 🆙 Upload test comment
         uses: actions/upload-artifact@v7
         with:
           name: comment
           path: comment.txt
+
       - name: 🆙 Upload pull request number
         uses: actions/upload-artifact@v7
         with:
           name: pr_number
           path: pr_number.txt
-      - name: 🆙 Upload title
-        uses: actions/upload-artifact@v7
-        with:
-          name: title
-          path: title.txt
