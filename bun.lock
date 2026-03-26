@@ -200,7 +200,7 @@
 
     "aria-query": ["aria-query@5.3.0", "", { "dependencies": { "dequal": "^2.0.3" } }, "sha512-b0P0sZPKtyu8HkeRAfCq0IfURZK+SuwMjY1UXGBU27wpAiTwQAIlq56IbIO+ytk/JjS1fMR14ee5WBBfKi5J6A=="],
 
-    "babel-plugin-react-compiler": ["babel-plugin-react-compiler@0.0.0-experimental-5d11809-20260324", "", { "dependencies": { "@babel/types": "^7.26.0" } }, "sha512-4yF6X29vC4bTAEBeT2VhKKyp/KczNP0X54ZwyH60j5yn71AauWj2g9XratbeNVBKxp3+tvhu/ODwGWf6DdaNFg=="],
+    "babel-plugin-react-compiler": ["babel-plugin-react-compiler@0.0.0-experimental-ff4e0fd-20260324", "", { "dependencies": { "@babel/types": "^7.26.0" } }, "sha512-WDLg0xygAG79VfkkMt0vRe1QVvMbflPkBXqnE+b3Yj3tpMIYF85yd0CWmz88JR1UQgG5xE7bDhz9IhR1mq9gRQ=="],
 
     "baseline-browser-mapping": ["baseline-browser-mapping@2.9.19", "", { "bin": { "baseline-browser-mapping": "dist/cli.js" } }, "sha512-ipDqC8FrAl/76p2SSWKSI+H9tFwm7vYqXQrItCuiVPt26Km0jS+NzSsBWAaBusvSbQcfJG+JitdMm+wZAgTYqg=="],
 
