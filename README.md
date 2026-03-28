@@ -46,6 +46,7 @@ bun test:app
 ```
 
 ### 5. E2E Test
+
 ```bash
 bun test:e2e
 ```
@@ -88,7 +89,8 @@ You can try out dev containers with **[GitHub Codespaces](https://github.com/fea
 GitHub Codespaces is a cloud-based development environment that allows you to work on this project directly in your browser.  
 You can click the badge above or [here](https://github.com/codespaces/new/?repo=JamBalaya56562/blog) to get started.
 
-Follow these steps to open this project in a Codespace:  
+Follow these steps to open this project in a Codespace:
+
 1. Click the **Code** drop-down menu.  
 2. Click on the **Codespaces** tab.  
 3. Click **Create codespace on main**.
@@ -146,8 +148,6 @@ This software uses the following open source packages:
 - [TypeScript](https://www.typescriptlang.org/)
 
 ## ⚖️ License
-
-[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2FJamBalaya56562%2Fblog.svg?type=large&issueType=license)](https://app.fossa.com/projects/git%2Bgithub.com%2FJamBalaya56562%2Fblog?ref=badge_large&issueType=license)
 
 The MIT License Copyright (c) 2026 - [JamBalaya56562](https://github.com/JamBalaya56562).
 Please have a look at the [LICENSE](https://github.com/JamBalaya56562/blog/blob/main/LICENSE) for more details.
