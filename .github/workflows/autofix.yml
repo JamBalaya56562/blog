@@ -23,13 +23,11 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: 🐣 Install bun
-        uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: canary
+      - name: 🐣 Setup mise
+        uses: jdx/mise-action@v4
 
       - name: 📦 Update dependencies
-        run: bun update
+        run: mise update
 
       - name: 🔷 Run Biome
         run: bun check
