@@ -22,7 +22,6 @@ docker:
 - all:
   - changed-files:
     - any-glob-to-any-file: 'app/**'
-    - all-globs-to-all-files: '!app/**/*.test.tsx'
 🪸git:
 - changed-files:
   - any-glob-to-any-file: ['.gitattributes', '.gitignore']
