@@ -1,0 +1,16 @@
+[tools]
+bun = "latest"
+pitchfork = "latest"
+
+[tasks.update]
+description = "Update bun dependencies and reinstall with isolated linker"
+run = ["bun update", "bun i --linker=isolated", "mise prep"]
+
+[hooks]
+enter = ["mise i -q", "mise prep -q"]
+
+[prepare.bun]
+auto = true
+
+[settings]
+experimental = true

@@ -1,0 +1,2 @@
+[daemons.web]
+run = "bun dev"
