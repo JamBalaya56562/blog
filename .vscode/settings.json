@@ -5,8 +5,5 @@
     "source.fixAll.biome": "explicit",
     "source.organizeImports.biome": "explicit"
   },
-  "files.exclude": {
-    "**/.jj": true,
-    "**/.sl": true
-  }
+  "typescript.autoClosingTags": false
 }

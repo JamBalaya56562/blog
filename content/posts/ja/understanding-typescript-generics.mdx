@@ -1,0 +1,38 @@
+---
+title: TypeScriptジェネリクスを理解する
+date: "2025-02-10"
+description: TypeScriptジェネリクスの詳細解説と効果的な使い方
+tags:
+  - typescript
+  - programming
+---
+
+## ジェネリクスとは
+
+ジェネリクスを使うと、複数の型で動作する再利用可能なコードを書くことができます。
+
+## 基本的な例
+
+```typescript
+function identity<T>(arg: T): T {
+  return arg
+}
+
+const result = identity<string>("hello")
+```
+
+## ジェネリック制約
+
+ジェネリクスを特定の型に制約することができます：
+
+```typescript
+interface HasLength {
+  length: number
+}
+
+function logLength<T extends HasLength>(arg: T): void {
+  console.log(arg.length)
+}
+```
+
+> ジェネリクスはTypeScriptの最も強力な機能の一つです。

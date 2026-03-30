@@ -33,6 +33,7 @@ jobs:
         run: bun check
 
       - name: 💾 Commit
+        if: success() || failure()
         uses: autofix-ci/action@v1.3.3
         with:
           commit-message: "fix(autofix.ci): apply automated fixes"

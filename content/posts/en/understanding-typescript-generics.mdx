@@ -1,0 +1,38 @@
+---
+title: Understanding TypeScript Generics
+date: "2025-02-10"
+description: Deep dive into TypeScript generics and how to use them effectively
+tags:
+  - typescript
+  - programming
+---
+
+## What are Generics?
+
+Generics allow you to write reusable code that works with multiple types.
+
+## Basic Example
+
+```typescript
+function identity<T>(arg: T): T {
+  return arg
+}
+
+const result = identity<string>("hello")
+```
+
+## Generic Constraints
+
+You can constrain generics to specific types:
+
+```typescript
+interface HasLength {
+  length: number
+}
+
+function logLength<T extends HasLength>(arg: T): void {
+  console.log(arg.length)
+}
+```
+
+> Generics are one of the most powerful features of TypeScript.

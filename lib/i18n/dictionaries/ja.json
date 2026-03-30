@@ -1,0 +1,30 @@
+{
+  "nav": {
+    "home": "ホーム",
+    "blog": "ブログ"
+  },
+  "header": {
+    "siteName": "Jamのブログ"
+  },
+  "footer": {
+    "copyright": "© {year} Jam Balaya. All rights reserved."
+  },
+  "home": {
+    "intro": "ブログへようこそ。Web開発やテクノロジーについて書いています。",
+    "latestPosts": "最新の記事"
+  },
+  "blog": {
+    "title": "ブログ",
+    "noPostsFound": "記事が見つかりませんでした。",
+    "filterByTag": "タグで絞り込み中:",
+    "clearFilter": "フィルターを解除",
+    "readMore": "続きを読む",
+    "translationAvailable": "この記事は以下の言語でも利用できます:",
+    "postedOn": "投稿日",
+    "taggedWith": "タグ"
+  },
+  "language": {
+    "switchTo": "English",
+    "current": "日本語"
+  }
+}
