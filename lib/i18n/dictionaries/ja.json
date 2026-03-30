@@ -7,7 +7,8 @@
     "siteName": "Jamのブログ"
   },
   "footer": {
-    "copyright": "© {year} Jam Balaya. All rights reserved."
+    "copyright": "© {year} Jam Balaya. All rights reserved.",
+    "privacyPolicy": "プライバシーポリシー"
   },
   "home": {
     "intro": "ブログへようこそ。Web開発やテクノロジーについて書いています。",
@@ -26,5 +27,9 @@
   "language": {
     "switchTo": "English",
     "current": "日本語"
+  },
+  "privacyPolicy": {
+    "title": "プライバシーポリシー",
+    "body": "当サイトはお客様のプライバシーを尊重いたします。基本的な機能に必要な範囲を超えて個人情報を収集することはありません。ブラウジング体験を向上させるためにCookieを使用する場合があります。当サイトをご利用いただくことで、Cookieの使用およびここに記載されたデータの取り扱いに同意したものとみなされます。"
   }
 }

@@ -7,7 +7,8 @@
     "siteName": "Jam's Blog"
   },
   "footer": {
-    "copyright": "© {year} Jam Balaya. All rights reserved."
+    "copyright": "© {year} Jam Balaya. All rights reserved.",
+    "privacyPolicy": "Privacy Policy"
   },
   "home": {
     "intro": "Welcome to my blog. I write about web development, technology, and more.",
@@ -26,5 +27,9 @@
   "language": {
     "switchTo": "日本語",
     "current": "English"
+  },
+  "privacyPolicy": {
+    "title": "Privacy Policy",
+    "body": "We respect your privacy. This site does not collect personal information beyond what is necessary for basic functionality. We may use cookies to improve your browsing experience. By using this site, you agree to our use of cookies and our handling of any data as described herein."
   }
 }

@@ -1,3 +1,4 @@
+import { LocaleSwitchLink } from "@/components/locale-switch-link"
 import type { Locale } from "@/lib/i18n/config"
 import { locales } from "@/lib/i18n/config"
 import type { Dictionary } from "@/lib/i18n/get-dictionary"
@@ -24,12 +25,13 @@ export function Header({
           >
             {dictionary.nav.blog}
           </a>
-          <a
-            href={`/${otherLocale}`}
+          <LocaleSwitchLink
+            currentLocale={locale}
+            targetLocale={otherLocale}
             className="rounded border border-gray-300 px-2 py-1 text-sm text-foreground hover:bg-gray-100 dark:border-gray-600 dark:hover:bg-gray-800"
           >
             {dictionary.language.switchTo}
-          </a>
+          </LocaleSwitchLink>
         </div>
       </nav>
     </header>
