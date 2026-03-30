@@ -1,9 +1,15 @@
-import { describe, expect, test } from "bun:test"
+import { describe, expect, mock, test } from "bun:test"
 import { render } from "@testing-library/react"
 import fc from "fast-check"
-import { Header } from "@/components/header"
 import { locales } from "@/lib/i18n/config"
 import { getDictionary } from "@/lib/i18n/get-dictionary"
+
+// Mock next/navigation before importing Header (which imports LocaleSwitchLink)
+mock.module("next/navigation", () => ({
+  usePathname: () => "/en",
+}))
+
+const { Header } = await import("@/components/header")
 
 describe("Header", () => {
   test("Property 9: navigation link locale prefix consistency", () => {

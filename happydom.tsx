@@ -1,7 +1,7 @@
 import { mock } from "bun:test"
 import { GlobalRegistrator } from "@happy-dom/global-registrator"
 import type { ImageProps, StaticImageData } from "next/image"
-import type { ComponentType, ReactElement } from "react"
+import type { ComponentProps, ComponentType, ReactElement } from "react"
 
 GlobalRegistrator.register()
 
@@ -58,5 +58,24 @@ mock.module("next/image", (): EsModuleDefault<ComponentType<ImageProps>> => {
   return {
     __esModule: true,
     default: MockNextImage,
+  }
+})
+
+function MockNextLink({
+  children,
+  href,
+  className,
+}: Readonly<ComponentProps<"a">>): ReactElement {
+  return (
+    <a href={typeof href === "string" ? href : undefined} className={className}>
+      {children}
+    </a>
+  )
+}
+
+mock.module("next/link", () => {
+  return {
+    __esModule: true,
+    default: MockNextLink,
   }
 })

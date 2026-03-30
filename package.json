@@ -34,7 +34,7 @@
     "lint": "biome lint --write",
     "format": "biome format --write",
     "check": "biome check --write",
-    "test:app": "bun test test/app --preload ./happydom.tsx",
+    "test:unit": "bun test test/unit --preload ./happydom.tsx",
     "test:e2e": "playwright test",
     "test:report": "playwright show-report"
   },

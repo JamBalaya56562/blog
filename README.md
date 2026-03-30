@@ -42,7 +42,7 @@ bun dev
 ### 4. Test the app
 
 ```bash
-bun test:app
+bun test:unit
 ```
 
 ### 5. E2E Test
