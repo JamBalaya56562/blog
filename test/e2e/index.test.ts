@@ -84,9 +84,7 @@ test.describe("Blog post page", () => {
 
   test("navigating to translation works", async ({ page }) => {
     await page.goto("/en/blog/getting-started-with-nextjs")
-    await page
-      .locator("a[href='/ja/blog/getting-started-with-nextjs']")
-      .click()
+    await page.locator("a[href='/ja/blog/getting-started-with-nextjs']").click()
     await expect(page).toHaveURL(/\/ja\/blog\/getting-started-with-nextjs/)
     await expect(
       page.getByRole("heading", { name: "Next.js入門ガイド" }),
