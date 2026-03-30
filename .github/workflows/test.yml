@@ -8,6 +8,7 @@ on:
   pull_request:
     paths:
       - "app/**"
+      - "lib/**"
       - "public/**"
       - "test/**"
       - ".dockerignore"
@@ -18,6 +19,7 @@ on:
   push:
     paths:
       - "app/**"
+      - "lib/**"
       - "public/**"
       - "test/**"
       - ".dockerignore"
