@@ -69,6 +69,16 @@ bun run build
 bun start
 ```
 
+## ⚙️ Environment Variables
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `CONTENT_SOURCE` | Content source (`"local"` or `"github"`) | `"local"` |
+| `GITHUB_OWNER` | GitHub repository owner | - |
+| `GITHUB_REPO` | GitHub repository name | - |
+| `GITHUB_BRANCH` | GitHub branch name | `"main"` |
+| `GITHUB_CONTENT_PATH` | Root path for content in the repository | `"content"` |
+
 ## 🆚 VSCode
 
 [Visual Studio Code](https://code.visualstudio.com/) is the recommended IDE for working on this project, as it has been configured.
@@ -130,16 +140,6 @@ Then check out one of our issues labeled as [😵‍💫help wanted][help] or [g
 <a href="https://github.com/jambalaya56562/blog/graphs/contributors">
   <img src="https://contrib.rocks/image?repo=jambalaya56562/blog" alt="Contributors" />
 </a>
-
-## ⚙️ Environment Variables
-
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `CONTENT_SOURCE` | Content source (`"local"` or `"github"`) | `"local"` |
-| `GITHUB_OWNER` | GitHub repository owner | - |
-| `GITHUB_REPO` | GitHub repository name | - |
-| `GITHUB_BRANCH` | GitHub branch name | `"main"` |
-| `GITHUB_CONTENT_PATH` | Root path for content in the repository | `"content"` |
 
 ## 📦 Credits
 
