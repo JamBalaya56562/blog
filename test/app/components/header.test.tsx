@@ -24,7 +24,7 @@ describe("Header", () => {
           }
         }
       }),
-      { numRuns: 100 },
+      { numRuns: locales.length * 2 },
     )
   })
 })
