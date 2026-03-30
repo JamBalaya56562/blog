@@ -61,4 +61,32 @@ describe("Frontmatter", () => {
       { numRuns: 100 },
     )
   })
+
+  test("Property 3: invalid field types detection", () => {
+    const invalidCases: [string, Record<string, unknown>][] = [
+      [
+        "tags as string",
+        { title: "t", date: "2024-01-01", description: "d", tags: "not-array" },
+      ],
+      [
+        "tags with non-string",
+        { title: "t", date: "2024-01-01", description: "d", tags: [1, 2] },
+      ],
+      [
+        "title as number",
+        { title: 123, date: "2024-01-01", description: "d", tags: ["a"] },
+      ],
+      [
+        "date as number",
+        { title: "t", date: 2024, description: "d", tags: ["a"] },
+      ],
+      [
+        "description as bool",
+        { title: "t", date: "2024-01-01", description: false, tags: ["a"] },
+      ],
+    ]
+    for (const [label, data] of invalidCases) {
+      expect(() => validateFrontmatter(data), label).toThrow()
+    }
+  })
 })
