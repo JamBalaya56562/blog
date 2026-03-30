@@ -10,6 +10,7 @@
 .vscode
 biome.json
 CODE_OF_CONDUCT.md
+content
 CONTRIBUTING.md
 LICENSE
 next-env.d.ts

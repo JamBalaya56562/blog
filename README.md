@@ -131,6 +131,16 @@ Then check out one of our issues labeled as [😵‍💫help wanted][help] or [g
   <img src="https://contrib.rocks/image?repo=jambalaya56562/blog" alt="Contributors" />
 </a>
 
+## ⚙️ Environment Variables
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `CONTENT_SOURCE` | Content source (`"local"` or `"github"`) | `"local"` |
+| `GITHUB_OWNER` | GitHub repository owner | - |
+| `GITHUB_REPO` | GitHub repository name | - |
+| `GITHUB_BRANCH` | GitHub branch name | `"main"` |
+| `GITHUB_CONTENT_PATH` | Root path for content in the repository | `"content"` |
+
 ## 📦 Credits
 
 This software uses the following open source packages:

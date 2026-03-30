@@ -1,0 +1,30 @@
+{
+  "nav": {
+    "home": "Home",
+    "blog": "Blog"
+  },
+  "header": {
+    "siteName": "Jam's Blog"
+  },
+  "footer": {
+    "copyright": "© {year} Jam Balaya. All rights reserved."
+  },
+  "home": {
+    "intro": "Welcome to my blog. I write about web development, technology, and more.",
+    "latestPosts": "Latest Posts"
+  },
+  "blog": {
+    "title": "Blog",
+    "noPostsFound": "No posts found.",
+    "filterByTag": "Filtered by tag:",
+    "clearFilter": "Clear filter",
+    "readMore": "Read more",
+    "translationAvailable": "This post is also available in:",
+    "postedOn": "Posted on",
+    "taggedWith": "Tagged with"
+  },
+  "language": {
+    "switchTo": "日本語",
+    "current": "English"
+  }
+}
