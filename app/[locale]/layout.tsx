@@ -54,7 +54,7 @@ export default async function LocaleLayout({
       >
         <Header locale={locale} dictionary={dictionary} />
         <main className="mx-auto max-w-3xl px-4 py-8">{children}</main>
-        <Footer dictionary={dictionary} />
+        <Footer locale={locale} dictionary={dictionary} />
       </body>
     </html>
   )

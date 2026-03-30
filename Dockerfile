@@ -7,7 +7,7 @@ RUN --mount=type=bind,source=package.json,target=package.json \
   --mount=type=cache,target=/root/.bun \
   bun i --frozen-lockfile
 COPY . .
-RUN bun test:app
+RUN bun test:unit
 ARG CONTENT_SOURCE=github
 ARG GITHUB_OWNER=JamBalaya56562
 ARG GITHUB_REPO=blog
