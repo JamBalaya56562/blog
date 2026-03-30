@@ -1,7 +1,7 @@
 import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 import { MDXRemote } from "next-mdx-remote-client/rsc"
-import { Suspense } from "react"
+import { cache } from "react"
 import remarkGfm from "remark-gfm"
 import { createContentLoader } from "@/lib/content/loader"
 import type { Locale } from "@/lib/i18n/config"
@@ -10,6 +10,12 @@ import { getDictionary } from "@/lib/i18n/get-dictionary"
 import { useMDXComponents } from "@/mdx-components"
 
 type Params = { locale: string; slug: string }
+
+const getPost = cache(async (locale: Locale, slug: string) => {
+  "use cache"
+  const loader = createContentLoader()
+  return loader.getPost(locale, slug)
+})
 
 export async function generateStaticParams() {
   const loader = createContentLoader()
@@ -27,12 +33,11 @@ async function getTranslationPair(
   currentLocale: Locale,
   slug: string,
 ): Promise<Locale | null> {
-  const loader = createContentLoader()
   for (const locale of locales) {
     if (locale === currentLocale) {
       continue
     }
-    const post = await loader.getPost(locale, slug)
+    const post = await getPost(locale, slug)
     if (post) {
       return locale
     }
@@ -49,8 +54,7 @@ export async function generateMetadata({
   if (!isValidLocale(locale)) {
     return {}
   }
-  const loader = createContentLoader()
-  const post = await loader.getPost(locale, slug)
+  const post = await getPost(locale, slug)
   if (!post) {
     return {}
   }
@@ -60,15 +64,18 @@ export async function generateMetadata({
   }
 }
 
-async function BlogPostContent({
-  locale,
-  slug,
+export default async function BlogPostPage({
+  params,
 }: {
-  locale: Locale
-  slug: string
+  params: Promise<Params>
 }) {
-  const loader = createContentLoader()
-  const post = await loader.getPost(locale, slug)
+  "use cache"
+  const { locale, slug } = await params
+  if (!isValidLocale(locale)) {
+    notFound()
+  }
+
+  const post = await getPost(locale, slug)
   if (!post) {
     notFound()
   }
@@ -114,22 +121,5 @@ async function BlogPostContent({
         />
       </div>
     </article>
-  )
-}
-
-export default async function BlogPostPage({
-  params,
-}: {
-  params: Promise<Params>
-}) {
-  const { locale, slug } = await params
-  if (!isValidLocale(locale)) {
-    notFound()
-  }
-
-  return (
-    <Suspense>
-      <BlogPostContent locale={locale} slug={slug} />
-    </Suspense>
   )
 }
