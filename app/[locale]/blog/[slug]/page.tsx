@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 import { MDXRemote } from "next-mdx-remote-client/rsc"
+import { Suspense } from "react"
 import remarkGfm from "remark-gfm"
 import { createContentLoader } from "@/lib/content/loader"
 import type { Locale } from "@/lib/i18n/config"
@@ -9,6 +10,18 @@ import { getDictionary } from "@/lib/i18n/get-dictionary"
 import { useMDXComponents } from "@/mdx-components"
 
 type Params = { locale: string; slug: string }
+
+export async function generateStaticParams() {
+  const loader = createContentLoader()
+  const params: Params[] = []
+  for (const locale of locales) {
+    const slugs = await loader.getPostSlugs(locale)
+    for (const slug of slugs) {
+      params.push({ locale, slug })
+    }
+  }
+  return params
+}
 
 async function getTranslationPair(
   currentLocale: Locale,
@@ -47,16 +60,13 @@ export async function generateMetadata({
   }
 }
 
-export default async function BlogPostPage({
-  params,
+async function BlogPostContent({
+  locale,
+  slug,
 }: {
-  params: Promise<Params>
+  locale: Locale
+  slug: string
 }) {
-  const { locale, slug } = await params
-  if (!isValidLocale(locale)) {
-    notFound()
-  }
-
   const loader = createContentLoader()
   const post = await loader.getPost(locale, slug)
   if (!post) {
@@ -104,5 +114,22 @@ export default async function BlogPostPage({
         />
       </div>
     </article>
+  )
+}
+
+export default async function BlogPostPage({
+  params,
+}: {
+  params: Promise<Params>
+}) {
+  const { locale, slug } = await params
+  if (!isValidLocale(locale)) {
+    notFound()
+  }
+
+  return (
+    <Suspense>
+      <BlogPostContent locale={locale} slug={slug} />
+    </Suspense>
   )
 }

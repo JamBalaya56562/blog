@@ -1,21 +1,18 @@
 import { notFound } from "next/navigation"
+import { Suspense } from "react"
 import { createContentLoader } from "@/lib/content/loader"
 import { filterPostsByTag } from "@/lib/content/sort-filter"
+import type { Locale } from "@/lib/i18n/config"
 import { isValidLocale } from "@/lib/i18n/config"
 import { getDictionary } from "@/lib/i18n/get-dictionary"
 
-export default async function BlogListPage({
-  params,
+async function BlogListContent({
+  locale,
   searchParams,
 }: {
-  params: Promise<{ locale: string }>
+  locale: Locale
   searchParams: Promise<{ tag?: string }>
 }) {
-  const { locale } = await params
-  if (!isValidLocale(locale)) {
-    notFound()
-  }
-
   const { tag } = await searchParams
   const dictionary = getDictionary(locale)
   const loader = createContentLoader()
@@ -81,5 +78,24 @@ export default async function BlogListPage({
         </ul>
       )}
     </div>
+  )
+}
+
+export default async function BlogListPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ locale: string }>
+  searchParams: Promise<{ tag?: string }>
+}) {
+  const { locale } = await params
+  if (!isValidLocale(locale)) {
+    notFound()
+  }
+
+  return (
+    <Suspense>
+      <BlogListContent locale={locale} searchParams={searchParams} />
+    </Suspense>
   )
 }

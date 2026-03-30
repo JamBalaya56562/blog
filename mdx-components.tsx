@@ -47,7 +47,8 @@ const components: MDXComponents = {
     />
   ),
   img: ({ src, alt, ...props }) => {
-    const resolvedSrc = src && !src.startsWith("http") ? resolveImagePath(src) : src
+    const resolvedSrc =
+      src && !src.startsWith("http") ? resolveImagePath(src) : src
     return (
       <img
         src={resolvedSrc}
