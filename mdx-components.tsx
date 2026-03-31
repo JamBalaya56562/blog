@@ -1,5 +1,13 @@
 import type { MDXComponents } from "mdx/types"
+import type React from "react"
 import { resolveImagePath } from "@/app/api/images/[...path]/route"
+import { createIdGenerator, extractText } from "@/lib/toc"
+
+let generateId = createIdGenerator()
+
+function headingId(props: React.HTMLAttributes<HTMLHeadingElement>) {
+  return generateId(extractText(props.children))
+}
 
 const components: MDXComponents = {
   h1: (props) => (
@@ -7,12 +15,14 @@ const components: MDXComponents = {
   ),
   h2: (props) => (
     <h2
+      id={headingId(props)}
       className="mt-6 mb-3 text-3xl font-semibold text-foreground"
       {...props}
     />
   ),
   h3: (props) => (
     <h3
+      id={headingId(props)}
       className="mt-5 mb-2 text-2xl font-semibold text-foreground"
       {...props}
     />
@@ -82,5 +92,6 @@ const components: MDXComponents = {
 }
 
 export function useMDXComponents(): MDXComponents {
+  generateId = createIdGenerator()
   return components
 }
