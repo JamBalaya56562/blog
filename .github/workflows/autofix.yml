@@ -30,7 +30,7 @@ jobs:
         run: mise update
 
       - name: 🔷 Run Biome
-        run: bun check
+        run: bun lint:fix --unsafe
 
       - name: 💾 Commit
         if: success() || failure()

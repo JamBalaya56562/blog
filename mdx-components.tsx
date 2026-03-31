@@ -40,13 +40,13 @@ const components: MDXComponents = {
   li: (props) => <li className="my-1" {...props} />,
   pre: (props) => (
     <pre
-      className="my-4 overflow-x-auto rounded-lg bg-gray-100 p-4 dark:bg-gray-800"
+      className="my-4 overflow-x-auto rounded-lg bg-gray-100 p-4 text-gray-800 dark:bg-gray-800 dark:text-gray-200"
       {...props}
     />
   ),
   code: (props) => (
     <code
-      className="rounded bg-gray-100 px-1.5 py-0.5 font-mono text-sm dark:bg-gray-800"
+      className="rounded bg-gray-100 px-1.5 py-0.5 font-mono text-sm text-gray-800 dark:bg-gray-800 dark:text-gray-200"
       {...props}
     />
   ),
@@ -79,7 +79,7 @@ const components: MDXComponents = {
   ),
   th: (props) => (
     <th
-      className="border border-gray-300 bg-gray-50 px-4 py-2 text-left font-semibold dark:border-gray-600 dark:bg-gray-800"
+      className="border border-gray-300 bg-gray-50 px-4 py-2 text-left font-semibold text-gray-800 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200"
       {...props}
     />
   ),
