@@ -54,7 +54,7 @@ bun test:e2e
 ### 6. Format and Lint the files
 
 ```bash
-bun check
+bun lint:fix
 ```
 
 ### 7. Build the app

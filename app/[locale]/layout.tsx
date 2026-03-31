@@ -6,8 +6,10 @@ import { notFound } from "next/navigation"
 import type React from "react"
 import { Footer } from "@/components/footer"
 import { Header } from "@/components/header"
+import { ThemeInitScript } from "@/components/theme-init-script"
 import { isValidLocale, locales } from "@/lib/i18n/config"
 import { getDictionary } from "@/lib/i18n/get-dictionary"
+import { ThemeProvider } from "@/lib/theme/theme-provider"
 import "@/app/globals.css"
 
 const geistSans = Geist({
@@ -49,12 +51,17 @@ export default async function LocaleLayout({
 
   return (
     <html lang={locale} suppressHydrationWarning>
+      <head>
+        <ThemeInitScript />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} min-h-screen bg-background text-foreground antialiased`}
       >
-        <Header locale={locale} dictionary={dictionary} />
-        <main className="mx-auto max-w-3xl px-4 py-8">{children}</main>
-        <Footer locale={locale} dictionary={dictionary} />
+        <ThemeProvider>
+          <Header locale={locale} dictionary={dictionary} />
+          <main className="mx-auto max-w-3xl px-4 py-8">{children}</main>
+          <Footer locale={locale} dictionary={dictionary} />
+        </ThemeProvider>
       </body>
     </html>
   )

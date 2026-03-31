@@ -102,9 +102,13 @@ bun run build && bun test:e2e
 | `bun dev` | Start development server |
 | `bun run build` | Production build |
 | `bun start` | Start production server |
-| `bun check` | Format + lint with Biome (auto-fix) |
+| `bun lint:fix` | Format + lint with Biome (auto-fix) |
 | `bun test:unit` | Run unit tests |
 | `bun test:e2e` | Run E2E tests |
+
+## Post-Change Workflow
+
+- After making changes, always run `bun lint:fix` to auto-fix formatting and lint issues
 
 ## Commit Messages
 
