@@ -1,6 +1,14 @@
 [tools]
 bun = "latest"
+markdownlint-cli2 = "latest"
 pitchfork = "latest"
+
+[tasks.check]
+run = ["bun check --write", "mise check:md"]
+
+[tasks."check:md"]
+description = "Check markdown files for linting issues"
+run = "markdownlint-cli2 '**/*.md'"
 
 [tasks.update]
 description = "Update bun dependencies and reinstall with isolated linker"
