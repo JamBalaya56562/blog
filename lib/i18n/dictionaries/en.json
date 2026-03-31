@@ -24,7 +24,9 @@
     "translationAvailable": "This post is also available in:",
     "postedOn": "Posted on",
     "taggedWith": "Tagged with",
-    "toc": "Table of Contents"
+    "toc": "Table of Contents",
+    "previousPost": "Previous Post",
+    "nextPost": "Next Post"
   },
   "language": {
     "switchTo": "日本語",

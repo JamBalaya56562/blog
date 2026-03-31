@@ -24,7 +24,9 @@
     "translationAvailable": "この記事は以下の言語でも利用できます:",
     "postedOn": "投稿日",
     "taggedWith": "タグ",
-    "toc": "目次"
+    "toc": "目次",
+    "previousPost": "前の記事",
+    "nextPost": "次の記事"
   },
   "language": {
     "switchTo": "English",
