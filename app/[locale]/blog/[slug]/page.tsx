@@ -3,10 +3,12 @@ import { notFound } from "next/navigation"
 import { MDXRemote } from "next-mdx-remote-client/rsc"
 import { cache } from "react"
 import remarkGfm from "remark-gfm"
+import { TableOfContents } from "@/components/table-of-contents"
 import { createContentLoader } from "@/lib/content/loader"
 import type { Locale } from "@/lib/i18n/config"
 import { isValidLocale, locales } from "@/lib/i18n/config"
 import { getDictionary } from "@/lib/i18n/get-dictionary"
+import { extractToc } from "@/lib/toc"
 import { useMDXComponents } from "@/mdx-components"
 
 type Params = { locale: string; slug: string }
@@ -82,44 +84,48 @@ export default async function BlogPostPage({
 
   const dictionary = getDictionary(locale)
   const translationLocale = await getTranslationPair(locale, slug)
+  const tocItems = extractToc(post.content)
 
   return (
-    <article>
-      <header className="mb-8">
-        <h1 className="text-4xl font-bold">{post.frontmatter.title}</h1>
-        <p className="mt-2 text-gray-500 dark:text-gray-400">
-          {dictionary.blog.postedOn} {post.frontmatter.date}
-        </p>
-        <div className="mt-2 flex gap-2">
-          {post.frontmatter.tags.map((tag) => (
-            <a
-              key={tag}
-              href={`/${locale}/blog?tag=${encodeURIComponent(tag)}`}
-              className="rounded bg-gray-100 px-2 py-0.5 text-xs text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
-            >
-              {tag}
-            </a>
-          ))}
-        </div>
-        {translationLocale && (
-          <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">
-            {dictionary.blog.translationAvailable}{" "}
-            <a
-              href={`/${translationLocale}/blog/${slug}`}
-              className="text-blue-600 hover:underline dark:text-blue-400"
-            >
-              {getDictionary(translationLocale).language.current}
-            </a>
+    <>
+      <TableOfContents items={tocItems} title={dictionary.blog.toc} />
+      <article>
+        <header className="mb-8">
+          <h1 className="text-4xl font-bold">{post.frontmatter.title}</h1>
+          <p className="mt-2 text-gray-500 dark:text-gray-400">
+            {dictionary.blog.postedOn} {post.frontmatter.date}
           </p>
-        )}
-      </header>
-      <div className="prose dark:prose-invert max-w-none">
-        <MDXRemote
-          source={post.content}
-          options={{ mdxOptions: { remarkPlugins: [remarkGfm] } }}
-          components={useMDXComponents()}
-        />
-      </div>
-    </article>
+          <div className="mt-2 flex gap-2">
+            {post.frontmatter.tags.map((tag) => (
+              <a
+                key={tag}
+                href={`/${locale}/blog?tag=${encodeURIComponent(tag)}`}
+                className="rounded bg-gray-100 px-2 py-0.5 text-xs text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+              >
+                {tag}
+              </a>
+            ))}
+          </div>
+          {translationLocale && (
+            <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">
+              {dictionary.blog.translationAvailable}{" "}
+              <a
+                href={`/${translationLocale}/blog/${slug}`}
+                className="text-blue-600 hover:underline dark:text-blue-400"
+              >
+                {getDictionary(translationLocale).language.current}
+              </a>
+            </p>
+          )}
+        </header>
+        <div className="prose dark:prose-invert max-w-none">
+          <MDXRemote
+            source={post.content}
+            options={{ mdxOptions: { remarkPlugins: [remarkGfm] } }}
+            components={useMDXComponents()}
+          />
+        </div>
+      </article>
+    </>
   )
 }

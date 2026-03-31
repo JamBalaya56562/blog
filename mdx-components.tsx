@@ -1,5 +1,18 @@
 import type { MDXComponents } from "mdx/types"
+import type React from "react"
 import { resolveImagePath } from "@/app/api/images/[...path]/route"
+import { slugify } from "@/lib/toc"
+
+const headingCounts = new Map<string, number>()
+
+function headingId(props: React.HTMLAttributes<HTMLHeadingElement>) {
+  const text =
+    typeof props.children === "string" ? props.children : String(props.children)
+  const base = slugify(text)
+  const count = headingCounts.get(base) ?? 0
+  headingCounts.set(base, count + 1)
+  return count > 0 ? `${base}-${count}` : base
+}
 
 const components: MDXComponents = {
   h1: (props) => (
@@ -7,12 +20,14 @@ const components: MDXComponents = {
   ),
   h2: (props) => (
     <h2
+      id={headingId(props)}
       className="mt-6 mb-3 text-3xl font-semibold text-foreground"
       {...props}
     />
   ),
   h3: (props) => (
     <h3
+      id={headingId(props)}
       className="mt-5 mb-2 text-2xl font-semibold text-foreground"
       {...props}
     />
@@ -82,5 +97,6 @@ const components: MDXComponents = {
 }
 
 export function useMDXComponents(): MDXComponents {
+  headingCounts.clear()
   return components
 }
