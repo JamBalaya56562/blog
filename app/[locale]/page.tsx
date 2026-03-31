@@ -1,3 +1,5 @@
+import type { Route } from "next"
+import Link from "next/link"
 import { notFound } from "next/navigation"
 import { createContentLoader } from "@/lib/content/loader"
 import { isValidLocale } from "@/lib/i18n/config"
@@ -33,12 +35,12 @@ export default async function HomePage({
               key={post.slug}
               className="flex items-baseline justify-between gap-4"
             >
-              <a
-                href={`/${locale}/blog/${post.slug}`}
+              <Link
+                href={`/${locale}/blog/${post.slug}` as Route}
                 className="font-medium text-foreground hover:underline"
               >
                 {post.frontmatter.title}
-              </a>
+              </Link>
               <span className="shrink-0 text-sm text-gray-500 dark:text-gray-400">
                 {post.frontmatter.date}
               </span>

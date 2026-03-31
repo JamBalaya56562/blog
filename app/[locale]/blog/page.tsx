@@ -1,3 +1,5 @@
+import type { Route } from "next"
+import Link from "next/link"
 import { notFound } from "next/navigation"
 import { Suspense } from "react"
 import { createContentLoader } from "@/lib/content/loader"
@@ -31,12 +33,12 @@ async function BlogListContent({
           <span className="rounded bg-blue-100 px-2 py-1 text-sm font-medium text-blue-800 dark:bg-blue-900 dark:text-blue-200">
             {tag}
           </span>
-          <a
-            href={`/${locale}/blog`}
+          <Link
+            href={`/${locale}/blog` as Route}
             className="text-sm text-blue-600 hover:underline dark:text-blue-400"
           >
             {dictionary.blog.clearFilter}
-          </a>
+          </Link>
         </div>
       )}
       {posts.length === 0 ? (
@@ -50,12 +52,12 @@ async function BlogListContent({
               key={post.slug}
               className="border-b border-gray-200 pb-6 dark:border-gray-800"
             >
-              <a
-                href={`/${locale}/blog/${post.slug}`}
+              <Link
+                href={`/${locale}/blog/${post.slug}` as Route}
                 className="text-xl font-semibold text-foreground hover:underline"
               >
                 {post.frontmatter.title}
-              </a>
+              </Link>
               <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
                 {post.frontmatter.date}
               </p>
@@ -64,13 +66,15 @@ async function BlogListContent({
               </p>
               <div className="mt-2 flex gap-2">
                 {post.frontmatter.tags.map((t) => (
-                  <a
+                  <Link
                     key={t}
-                    href={`/${locale}/blog?tag=${encodeURIComponent(t)}`}
+                    href={
+                      `/${locale}/blog?tag=${encodeURIComponent(t)}` as Route
+                    }
                     className={`rounded px-2 py-0.5 text-xs ${t === tag ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"}`}
                   >
                     {t}
-                  </a>
+                  </Link>
                 ))}
               </div>
             </li>

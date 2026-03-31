@@ -22,7 +22,8 @@
     "readMore": "続きを読む",
     "translationAvailable": "この記事は以下の言語でも利用できます:",
     "postedOn": "投稿日",
-    "taggedWith": "タグ"
+    "taggedWith": "タグ",
+    "toc": "目次"
   },
   "language": {
     "switchTo": "English",
