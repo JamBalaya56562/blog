@@ -43,5 +43,9 @@
   "privacyPolicy": {
     "title": "Privacy Policy",
     "body": "We respect your privacy. This site does not collect personal information beyond what is necessary for basic functionality. We may use cookies to improve your browsing experience. By using this site, you agree to our use of cookies and our handling of any data as described herein."
+  },
+  "theme": {
+    "switchToLight": "Switch to light mode",
+    "switchToDark": "Switch to dark mode"
   }
 }
