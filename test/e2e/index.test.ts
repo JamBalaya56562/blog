@@ -16,8 +16,7 @@ test.describe("Home page", () => {
   test("shows site name, navigation, and latest posts", async ({ page }) => {
     await page.goto("/en")
     await expect(page).toHaveTitle(/Jam's Blog/)
-    await expect(page.locator("header")).toContainText("Jam's Blog")
-    await expect(page.locator("nav")).toContainText("Home")
+    await expect(page.locator('header img[alt="Jam\'s Blog"]')).toBeVisible()
     await expect(page.locator("nav")).toContainText("Blog")
     await expect(page.getByText("Latest Posts")).toBeVisible()
     await expect(page.locator("a[href*='/en/blog/']").first()).toBeVisible()
@@ -100,7 +99,7 @@ test.describe("Blog post page", () => {
 test.describe("Japanese locale", () => {
   test("home page shows Japanese content", async ({ page }) => {
     await page.goto("/ja")
-    await expect(page.locator("header")).toContainText("Jamのブログ")
+    await expect(page.locator('header img[alt="Jamのブログ"]')).toBeVisible()
     await expect(page.getByText("最新の記事")).toBeVisible()
   })
 
@@ -116,14 +115,14 @@ test.describe("Language switch", () => {
     await page.goto("/en")
     await page.getByText("日本語").click()
     await expect(page).toHaveURL(/\/ja$/)
-    await expect(page.locator("header")).toContainText("Jamのブログ")
+    await expect(page.locator('header img[alt="Jamのブログ"]')).toBeVisible()
   })
 
   test("switching from Japanese to English", async ({ page }) => {
     await page.goto("/ja")
     await page.getByText("English").click()
     await expect(page).toHaveURL(/\/en$/)
-    await expect(page.locator("header")).toContainText("Jam's Blog")
+    await expect(page.locator('header img[alt="Jam\'s Blog"]')).toBeVisible()
   })
 })
 
