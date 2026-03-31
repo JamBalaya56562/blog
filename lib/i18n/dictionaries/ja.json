@@ -8,7 +8,8 @@
   },
   "footer": {
     "copyright": "© {year} Jam Balaya. All rights reserved.",
-    "privacyPolicy": "プライバシーポリシー"
+    "privacyPolicy": "プライバシーポリシー",
+    "portfolio": "自己紹介"
   },
   "home": {
     "intro": "ブログへようこそ。Web開発やテクノロジーについて書いています。",
@@ -28,6 +29,16 @@
   "language": {
     "switchTo": "English",
     "current": "日本語"
+  },
+  "portfolio": {
+    "title": "自己紹介",
+    "intro": "こんにちは、Jam Balayaです。日本在住のWeb開発者です。将棋と麻雀が趣味です♟️🀄",
+    "skills": "スキル",
+    "projects": "プロジェクト",
+    "links": "リンク",
+    "blogDescription": "Next.js、TypeScript、Tailwind CSS、Bun、Biomeで構築した個人ブログです。",
+    "ossContributions": "OSS コントリビューション",
+    "ossDescription": "Next.js、Biome、Mise、Dev Containersなどのオープンソースプロジェクトに積極的に貢献しています。"
   },
   "privacyPolicy": {
     "title": "プライバシーポリシー",

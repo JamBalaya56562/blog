@@ -8,7 +8,8 @@
   },
   "footer": {
     "copyright": "© {year} Jam Balaya. All rights reserved.",
-    "privacyPolicy": "Privacy Policy"
+    "privacyPolicy": "Privacy Policy",
+    "portfolio": "About Me"
   },
   "home": {
     "intro": "Welcome to my blog. I write about web development, technology, and more.",
@@ -28,6 +29,16 @@
   "language": {
     "switchTo": "日本語",
     "current": "English"
+  },
+  "portfolio": {
+    "title": "About Me",
+    "intro": "Hi, I'm Jam Balaya — a web developer based in Japan. I enjoy Shogi and Mahjong ♟️🀄",
+    "skills": "Skills",
+    "projects": "Projects",
+    "links": "Links",
+    "blogDescription": "My personal blog built with Next.js, TypeScript, Tailwind CSS, Bun, and Biome.",
+    "ossContributions": "OSS Contributions",
+    "ossDescription": "I actively contribute to open-source projects including Next.js, Biome, Mise, Dev Containers, and more."
   },
   "privacyPolicy": {
     "title": "Privacy Policy",
