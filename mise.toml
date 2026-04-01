@@ -3,10 +3,10 @@ bun = "latest"
 markdownlint-cli2 = "latest"
 pitchfork = "latest"
 
-[tasks.check]
-run = ["bun lint:fix --write", "mise check:md"]
+[tasks.lint]
+run = ["bun lint:fix --write", "mise lint:md"]
 
-[tasks."check:md"]
+[tasks."lint:md"]
 description = "Check markdown files for linting issues"
 run = "markdownlint-cli2 '**/*.md'"
 

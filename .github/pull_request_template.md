@@ -1,23 +1,23 @@
-<!--
-  Thanks for submitting a pull request!
-  We appreciate you spending the time to work on these changes. Please provide enough information so that others can review your pull request.
--->
+## Summary
 
-### What does this PR do?
+<!-- What does this PR do? Briefly describe the changes. -->
 
-<!-- **Please explain what your changes do**, example: -->
+## Details
 
-- [ ] Documentation or TypeScript types (it's okay to leave the rest blank in this case)
-- [ ] Code changes
+<!-- Explain the approach and any design decisions. -->
 
-### How did you verify your code works?
+## Related Issues
 
-<!-- **For code changes, please include automated tests**. Feel free to uncomment the line below -->
+<!-- Link related issues: closes #123, fixes #456 -->
 
-<!-- I wrote automated tests -->
+## Checklist
 
-<!-- 
-  Demonstrate the code is solid. Example: The exact commands you ran and their output, screenshots / videos if the pull request changes the user interface.
-  How exactly did you verify that your PR solves the issue you wanted to solve?
-  If you leave this empty, your PR will very likely be closed.
--->
+- [ ] PR title follows [Conventional Commits](https://www.conventionalcommits.org/) (`type(scope): summary`)
+- [ ] `bun lint:fix` passes
+- [ ] `bun test:unit` passes
+- [ ] `bun run build` succeeds
+- [ ] E2E tests pass if applicable (`bun test:e2e`)
+
+## Verification
+
+<!-- How did you verify your changes? Commands run, screenshots, etc. -->
