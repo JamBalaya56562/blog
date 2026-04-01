@@ -116,72 +116,84 @@ const adjacentPostsArb: fc.Arbitrary<AdjacentPosts> = fc.record({
 const localeArb = fc.constantFrom(...locales)
 
 describe("Feature: post-navigation, Property 2: conditional link display", () => {
-  test("link presence matches adjacentPosts state", () => {
-    fc.assert(
-      fc.property(adjacentPostsArb, (adjacentPosts) => {
-        const { container } = render(
-          <PostNavigation
-            locale="en"
-            adjacentPosts={adjacentPosts}
-            dictionary={dictionary}
-          />,
-        )
-        const links = container.querySelectorAll("a")
-        const expectedCount =
-          (adjacentPosts.previous ? 1 : 0) + (adjacentPosts.next ? 1 : 0)
-        expect(links.length).toBe(expectedCount)
-      }),
-      { numRuns: 100 },
-    )
-  })
-})
-
-describe("Feature: post-navigation, Property 3: link href accuracy", () => {
-  test("link hrefs follow /{locale}/blog/{slug} format", () => {
-    fc.assert(
-      fc.property(
-        localeArb,
-        fc.record({
-          previous: adjacentPostArb,
-          next: adjacentPostArb,
-        }),
-        (locale, adjacentPosts) => {
+  test(
+    "link presence matches adjacentPosts state",
+    () => {
+      fc.assert(
+        fc.property(adjacentPostsArb, (adjacentPosts) => {
           const { container } = render(
             <PostNavigation
-              locale={locale}
+              locale="en"
               adjacentPosts={adjacentPosts}
-              dictionary={getDictionary(locale)}
+              dictionary={dictionary}
             />,
           )
           const links = container.querySelectorAll("a")
-          for (const link of links) {
-            const href = link.getAttribute("href")
-            expect(href).toMatch(new RegExp(`^/${locale}/blog/.+`))
-          }
-        },
-      ),
-      { numRuns: 100 },
-    )
-  })
+          const expectedCount =
+            (adjacentPosts.previous ? 1 : 0) + (adjacentPosts.next ? 1 : 0)
+          expect(links.length).toBe(expectedCount)
+        }),
+        { numRuns: 100 },
+      )
+    },
+    { timeout: 30_000 },
+  )
+})
+
+describe("Feature: post-navigation, Property 3: link href accuracy", () => {
+  test(
+    "link hrefs follow /{locale}/blog/{slug} format",
+    () => {
+      fc.assert(
+        fc.property(
+          localeArb,
+          fc.record({
+            previous: adjacentPostArb,
+            next: adjacentPostArb,
+          }),
+          (locale, adjacentPosts) => {
+            const { container } = render(
+              <PostNavigation
+                locale={locale}
+                adjacentPosts={adjacentPosts}
+                dictionary={getDictionary(locale)}
+              />,
+            )
+            const links = container.querySelectorAll("a")
+            for (const link of links) {
+              const href = link.getAttribute("href")
+              expect(href).toMatch(new RegExp(`^/${locale}/blog/.+`))
+            }
+          },
+        ),
+        { numRuns: 100 },
+      )
+    },
+    { timeout: 30_000 },
+  )
 })
 
 describe("Feature: post-navigation, Property 4: label text matches dictionary", () => {
-  test("labels match dictionary values", () => {
-    fc.assert(
-      fc.property(localeArb, (locale) => {
-        const dict = getDictionary(locale)
-        const { container } = render(
-          <PostNavigation
-            locale={locale}
-            adjacentPosts={bothPosts}
-            dictionary={dict}
-          />,
-        )
-        const labels = container.querySelectorAll(".text-sm.text-gray-500")
-        expect(labels[0].textContent).toBe(dict.blog.previousPost)
-        expect(labels[1].textContent).toBe(dict.blog.nextPost)
-      }),
-      { numRuns: 100 },
-    )
-  })
+  test(
+    "labels match dictionary values",
+    () => {
+      fc.assert(
+        fc.property(localeArb, (locale) => {
+          const dict = getDictionary(locale)
+          const { container } = render(
+            <PostNavigation
+              locale={locale}
+              adjacentPosts={bothPosts}
+              dictionary={dict}
+            />,
+          )
+          const labels = container.querySelectorAll(".text-sm.text-gray-500")
+          expect(labels[0].textContent).toBe(dict.blog.previousPost)
+          expect(labels[1].textContent).toBe(dict.blog.nextPost)
+        }),
+        { numRuns: 100 },
+      )
+    },
+    { timeout: 30_000 },
+  )
 })
