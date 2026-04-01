@@ -20,16 +20,20 @@ This repository is a multilingual blog built with Next.js (App Router).
 app/                  # Next.js App Router pages
   [locale]/           # Multilingual routing (en, ja)
     blog/[slug]/      # Blog post page
+    portfolio/        # Portfolio page
     privacy-policy/   # Privacy policy
   api/images/         # Image proxy API
 components/           # Shared React components
 lib/
-  content/            # Content loader (local / GitHub)
+  content/            # Content loader (local / GitHub), adjacent post utils
   i18n/               # Internationalization (dictionaries, locale config)
+  theme/              # Theme provider and hook (dark/light mode)
+  routes.ts           # Route definitions
   toc.ts              # Table of contents generation
 content/
   posts/{en,ja}/      # MDX blog posts
   images/             # Content images
+public/               # Static assets (logos, icons)
 test/
   unit/               # Bun unit tests
   e2e/                # Playwright E2E tests
