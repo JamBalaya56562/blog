@@ -1,2 +1,9 @@
+config:
+  MD013:
+    line_length: 120
 fix: true
 gitignore: true
+ignores:
+  - .github/pull_request_template.md
+  - CODE_OF_CONDUCT.md
+  - README.md
