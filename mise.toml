@@ -4,7 +4,7 @@ markdownlint-cli2 = "latest"
 pitchfork = "latest"
 
 [tasks.lint]
-run = ["bun lint:fix --write", "mise lint:md"]
+run = ["bun lint:fix --unsafe", "mise lint:md"]
 
 [tasks."lint:md"]
 description = "Check markdown files for linting issues"
