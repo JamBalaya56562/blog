@@ -1,9 +1,9 @@
-import type { Route } from "next"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import { createContentLoader } from "@/lib/content/loader"
 import { isValidLocale } from "@/lib/i18n/config"
 import { getDictionary } from "@/lib/i18n/get-dictionary"
+import { getBlogPostPath } from "@/lib/routes"
 
 export default async function HomePage({
   params,
@@ -36,7 +36,7 @@ export default async function HomePage({
               className="flex items-baseline justify-between gap-4"
             >
               <Link
-                href={`/${locale}/blog/${post.slug}` as Route}
+                href={getBlogPostPath(locale, post.slug)}
                 className="font-medium text-foreground hover:underline"
               >
                 {post.frontmatter.title}

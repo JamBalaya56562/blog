@@ -17,11 +17,11 @@ docker:
   - any-glob-to-any-file: ['.dockerignore', 'Dockerfile']
 📝documentation:
 - changed-files:
-  - any-glob-to-any-file: ['**/*.md']
+  - any-glob-to-any-file: ['**/*.md', '**/*.mdx']
 🚀enhancement:
 - all:
   - changed-files:
-    - any-glob-to-any-file: 'app/**'
+    - any-glob-to-any-file: ['app/**', 'components/**', 'lib/**']
 🪸git:
 - changed-files:
   - any-glob-to-any-file: ['.gitattributes', '.gitignore']

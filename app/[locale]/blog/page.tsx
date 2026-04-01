@@ -7,6 +7,7 @@ import { filterPostsByTag } from "@/lib/content/sort-filter"
 import type { Locale } from "@/lib/i18n/config"
 import { isValidLocale } from "@/lib/i18n/config"
 import { getDictionary } from "@/lib/i18n/get-dictionary"
+import { getBlogPostPath } from "@/lib/routes"
 
 async function BlogListContent({
   locale,
@@ -53,7 +54,7 @@ async function BlogListContent({
               className="border-b border-gray-200 pb-6 dark:border-gray-800"
             >
               <Link
-                href={`/${locale}/blog/${post.slug}` as Route}
+                href={getBlogPostPath(locale, post.slug)}
                 className="text-xl font-semibold text-foreground hover:underline"
               >
                 {post.frontmatter.title}
