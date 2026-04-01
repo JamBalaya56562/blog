@@ -29,8 +29,8 @@ jobs:
       - name: 📦 Update dependencies
         run: mise update
 
-      - name: 🔷 Run Biome
-        run: bun lint:fix --unsafe
+      - name: 🔷 Run Lint
+        run: mise lint
 
       - name: 💾 Commit
         if: success() || failure()
