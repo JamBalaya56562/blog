@@ -105,10 +105,6 @@ bun run build && bun test:e2e
 | `bun test:unit` | Run unit tests |
 | `bun test:e2e` | Run E2E tests |
 
-## Post-Change Workflow
-
-- After making changes, always run `bun lint:fix` to auto-fix formatting and lint issues
-
 ## Commit Messages
 
 Follow [Conventional Commits](https://www.conventionalcommits.org/):

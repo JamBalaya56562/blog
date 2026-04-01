@@ -4,7 +4,9 @@ import { notFound } from "next/navigation"
 import { MDXRemote } from "next-mdx-remote-client/rsc"
 import { cache } from "react"
 import remarkGfm from "remark-gfm"
+import { PostNavigation } from "@/components/post-navigation"
 import { TableOfContents } from "@/components/table-of-contents"
+import { findAdjacentPosts } from "@/lib/content/adjacent"
 import { createContentLoader } from "@/lib/content/loader"
 import type { Locale } from "@/lib/i18n/config"
 import { isValidLocale, locales } from "@/lib/i18n/config"
@@ -86,6 +88,8 @@ export default async function BlogPostPage({
   const dictionary = getDictionary(locale)
   const translationLocale = await getTranslationPair(locale, slug)
   const tocItems = extractToc(post.content)
+  const allPosts = await createContentLoader().getAllPosts(locale)
+  const adjacentPosts = findAdjacentPosts(allPosts, slug)
 
   return (
     <>
@@ -127,6 +131,11 @@ export default async function BlogPostPage({
           />
         </div>
       </article>
+      <PostNavigation
+        locale={locale}
+        adjacentPosts={adjacentPosts}
+        dictionary={dictionary}
+      />
     </>
   )
 }
