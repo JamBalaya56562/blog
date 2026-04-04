@@ -1,5 +1,9 @@
 {
   "servers": {
+    "next-devtools": {
+      "command": "npx",
+      "args": ["-y", "next-devtools-mcp@latest"]
+    },
     "microsoft/playwright-mcp": {
       "command": "npx",
       "args": ["@playwright/mcp@latest"]
