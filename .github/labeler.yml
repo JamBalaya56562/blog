@@ -17,7 +17,7 @@ docker:
   - any-glob-to-any-file: ['.dockerignore', 'Dockerfile']
 📝documentation:
 - changed-files:
-  - any-glob-to-any-file: ['**/*.md', '**/*.mdx']
+  - any-glob-to-any-file: ['.markdownlint-cli2.yaml', '**/*.md', '**/*.mdx']
 🚀enhancement:
 - all:
   - changed-files:
