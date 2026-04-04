@@ -1,10 +1,8 @@
 {
-	"servers": {
-		"microsoft/playwright-mcp": {
-			"command": "npx",
-			"args": [
-				"@playwright/mcp@latest"
-			],
-		}
-	},
+  "servers": {
+    "microsoft/playwright-mcp": {
+      "command": "npx",
+      "args": ["@playwright/mcp@latest"]
+    }
+  }
 }
