@@ -1,7 +1,10 @@
 import type { Route } from "next"
+import Image from "next/image"
 import Link from "next/link"
 import type { Locale } from "@/lib/i18n/config"
 import type { Dictionary } from "@/lib/i18n/get-dictionary"
+
+const GITHUB_REPO_URL = "https://github.com/JamBalaya56562/blog"
 
 export function Footer({
   locale,
@@ -10,7 +13,10 @@ export function Footer({
   return (
     <footer className="border-t border-gray-200 dark:border-gray-800">
       <div className="mx-auto max-w-3xl px-4 py-6 text-center text-sm text-gray-500 dark:text-gray-400">
-        <div className="mb-2 flex justify-center gap-4">
+        <div className="mb-2 flex items-center justify-center gap-4">
+          <Link href={`/${locale}/blog` as Route} className="hover:underline">
+            {dictionary.nav.blog}
+          </Link>
           <Link
             href={`/${locale}/portfolio` as Route}
             className="hover:underline"
@@ -23,6 +29,27 @@ export function Footer({
           >
             {dictionary.footer.privacyPolicy}
           </Link>
+          <a
+            href={GITHUB_REPO_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="GitHub"
+          >
+            <Image
+              src="/github-mark.svg"
+              alt="GitHub"
+              width={20}
+              height={20}
+              className="block dark:hidden"
+            />
+            <Image
+              src="/github-mark-white.svg"
+              alt="GitHub"
+              width={20}
+              height={20}
+              className="hidden dark:block"
+            />
+          </a>
         </div>
         {dictionary.footer.copyright.replace(
           "{year}",

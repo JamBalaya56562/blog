@@ -13,7 +13,20 @@
   },
   "home": {
     "intro": "ブログへようこそ。Web開発やテクノロジーについて書いています。",
-    "latestPosts": "最新の記事"
+    "latestPosts": "最新の記事",
+    "badge": "モダンな開発体験",
+    "badge2": "オープンソース志向",
+    "title": "プログラミングを",
+    "titleAccent": "もっと身近に。",
+    "subtitle": "新しい技術を積極的に取り入れて、モダンな開発体験を共有します。",
+    "subtitleSecond": "日々のコーディングがもっと楽しくなるヒントや知見をお届けします。",
+    "ctaBrowse": "すべての記事を見る",
+    "ctaGithub": "GitHub リポジトリ",
+    "featuredLabel": "注目",
+    "recentTitle": "最近のディスパッチ",
+    "recentDescription": "ラボからの新鮮な視点と技術的な解説。",
+    "viewAll": "すべて表示",
+    "readDispatch": "ディスパッチを読む"
   },
   "blog": {
     "title": "ブログ",

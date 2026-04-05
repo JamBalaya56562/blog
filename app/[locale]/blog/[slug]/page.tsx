@@ -93,7 +93,7 @@ export default async function BlogPostPage({
   const adjacentPosts = findAdjacentPosts(allPosts, slug)
 
   return (
-    <>
+    <div className="mx-auto max-w-3xl">
       <TableOfContents items={tocItems} title={dictionary.blog.toc} />
       <article>
         <header className="mb-8">
@@ -137,6 +137,6 @@ export default async function BlogPostPage({
         adjacentPosts={adjacentPosts}
         dictionary={dictionary}
       />
-    </>
+    </div>
   )
 }
