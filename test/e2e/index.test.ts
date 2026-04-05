@@ -39,8 +39,10 @@ test.describe("Blog list page", () => {
 
   test("filters posts by tag", async ({ page }) => {
     await page.goto("/en/blog?tag=typescript")
-    await expect(page.getByText("Filtered by tag:")).toBeVisible()
-    await expect(page.getByText("Clear filter")).toBeVisible()
+    await expect(
+      page.getByRole("main").getByText("Filtered by tag:"),
+    ).toBeVisible()
+    await expect(page.getByRole("main").getByText("Clear filter")).toBeVisible()
   })
 
   test("clear filter returns to unfiltered list", async ({ page }) => {

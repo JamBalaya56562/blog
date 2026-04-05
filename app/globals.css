@@ -83,6 +83,11 @@ body {
   color: var(--foreground);
 }
 
+/* Card title turns blue on card hover, but reverts when a tag is hovered */
+.card-title-hover:hover:not(:has(.tag-link:hover)) .card-title {
+  color: var(--on-primary-container);
+}
+
 @keyframes codeFloat {
   0% {
     transform: translateY(110vh) rotate(0deg);
