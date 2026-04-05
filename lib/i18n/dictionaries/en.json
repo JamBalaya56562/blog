@@ -1,7 +1,10 @@
 {
   "nav": {
     "home": "Home",
-    "blog": "Blog"
+    "blog": "Blog",
+    "openMenu": "Open menu",
+    "closeMenu": "Close menu",
+    "scrollToTop": "Scroll to top"
   },
   "header": {
     "siteName": "Jam's Blog"
@@ -13,7 +16,20 @@
   },
   "home": {
     "intro": "Welcome to my blog. I write about web development, technology, and more.",
-    "latestPosts": "Latest Posts"
+    "latestPosts": "Latest Posts",
+    "badge": "Modern Dev Experience",
+    "badge2": "Open Source First",
+    "title": "Making programming",
+    "titleAccent": "more accessible.",
+    "subtitle": "Embracing new technologies and sharing modern development experiences.",
+    "subtitleSecond": "Tips, tutorials, and real-world insights to make your coding journey smoother.",
+    "ctaBrowse": "Browse All Articles",
+    "ctaGithub": "GitHub Repository",
+    "featuredLabel": "FEATURED",
+    "recentTitle": "Recent Dispatches",
+    "recentDescription": "Fresh perspectives and technical breakdowns from the laboratory.",
+    "viewAll": "View all",
+    "readDispatch": "Read Dispatch"
   },
   "blog": {
     "title": "Blog",

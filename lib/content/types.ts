@@ -5,6 +5,7 @@ export interface Frontmatter {
   date: string
   description: string
   tags: string[]
+  image?: string
 }
 
 export interface Post {

@@ -99,8 +99,10 @@ export default async function BlogListPage({
   }
 
   return (
-    <Suspense>
-      <BlogListContent locale={locale} searchParams={searchParams} />
-    </Suspense>
+    <div className="mx-auto max-w-3xl">
+      <Suspense>
+        <BlogListContent locale={locale} searchParams={searchParams} />
+      </Suspense>
+    </div>
   )
 }
