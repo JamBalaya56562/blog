@@ -16,7 +16,7 @@ export default async function PrivacyPolicyPage({
   const dictionary = getDictionary(locale)
 
   return (
-    <div>
+    <div className="mx-auto max-w-3xl">
       <h1 className="mb-6 text-3xl font-bold">
         {dictionary.privacyPolicy.title}
       </h1>

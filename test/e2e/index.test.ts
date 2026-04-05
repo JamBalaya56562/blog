@@ -13,12 +13,13 @@ test.describe("Locale redirect", () => {
 })
 
 test.describe("Home page", () => {
-  test("shows site name, navigation, and latest posts", async ({ page }) => {
+  test("shows site name, navigation, and hero section", async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 })
     await page.goto("/en")
     await expect(page).toHaveTitle(/Jam's Blog/)
     await expect(page.locator('header img[alt="Jam\'s Blog"]')).toBeVisible()
     await expect(page.locator("nav")).toContainText("Blog")
-    await expect(page.getByText("Latest Posts")).toBeVisible()
+    await expect(page.getByText("Modern Dev Experience")).toBeVisible()
     await expect(page.locator("a[href*='/en/blog/']").first()).toBeVisible()
   })
 
@@ -100,7 +101,9 @@ test.describe("Japanese locale", () => {
   test("home page shows Japanese content", async ({ page }) => {
     await page.goto("/ja")
     await expect(page.locator('header img[alt="Jamのブログ"]')).toBeVisible()
-    await expect(page.getByText("最新の記事")).toBeVisible()
+    await expect(
+      page.getByText("モダンな開発体験", { exact: true }),
+    ).toBeVisible()
   })
 
   test("blog list page shows Japanese heading", async ({ page }) => {
@@ -112,6 +115,7 @@ test.describe("Japanese locale", () => {
 
 test.describe("Language switch", () => {
   test("switching from English to Japanese", async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 })
     await page.goto("/en")
     await page.getByText("日本語").click()
     await expect(page).toHaveURL(/\/ja$/)
@@ -119,6 +123,7 @@ test.describe("Language switch", () => {
   })
 
   test("switching from Japanese to English", async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 })
     await page.goto("/ja")
     await page.getByText("English").click()
     await expect(page).toHaveURL(/\/en$/)

@@ -1,25 +1,33 @@
 "use cache"
 
 import type { Metadata } from "next"
-import { Geist, Geist_Mono } from "next/font/google"
+import { Geist_Mono, Inter, Manrope } from "next/font/google"
 import { notFound } from "next/navigation"
 import type React from "react"
 import { Footer } from "@/components/footer"
 import { Header } from "@/components/header"
+import { ScrollToTop } from "@/components/scroll-to-top"
 import { ThemeInitScript } from "@/components/theme-init-script"
 import { isValidLocale, locales } from "@/lib/i18n/config"
 import { getDictionary } from "@/lib/i18n/get-dictionary"
 import { ThemeProvider } from "@/lib/theme/theme-provider"
 import "@/app/globals.css"
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-})
-
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+})
+
+const inter = Inter({
+  variable: "--font-inter",
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+})
+
+const manrope = Manrope({
+  variable: "--font-manrope",
+  subsets: ["latin"],
+  weight: ["500", "700", "800"],
 })
 
 export const metadata: Metadata = {
@@ -55,12 +63,13 @@ export default async function LocaleLayout({
         <ThemeInitScript />
       </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} min-h-screen bg-background text-foreground antialiased`}
+        className={`${geistMono.variable} ${inter.variable} ${manrope.variable} min-h-screen bg-background text-foreground antialiased`}
       >
         <ThemeProvider>
           <Header locale={locale} dictionary={dictionary} />
-          <main className="mx-auto max-w-3xl px-4 py-8">{children}</main>
+          <main className="px-4 py-8">{children}</main>
           <Footer locale={locale} dictionary={dictionary} />
+          <ScrollToTop dictionary={dictionary} />
         </ThemeProvider>
       </body>
     </html>
