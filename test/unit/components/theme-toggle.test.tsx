@@ -57,7 +57,7 @@ afterEach(() => {
 })
 
 describe("ThemeToggle icon display", () => {
-  test("light mode shows moon icon (🌙)", () => {
+  test("light mode shows moon icon", () => {
     cleanup()
     document.documentElement.classList.remove("dark")
     storage = { theme: "light" }
@@ -75,13 +75,13 @@ describe("ThemeToggle icon display", () => {
     )
 
     const button = getByRole("button")
-    expect(button.querySelector("svg")).toBeDefined()
+    expect(button).toBeDefined()
     expect(button.getAttribute("aria-label")).toBe(
       dictionary.theme.switchToDark,
     )
   })
 
-  test("dark mode shows sun icon (☀️)", () => {
+  test("dark mode shows sun icon", () => {
     cleanup()
     document.documentElement.classList.remove("dark")
     storage = { theme: "dark" }
@@ -99,7 +99,7 @@ describe("ThemeToggle icon display", () => {
     )
 
     const button = getByRole("button")
-    expect(button.querySelector("svg")).toBeDefined()
+    expect(button).toBeDefined()
     expect(button.getAttribute("aria-label")).toBe(
       dictionary.theme.switchToLight,
     )
@@ -107,23 +107,15 @@ describe("ThemeToggle icon display", () => {
 })
 
 describe("Feature: dark-mode-toggle, Property 4: localized aria-label correctness", () => {
-  /**
-   * For any locale × theme combination, the ThemeToggle's aria-label
-   * matches the corresponding dictionary value:
-   *   dark  → theme.switchToLight
-   *   light → theme.switchToDark
-   */
   test("aria-label matches dictionary for every locale × theme combination", () => {
     const localeArb = fc.constantFrom(...locales)
     const themeArb = fc.constantFrom<"light" | "dark">("light", "dark")
 
     fc.assert(
       fc.property(localeArb, themeArb, (locale, theme) => {
-        // Clean up previous render
         cleanup()
         document.documentElement.classList.remove("dark")
 
-        // Set localStorage so provider initialises with the desired theme
         storage.theme = theme
 
         const dictionary = getDictionary(locale)
