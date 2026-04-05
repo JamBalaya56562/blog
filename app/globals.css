@@ -224,6 +224,8 @@ body {
 .circuit-path {
   stroke-width: 1.5;
   opacity: 0.08;
+  animation: circuitDraw var(--circuit-dur) ease-in-out var(--circuit-delay)
+    infinite;
 }
 
 .circuit-node {
@@ -234,6 +236,8 @@ body {
 .circuit-node-dot {
   opacity: 0;
   transform: translate(-50%, -50%);
+  animation: circuitNodeFade var(--circuit-dur) ease-in-out var(--circuit-delay)
+    infinite;
 }
 
 @keyframes circuitNodeFade {
@@ -255,7 +259,7 @@ body {
 
 @keyframes circuitDraw {
   0% {
-    stroke-dashoffset: 700;
+    stroke-dashoffset: var(--circuit-len);
     opacity: 0;
   }
   10% {
@@ -270,7 +274,28 @@ body {
     opacity: 0.08;
   }
   100% {
-    stroke-dashoffset: 700;
+    stroke-dashoffset: var(--circuit-len);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .circuit-path,
+  .circuit-node-dot,
+  .animate-ping {
+    animation: none;
+  }
+
+  .circuit-path {
+    stroke-dashoffset: 0;
+    opacity: 0.06;
+  }
+
+  .circuit-node-dot {
+    opacity: 0.1;
+  }
+
+  .animate-ping {
     opacity: 0;
   }
 }
