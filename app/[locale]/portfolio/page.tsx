@@ -44,7 +44,7 @@ export default async function PortfolioPage({
   const dictionary = getDictionary(locale)
 
   return (
-    <div>
+    <div className="mx-auto max-w-3xl">
       <h1 className="mb-6 text-3xl font-bold">{dictionary.portfolio.title}</h1>
       <p className="mb-8 text-gray-600 dark:text-gray-400">
         {dictionary.portfolio.intro}

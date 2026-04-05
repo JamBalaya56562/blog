@@ -75,7 +75,10 @@ describe("ThemeToggle icon display", () => {
     )
 
     const button = getByRole("button")
-    expect(button.textContent).toBe("🌙")
+    expect(button.querySelector("svg")).toBeDefined()
+    expect(button.getAttribute("aria-label")).toBe(
+      dictionary.theme.switchToDark,
+    )
   })
 
   test("dark mode shows sun icon (☀️)", () => {
@@ -96,7 +99,10 @@ describe("ThemeToggle icon display", () => {
     )
 
     const button = getByRole("button")
-    expect(button.textContent).toBe("☀️")
+    expect(button.querySelector("svg")).toBeDefined()
+    expect(button.getAttribute("aria-label")).toBe(
+      dictionary.theme.switchToLight,
+    )
   })
 })
 

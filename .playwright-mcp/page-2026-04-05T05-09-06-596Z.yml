@@ -1,0 +1,83 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - navigation [ref=e3]:
+      - link "Jam's Blog" [ref=e4] [cursor=pointer]:
+        - /url: /en
+        - img "Jam's Blog" [ref=e5]
+      - generic [ref=e6]:
+        - link "Blog" [ref=e7] [cursor=pointer]:
+          - /url: /en/blog
+        - link "About Me" [ref=e8] [cursor=pointer]:
+          - /url: /en/portfolio
+        - link "日本語" [ref=e9] [cursor=pointer]:
+          - /url: /ja
+        - button "Toggle theme" [ref=e10]:
+          - img [ref=e11]
+  - main [ref=e13]:
+    - generic [ref=e14]:
+      - generic [ref=e16]:
+        - generic [ref=e17]:
+          - generic [ref=e18]: Modern Dev Experience
+          - generic [ref=e22]: Open Source First
+        - heading "Making programming more accessible." [level=1] [ref=e26]:
+          - text: Making programming
+          - text: more accessible.
+        - paragraph [ref=e27]:
+          - text: Embracing new technologies and sharing modern development experiences.
+          - text: Tips, tutorials, and real-world insights to make your coding journey smoother.
+        - link "Browse All Articles" [ref=e29] [cursor=pointer]:
+          - /url: /en/blog
+      - generic [ref=e32]:
+        - link "Tailwind CSS v4 Guide Tailwind CSS v4 Guide css tailwindcss 2025-03-01 · 1 min read" [ref=e33] [cursor=pointer]:
+          - /url: /en/blog/tailwind-css-v4-guide
+          - img "Tailwind CSS v4 Guide" [ref=e35]
+          - generic [ref=e36]:
+            - heading "Tailwind CSS v4 Guide" [level=3] [ref=e37]
+            - generic [ref=e38]:
+              - generic [ref=e39]: css
+              - generic [ref=e40]: tailwindcss
+            - generic [ref=e41]:
+              - generic [ref=e42]: 2025-03-01
+              - generic [ref=e43]: ·
+              - generic [ref=e44]: 1 min read
+        - link "Understanding TypeScript Generics Understanding TypeScript Generics typescript programming 2025-02-10 · 1 min read" [ref=e45] [cursor=pointer]:
+          - /url: /en/blog/understanding-typescript-generics
+          - img "Understanding TypeScript Generics" [ref=e47]
+          - generic [ref=e48]:
+            - heading "Understanding TypeScript Generics" [level=3] [ref=e49]
+            - generic [ref=e50]:
+              - generic [ref=e51]: typescript
+              - generic [ref=e52]: programming
+            - generic [ref=e53]:
+              - generic [ref=e54]: 2025-02-10
+              - generic [ref=e55]: ·
+              - generic [ref=e56]: 1 min read
+        - link "Getting Started with Next.js Getting Started with Next.js nextjs react typescript 2025-01-15 · 1 min read" [ref=e57] [cursor=pointer]:
+          - /url: /en/blog/getting-started-with-nextjs
+          - img "Getting Started with Next.js" [ref=e59]
+          - generic [ref=e60]:
+            - heading "Getting Started with Next.js" [level=3] [ref=e61]
+            - generic [ref=e62]:
+              - generic [ref=e63]: nextjs
+              - generic [ref=e64]: react
+              - generic [ref=e65]: typescript
+            - generic [ref=e66]:
+              - generic [ref=e67]: 2025-01-15
+              - generic [ref=e68]: ·
+              - generic [ref=e69]: 1 min read
+  - contentinfo [ref=e70]:
+    - generic [ref=e71]:
+      - generic [ref=e72]:
+        - link "Blog" [ref=e73] [cursor=pointer]:
+          - /url: /en/blog
+        - link "About Me" [ref=e74] [cursor=pointer]:
+          - /url: /en/portfolio
+        - link "Privacy Policy" [ref=e75] [cursor=pointer]:
+          - /url: /en/privacy-policy
+        - link "GitHub" [ref=e76] [cursor=pointer]:
+          - /url: https://github.com/JamBalaya56562/blog
+          - img "GitHub" [ref=e77]
+      - text: © 2026 Jam Balaya. All rights reserved.
+  - button "Open Next.js Dev Tools" [ref=e83] [cursor=pointer]:
+    - img [ref=e84]
+  - alert [ref=e87]

@@ -3,24 +3,138 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f8f9fb;
+  --foreground: #191c1e;
+  --surface: #f8f9fb;
+  --surface-container-low: #f2f4f6;
+  --surface-container: #eceef0;
+  --surface-container-lowest: #ffffff;
+  --on-surface: #191c1e;
+  --on-surface-variant: #44474b;
+  --primary: #001333;
+  --primary-container: #00275a;
+  --on-primary: #ffffff;
+  --on-primary-container: #488dff;
+  --primary-fixed: #d8e2ff;
+  --primary-fixed-dim: #adc6ff;
+  --secondary: #565f69;
+  --secondary-container: #dae3ef;
+  --on-secondary-container: #5c656f;
+  --outline: #75777b;
+  --outline-variant: #c5c6cb;
+  --error: #ba1a1a;
+  --error-container: #ffdad6;
+  --surface-tint: #005bc0;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+  --color-surface: var(--surface);
+  --color-surface-container-low: var(--surface-container-low);
+  --color-surface-container: var(--surface-container);
+  --color-surface-container-lowest: var(--surface-container-lowest);
+  --color-on-surface: var(--on-surface);
+  --color-on-surface-variant: var(--on-surface-variant);
+  --color-primary: var(--primary);
+  --color-primary-container: var(--primary-container);
+  --color-on-primary: var(--on-primary);
+  --color-on-primary-container: var(--on-primary-container);
+  --color-primary-fixed: var(--primary-fixed);
+  --color-primary-fixed-dim: var(--primary-fixed-dim);
+  --color-secondary: var(--secondary);
+  --color-secondary-container: var(--secondary-container);
+  --color-on-secondary-container: var(--on-secondary-container);
+  --color-outline: var(--outline);
+  --color-outline-variant: var(--outline-variant);
+  --color-error: var(--error);
+  --color-error-container: var(--error-container);
+  --color-surface-tint: var(--surface-tint);
+  --font-sans: var(--font-inter);
+  --font-headline: var(--font-manrope);
   --font-mono: var(--font-geist-mono);
 }
 
 .dark {
-  --background: #0a0a0a;
-  --foreground: #ededed;
+  --background: #191c1e;
+  --foreground: #e0e3e5;
+  --surface: #191c1e;
+  --surface-container-low: #1e2124;
+  --surface-container: #232629;
+  --surface-container-lowest: #121416;
+  --on-surface: #e0e3e5;
+  --on-surface-variant: #c5c6cb;
+  --primary: #adc6ff;
+  --primary-container: #00275a;
+  --on-primary: #002f6c;
+  --on-primary-container: #488dff;
+  --primary-fixed: #d8e2ff;
+  --primary-fixed-dim: #adc6ff;
+  --secondary: #bec7d3;
+  --secondary-container: #3f4851;
+  --on-secondary-container: #dae3ef;
+  --outline: #8e9093;
+  --outline-variant: #44474b;
+  --surface-tint: #adc6ff;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+}
+
+@keyframes codeFloat {
+  0% {
+    transform: translateY(110vh) rotate(0deg);
+    opacity: 0;
+  }
+  5% {
+    opacity: 1;
+  }
+  95% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-10vh) rotate(3deg);
+    opacity: 0;
+  }
+}
+
+@keyframes orbDrift1 {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(60px, -40px) scale(1.1);
+  }
+  66% {
+    transform: translate(-30px, 30px) scale(0.95);
+  }
+}
+
+@keyframes orbDrift2 {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(-50px, 40px) scale(1.05);
+  }
+  66% {
+    transform: translate(40px, -50px) scale(0.9);
+  }
+}
+
+@keyframes orbDrift3 {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(40px, 30px) scale(1.08);
+  }
+  66% {
+    transform: translate(-50px, -20px) scale(0.92);
+  }
 }

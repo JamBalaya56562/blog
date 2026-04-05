@@ -1,9 +1,12 @@
-import Link from "next/link"
 import { notFound } from "next/navigation"
+import { BentoGrid } from "@/components/home/bento-grid"
+import { CodeRain } from "@/components/home/code-rain"
+import { HeroSection } from "@/components/home/hero-section"
+import { ParticleNetwork } from "@/components/home/particle-network"
+import { RecentDispatches } from "@/components/home/recent-dispatches"
 import { createContentLoader } from "@/lib/content/loader"
 import { isValidLocale } from "@/lib/i18n/config"
 import { getDictionary } from "@/lib/i18n/get-dictionary"
-import { getBlogPostPath } from "@/lib/routes"
 
 export default async function HomePage({
   params,
@@ -18,36 +21,24 @@ export default async function HomePage({
 
   const dictionary = getDictionary(locale)
   const loader = createContentLoader()
-  const posts = (await loader.getAllPosts(locale)).slice(0, 5)
+  const posts = await loader.getAllPosts(locale)
+
+  const bentoGridPosts = posts.slice(0, 3)
+  const recentPosts = posts.slice(3, 8)
 
   return (
-    <div>
-      <p className="mb-8 text-lg text-foreground">{dictionary.home.intro}</p>
-      <h2 className="mb-4 text-2xl font-bold">{dictionary.home.latestPosts}</h2>
-      {posts.length === 0 ? (
-        <p className="text-gray-500 dark:text-gray-400">
-          {dictionary.blog.noPostsFound}
-        </p>
-      ) : (
-        <ul className="space-y-3">
-          {posts.map((post) => (
-            <li
-              key={post.slug}
-              className="flex items-baseline justify-between gap-4"
-            >
-              <Link
-                href={getBlogPostPath(locale, post.slug)}
-                className="font-medium text-foreground hover:underline"
-              >
-                {post.frontmatter.title}
-              </Link>
-              <span className="shrink-0 text-sm text-gray-500 dark:text-gray-400">
-                {post.frontmatter.date}
-              </span>
-            </li>
-          ))}
-        </ul>
-      )}
+    <div className="relative">
+      <ParticleNetwork />
+      <CodeRain />
+      <HeroSection locale={locale} dictionary={dictionary} />
+      <div className="py-20">
+        <BentoGrid locale={locale} posts={bentoGridPosts} />
+      </div>
+      <RecentDispatches
+        locale={locale}
+        dictionary={dictionary}
+        posts={recentPosts}
+      />
     </div>
   )
 }
