@@ -1,10 +1,16 @@
 import type { Metadata, Route } from "next"
+import Image from "next/image"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import { MDXRemote } from "next-mdx-remote-client/rsc"
 import { cache } from "react"
 import remarkGfm from "remark-gfm"
+import {
+  DEFAULT_THUMBNAIL,
+  estimateReadingTime,
+} from "@/components/article-card"
 import { PostNavigation } from "@/components/post-navigation"
+import { RelatedPosts } from "@/components/related-posts"
 import { TableOfContents } from "@/components/table-of-contents"
 import { findAdjacentPosts } from "@/lib/content/adjacent"
 import { createContentLoader } from "@/lib/content/loader"
@@ -98,9 +104,12 @@ export default async function BlogPostPage({
       <article>
         <header className="mb-8">
           <h1 className="text-4xl font-bold">{post.frontmatter.title}</h1>
-          <p className="mt-2 text-gray-500 dark:text-gray-400">
-            {dictionary.blog.postedOn} {post.frontmatter.date}
-          </p>
+          <div className="mt-2 flex items-center justify-between text-gray-500 dark:text-gray-400">
+            <span>
+              {dictionary.blog.postedOn} {post.frontmatter.date}
+            </span>
+            <span>{estimateReadingTime(post.content)} min read</span>
+          </div>
           <div className="mt-2 flex gap-2">
             {post.frontmatter.tags.map((tag) => (
               <Link
@@ -124,6 +133,15 @@ export default async function BlogPostPage({
             </p>
           )}
         </header>
+        <div className="mb-12 overflow-hidden rounded-xl aspect-[21/9]">
+          <Image
+            src={post.frontmatter.image ?? DEFAULT_THUMBNAIL}
+            alt={post.frontmatter.title}
+            width={1200}
+            height={514}
+            className="h-full w-full object-cover"
+          />
+        </div>
         <div className="prose dark:prose-invert max-w-none">
           <MDXRemote
             source={post.content}
@@ -132,6 +150,11 @@ export default async function BlogPostPage({
           />
         </div>
       </article>
+      <RelatedPosts
+        locale={locale}
+        posts={allPosts.filter((p) => p.slug !== slug).slice(0, 3)}
+        dictionary={dictionary}
+      />
       <PostNavigation
         locale={locale}
         adjacentPosts={adjacentPosts}

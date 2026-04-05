@@ -1,5 +1,6 @@
 import type { Route } from "next"
 import Link from "next/link"
+import { TagLink } from "@/components/home/tag-link"
 import type { Post } from "@/lib/content/types"
 import type { Locale } from "@/lib/i18n/config"
 import type { Dictionary } from "@/lib/i18n/get-dictionary"
@@ -63,7 +64,7 @@ export function RecentDispatches({
             <Link
               key={post.slug}
               href={getBlogPostPath(locale, post.slug)}
-              className="group flex flex-col justify-between rounded-xl border-l-2
+              className="card-title-hover group flex flex-col justify-between rounded-xl border-l-2
                 border-transparent bg-surface p-6 transition-all
                 hover:border-primary-fixed hover:bg-surface-container-low
                 md:flex-row md:items-center"
@@ -73,11 +74,7 @@ export function RecentDispatches({
                   {number}
                 </span>
                 <div>
-                  <h3
-                    className="font-headline text-xl font-bold text-primary transition-colors
-                      group-hover:text-on-primary-container dark:text-white
-                      dark:group-hover:text-on-primary-container"
-                  >
+                  <h3 className="card-title font-headline text-xl font-bold text-primary transition-colors dark:text-white">
                     {post.frontmatter.title}
                   </h3>
                   <div className="mt-1 flex gap-4">
@@ -85,9 +82,11 @@ export function RecentDispatches({
                       {post.frontmatter.date}
                     </span>
                     {tag && (
-                      <span className="rounded-full bg-secondary-container px-2 text-xs text-on-secondary-container">
-                        {tag}
-                      </span>
+                      <TagLink
+                        tag={tag}
+                        locale={locale}
+                        className="cursor-pointer rounded-full bg-secondary-container px-2 text-xs text-on-secondary-container transition-colors hover:bg-primary hover:text-on-primary"
+                      />
                     )}
                   </div>
                 </div>
