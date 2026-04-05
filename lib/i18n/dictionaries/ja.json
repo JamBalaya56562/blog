@@ -34,8 +34,9 @@
   "blog": {
     "title": "ブログ",
     "noPostsFound": "記事が見つかりませんでした。",
-    "filterByTag": "タグで絞り込み中:",
-    "clearFilter": "フィルターを解除",
+    "filterByTag": "タグで絞り込み:",
+    "noActiveFilter": "すべての記事",
+    "clearFilter": "フィルター解除",
     "readMore": "続きを読む",
     "translationAvailable": "この記事は以下の言語でも利用できます:",
     "postedOn": "投稿日",
@@ -43,7 +44,10 @@
     "toc": "目次",
     "previousPost": "前の記事",
     "nextPost": "次の記事",
-    "continueExploring": "他の記事を探す"
+    "continueExploring": "他の記事を探す",
+    "previousPage": "前へ",
+    "nextPage": "次へ",
+    "pagination": "ページナビゲーション"
   },
   "language": {
     "switchTo": "English",

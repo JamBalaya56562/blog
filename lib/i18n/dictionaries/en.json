@@ -35,6 +35,7 @@
     "title": "Blog",
     "noPostsFound": "No posts found.",
     "filterByTag": "Filtered by tag:",
+    "noActiveFilter": "All posts",
     "clearFilter": "Clear filter",
     "readMore": "Read more",
     "translationAvailable": "This post is also available in:",
@@ -43,7 +44,10 @@
     "toc": "Table of Contents",
     "previousPost": "Previous Post",
     "nextPost": "Next Post",
-    "continueExploring": "Continue Exploring"
+    "continueExploring": "Continue Exploring",
+    "previousPage": "Previous",
+    "nextPage": "Next",
+    "pagination": "Pagination"
   },
   "language": {
     "switchTo": "日本語",
