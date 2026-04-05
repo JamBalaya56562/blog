@@ -23,7 +23,7 @@ export function BentoGrid({ locale, posts }: Readonly<BentoGridProps>) {
         : "grid-cols-1 md:grid-cols-3"
 
   return (
-    <section className="mx-auto max-w-7xl px-4">
+    <section className="mx-auto max-w-5xl px-4">
       <div className={`grid gap-4 ${gridCols}`}>
         <ArticleCard post={first} locale={locale} isLarge />
         {rest.map((post) => (

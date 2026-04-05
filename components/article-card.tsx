@@ -39,7 +39,7 @@ export function ArticleCard({
         alt={post.frontmatter.title}
         width={800}
         height={400}
-        className={`w-full object-cover ${isLarge ? "h-40 md:h-48" : "h-40"}`}
+        className={`w-full object-cover aspect-video rounded-xl transition-opacity hover:opacity-90 ${isLarge ? "md:max-h-56" : "md:max-h-40"}`}
       />
       <div className="p-4">
         <h3
@@ -47,6 +47,11 @@ export function ArticleCard({
         >
           {post.frontmatter.title}
         </h3>
+        {post.frontmatter.description && (
+          <p className="mt-1 text-sm text-on-surface-variant line-clamp-2">
+            {post.frontmatter.description}
+          </p>
+        )}
         {post.frontmatter.tags.length > 0 && (
           <div className="mt-2 flex flex-wrap gap-1.5">
             {post.frontmatter.tags.map((tag) => (
