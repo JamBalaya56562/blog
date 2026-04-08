@@ -5,9 +5,11 @@
 .github
 .gitignore
 .jj
+.markdownlint-cli2.yaml
 .next
 .sl
 .vscode
+AGENTS.md
 biome.json
 CODE_OF_CONDUCT.md
 content
@@ -15,5 +17,6 @@ CONTRIBUTING.md
 LICENSE
 next-env.d.ts
 node_modules
+pitchfork.toml
 README.md
 SECURITY.md
