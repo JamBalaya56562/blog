@@ -46,8 +46,8 @@
     "lucide-react": "^1.7.0",
     "next": "canary",
     "next-mdx-remote-client": "^2.1.10",
-    "react": "^19.2.4",
-    "react-dom": "^19.2.4",
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5",
     "remark-gfm": "^4.0.1",
     "yaml": "^2.8.3"
   },
@@ -64,7 +64,7 @@
     "@types/react-dom": "^19.2.3",
     "babel-plugin-react-compiler": "experimental",
     "fast-check": "^4.6.0",
-    "postcss": "^8.5.8",
+    "postcss": "^8.5.9",
     "tailwindcss": "^4.2.2",
     "typescript": "^6.0.2"
   },
