@@ -1,5 +1,6 @@
 import { expect, test } from "bun:test"
-import RootPage from "@/app/page.tsx"
+
+const { default: RootPage } = await import("@/app/page.tsx")
 
 test("Root page redirects to /en", () => {
   try {
