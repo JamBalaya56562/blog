@@ -1,7 +1,9 @@
 import { expect, test } from "bun:test"
-import RootPage from "@/app/page.tsx"
 
-test("Root page redirects to /en", () => {
+test("Root page redirects to /en", async () => {
+  // Dynamic import avoids redirect/usePathname side effects during module evaluation
+  const { default: RootPage } = await import("@/app/page.tsx")
+
   try {
     RootPage()
   } catch (e: unknown) {
