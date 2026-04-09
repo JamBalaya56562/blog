@@ -7,16 +7,24 @@ export function ViewCounter({ slug }: { slug: string }) {
 
   useEffect(() => {
     const encoded = encodeURIComponent(slug)
+    const controller = new AbortController()
+    const signal = controller.signal
+    const timeout = setTimeout(() => controller.abort(), 3000)
 
-    fetch(`/api/views/${encoded}`, { method: "POST" })
-      .then(() => fetch(`/api/views/${encoded}`))
+    fetch(`/api/views/${encoded}`, { method: "POST", signal })
+      .then(() => fetch(`/api/views/${encoded}`, { signal }))
       .then((res) => res.json())
-      .then((data) => setCount(data.count))
+      .then((data) => {
+        if (!signal.aborted) setCount(data.count)
+      })
       .catch((err) => {
-        if (process.env.NODE_ENV === "development") {
+        if (process.env.NODE_ENV === "development" && !signal.aborted) {
           console.error("Failed to update view count", err)
         }
       })
+      .finally(() => clearTimeout(timeout))
+
+    return () => controller.abort()
   }, [slug])
 
   if (count === null) {
