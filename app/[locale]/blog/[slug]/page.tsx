@@ -3,7 +3,7 @@ import Image from "next/image"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import { MDXRemote } from "next-mdx-remote-client/rsc"
-import { cache } from "react"
+import { cache, ViewTransition } from "react"
 import remarkGfm from "remark-gfm"
 import {
   DEFAULT_THUMBNAIL,
@@ -108,23 +108,20 @@ export default async function BlogPostPage({
       <TableOfContents items={tocItems} title={dictionary.blog.toc} />
       <article>
         <header className="mb-8">
-          <h1
-            className="text-4xl font-bold"
-            style={{ viewTransitionName: `post-title-${slug}` }}
-          >
-            {post.frontmatter.title}
-          </h1>
-          <div
-            className="mt-2 flex items-center justify-between text-gray-500 dark:text-gray-400"
-            style={{ viewTransitionName: `post-meta-${slug}` }}
-          >
-            <span>
-              {dictionary.blog.postedOn} {post.frontmatter.date}
-            </span>
-            <ViewCounter slug={slug} count={viewCount} />
-            <span>·</span>
-            <span>{estimateReadingTime(post.content)} min read</span>
-          </div>
+          <ViewTransition name={`post-title-${slug}`} share="morph">
+            <h1 className="text-4xl font-bold">{post.frontmatter.title}</h1>
+          </ViewTransition>
+          <ViewTransition name={`post-meta-${slug}`} share="morph">
+            <div className="mt-2 flex flex-wrap items-center gap-x-3 text-gray-500 dark:text-gray-400">
+              <span className="basis-full md:basis-auto">
+                {dictionary.blog.postedOn} {post.frontmatter.date}
+              </span>
+              <span className="hidden md:inline">·</span>
+              <ViewCounter slug={slug} count={viewCount} />
+              <span>·</span>
+              <span>{estimateReadingTime(post.content)} min read</span>
+            </div>
+          </ViewTransition>
           <div className="mt-2 flex gap-2">
             {post.frontmatter.tags.map((tag) => (
               <Link
@@ -148,16 +145,17 @@ export default async function BlogPostPage({
             </p>
           )}
         </header>
-        <div className="mb-12 overflow-hidden rounded-xl aspect-[21/9]">
-          <Image
-            src={post.frontmatter.image ?? DEFAULT_THUMBNAIL}
-            alt={post.frontmatter.title}
-            width={1200}
-            height={514}
-            className="h-full w-full object-cover"
-            style={{ viewTransitionName: `post-image-${slug}` }}
-          />
-        </div>
+        <ViewTransition name={`post-image-${slug}`} share="morph">
+          <div className="mb-12 overflow-hidden rounded-xl aspect-[21/9]">
+            <Image
+              src={post.frontmatter.image ?? DEFAULT_THUMBNAIL}
+              alt={post.frontmatter.title}
+              width={1200}
+              height={514}
+              className="h-full w-full object-cover"
+            />
+          </div>
+        </ViewTransition>
         <div className="prose dark:prose-invert max-w-none">
           <MDXRemote
             source={post.content}

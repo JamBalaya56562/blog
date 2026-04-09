@@ -101,9 +101,9 @@ describe("ArticleCard rendering", () => {
     expect(container.textContent).toContain("views")
   })
 
-  test("viewCount is not displayed when omitted", () => {
+  test("viewCount defaults to 0 views when omitted", () => {
     const { container } = render(<ArticleCard post={basePost} locale="en" />)
-    expect(container.textContent).not.toContain("views")
+    expect(container.textContent).toContain("0 views")
   })
 
   test("viewCount of zero is displayed", () => {

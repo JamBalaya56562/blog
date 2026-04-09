@@ -5,6 +5,7 @@ import { HeroSection } from "@/components/home/hero-section"
 import { ParticleNetwork } from "@/components/home/particle-network"
 import { RecentDispatches } from "@/components/home/recent-dispatches"
 import { createContentLoader } from "@/lib/content/loader"
+import { getViewCounts } from "@/lib/db/queries"
 import { isValidLocale } from "@/lib/i18n/config"
 import { getDictionary } from "@/lib/i18n/get-dictionary"
 
@@ -25,6 +26,7 @@ export default async function HomePage({
 
   const bentoGridPosts = posts.slice(0, 3)
   const recentPosts = posts.slice(3, 8)
+  const viewCounts = await getViewCounts(bentoGridPosts.map((p) => p.slug))
 
   return (
     <div className="relative">
@@ -32,7 +34,11 @@ export default async function HomePage({
       <CodeRain />
       <HeroSection locale={locale} dictionary={dictionary} />
       <div className="py-20">
-        <BentoGrid locale={locale} posts={bentoGridPosts} />
+        <BentoGrid
+          locale={locale}
+          posts={bentoGridPosts}
+          viewCounts={viewCounts}
+        />
       </div>
       <RecentDispatches
         locale={locale}
