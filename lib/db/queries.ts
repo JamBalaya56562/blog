@@ -8,13 +8,17 @@ export async function getViewCount(slug: string): Promise<number> {
     return 0
   }
 
-  const result = await db
-    .select({ count: pageViews.count })
-    .from(pageViews)
-    .where(eq(pageViews.slug, slug))
-    .limit(1)
+  try {
+    const result = await db
+      .select({ count: pageViews.count })
+      .from(pageViews)
+      .where(eq(pageViews.slug, slug))
+      .limit(1)
 
-  return result[0]?.count ?? 0
+    return result[0]?.count ?? 0
+  } catch {
+    return 0
+  }
 }
 
 export async function incrementViewCount(slug: string): Promise<void> {
@@ -23,16 +27,20 @@ export async function incrementViewCount(slug: string): Promise<void> {
     return
   }
 
-  await db
-    .insert(pageViews)
-    .values({ slug, count: 1 })
-    .onConflictDoUpdate({
-      target: pageViews.slug,
-      set: {
-        count: sql`${pageViews.count} + 1`,
-        updatedAt: sql`now()`,
-      },
-    })
+  try {
+    await db
+      .insert(pageViews)
+      .values({ slug, count: 1 })
+      .onConflictDoUpdate({
+        target: pageViews.slug,
+        set: {
+          count: sql`${pageViews.count} + 1`,
+          updatedAt: sql`now()`,
+        },
+      })
+  } catch (e) {
+    console.error("[incrementViewCount] failed for slug:", slug, e)
+  }
 }
 
 export async function getViewCounts(
@@ -43,12 +51,16 @@ export async function getViewCounts(
     return new Map()
   }
 
-  const results = await db
-    .select({ slug: pageViews.slug, count: pageViews.count })
-    .from(pageViews)
-    .where(inArray(pageViews.slug, slugs))
+  try {
+    const results = await db
+      .select({ slug: pageViews.slug, count: pageViews.count })
+      .from(pageViews)
+      .where(inArray(pageViews.slug, slugs))
 
-  return new Map(results.map((r) => [r.slug, r.count]))
+    return new Map(results.map((r) => [r.slug, r.count]))
+  } catch {
+    return new Map()
+  }
 }
 
 export async function getAllViewCounts() {
@@ -57,5 +69,9 @@ export async function getAllViewCounts() {
     return []
   }
 
-  return db.select().from(pageViews).orderBy(desc(pageViews.count))
+  try {
+    return await db.select().from(pageViews).orderBy(desc(pageViews.count))
+  } catch {
+    return []
+  }
 }
