@@ -1,5 +1,6 @@
 import Image from "next/image"
 import Link from "next/link"
+import { ViewTransition } from "react"
 import { TagLink } from "@/components/home/tag-link"
 import type { Post } from "@/lib/content/types"
 import type { Locale } from "@/lib/i18n/config"
@@ -36,21 +37,23 @@ export function ArticleCard({
       className={`card-title-hover group relative block overflow-hidden rounded-2xl bg-surface-container-lowest transition-colors ${isLarge ? "md:col-span-2" : ""}`}
     >
       <div className="absolute inset-y-0 left-0 w-1 rounded-l-2xl bg-primary-fixed opacity-0 transition-opacity group-hover:opacity-100" />
-      <Image
-        src={post.frontmatter.image ?? DEFAULT_THUMBNAIL}
-        alt={post.frontmatter.title}
-        width={800}
-        height={400}
-        className={`w-full object-cover aspect-video rounded-xl transition-opacity hover:opacity-90 ${isLarge ? "md:max-h-56" : "md:max-h-40"}`}
-        style={{ viewTransitionName: `post-image-${post.slug}` }}
-      />
+      <ViewTransition name={`post-image-${post.slug}`} share="morph">
+        <Image
+          src={post.frontmatter.image ?? DEFAULT_THUMBNAIL}
+          alt={post.frontmatter.title}
+          width={800}
+          height={400}
+          className={`w-full object-cover aspect-video rounded-xl transition-opacity hover:opacity-90 ${isLarge ? "md:max-h-56" : "md:max-h-40"}`}
+        />
+      </ViewTransition>
       <div className="p-4">
-        <h3
-          className={`card-title font-headline font-bold leading-tight text-on-surface transition-colors text-lg ${isLarge ? "md:text-2xl" : ""}`}
-          style={{ viewTransitionName: `post-title-${post.slug}` }}
-        >
-          {post.frontmatter.title}
-        </h3>
+        <ViewTransition name={`post-title-${post.slug}`} share="morph">
+          <h3
+            className={`card-title font-headline font-bold leading-tight text-on-surface transition-colors text-lg ${isLarge ? "md:text-2xl" : ""}`}
+          >
+            {post.frontmatter.title}
+          </h3>
+        </ViewTransition>
         {post.frontmatter.description && (
           <p className="mt-1 text-sm text-on-surface-variant line-clamp-2">
             {post.frontmatter.description}
@@ -68,20 +71,17 @@ export function ArticleCard({
             ))}
           </div>
         )}
-        <div
-          className="mt-2 flex items-center gap-3 text-xs text-on-surface-variant"
-          style={{ viewTransitionName: `post-meta-${post.slug}` }}
-        >
-          <span>{post.frontmatter.date}</span>
-          <span>·</span>
-          <span>{readMin} min read</span>
-          {viewCount != null && (
-            <>
-              <span>·</span>
-              <span>{viewCount.toLocaleString()} views</span>
-            </>
-          )}
-        </div>
+        <ViewTransition name={`post-meta-${post.slug}`} share="morph">
+          <div className="mt-2 flex flex-wrap items-center gap-x-3 text-xs text-on-surface-variant">
+            <span className="basis-full md:basis-auto">
+              {post.frontmatter.date}
+            </span>
+            <span className="hidden md:inline">·</span>
+            <span>{readMin} min read</span>
+            <span>·</span>
+            <span>{(viewCount ?? 0).toLocaleString()} views</span>
+          </div>
+        </ViewTransition>
       </div>
     </Link>
   )

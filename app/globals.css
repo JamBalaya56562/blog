@@ -324,17 +324,83 @@ body {
 }
 
 /* ===== View Transitions ===== */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes fade-out {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes slide-from-right {
+  from {
+    transform: translateX(30px);
+    opacity: 0;
+  }
+}
+
+@keyframes slide-to-left {
+  to {
+    transform: translateX(-30px);
+    opacity: 0;
+  }
+}
+
+@keyframes slide-from-left {
+  from {
+    transform: translateX(-30px);
+    opacity: 0;
+  }
+}
+
+@keyframes slide-to-right {
+  to {
+    transform: translateX(30px);
+    opacity: 0;
+  }
+}
+
+/* Forward navigation */
+::view-transition-old(.nav-forward) {
+  animation:
+    90ms cubic-bezier(0.4, 0, 1, 1) both fade-out,
+    300ms cubic-bezier(0.4, 0, 0.2, 1) both slide-to-left;
+}
+
+::view-transition-new(.nav-forward) {
+  animation:
+    210ms cubic-bezier(0, 0, 0.2, 1) 90ms both fade-in,
+    300ms cubic-bezier(0.4, 0, 0.2, 1) both slide-from-right;
+}
+
+/* Back navigation */
+::view-transition-old(.nav-back) {
+  animation:
+    90ms cubic-bezier(0.4, 0, 1, 1) both fade-out,
+    300ms cubic-bezier(0.4, 0, 0.2, 1) both slide-to-right;
+}
+
+::view-transition-new(.nav-back) {
+  animation:
+    210ms cubic-bezier(0, 0, 0.2, 1) 90ms both fade-in,
+    300ms cubic-bezier(0.4, 0, 0.2, 1) both slide-from-left;
+}
+
+/* Default cross-fade */
 ::view-transition-old(root) {
-  animation-duration: 200ms;
-  animation-timing-function: ease-in;
+  animation: 90ms cubic-bezier(0.4, 0, 1, 1) both fade-out;
 }
 
 ::view-transition-new(root) {
-  animation-duration: 300ms;
-  animation-timing-function: ease-out;
+  animation: 210ms cubic-bezier(0, 0, 0.2, 1) 90ms both fade-in;
 }
 
+/* Shared element morph timing */
 ::view-transition-group(*) {
-  animation-duration: 350ms;
+  animation-duration: 300ms;
   animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 }

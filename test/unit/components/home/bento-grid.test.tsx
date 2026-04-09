@@ -123,6 +123,45 @@ describe("BentoGrid", () => {
     expect(grid?.className).toContain("md:grid-cols-2")
   })
 
+  test("passes viewCounts to ArticleCard by slug", () => {
+    const posts = [
+      createMockPost({ slug: "post-a" }),
+      createMockPost({ slug: "post-b" }),
+    ]
+    const viewCounts = new Map([
+      ["post-a", 123],
+      ["post-b", 456],
+    ])
+    const { container } = render(
+      <BentoGrid locale="en" posts={posts} viewCounts={viewCounts} />,
+    )
+    expect(container.textContent).toContain("123 views")
+    expect(container.textContent).toContain("456 views")
+  })
+
+  test("falls back to 0 views when viewCounts is omitted", () => {
+    const posts = [
+      createMockPost({ slug: "post-a" }),
+      createMockPost({ slug: "post-b" }),
+    ]
+    const { container } = render(<BentoGrid locale="en" posts={posts} />)
+    const matches = container.textContent?.match(/0 views/g)
+    expect(matches).toHaveLength(2)
+  })
+
+  test("uses viewCounts when present and 0 views as fallback when missing", () => {
+    const posts = [
+      createMockPost({ slug: "post-a" }),
+      createMockPost({ slug: "post-b" }),
+    ]
+    const viewCounts = new Map([["post-a", 99]])
+    const { container } = render(
+      <BentoGrid locale="en" posts={posts} viewCounts={viewCounts} />,
+    )
+    expect(container.textContent).toContain("99 views")
+    expect(container.textContent).toContain("0 views")
+  })
+
   test("each card links to correct blog post path", () => {
     const posts = [
       createMockPost({
