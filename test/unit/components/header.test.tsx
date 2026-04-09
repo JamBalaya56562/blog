@@ -7,8 +7,11 @@ import { getDictionary } from "@/lib/i18n/get-dictionary"
 import { ThemeProvider } from "@/lib/theme/theme-provider"
 
 // Mock next/navigation before importing Header (which imports LocaleSwitchLink)
+import { nextNavigationMock } from "../setup-next-navigation-mock"
+
 const pathnameMock = { value: "/en" }
 mock.module("next/navigation", () => ({
+  ...nextNavigationMock,
   usePathname: () => pathnameMock.value,
 }))
 

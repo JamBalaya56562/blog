@@ -55,6 +55,7 @@ test.describe("Blog list page", () => {
 test.describe("Blog post page", () => {
   test("displays post content and metadata", async ({ page }) => {
     await page.goto("/en/blog/getting-started-with-nextjs")
+    await page.waitForLoadState("networkidle")
     await expect(
       page.getByRole("heading", { name: "Getting Started with Next.js" }),
     ).toBeVisible()
@@ -67,6 +68,7 @@ test.describe("Blog post page", () => {
     page,
   }) => {
     await page.goto("/en/blog/getting-started-with-nextjs")
+    await page.waitForLoadState("networkidle")
     await expect(
       page.getByText("This post is also available in:"),
     ).toBeVisible()
@@ -81,6 +83,7 @@ test.describe("Blog post page", () => {
     page,
   }) => {
     await page.goto("/en/blog/tailwind-css-v4-guide")
+    await page.waitForLoadState("networkidle")
     await expect(
       page.getByText("This post is also available in:"),
     ).not.toBeVisible()
@@ -88,6 +91,7 @@ test.describe("Blog post page", () => {
 
   test("navigating to translation works", async ({ page }) => {
     await page.goto("/en/blog/getting-started-with-nextjs")
+    await page.waitForLoadState("networkidle")
     await page
       .getByRole("article")
       .locator("a[href='/ja/blog/getting-started-with-nextjs']")

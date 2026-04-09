@@ -15,6 +15,7 @@ import { TableOfContents } from "@/components/table-of-contents"
 import { ViewCounter } from "@/components/view-counter"
 import { findAdjacentPosts } from "@/lib/content/adjacent"
 import { createContentLoader } from "@/lib/content/loader"
+import { getViewCount } from "@/lib/db/queries"
 import type { Locale } from "@/lib/i18n/config"
 import { isValidLocale, locales } from "@/lib/i18n/config"
 import { getDictionary } from "@/lib/i18n/get-dictionary"
@@ -94,9 +95,12 @@ export default async function BlogPostPage({
   }
 
   const dictionary = getDictionary(locale)
-  const translationLocale = await getTranslationPair(locale, slug)
-  const tocItems = extractToc(post.content)
-  const allPosts = await createContentLoader().getAllPosts(locale)
+  const [translationLocale, tocItems, allPosts, viewCount] = await Promise.all([
+    getTranslationPair(locale, slug),
+    Promise.resolve(extractToc(post.content)),
+    createContentLoader().getAllPosts(locale),
+    getViewCount(slug),
+  ])
   const adjacentPosts = findAdjacentPosts(allPosts, slug)
 
   return (
@@ -109,7 +113,7 @@ export default async function BlogPostPage({
             <span>
               {dictionary.blog.postedOn} {post.frontmatter.date}
             </span>
-            <ViewCounter slug={slug} />
+            <ViewCounter slug={slug} count={viewCount} />
             <span>·</span>
             <span>{estimateReadingTime(post.content)} min read</span>
           </div>

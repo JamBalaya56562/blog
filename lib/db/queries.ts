@@ -1,6 +1,39 @@
-import { desc, inArray } from "drizzle-orm"
+import { desc, eq, inArray, sql } from "drizzle-orm"
 import { getDb } from "."
 import { pageViews } from "./schema"
+
+export async function getViewCount(slug: string): Promise<number> {
+  const db = getDb()
+  if (!db) {
+    return 0
+  }
+
+  const result = await db
+    .select({ count: pageViews.count })
+    .from(pageViews)
+    .where(eq(pageViews.slug, slug))
+    .limit(1)
+
+  return result[0]?.count ?? 0
+}
+
+export async function incrementViewCount(slug: string): Promise<void> {
+  const db = getDb()
+  if (!db) {
+    return
+  }
+
+  await db
+    .insert(pageViews)
+    .values({ slug, count: 1 })
+    .onConflictDoUpdate({
+      target: pageViews.slug,
+      set: {
+        count: sql`${pageViews.count} + 1`,
+        updatedAt: sql`now()`,
+      },
+    })
+}
 
 export async function getViewCounts(
   slugs: string[],

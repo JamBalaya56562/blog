@@ -24,7 +24,10 @@ mock.module("next/image", () => ({
   ),
 }))
 
+import { nextNavigationMock } from "../setup-next-navigation-mock"
+
 mock.module("next/navigation", () => ({
+  ...nextNavigationMock,
   useRouter: () => ({ push: () => {} }),
   usePathname: () => "/en",
 }))
