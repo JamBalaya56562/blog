@@ -12,6 +12,7 @@ import {
 import { PostNavigation } from "@/components/post-navigation"
 import { getRelatedPosts, RelatedPosts } from "@/components/related-posts"
 import { TableOfContents } from "@/components/table-of-contents"
+import { ViewCounter } from "@/components/view-counter"
 import { findAdjacentPosts } from "@/lib/content/adjacent"
 import { createContentLoader } from "@/lib/content/loader"
 import type { Locale } from "@/lib/i18n/config"
@@ -108,6 +109,8 @@ export default async function BlogPostPage({
             <span>
               {dictionary.blog.postedOn} {post.frontmatter.date}
             </span>
+            <ViewCounter slug={slug} />
+            <span>·</span>
             <span>{estimateReadingTime(post.content)} min read</span>
           </div>
           <div className="mt-2 flex gap-2">

@@ -6,6 +6,7 @@ import { ArticleCard } from "@/components/article-card"
 import { Pagination } from "@/components/pagination"
 import { createContentLoader } from "@/lib/content/loader"
 import { filterPostsByTag } from "@/lib/content/sort-filter"
+import { getViewCounts } from "@/lib/db/queries"
 import type { Locale } from "@/lib/i18n/config"
 import { isValidLocale } from "@/lib/i18n/config"
 import { getDictionary } from "@/lib/i18n/get-dictionary"
@@ -33,6 +34,8 @@ async function BlogListContent({
     page,
     POSTS_PER_PAGE,
   )
+
+  const viewCounts = await getViewCounts(items.map((p) => p.slug))
 
   const paginationSearchParams: Record<string, string> = {}
   if (tag) {
@@ -73,7 +76,12 @@ async function BlogListContent({
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {items.map((post) => (
-              <ArticleCard key={post.slug} post={post} locale={locale} />
+              <ArticleCard
+                key={post.slug}
+                post={post}
+                locale={locale}
+                viewCount={viewCounts.get(post.slug)}
+              />
             ))}
           </div>
           <Pagination
