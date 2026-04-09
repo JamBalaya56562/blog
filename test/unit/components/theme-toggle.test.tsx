@@ -7,7 +7,10 @@ import { getDictionary } from "@/lib/i18n/get-dictionary"
 import { ThemeProvider } from "@/lib/theme/theme-provider"
 
 // Mock next/navigation before importing ThemeToggle
+import { nextNavigationMock } from "../setup-next-navigation-mock"
+
 mock.module("next/navigation", () => ({
+  ...nextNavigationMock,
   usePathname: () => "/en",
 }))
 

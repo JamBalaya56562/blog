@@ -13,7 +13,10 @@ mock.module("next/image", () => ({
 }))
 
 // Mock next/navigation
+import { nextNavigationMock } from "./setup-next-navigation-mock"
+
 mock.module("next/navigation", () => ({
+  ...nextNavigationMock,
   notFound: () => {
     throw new Error("NEXT_NOT_FOUND")
   },
