@@ -8,6 +8,7 @@ const nextConfig: NextConfig = {
     viewTransition: true,
   },
   cacheComponents: true,
+  images: { unoptimized: true },
   output: "standalone",
   pageExtensions: ["js", "jsx", "md", "mdx", "ts", "tsx"],
   reactCompiler: true,
