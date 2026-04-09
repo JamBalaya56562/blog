@@ -22,7 +22,7 @@ COPY --from=public.ecr.aws/awsguru/aws-lambda-adapter:1.0.0 /lambda-adapter /opt
 
 COPY --from=builder /usr/src/app/public ./public
 COPY --from=builder /usr/src/app/.next/standalone ./
-COPY --from=builder /usr/src/app/.next/static ./.next/static
+COPY --from=builder --chown=65534:65534 /usr/src/app/.next/static ./.next/static
 COPY --from=builder /usr/src/app/start.js ./start.js
 
 EXPOSE 3000
