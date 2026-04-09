@@ -6,6 +6,9 @@ const nextConfig: NextConfig = {
     inlineCss: true,
     isrFlushToDisk: false,
     viewTransition: true,
+    serverActions: {
+      allowedOrigins: ["kokohore56562wanwan.site"],
+    },
   },
   cacheComponents: true,
   images: { unoptimized: true },
