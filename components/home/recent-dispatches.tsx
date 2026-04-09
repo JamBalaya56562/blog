@@ -74,7 +74,10 @@ export function RecentDispatches({
                   {number}
                 </span>
                 <div>
-                  <h3 className="card-title font-headline text-xl font-bold text-primary transition-colors dark:text-white">
+                  <h3
+                    className="card-title font-headline text-xl font-bold text-primary transition-colors dark:text-white"
+                    style={{ viewTransitionName: `post-title-${post.slug}` }}
+                  >
                     {post.frontmatter.title}
                   </h3>
                   <div className="mt-1 flex gap-4">

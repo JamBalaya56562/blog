@@ -129,10 +129,10 @@ jobs:
           push: ${{ fromJSON(env.IS_PUSH) }}
           sbom: ${{ fromJSON(env.IS_PUSH) }}
           tags: ${{ steps.meta.outputs.tags }}
-        env:
-          CONTENT_SOURCE: github
-          GITHUB_OWNER: ${{ env.GITHUB_OWNER }}
-          GITHUB_REPO: ${{ github.event.repository.name }}
+          build-args: |
+            CONTENT_SOURCE=github
+            GITHUB_REPO=${{ github.event.repository.name }}
+            DATABASE_URL=${{ secrets.DATABASE_URL }}
 
       - name: 🪪 Attest
         if: fromJSON(env.IS_PUSH)

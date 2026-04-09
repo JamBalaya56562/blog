@@ -42,10 +42,12 @@ export function ArticleCard({
         width={800}
         height={400}
         className={`w-full object-cover aspect-video rounded-xl transition-opacity hover:opacity-90 ${isLarge ? "md:max-h-56" : "md:max-h-40"}`}
+        style={{ viewTransitionName: `post-image-${post.slug}` }}
       />
       <div className="p-4">
         <h3
           className={`card-title font-headline font-bold leading-tight text-on-surface transition-colors text-lg ${isLarge ? "md:text-2xl" : ""}`}
+          style={{ viewTransitionName: `post-title-${post.slug}` }}
         >
           {post.frontmatter.title}
         </h3>
@@ -66,7 +68,10 @@ export function ArticleCard({
             ))}
           </div>
         )}
-        <div className="mt-2 flex items-center gap-3 text-xs text-on-surface-variant">
+        <div
+          className="mt-2 flex items-center gap-3 text-xs text-on-surface-variant"
+          style={{ viewTransitionName: `post-meta-${post.slug}` }}
+        >
           <span>{post.frontmatter.date}</span>
           <span>·</span>
           <span>{readMin} min read</span>
