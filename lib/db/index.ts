@@ -10,6 +10,7 @@ export function getDb(): PostgresJsDatabase<typeof schema> | null {
 
   const url = process.env.DATABASE_URL
   if (!url) {
+    console.warn("[getDb] DATABASE_URL is not set, returning null")
     return null
   }
 
