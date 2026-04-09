@@ -4,14 +4,9 @@ const { mkdirSync, symlinkSync } = require("node:fs")
 // Lambda containers have a read-only filesystem except for /tmp.
 // Next.js image optimization writes to .next/cache/images/, so without
 // this symlink, optimized images fail to load on the first request.
-mkdirSync("/tmp/cache", { recursive: true })
 try {
+  mkdirSync("/tmp/cache", { recursive: true })
   symlinkSync("/tmp/cache", ".next/cache")
-} catch (e) {
-  // Symlink may already exist on warm Lambda container reuse
-  if (e.code !== "EEXIST") {
-    throw e
-  }
+} catch {
+  // Ignore EEXIST (warm container reuse) and EACCES (read-only .next/)
 }
-
-require("./server.js")
