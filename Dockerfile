@@ -23,6 +23,7 @@ COPY --from=public.ecr.aws/awsguru/aws-lambda-adapter:1.0.0 /lambda-adapter /opt
 COPY --from=builder /usr/src/app/public ./public
 COPY --from=builder /usr/src/app/.next/standalone ./
 COPY --from=builder /usr/src/app/.next/static ./.next/static
+COPY --from=builder /usr/src/app/start.js ./start.js
 
 EXPOSE 3000
 ARG CONTENT_SOURCE=github
@@ -31,4 +32,4 @@ ARG GITHUB_REPO=blog
 ARG GITHUB_BRANCH=main
 ARG GITHUB_CONTENT_PATH=content
 ENV AWS_LWA_ENABLE_COMPRESSION=true AWS_LWA_INVOKE_MODE=response_stream HOSTNAME=0.0.0.0 PORT=3000 CONTENT_SOURCE=${CONTENT_SOURCE} GITHUB_OWNER=${GITHUB_OWNER} GITHUB_REPO=${GITHUB_REPO} GITHUB_BRANCH=${GITHUB_BRANCH} GITHUB_CONTENT_PATH=${GITHUB_CONTENT_PATH}
-ENTRYPOINT ["/nodejs/bin/node", "server.js"]
+ENTRYPOINT ["/nodejs/bin/node", "start.js"]
