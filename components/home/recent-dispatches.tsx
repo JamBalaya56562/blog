@@ -1,5 +1,6 @@
 import type { Route } from "next"
 import Link from "next/link"
+import { ViewTransition } from "react"
 import { TagLink } from "@/components/home/tag-link"
 import type { Post } from "@/lib/content/types"
 import type { Locale } from "@/lib/i18n/config"
@@ -74,12 +75,14 @@ export function RecentDispatches({
                   {number}
                 </span>
                 <div>
-                  <h3
-                    className="card-title font-headline text-xl font-bold text-primary transition-colors dark:text-white"
-                    style={{ viewTransitionName: `post-title-${post.slug}` }}
+                  <ViewTransition
+                    name={`post-title-${post.slug}`}
+                    share="morph"
                   >
-                    {post.frontmatter.title}
-                  </h3>
+                    <h3 className="card-title font-headline text-xl font-bold text-primary transition-colors dark:text-white">
+                      {post.frontmatter.title}
+                    </h3>
+                  </ViewTransition>
                   <div className="mt-1 flex gap-4">
                     <span className="text-xs font-medium text-secondary">
                       {post.frontmatter.date}

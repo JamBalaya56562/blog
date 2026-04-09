@@ -5,9 +5,14 @@ import type { Locale } from "@/lib/i18n/config"
 interface BentoGridProps {
   readonly locale: Locale
   readonly posts: Post[]
+  readonly viewCounts?: Map<string, number>
 }
 
-export function BentoGrid({ locale, posts }: Readonly<BentoGridProps>) {
+export function BentoGrid({
+  locale,
+  posts,
+  viewCounts,
+}: Readonly<BentoGridProps>) {
   if (posts.length === 0) {
     return null
   }
@@ -25,13 +30,19 @@ export function BentoGrid({ locale, posts }: Readonly<BentoGridProps>) {
   return (
     <section className="mx-auto max-w-5xl px-4">
       <div className={`grid gap-4 ${gridCols}`}>
-        <ArticleCard post={first} locale={locale} isLarge />
+        <ArticleCard
+          post={first}
+          locale={locale}
+          isLarge
+          viewCount={viewCounts?.get(first.slug)}
+        />
         {rest.map((post) => (
           <ArticleCard
             key={post.slug}
             post={post}
             locale={locale}
             isLarge={false}
+            viewCount={viewCounts?.get(post.slug)}
           />
         ))}
       </div>
