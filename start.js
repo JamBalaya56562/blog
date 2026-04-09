@@ -8,10 +8,10 @@ mkdirSync("/tmp/cache", { recursive: true })
 try {
   symlinkSync("/tmp/cache", ".next/cache")
 } catch (e) {
-  // Symlink may already exist on warm Lambda container reuse
-  if (e.code !== "EEXIST") {
+  if (e.code === "EEXIST" || e.code === "EACCES") {
+    // EEXIST: warm Lambda container reuse (symlink already exists)
+    // EACCES: .next/ directory is read-only
+  } else {
     throw e
   }
 }
-
-require("./server.js")
