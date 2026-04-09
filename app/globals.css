@@ -298,6 +298,12 @@ body {
   .animate-ping {
     opacity: 0;
   }
+
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation-duration: 0.01ms;
+  }
 }
 
 @keyframes circuitPulse {
@@ -315,4 +321,20 @@ body {
     opacity: 0.5;
     r: 7;
   }
+}
+
+/* ===== View Transitions ===== */
+::view-transition-old(root) {
+  animation-duration: 200ms;
+  animation-timing-function: ease-in;
+}
+
+::view-transition-new(root) {
+  animation-duration: 300ms;
+  animation-timing-function: ease-out;
+}
+
+::view-transition-group(*) {
+  animation-duration: 350ms;
+  animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 }

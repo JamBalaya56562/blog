@@ -108,8 +108,16 @@ export default async function BlogPostPage({
       <TableOfContents items={tocItems} title={dictionary.blog.toc} />
       <article>
         <header className="mb-8">
-          <h1 className="text-4xl font-bold">{post.frontmatter.title}</h1>
-          <div className="mt-2 flex items-center justify-between text-gray-500 dark:text-gray-400">
+          <h1
+            className="text-4xl font-bold"
+            style={{ viewTransitionName: `post-title-${slug}` }}
+          >
+            {post.frontmatter.title}
+          </h1>
+          <div
+            className="mt-2 flex items-center justify-between text-gray-500 dark:text-gray-400"
+            style={{ viewTransitionName: `post-meta-${slug}` }}
+          >
             <span>
               {dictionary.blog.postedOn} {post.frontmatter.date}
             </span>
@@ -147,6 +155,7 @@ export default async function BlogPostPage({
             width={1200}
             height={514}
             className="h-full w-full object-cover"
+            style={{ viewTransitionName: `post-image-${slug}` }}
           />
         </div>
         <div className="prose dark:prose-invert max-w-none">
