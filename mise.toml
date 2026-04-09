@@ -14,6 +14,35 @@ run = "markdownlint-cli2 '**/*.md'"
 description = "Update bun dependencies and reinstall with isolated linker"
 run = ["bun update", "bun i --linker=isolated", "mise prep"]
 
+[tasks."db:env"]
+description = "Generate .env file with default development values"
+run = "bun run scripts/setup-env.ts"
+
+[tasks."db:start"]
+description = "Start PostgreSQL container for local development"
+run = "bash scripts/db-start.sh"
+
+[tasks."db:health"]
+description = "Wait for PostgreSQL to be healthy"
+run = "bash scripts/db-health.sh"
+
+[tasks."db:stop"]
+description = "Stop PostgreSQL container"
+run = "docker stop blog-postgres"
+
+[tasks."db:push"]
+description = "Push Drizzle schema to database"
+run = "bun drizzle-kit push"
+
+[tasks."db:studio"]
+description = "Open Drizzle Studio"
+run = "bun drizzle-kit studio"
+
+[tasks."db:setup"]
+description = "Full local DB setup: generate .env, start PostgreSQL, health check, push schema"
+depends = ["db:env", "db:start"]
+run = ["mise run db:health", "mise run db:push"]
+
 [hooks]
 enter = ["mise i -q", "mise prep -q"]
 

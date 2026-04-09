@@ -92,4 +92,25 @@ describe("ArticleCard rendering", () => {
     )
     expect(descParagraph).toBeUndefined()
   })
+
+  test("viewCount is displayed when provided", () => {
+    const { container } = render(
+      <ArticleCard post={basePost} locale="en" viewCount={1234} />,
+    )
+    expect(container.textContent).toContain("1,234")
+    expect(container.textContent).toContain("views")
+  })
+
+  test("viewCount is not displayed when omitted", () => {
+    const { container } = render(<ArticleCard post={basePost} locale="en" />)
+    expect(container.textContent).not.toContain("views")
+  })
+
+  test("viewCount of zero is displayed", () => {
+    const { container } = render(
+      <ArticleCard post={basePost} locale="en" viewCount={0} />,
+    )
+    expect(container.textContent).toContain("0")
+    expect(container.textContent).toContain("views")
+  })
 })
