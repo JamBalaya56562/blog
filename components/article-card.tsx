@@ -19,12 +19,14 @@ interface ArticleCardProps {
   readonly post: Post
   readonly locale: Locale
   readonly isLarge?: boolean
+  readonly viewCount?: number
 }
 
 export function ArticleCard({
   post,
   locale,
   isLarge = false,
+  viewCount,
 }: Readonly<ArticleCardProps>) {
   const readMin = estimateReadingTime(post.content)
 
@@ -68,6 +70,12 @@ export function ArticleCard({
           <span>{post.frontmatter.date}</span>
           <span>·</span>
           <span>{readMin} min read</span>
+          {viewCount != null && (
+            <>
+              <span>·</span>
+              <span>{viewCount.toLocaleString()} views</span>
+            </>
+          )}
         </div>
       </div>
     </Link>

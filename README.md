@@ -33,37 +33,68 @@ git clone https://github.com/JamBalaya56562/blog.git
 cd blog && bun i
 ```
 
-### 3. Develop the app
+### 3. Set up the local database
+
+This project uses PostgreSQL for page view tracking. [Docker](https://www.docker.com/) is required.
+
+```bash
+# Full setup: generate .env, start PostgreSQL, wait for health check, push schema
+mise run db:setup
+```
+
+Or run each step individually:
+
+```bash
+# Generate .env with default values
+mise run db:env
+
+# Start PostgreSQL container (postgres:18-alpine)
+mise run db:start
+
+# Wait for PostgreSQL to be healthy
+mise run db:health
+
+# Push Drizzle schema to database
+mise run db:push
+
+# Open Drizzle Studio (DB GUI)
+mise run db:studio
+
+# Stop PostgreSQL container
+mise run db:stop
+```
+
+### 4. Develop the app
 
 ```bash
 bun dev
 ```
 
-### 4. Test the app
+### 5. Test the app
 
 ```bash
 bun test:unit
 ```
 
-### 5. E2E Test
+### 6. E2E Test
 
 ```bash
 bun test:e2e
 ```
 
-### 6. Format and Lint the files
+### 7. Format and Lint the files
 
 ```bash
 bun lint:fix
 ```
 
-### 7. Build the app
+### 8. Build the app
 
 ```bash
 bun run build
 ```
 
-### 8. Start the app
+### 9. Start the app
 
 ```bash
 bun start
@@ -73,6 +104,7 @@ bun start
 
 | Variable | Description | Default |
 |----------|-------------|---------|
+| `DATABASE_URL` | PostgreSQL connection string | `postgresql://blog:blog_dev_password@localhost:5433/blog` |
 | `CONTENT_SOURCE` | Content source (`"local"` or `"github"`) | `"local"` |
 | `GITHUB_OWNER` | GitHub repository owner | - |
 | `GITHUB_REPO` | GitHub repository name | - |
@@ -148,11 +180,13 @@ This software uses the following open source packages:
 - [AWS Lambda Web Adapter](https://github.com/awslabs/aws-lambda-web-adapter)
 - [Biome](https://biomejs.dev/)
 - [Bun](https://bun.sh/)
+- [Drizzle ORM](https://orm.drizzle.team/)
 - [HAPPY DOM](https://github.com/capricorn86/happy-dom)
 - [Mise](https://mise.jdx.dev/)
 - [Next.js](https://nextjs.org/)
 - [Node.js](https://nodejs.org/)
 - [Playwright](https://playwright.dev/)
+- [PostgreSQL](https://www.postgresql.org/)
 - [React](https://react.dev/)
 - [StackBlitz Codeflow](https://stackblitz.com/codeflow/)
 - [Tailwind CSS](https://tailwindcss.com/)

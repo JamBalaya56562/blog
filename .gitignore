@@ -44,5 +44,6 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# Kiro settings
+# AI settings
+.claude
 .kiro
