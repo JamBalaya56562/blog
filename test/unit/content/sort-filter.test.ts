@@ -1,6 +1,10 @@
 import { describe, expect, test } from "bun:test"
 import fc from "fast-check"
-import { filterPostsByTag, sortPostsByDate } from "@/lib/content/sort-filter"
+import {
+  filterPostsByKeyword,
+  filterPostsByTag,
+  sortPostsByDate,
+} from "@/lib/content/sort-filter"
 import type { Post } from "@/lib/content/types"
 
 const dateArb = fc
@@ -64,6 +68,59 @@ describe("Sort and Filter", () => {
         },
       ),
       { numRuns: 100 },
+    )
+  })
+
+  test("Property: keyword filtering returns only matching posts", () => {
+    fc.assert(
+      fc.property(
+        fc.array(postArb, { minLength: 1, maxLength: 20 }),
+        (posts) => {
+          const keyword = posts[0].frontmatter.title.slice(0, 3).trim()
+          if (!keyword) {
+            return
+          }
+          const filtered = filterPostsByKeyword(posts, keyword)
+          const normalized = keyword.toLowerCase()
+          for (const post of filtered) {
+            const haystack = [
+              post.frontmatter.title,
+              post.frontmatter.description,
+              post.content,
+              ...post.frontmatter.tags,
+            ]
+              .join(" ")
+              .toLowerCase()
+            expect(haystack).toContain(normalized)
+          }
+        },
+      ),
+      { numRuns: 100 },
+    )
+  })
+
+  test("Property: keyword filtering is case-insensitive", () => {
+    fc.assert(
+      fc.property(postArb, (post) => {
+        const keyword = post.frontmatter.title
+        const upper = filterPostsByKeyword([post], keyword.toUpperCase())
+        const lower = filterPostsByKeyword([post], keyword.toLowerCase())
+        expect(upper.length).toBe(lower.length)
+      }),
+      { numRuns: 100 },
+    )
+  })
+
+  test("Property: empty keyword returns all posts", () => {
+    fc.assert(
+      fc.property(
+        fc.array(postArb, { minLength: 0, maxLength: 20 }),
+        (posts) => {
+          const filtered = filterPostsByKeyword(posts, "")
+          expect(filtered.length).toBe(posts.length)
+        },
+      ),
+      { numRuns: 50 },
     )
   })
 
