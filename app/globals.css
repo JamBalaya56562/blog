@@ -282,8 +282,13 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .circuit-path,
   .circuit-node-dot,
-  .animate-ping {
+  .animate-ping,
+  .animate-shimmer {
     animation: none;
+  }
+
+  .animate-shimmer {
+    background: var(--surface-container);
   }
 
   .circuit-path {
@@ -303,6 +308,15 @@ body {
   ::view-transition-old(*),
   ::view-transition-new(*) {
     animation-duration: 0.01ms;
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
   }
 }
 
