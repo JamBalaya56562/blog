@@ -51,7 +51,10 @@
     "searchPlaceholder": "Search articles...",
     "searchLabel": "Search",
     "searchResultsFor": "Search results for:",
-    "clearSearch": "Clear search"
+    "clearSearch": "Clear search",
+    "sortLabel": "Sort by:",
+    "sortNewest": "Newest",
+    "sortPopular": "Most viewed"
   },
   "language": {
     "switchTo": "日本語",

@@ -6,12 +6,14 @@ import { ArticleCard } from "@/components/article-card"
 import { Pagination } from "@/components/pagination"
 import { SearchInput } from "@/components/search-input"
 import { BlogListSkeleton } from "@/components/skeletons"
+import { SortSelect } from "@/components/sort-select"
 import { createContentLoader } from "@/lib/content/loader"
 import {
   filterPostsByKeyword,
   filterPostsByTag,
+  sortPostsByViews,
 } from "@/lib/content/sort-filter"
-import { getViewCounts } from "@/lib/db/queries"
+import { getAllViewCounts, getViewCounts } from "@/lib/db/queries"
 import type { Locale } from "@/lib/i18n/config"
 import { isValidLocale } from "@/lib/i18n/config"
 import { getDictionary } from "@/lib/i18n/get-dictionary"
@@ -22,9 +24,14 @@ async function BlogListContent({
   searchParams,
 }: {
   locale: Locale
-  searchParams: Promise<{ tag?: string; page?: string; q?: string }>
+  searchParams: Promise<{
+    tag?: string
+    page?: string
+    q?: string
+    sort?: string
+  }>
 }) {
-  const { tag, page: pageParam, q } = await searchParams
+  const { tag, page: pageParam, q, sort } = await searchParams
   const dictionary = getDictionary(locale)
   const loader = createContentLoader()
   let posts = await loader.getAllPosts(locale)
@@ -34,6 +41,12 @@ async function BlogListContent({
   }
   if (q) {
     posts = filterPostsByKeyword(posts, q)
+  }
+
+  if (sort === "popular") {
+    const allViews = await getAllViewCounts()
+    const allViewsMap = new Map(allViews.map((v) => [v.slug, v.count]))
+    posts = sortPostsByViews(posts, allViewsMap)
   }
 
   const page = Math.max(1, Number(pageParam) || 1)
@@ -52,15 +65,30 @@ async function BlogListContent({
   if (q) {
     paginationSearchParams.q = q
   }
+  if (sort) {
+    paginationSearchParams.sort = sort
+  }
 
   return (
     <div>
       <h1 className="mb-6 text-3xl font-bold">{dictionary.blog.title}</h1>
-      <div className="mb-4">
+      <div className="mb-4 flex flex-col sm:flex-row gap-2">
+        <div className="flex-1">
+          <Suspense>
+            <SearchInput
+              placeholder={dictionary.blog.searchPlaceholder}
+              label={dictionary.blog.searchLabel}
+              basePath={`/${locale}/blog`}
+            />
+          </Suspense>
+        </div>
         <Suspense>
-          <SearchInput
-            placeholder={dictionary.blog.searchPlaceholder}
-            label={dictionary.blog.searchLabel}
+          <SortSelect
+            labels={{
+              sortLabel: dictionary.blog.sortLabel,
+              sortNewest: dictionary.blog.sortNewest,
+              sortPopular: dictionary.blog.sortPopular,
+            }}
             basePath={`/${locale}/blog`}
           />
         </Suspense>
@@ -146,7 +174,12 @@ export default async function BlogListPage({
   searchParams,
 }: {
   params: Promise<{ locale: string }>
-  searchParams: Promise<{ tag?: string; page?: string; q?: string }>
+  searchParams: Promise<{
+    tag?: string
+    page?: string
+    q?: string
+    sort?: string
+  }>
 }) {
   const { locale } = await params
   if (!isValidLocale(locale)) {

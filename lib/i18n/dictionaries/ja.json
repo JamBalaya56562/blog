@@ -51,7 +51,10 @@
     "searchPlaceholder": "記事を検索...",
     "searchLabel": "検索",
     "searchResultsFor": "検索結果:",
-    "clearSearch": "検索をクリア"
+    "clearSearch": "検索をクリア",
+    "sortLabel": "並び替え:",
+    "sortNewest": "新しい順",
+    "sortPopular": "人気順"
   },
   "language": {
     "switchTo": "English",
