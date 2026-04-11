@@ -4,6 +4,7 @@ import { notFound } from "next/navigation"
 import { Suspense } from "react"
 import { ArticleCard } from "@/components/article-card"
 import { Pagination } from "@/components/pagination"
+import { BlogListSkeleton } from "@/components/skeletons"
 import { createContentLoader } from "@/lib/content/loader"
 import { filterPostsByTag } from "@/lib/content/sort-filter"
 import { getViewCounts } from "@/lib/db/queries"
@@ -115,7 +116,7 @@ export default async function BlogListPage({
 
   return (
     <div className="mx-auto max-w-5xl">
-      <Suspense>
+      <Suspense fallback={<BlogListSkeleton />}>
         <BlogListContent locale={locale} searchParams={searchParams} />
       </Suspense>
     </div>

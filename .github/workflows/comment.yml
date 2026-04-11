@@ -24,7 +24,7 @@ jobs:
           github-token: ${{ github.token }}
           run-id: ${{ github.event.workflow_run.id }}
       - name: 💬 Add a comment
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         env:
           CONCLUSION: ${{ github.event.workflow_run.conclusion }}
           WORKFLOW_NAME: ${{ github.event.workflow_run.name }}
