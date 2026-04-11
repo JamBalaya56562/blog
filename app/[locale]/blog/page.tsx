@@ -4,9 +4,13 @@ import { notFound } from "next/navigation"
 import { Suspense } from "react"
 import { ArticleCard } from "@/components/article-card"
 import { Pagination } from "@/components/pagination"
+import { SearchInput } from "@/components/search-input"
 import { BlogListSkeleton } from "@/components/skeletons"
 import { createContentLoader } from "@/lib/content/loader"
-import { filterPostsByTag } from "@/lib/content/sort-filter"
+import {
+  filterPostsByKeyword,
+  filterPostsByTag,
+} from "@/lib/content/sort-filter"
 import { getViewCounts } from "@/lib/db/queries"
 import type { Locale } from "@/lib/i18n/config"
 import { isValidLocale } from "@/lib/i18n/config"
@@ -18,15 +22,18 @@ async function BlogListContent({
   searchParams,
 }: {
   locale: Locale
-  searchParams: Promise<{ tag?: string; page?: string }>
+  searchParams: Promise<{ tag?: string; page?: string; q?: string }>
 }) {
-  const { tag, page: pageParam } = await searchParams
+  const { tag, page: pageParam, q } = await searchParams
   const dictionary = getDictionary(locale)
   const loader = createContentLoader()
   let posts = await loader.getAllPosts(locale)
 
   if (tag) {
     posts = filterPostsByTag(posts, tag)
+  }
+  if (q) {
+    posts = filterPostsByKeyword(posts, q)
   }
 
   const page = Math.max(1, Number(pageParam) || 1)
@@ -42,11 +49,39 @@ async function BlogListContent({
   if (tag) {
     paginationSearchParams.tag = tag
   }
+  if (q) {
+    paginationSearchParams.q = q
+  }
 
   return (
     <div>
       <h1 className="mb-6 text-3xl font-bold">{dictionary.blog.title}</h1>
-      <div className="mb-4 flex items-center gap-2">
+      <div className="mb-4">
+        <Suspense>
+          <SearchInput
+            placeholder={dictionary.blog.searchPlaceholder}
+            label={dictionary.blog.searchLabel}
+            basePath={`/${locale}/blog`}
+          />
+        </Suspense>
+      </div>
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        {q && (
+          <>
+            <span>{dictionary.blog.searchResultsFor}</span>
+            <span className="rounded bg-green-100 px-2 py-1 text-sm font-medium text-green-800 dark:bg-green-900 dark:text-green-200">
+              {q}
+            </span>
+            <Link
+              href={
+                `/${locale}/blog${tag ? `?tag=${encodeURIComponent(tag)}` : ""}` as Route
+              }
+              className="text-sm text-blue-600 hover:underline dark:text-blue-400"
+            >
+              {dictionary.blog.clearSearch}
+            </Link>
+          </>
+        )}
         {tag ? (
           <>
             <span>{dictionary.blog.filterByTag}</span>
@@ -54,19 +89,23 @@ async function BlogListContent({
               {tag}
             </span>
             <Link
-              href={`/${locale}/blog` as Route}
+              href={
+                `/${locale}/blog${q ? `?q=${encodeURIComponent(q)}` : ""}` as Route
+              }
               className="text-sm text-blue-600 hover:underline dark:text-blue-400"
             >
               {dictionary.blog.clearFilter}
             </Link>
           </>
         ) : (
-          <>
-            <span>{dictionary.blog.filterByTag}</span>
-            <span className="text-sm text-on-surface-variant">
-              {dictionary.blog.noActiveFilter}
-            </span>
-          </>
+          !q && (
+            <>
+              <span>{dictionary.blog.filterByTag}</span>
+              <span className="text-sm text-on-surface-variant">
+                {dictionary.blog.noActiveFilter}
+              </span>
+            </>
+          )
         )}
       </div>
       {posts.length === 0 ? (
@@ -107,7 +146,7 @@ export default async function BlogListPage({
   searchParams,
 }: {
   params: Promise<{ locale: string }>
-  searchParams: Promise<{ tag?: string; page?: string }>
+  searchParams: Promise<{ tag?: string; page?: string; q?: string }>
 }) {
   const { locale } = await params
   if (!isValidLocale(locale)) {
