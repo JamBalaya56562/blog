@@ -10,6 +10,15 @@ export function filterPostsByTag(posts: Post[], tag: string): Post[] {
   return posts.filter((p) => p.frontmatter.tags.includes(tag))
 }
 
+export function sortPostsByViews(
+  posts: Post[],
+  viewCounts: Map<string, number>,
+): Post[] {
+  return [...posts].sort(
+    (a, b) => (viewCounts.get(b.slug) ?? 0) - (viewCounts.get(a.slug) ?? 0),
+  )
+}
+
 export function filterPostsByKeyword(posts: Post[], keyword: string): Post[] {
   const trimmed = keyword.trim()
   if (!trimmed) {
