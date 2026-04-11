@@ -47,7 +47,11 @@
     "continueExploring": "Continue Exploring",
     "previousPage": "Previous",
     "nextPage": "Next",
-    "pagination": "Pagination"
+    "pagination": "Pagination",
+    "searchPlaceholder": "Search articles...",
+    "searchLabel": "Search",
+    "searchResultsFor": "Search results for:",
+    "clearSearch": "Clear search"
   },
   "language": {
     "switchTo": "日本語",

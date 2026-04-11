@@ -47,7 +47,11 @@
     "continueExploring": "他の記事を探す",
     "previousPage": "前へ",
     "nextPage": "次へ",
-    "pagination": "ページナビゲーション"
+    "pagination": "ページナビゲーション",
+    "searchPlaceholder": "記事を検索...",
+    "searchLabel": "検索",
+    "searchResultsFor": "検索結果:",
+    "clearSearch": "検索をクリア"
   },
   "language": {
     "switchTo": "English",
