@@ -19,6 +19,17 @@ import { isValidLocale } from "@/lib/i18n/config"
 import { getDictionary } from "@/lib/i18n/get-dictionary"
 import { POSTS_PER_PAGE, paginate } from "@/lib/pagination"
 
+async function getCachedPosts(locale: Locale) {
+  "use cache"
+  const loader = createContentLoader()
+  return loader.getAllPosts(locale)
+}
+
+async function getCachedAllViewCounts() {
+  "use cache"
+  return getAllViewCounts()
+}
+
 async function BlogListContent({
   locale,
   searchParams,
@@ -33,8 +44,7 @@ async function BlogListContent({
 }) {
   const { tag, page: pageParam, q, sort } = await searchParams
   const dictionary = getDictionary(locale)
-  const loader = createContentLoader()
-  let posts = await loader.getAllPosts(locale)
+  let posts = await getCachedPosts(locale)
 
   if (tag) {
     posts = filterPostsByTag(posts, tag)
@@ -44,7 +54,7 @@ async function BlogListContent({
   }
 
   if (sort === "popular") {
-    const allViews = await getAllViewCounts()
+    const allViews = await getCachedAllViewCounts()
     const allViewsMap = new Map(allViews.map((v) => [v.slug, v.count]))
     posts = sortPostsByViews(posts, allViewsMap)
   }

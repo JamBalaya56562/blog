@@ -3,7 +3,7 @@ import Image from "next/image"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import { MDXRemote } from "next-mdx-remote-client/rsc"
-import { cache, ViewTransition } from "react"
+import { cache, Suspense, ViewTransition } from "react"
 import remarkGfm from "remark-gfm"
 import {
   DEFAULT_THUMBNAIL,
@@ -11,6 +11,7 @@ import {
 } from "@/components/article-card"
 import { PostNavigation } from "@/components/post-navigation"
 import { getRelatedPosts, RelatedPosts } from "@/components/related-posts"
+import { BlogPostSkeleton } from "@/components/skeletons"
 import { TableOfContents } from "@/components/table-of-contents"
 import { ViewCounter } from "@/components/view-counter"
 import { findAdjacentPosts } from "@/lib/content/adjacent"
@@ -83,17 +84,14 @@ export async function generateMetadata({
   }
 }
 
-export default async function BlogPostPage({
-  params,
+async function BlogPostContent({
+  locale,
+  slug,
 }: {
-  params: Promise<Params>
+  locale: Locale
+  slug: string
 }) {
   "use cache"
-  const { locale, slug } = await params
-  if (!isValidLocale(locale)) {
-    notFound()
-  }
-
   const post = await getPost(locale, slug)
   if (!post) {
     notFound()
@@ -180,5 +178,27 @@ export default async function BlogPostPage({
         dictionary={dictionary}
       />
     </div>
+  )
+}
+
+export default async function BlogPostPage({
+  params,
+}: {
+  params: Promise<Params>
+}) {
+  const { locale, slug } = await params
+  if (!isValidLocale(locale)) {
+    notFound()
+  }
+
+  const post = await getPost(locale, slug)
+  if (!post) {
+    notFound()
+  }
+
+  return (
+    <Suspense fallback={<BlogPostSkeleton />}>
+      <BlogPostContent locale={locale} slug={slug} />
+    </Suspense>
   )
 }
