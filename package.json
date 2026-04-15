@@ -58,8 +58,8 @@
     "yaml": "^2.8.3"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.4.11",
-    "@happy-dom/global-registrator": "^20.8.9",
+    "@biomejs/biome": "^2.4.12",
+    "@happy-dom/global-registrator": "^20.9.0",
     "@playwright/mcp": "^0.0.70",
     "@playwright/test": "next",
     "@tailwindcss/postcss": "^4.2.2",
