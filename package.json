@@ -58,8 +58,8 @@
     "yaml": "^2.8.3"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.4.11",
-    "@happy-dom/global-registrator": "^20.8.9",
+    "@biomejs/biome": "^2.4.12",
+    "@happy-dom/global-registrator": "^20.9.0",
     "@playwright/mcp": "^0.0.70",
     "@playwright/test": "next",
     "@tailwindcss/postcss": "^4.2.2",
@@ -72,7 +72,7 @@
     "babel-plugin-react-compiler": "experimental",
     "drizzle-kit": "0.31.10",
     "fast-check": "^4.6.0",
-    "postcss": "^8.5.9",
+    "postcss": "^8.5.10",
     "tailwindcss": "^4.2.2",
     "typescript": "^6.0.2"
   },
