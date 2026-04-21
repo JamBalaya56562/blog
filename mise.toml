@@ -43,11 +43,11 @@ description = "Full local DB setup: generate .env, start PostgreSQL, health chec
 depends = ["db:env", "db:start"]
 run = ["mise run db:health", "mise run db:push"]
 
-[hooks]
-enter = ["mise i -q", "mise prep -q"]
-
-[prepare.bun]
+[deps.bun]
 auto = true
+
+[hooks]
+enter = ["mise i -q", "mise deps -q"]
 
 [settings]
 experimental = true
