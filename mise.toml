@@ -12,7 +12,7 @@ run = "markdownlint-cli2 '**/*.md'"
 
 [tasks.update]
 description = "Update bun dependencies and reinstall with isolated linker"
-run = ["bun update", "bun i --linker=isolated", "mise prep"]
+run = ["bun update", "bun i --linker=isolated", "mise deps"]
 
 [tasks."db:env"]
 description = "Generate .env file with default development values"
