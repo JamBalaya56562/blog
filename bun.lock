@@ -224,7 +224,7 @@
 
     "@playwright/mcp": ["@playwright/mcp@0.0.70", "", { "dependencies": { "playwright": "1.60.0-alpha-1774999321000", "playwright-core": "1.60.0-alpha-1774999321000" }, "bin": { "playwright-mcp": "cli.js" } }, "sha512-Kl0a6l9VL8rvT1oBou3hS5yArjwWV9UlwAkq+0skfK1YVg8XfmmNaAmwZhMeNx/ZhGiWXfCllo6rD/jvZz+WuA=="],
 
-    "@playwright/test": ["@playwright/test@1.60.0-alpha-2026-04-20", "", { "dependencies": { "playwright": "1.60.0-alpha-2026-04-20" }, "bin": { "playwright": "cli.js" } }, "sha512-VLYrQxk4iVPk/W7vuN1Feera0BFZxmomVMwNm0HqN7fEgwhYygVk+1Dd+lmVT1Ld7AxT4zfqb/Uyj2UZ99r4kg=="],
+    "@playwright/test": ["@playwright/test@1.60.0-alpha-2026-04-21", "", { "dependencies": { "playwright": "1.60.0-alpha-2026-04-21" }, "bin": { "playwright": "cli.js" } }, "sha512-tIzN0209CtFuqxWGz3yzN2Z9+3PJjQE7HyGv4U/soodVV0J9OyB9hl/XTLkooe2dvkdpqVw4vIBIxa9NDQKhgA=="],
 
     "@swc/helpers": ["@swc/helpers@0.5.15", "", { "dependencies": { "tslib": "^2.8.0" } }, "sha512-JQ5TuMi45Owi4/BIMAJBoSQoOJu12oOk/gADqlcUL9JEdHB8vyjUSsxqeNXnmXHjYKMi2WcYtezGEEhqUI/E2g=="],
 
@@ -712,7 +712,7 @@
 
     "@esbuild-kit/core-utils/esbuild": ["esbuild@0.18.20", "", { "optionalDependencies": { "@esbuild/android-arm": "0.18.20", "@esbuild/android-arm64": "0.18.20", "@esbuild/android-x64": "0.18.20", "@esbuild/darwin-arm64": "0.18.20", "@esbuild/darwin-x64": "0.18.20", "@esbuild/freebsd-arm64": "0.18.20", "@esbuild/freebsd-x64": "0.18.20", "@esbuild/linux-arm": "0.18.20", "@esbuild/linux-arm64": "0.18.20", "@esbuild/linux-ia32": "0.18.20", "@esbuild/linux-loong64": "0.18.20", "@esbuild/linux-mips64el": "0.18.20", "@esbuild/linux-ppc64": "0.18.20", "@esbuild/linux-riscv64": "0.18.20", "@esbuild/linux-s390x": "0.18.20", "@esbuild/linux-x64": "0.18.20", "@esbuild/netbsd-x64": "0.18.20", "@esbuild/openbsd-x64": "0.18.20", "@esbuild/sunos-x64": "0.18.20", "@esbuild/win32-arm64": "0.18.20", "@esbuild/win32-ia32": "0.18.20", "@esbuild/win32-x64": "0.18.20" }, "bin": { "esbuild": "bin/esbuild" } }, "sha512-ceqxoedUrcayh7Y7ZX6NdbbDzGROiyVBgC4PriJThBKSVPWnnFHZAkfI1lJT8QFkOwH4qOS2SJkS4wvpGl8BpA=="],
 
-    "@playwright/test/playwright": ["playwright@1.60.0-alpha-2026-04-20", "", { "dependencies": { "playwright-core": "1.60.0-alpha-2026-04-20" }, "optionalDependencies": { "fsevents": "2.3.2" }, "bin": { "playwright": "cli.js" } }, "sha512-YXPRq/j/m39yX4/cvOwC0qmsjMqmZ3HXPQHq7gR5eVTgIReXwqZajn/GY5Nmsws0e3qfqfOorwf5lKzhUgqvSA=="],
+    "@playwright/test/playwright": ["playwright@1.60.0-alpha-2026-04-21", "", { "dependencies": { "playwright-core": "1.60.0-alpha-2026-04-21" }, "optionalDependencies": { "fsevents": "2.3.2" }, "bin": { "playwright": "cli.js" } }, "sha512-SbQ4e0utmXEgyLvZEksINE0L31LvdXuLEFCN2mXN/c4P/OiL8HxgMiCRqlOYPL+CeFUN+lUP3TzvVLmobc60Qw=="],
 
     "@tailwindcss/oxide-wasm32-wasi/@emnapi/core": ["@emnapi/core@1.9.1", "", { "dependencies": { "@emnapi/wasi-threads": "1.2.0", "tslib": "^2.4.0" }, "bundled": true }, "sha512-mukuNALVsoix/w1BJwFzwXBN/dHeejQtuVzcDsfOEsdpCumXb/E9j8w11h5S54tT1xhifGfbbSm/ICrObRb3KA=="],
 
@@ -782,7 +782,7 @@
 
     "@esbuild-kit/core-utils/esbuild/@esbuild/win32-x64": ["@esbuild/win32-x64@0.18.20", "", { "os": "win32", "cpu": "x64" }, "sha512-kTdfRcSiDfQca/y9QIkng02avJ+NCaQvrMejlsB3RRv5sE9rRoeBPISaZpKxHELzRxZyLvNts1P27W3wV+8geQ=="],
 
-    "@playwright/test/playwright/playwright-core": ["playwright-core@1.60.0-alpha-2026-04-20", "", { "bin": { "playwright-core": "cli.js" } }, "sha512-4Xj1LmTwWilE7dhr/oWkkvpfaXU+Ylq6CbBL7P+APtldfHe1bFTyqPjPXeEtuI/SqFivqfNU4v1QNgHshS1yeQ=="],
+    "@playwright/test/playwright/playwright-core": ["playwright-core@1.60.0-alpha-2026-04-21", "", { "bin": { "playwright-core": "cli.js" } }, "sha512-PaP2MbCX8dqJmDcYM6CJS9DVbiDCT1sMHPOPFbGzac/gXQM6bksCkH016JK7Pjyv9e9M7mdxhsseuELknI6iuQ=="],
 
     "@types/ws/@types/node/undici-types": ["undici-types@7.18.2", "", {}, "sha512-AsuCzffGHJybSaRrmr5eHr81mwJU3kjw6M+uprWvCXiNeN9SOGwQ3Jn8jb8m3Z6izVgknn1R0FTCEAP2QrLY/w=="],
 
