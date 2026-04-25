@@ -48,7 +48,7 @@
     "@next/mdx": "canary",
     "@types/mdx": "^2.0.13",
     "drizzle-orm": "0.45.2",
-    "lucide-react": "^1.8.0",
+    "lucide-react": "^1.9.0",
     "next": "canary",
     "next-mdx-remote-client": "^2.1.10",
     "postgres": "^3.4.9",
@@ -58,7 +58,7 @@
     "yaml": "^2.8.3"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.4.12",
+    "@biomejs/biome": "^2.4.13",
     "@happy-dom/global-registrator": "^20.9.0",
     "@playwright/mcp": "^0.0.70",
     "@playwright/test": "next",
