@@ -69,7 +69,7 @@ export function MobileMenu({
             aria-label={dictionary.nav.closeMenu}
           />
           <div
-            className={`absolute right-4 top-full z-50 mt-3 w-auto min-w-[180px] origin-top-right rounded-2xl bg-background/85 px-2 py-3 shadow-2xl ring-1 ring-outline-variant/15 backdrop-blur-2xl transition-all duration-250 ${
+            className={`absolute right-4 top-full z-50 mt-3 w-auto min-w-[180px] origin-top-right rounded-2xl bg-background px-2 py-3 shadow-2xl ring-1 ring-cyber-line transition-all duration-250 ${
               isVisible ? "scale-100 opacity-100" : "scale-90 opacity-0"
             }`}
           >

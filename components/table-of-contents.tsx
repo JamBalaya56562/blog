@@ -37,35 +37,37 @@ export function TableOfContents({
   }
 
   return (
-    <nav className="hidden lg:block fixed top-24 right-[max(2rem,calc((100vw-48rem)/2-15rem))] w-48 rounded-xl border border-gray-200 bg-white/80 p-4 shadow-sm backdrop-blur-sm dark:border-gray-700 dark:bg-gray-900/80">
-      <p className="mb-3 text-xs font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500">
-        {title}
-      </p>
-      <ul className="space-y-0.5 border-l-2 border-gray-200 text-sm dark:border-gray-700">
-        {items.map((item) => (
-          <li
-            key={item.id}
-            style={{ paddingLeft: `${(item.level - 2) * 0.75 + 0.75}rem` }}
-          >
-            <a
-              href={`#${item.id}`}
-              onClick={(e) => {
-                e.preventDefault()
-                document
-                  .getElementById(item.id)
-                  ?.scrollIntoView({ behavior: "smooth" })
-                window.history.pushState(null, "", `#${item.id}`)
-              }}
-              className={`-ml-px block border-l-2 py-1 pl-3 transition-all ${
-                activeId === item.id
-                  ? "border-blue-500 font-medium text-blue-600 dark:border-blue-400 dark:text-blue-400"
-                  : "border-transparent text-gray-500 hover:border-gray-400 hover:text-gray-900 dark:text-gray-400 dark:hover:border-gray-500 dark:hover:text-gray-200"
-              }`}
+    <nav className="hidden xl:block fixed top-32 right-[max(1.5rem,calc((100vw-72rem)/2-2rem))] w-56 border border-cyber-line bg-cyber-bg-1/60 p-4 backdrop-blur-md">
+      <div className="pp-tick mb-3 text-cyber-cyan">◢ INDEX</div>
+      <p className="pp-tick mb-3 text-cyber-dim">{title}</p>
+      <ul className="space-y-1 border-l border-cyber-line text-sm">
+        {items.map((item) => {
+          const active = activeId === item.id
+          return (
+            <li
+              key={item.id}
+              style={{ paddingLeft: `${(item.level - 2) * 0.75 + 0.75}rem` }}
             >
-              {item.text}
-            </a>
-          </li>
-        ))}
+              <a
+                href={`#${item.id}`}
+                onClick={(e) => {
+                  e.preventDefault()
+                  document
+                    .getElementById(item.id)
+                    ?.scrollIntoView({ behavior: "smooth" })
+                  window.history.pushState(null, "", `#${item.id}`)
+                }}
+                className={`-ml-px block border-l-2 py-1 pl-3 font-mono text-[11px] transition-all ${
+                  active
+                    ? "border-cyber-cyan text-cyber-cyan"
+                    : "border-transparent text-cyber-dim hover:border-cyber-line-hi hover:text-foreground"
+                }`}
+              >
+                {item.text}
+              </a>
+            </li>
+          )
+        })}
       </ul>
     </nav>
   )

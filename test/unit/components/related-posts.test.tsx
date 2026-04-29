@@ -69,8 +69,9 @@ describe("RelatedPosts", () => {
     const { container } = render(
       <RelatedPosts locale="en" posts={posts} dictionary={dictionary} />,
     )
-    const heading = container.querySelector("h2")
-    expect(heading?.textContent).toBe("Continue Exploring")
+    // Cyber redesign: heading lives in a `.pp-tick` label decorated with
+    // "RELATED DISPATCHES — <continueExploring>".
+    expect(container.textContent).toContain("Continue Exploring")
   })
 
   test("displays '他の記事を探す' heading for Japanese locale", () => {
@@ -79,8 +80,7 @@ describe("RelatedPosts", () => {
     const { container } = render(
       <RelatedPosts locale="ja" posts={posts} dictionary={dictionary} />,
     )
-    const heading = container.querySelector("h2")
-    expect(heading?.textContent).toBe("他の記事を探す")
+    expect(container.textContent).toContain("他の記事を探す")
   })
 })
 

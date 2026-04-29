@@ -11,117 +11,97 @@ interface RecentDispatchesProps {
   readonly locale: Locale
   readonly dictionary: Dictionary
   readonly posts: Post[]
+  readonly indexOffset?: number
 }
 
 export function RecentDispatches({
   locale,
   dictionary,
   posts,
+  indexOffset = 0,
 }: Readonly<RecentDispatchesProps>) {
   if (posts.length === 0) {
     return null
   }
 
   return (
-    <section className="mx-auto max-w-7xl px-4 py-20">
-      <div className="mb-12 flex items-end justify-between">
-        <div className="max-w-xl">
-          <h2 className="mb-4 font-headline text-3xl font-bold text-primary dark:text-white">
-            {dictionary.home.recentTitle}
-          </h2>
-          <p className="font-sans text-on-surface-variant">
-            {dictionary.home.recentDescription}
-          </p>
-        </div>
+    <section className="mx-auto max-w-7xl px-7 py-16">
+      <div className="mb-8 flex items-baseline gap-4">
+        <span className="pp-tick">◢ FEED</span>
+        <h2 className="pp-display text-2xl tracking-[0.04em] text-foreground md:text-3xl">
+          {dictionary.home.recentTitle}
+        </h2>
+        <span className="h-px flex-1 bg-cyber-line" />
         <Link
           href={`/${locale}/blog` as Route}
-          className="flex items-center gap-2 font-semibold text-primary dark:text-primary-fixed"
+          className="pp-tick pp-link transition-colors hover:text-cyber-cyan"
         >
-          {dictionary.home.viewAll}
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden="true"
-          >
-            <path d="M5 12h14" />
-            <path d="m12 5 7 7-7 7" />
-          </svg>
+          {dictionary.home.viewAll} →
         </Link>
       </div>
+      <p className="mb-8 max-w-2xl font-mono text-sm text-cyber-dim">
+        {dictionary.home.recentDescription}
+      </p>
 
-      <div className="space-y-4">
-        {posts.map((post, index) => {
+      <ul className="flex flex-col">
+        {posts.map((post, i) => {
+          const num = String(i + 1 + indexOffset).padStart(3, "0")
           const tag = post.frontmatter.tags[0]
-          const number = String(index + 1).padStart(2, "0")
-
+          const cat = tag ?? "DISPATCH"
           return (
-            <Link
-              key={post.slug}
-              href={getBlogPostPath(locale, post.slug)}
-              className="card-title-hover group flex flex-col justify-between rounded-xl border-l-2
-                border-transparent bg-surface p-6 transition-all
-                hover:border-primary-fixed hover:bg-surface-container-low
-                md:flex-row md:items-center"
-            >
-              <div className="flex items-center gap-8">
-                <span className="hidden font-mono text-sm text-secondary opacity-50 md:block">
-                  {number}
+            <li key={post.slug} className="border-t border-cyber-line">
+              <Link
+                href={getBlogPostPath(locale, post.slug)}
+                className="group relative grid grid-cols-[64px_1fr_auto] items-center gap-5 px-3 py-5 transition-colors last:border-b last:border-cyber-line hover:bg-cyber-bg-1/40"
+              >
+                <span className="pp-num text-base text-cyber-dim transition-colors group-hover:text-cyber-cyan">
+                  {num}
                 </span>
-                <div>
+                <div className="min-w-0">
+                  <div className="mb-1.5 flex flex-wrap items-center gap-3">
+                    <span className="pp-tick text-cyber-amber/80 group-hover:text-cyber-amber">
+                      ◢ {cat.toUpperCase()}
+                    </span>
+                    <span className="pp-tick">
+                      {post.frontmatter.date.replace(/-/g, ".")}
+                    </span>
+                  </div>
                   <ViewTransition
                     name={`post-title-${post.slug}`}
                     share="morph"
                   >
-                    <h3 className="card-title font-headline text-xl font-bold text-primary transition-colors dark:text-white">
+                    <h3 className="pp-display truncate text-lg text-foreground transition-all group-hover:translate-x-2 group-hover:text-cyber-cyan md:text-xl">
                       {post.frontmatter.title}
                     </h3>
                   </ViewTransition>
-                  <div className="mt-1 flex gap-4">
-                    <span className="text-xs font-medium text-secondary">
-                      {post.frontmatter.date}
-                    </span>
-                    {tag && (
-                      <TagLink
-                        tag={tag}
-                        locale={locale}
-                        className="cursor-pointer rounded-full bg-secondary-container px-2 text-xs text-on-secondary-container transition-colors hover:bg-primary hover:text-on-primary"
-                      />
-                    )}
+                  {post.frontmatter.tags.length > 0 && (
+                    <div className="mt-2 flex flex-wrap gap-1.5">
+                      {post.frontmatter.tags.slice(0, 3).map((t) => (
+                        <TagLink
+                          key={t}
+                          tag={t}
+                          locale={locale}
+                          className="pp-tag"
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <div className="text-right">
+                  <div className="pp-tick text-cyber-cyan opacity-0 transition-opacity group-hover:opacity-100">
+                    {dictionary.home.readDispatch} →
                   </div>
                 </div>
-              </div>
-              <div
-                className="mt-4 flex items-center gap-2 font-medium text-primary opacity-0
-                  transition-opacity group-hover:opacity-100 dark:text-primary-fixed md:mt-0"
-              >
-                {dictionary.home.readDispatch}
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden="true"
-                >
-                  <path d="m7 7 10 10" />
-                  <path d="M7 17h10V7" />
-                </svg>
-              </div>
-            </Link>
+                {/* hover indicator bar */}
+                <span
+                  aria-hidden
+                  className="pointer-events-none absolute inset-y-0 left-0 w-0.5 bg-cyber-cyan opacity-0 shadow-[0_0_8px_var(--cyber-cyan)] transition-opacity group-hover:opacity-100"
+                />
+              </Link>
+            </li>
           )
         })}
-      </div>
+      </ul>
     </section>
   )
 }

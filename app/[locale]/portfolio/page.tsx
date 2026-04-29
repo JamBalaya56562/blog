@@ -11,7 +11,7 @@ import {
 } from "lucide-react"
 import Image from "next/image"
 import { notFound } from "next/navigation"
-import { CircuitBackground } from "@/components/circuit-background"
+import { Brackets } from "@/components/ui/brackets"
 import { isValidLocale } from "@/lib/i18n/config"
 import { getDictionary } from "@/lib/i18n/get-dictionary"
 
@@ -35,41 +35,51 @@ const projects = [
   },
 ]
 
+/**
+ * Per-OSS visual identity. The cyber frame (border + brackets) stays
+ * consistent across all cards; the accent color tints the icon, the
+ * background wash, and the giant watermark icon in the corner.
+ */
 const ossContributions = [
   {
     name: "Next.js",
     url: "https://github.com/vercel/next.js",
     Icon: Sparkles,
-    color: "text-violet-500",
+    accent: "text-violet-400",
     bg: "bg-violet-500/10",
+    glow: "shadow-[0_0_24px_-8px_rgb(167_139_250_/_0.6)]",
   },
   {
     name: "Biome",
     url: "https://github.com/biomejs/biome",
     Icon: Terminal,
-    color: "text-emerald-500",
+    accent: "text-emerald-400",
     bg: "bg-emerald-500/10",
+    glow: "shadow-[0_0_24px_-8px_rgb(52_211_153_/_0.6)]",
   },
   {
     name: "Mise",
     url: "https://github.com/jdx/mise",
     Icon: Wrench,
-    color: "text-amber-500",
+    accent: "text-amber-400",
     bg: "bg-amber-500/10",
+    glow: "shadow-[0_0_24px_-8px_rgb(251_191_36_/_0.6)]",
   },
   {
     name: "Dev Containers",
     url: "https://github.com/devcontainers",
     Icon: Box,
-    color: "text-sky-500",
+    accent: "text-sky-400",
     bg: "bg-sky-500/10",
+    glow: "shadow-[0_0_24px_-8px_rgb(56_189_248_/_0.6)]",
   },
   {
     name: "Prettier",
     url: "https://github.com/prettier/prettier",
     Icon: Paintbrush,
-    color: "text-rose-500",
+    accent: "text-rose-400",
     bg: "bg-rose-500/10",
+    glow: "shadow-[0_0_24px_-8px_rgb(251_113_133_/_0.6)]",
   },
 ]
 
@@ -85,246 +95,304 @@ export default async function PortfolioPage({
   }
 
   const dictionary = getDictionary(locale)
+  const project = projects[0]
+  if (!project) {
+    return null
+  }
 
   return (
-    <div className="relative mx-auto max-w-7xl">
-      <CircuitBackground />
-      {/* Hero Section */}
-      <section className="mb-24 flex flex-col items-center text-center">
-        <div className="relative mb-6">
-          <Image
-            src="/jambalaya.jpg"
-            alt={dictionary.portfolio.title}
-            width={128}
-            height={128}
-            className="rounded-full ring-4 ring-surface-container-lowest"
-            priority
-          />
-          {/* Online status indicator */}
-          <span className="absolute bottom-1 right-1 flex h-5 w-5">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-surface-tint opacity-75" />
-            <span className="relative inline-flex h-5 w-5 rounded-full bg-surface-tint" />
-          </span>
-        </div>
-        <h1 className="font-headline tracking-tighter text-primary text-5xl md:text-7xl">
-          Jam Balaya
-        </h1>
-        <p className="mt-4 text-lg text-secondary">
-          {dictionary.portfolio.subtitle}
-        </p>
-      </section>
+    <div className="relative mx-auto max-w-7xl px-7 py-12">
+      {/* Header */}
+      <h1 className="pp-display text-5xl text-foreground sm:text-6xl">
+        ABOUT<span className="text-cyber-cyan">.</span>
+      </h1>
+      <p className="mt-2 font-mono text-xs">
+        <span className="mr-1 text-cyber-cyan">{"//"}</span>
+        <span className="text-cyber-dim">{dictionary.portfolio.subtitle}</span>
+      </p>
 
-      {/* Asymmetric 12-column grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
-        {/* Left column */}
-        <div className="lg:col-span-7 space-y-16">
-          {/* Bio Section */}
-          <section className="bg-surface-container-lowest p-8 rounded-xl ring-1 ring-outline-variant/10 shadow-[0_12px_32px_rgba(25,28,30,0.04)]">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-1 h-8 bg-primary-fixed rounded-full" />
-              <h2 className="font-headline text-3xl font-bold tracking-tight">
-                {dictionary.portfolio.bioTitle}
-              </h2>
+      {/* ID card + bio */}
+      <div className="mt-10 grid grid-cols-1 gap-8 lg:grid-cols-12">
+        {/* Left — operator portrait */}
+        <aside className="lg:col-span-4">
+          <div className="relative border border-cyber-line bg-cyber-bg-1/50 p-5">
+            <Brackets />
+            <div className="relative aspect-square overflow-hidden border border-cyber-line">
+              <Image
+                src="/jambalaya.jpg"
+                alt={dictionary.portfolio.title}
+                width={320}
+                height={320}
+                className="h-full w-full object-cover"
+                priority
+              />
+              <span className="pointer-events-none absolute inset-x-0 top-3 px-3">
+                <span className="pp-tick text-cyber-cyan">◢ ID</span>
+              </span>
             </div>
-            <div className="space-y-6 text-on-surface-variant leading-loose text-lg">
+            <div className="mt-4 space-y-3">
+              <Field
+                label={dictionary.portfolio.idHandle}
+                value="@JamBalaya56562"
+                mono
+              />
+              <Field label={dictionary.portfolio.idName} value="Jam Balaya" />
+              <Field
+                label={dictionary.portfolio.idLocation}
+                value={dictionary.portfolio.locationValue}
+              />
+            </div>
+          </div>
+
+          {/* Quick connectivity */}
+          <div className="mt-6 border border-cyber-line bg-cyber-bg-1/50 p-5">
+            <div className="pp-tick mb-4 text-cyber-cyan">◢ CONNECTIVITY</div>
+            <h3 className="pp-display mb-4 text-base text-foreground">
+              {dictionary.portfolio.quickConnectivity}
+            </h3>
+            <ul className="space-y-3">
+              <ConnectivityItem
+                href="https://github.com/JamBalaya56562"
+                label={dictionary.portfolio.github}
+                value="@JamBalaya56562"
+                icon={
+                  <Image
+                    src="/github-mark.svg"
+                    alt=""
+                    width={16}
+                    height={16}
+                    className="block dark:hidden"
+                  />
+                }
+                iconDark={
+                  <Image
+                    src="/github-mark-white.svg"
+                    alt=""
+                    width={16}
+                    height={16}
+                    className="hidden dark:block"
+                  />
+                }
+              />
+              <ConnectivityItem
+                href="https://github.com/sponsors/JamBalaya56562"
+                label={dictionary.portfolio.githubSponsors}
+                value="Sponsor"
+                icon={<Heart className="h-4 w-4 text-cyber-magenta" />}
+              />
+              <ConnectivityItem
+                label={dictionary.portfolio.location}
+                value={dictionary.portfolio.locationValue}
+                icon={<MapPin className="h-4 w-4 text-cyber-amber" />}
+              />
+            </ul>
+          </div>
+        </aside>
+
+        {/* Right — bio & tech stack */}
+        <div className="lg:col-span-8 space-y-12">
+          <section>
+            <div className="pp-tick mb-3 text-cyber-cyan">◢ BIOGRAPHY</div>
+            <h2 className="pp-display mb-5 text-3xl text-foreground">
+              {dictionary.portfolio.bioTitle}
+            </h2>
+            <div className="space-y-5 font-sans text-base leading-loose text-foreground/85">
               <p>{dictionary.portfolio.bioText1}</p>
               <p>{dictionary.portfolio.bioText2}</p>
             </div>
           </section>
 
-          {/* Tech Stack Section */}
           <section>
-            <div className="flex items-center gap-3 mb-6">
-              <Terminal className="h-5 w-5 text-primary" />
-              <h2 className="font-headline text-3xl font-bold tracking-tight">
-                {dictionary.portfolio.techCore}
-              </h2>
-            </div>
-            <div className="flex flex-wrap gap-3">
+            <div className="pp-tick mb-3 text-cyber-cyan">◢ STACK</div>
+            <h2 className="pp-display mb-4 text-2xl text-foreground">
+              {dictionary.portfolio.techCore}
+            </h2>
+            <div className="flex flex-wrap gap-1.5">
               {skills.map((skill) => (
-                <span
-                  key={skill}
-                  className="px-5 py-2 bg-secondary-container text-on-secondary-container rounded-full text-sm font-medium"
-                >
+                <span key={skill} className="pp-tag">
                   {skill}
                 </span>
               ))}
             </div>
           </section>
-        </div>
 
-        {/* Right column */}
-        <div className="lg:col-span-5 space-y-8">
-          {/* Connectivity Card */}
-          <div className="bg-surface-container-lowest p-8 rounded-xl ring-1 ring-outline-variant/10 shadow-[0_12px_32px_rgba(25,28,30,0.04)]">
-            <h3 className="font-headline text-lg font-bold mb-6">
-              {dictionary.portfolio.quickConnectivity}
-            </h3>
-            <ul className="space-y-4">
-              <li>
-                <a
-                  href="https://github.com/JamBalaya56562"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-4 group"
-                >
-                  <div className="w-10 h-10 rounded-lg bg-surface-container-low flex items-center justify-center group-hover:bg-primary-fixed transition-colors">
-                    <Image
-                      src="/github-mark.svg"
-                      alt="GitHub"
-                      width={20}
-                      height={20}
-                      className="dark:invert"
-                    />
-                  </div>
-                  <div>
-                    <p className="text-xs text-secondary font-medium uppercase tracking-widest">
-                      {dictionary.portfolio.github}
-                    </p>
-                    <p className="text-sm font-semibold">@JamBalaya56562</p>
-                  </div>
-                </a>
-              </li>
-              <li>
-                <a
-                  href="https://github.com/sponsors/JamBalaya56562"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-4 group"
-                >
-                  <div className="w-10 h-10 rounded-lg bg-surface-container-low flex items-center justify-center group-hover:bg-primary-fixed transition-colors">
-                    <Heart className="h-5 w-5 text-on-surface-variant" />
-                  </div>
-                  <div>
-                    <p className="text-xs text-secondary font-medium uppercase tracking-widest">
-                      {dictionary.portfolio.githubSponsors}
-                    </p>
-                    <p className="text-sm font-semibold">Sponsor</p>
-                  </div>
-                </a>
-              </li>
-              <li className="flex items-center gap-4 group">
-                <div className="w-10 h-10 rounded-lg bg-surface-container-low flex items-center justify-center group-hover:bg-primary-fixed transition-colors">
-                  <MapPin className="h-5 w-5 text-on-surface-variant" />
-                </div>
-                <div>
-                  <p className="text-xs text-secondary font-medium uppercase tracking-widest">
-                    {dictionary.portfolio.location}
-                  </p>
-                  <p className="text-sm font-semibold">
-                    {dictionary.portfolio.locationValue}
-                  </p>
-                </div>
-              </li>
-            </ul>
-          </div>
-
-          {/* Quote Card */}
-          <div className="bg-primary p-8 rounded-xl text-on-primary">
-            <p className="text-sm font-medium mb-4 opacity-80 italic">
+          <section className="relative border border-cyber-line bg-cyber-bg-1/50 p-6">
+            <Brackets color="amber" />
+            <p className="mb-3 font-mono text-sm italic text-cyber-amber">
               {dictionary.portfolio.quoteText}
             </p>
-            <p className="text-xs opacity-60">
-              {dictionary.portfolio.quoteAuthor}
-            </p>
-          </div>
+            <p className="pp-tick">{dictionary.portfolio.quoteAuthor}</p>
+          </section>
         </div>
       </div>
 
-      {/* Projects / OSS Bento Grid */}
-      <section className="mt-32">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between mb-12">
-          <div>
-            <h2 className="font-headline text-4xl font-extrabold tracking-tighter mb-2">
-              {dictionary.portfolio.sideProjects}
-            </h2>
-            <p className="text-secondary">
-              {dictionary.portfolio.sideProjectsDescription}
-            </p>
-          </div>
+      {/* Deployment log / projects */}
+      <section className="mt-16">
+        <div className="mb-6 flex flex-wrap items-baseline gap-4">
+          <span className="pp-tick">◢ DEPLOYMENT_LOG</span>
+          <h2 className="pp-display text-3xl tracking-tight text-foreground sm:text-4xl">
+            {dictionary.portfolio.sideProjects}
+          </h2>
+          <span className="h-px flex-1 bg-cyber-line" />
           <a
             href="https://github.com/JamBalaya56562"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-sm font-bold text-primary flex items-center gap-1 hover:underline"
+            className="pp-tick pp-link inline-flex items-center gap-1 text-cyber-cyan transition-colors hover:text-cyber-cyan-bright"
           >
             {dictionary.portfolio.viewAllOnGithub}
-            <ExternalLink className="h-4 w-4" />
+            <ExternalLink className="h-3 w-3" />
           </a>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Blog Project Feature Card */}
+
+        <p className="mb-8 max-w-2xl font-mono text-sm text-cyber-dim">
+          {dictionary.portfolio.sideProjectsDescription}
+        </p>
+
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+          {/* Featured project */}
           <a
-            href={projects[0].url}
+            href={project.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="md:col-span-2 bg-surface-container-low p-8 rounded-xl group hover:bg-surface-container transition-colors relative overflow-hidden block"
+            className="pp-card-hover relative border border-cyber-line bg-cyber-bg-1/50 p-6 md:col-span-2"
           >
-            <div className="relative z-10">
-              <div className="flex items-center gap-2 mb-4">
-                <div className="w-10 h-10 rounded-lg bg-primary-fixed/20 flex items-center justify-center">
-                  <FolderOpen className="h-5 w-5 text-primary" />
-                </div>
-                <span className="text-xs font-bold tracking-widest text-primary uppercase">
-                  {dictionary.portfolio.activeProject}
-                </span>
-              </div>
-              <h3 className="font-headline text-2xl font-bold mb-4">
-                {projects[0].name}
-              </h3>
-              <p className="text-on-surface-variant max-w-md">
-                {dictionary.portfolio[projects[0].descriptionKey]}
-              </p>
+            <Brackets />
+            <div className="mb-4 flex items-center gap-2">
+              <FolderOpen className="h-4 w-4 text-cyber-cyan" />
+              <span className="pp-tick text-cyber-cyan">
+                ◢ {dictionary.portfolio.activeProject}
+              </span>
             </div>
-            <div className="absolute -right-10 -bottom-10 opacity-5 group-hover:opacity-15 transition-opacity">
-              <FolderOpen className="h-48 w-48 text-primary" />
+            <h3 className="pp-display mb-3 text-2xl text-foreground">
+              {project.name}
+            </h3>
+            <p className="max-w-md font-mono text-sm text-cyber-dim">
+              {dictionary.portfolio[project.descriptionKey]}
+            </p>
+            <div className="pp-bar mt-6">
+              <div className="pp-bar-fill" style={{ width: "78%" }} />
             </div>
           </a>
 
-          {/* OSS Contribution Cards */}
           {ossContributions.map((oss) => (
             <a
               key={oss.name}
               href={oss.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="bg-surface-container-lowest p-8 rounded-xl ring-1 ring-outline-variant/10 group hover:shadow-lg transition-all block relative overflow-hidden"
+              className={`pp-card-hover group relative overflow-hidden border border-cyber-line p-5 ${oss.bg} ${oss.glow}`}
             >
-              <div
-                className={`w-10 h-10 rounded-lg ${oss.bg} flex items-center justify-center mb-4`}
-              >
-                <oss.Icon className={`h-5 w-5 ${oss.color}`} />
-              </div>
-              <h3 className="font-headline text-xl font-bold mb-2 relative z-10">
-                {oss.name}
-              </h3>
-              <div className="absolute -right-4 -bottom-4 opacity-5 group-hover:opacity-15 transition-opacity">
-                <oss.Icon className={`h-28 w-28 ${oss.color}`} />
+              <Brackets />
+              {/* Giant faded icon watermark — bleeds out of the card and
+                  brightens on hover for a subtle visual cue. */}
+              <oss.Icon
+                aria-hidden
+                className={`pointer-events-none absolute -bottom-6 -right-6 h-28 w-28 opacity-10 transition-opacity duration-300 group-hover:opacity-25 ${oss.accent}`}
+              />
+              <div className="relative">
+                <div
+                  className={`mb-3 inline-flex h-9 w-9 items-center justify-center border border-cyber-line ${oss.accent} ${oss.bg}`}
+                >
+                  <oss.Icon className="h-5 w-5" />
+                </div>
+                <div className="pp-tick text-cyber-amber/80">◢ OSS</div>
+                <h3 className="pp-display mt-1 text-lg text-foreground">
+                  {oss.name}
+                </h3>
               </div>
             </a>
           ))}
 
-          {/* Collaboration CTA Card */}
-          <div className="md:col-span-2 bg-primary p-8 rounded-xl text-on-primary flex flex-col md:flex-row items-center gap-8 justify-between">
-            <div>
-              <h3 className="font-headline text-2xl font-bold mb-2">
-                {dictionary.portfolio.collaborateCta}
-              </h3>
-              <p className="opacity-70">
-                {dictionary.portfolio.collaborateDescription}
-              </p>
+          {/* Collaborate CTA */}
+          <div className="relative border border-cyber-amber/60 bg-cyber-amber/5 p-6 md:col-span-3">
+            <Brackets color="amber" />
+            <div className="flex flex-col items-start gap-5 md:flex-row md:items-center md:justify-between">
+              <div>
+                <div className="pp-tick mb-2 text-cyber-amber">◢ COLLAB</div>
+                <h3 className="pp-display text-2xl text-foreground">
+                  {dictionary.portfolio.collaborateCta}
+                </h3>
+                <p className="mt-2 max-w-xl font-mono text-sm text-cyber-dim">
+                  {dictionary.portfolio.collaborateDescription}
+                </p>
+              </div>
+              <a
+                href="https://github.com/sponsors/JamBalaya56562"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="pp-btn pp-btn-amber whitespace-nowrap"
+              >
+                <span>◢ {dictionary.portfolio.getInTouch}</span>
+              </a>
             </div>
-            <a
-              href="https://github.com/sponsors/JamBalaya56562"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="px-8 py-3 bg-on-primary text-primary rounded-lg font-bold hover:opacity-90 transition-opacity whitespace-nowrap"
-            >
-              {dictionary.portfolio.getInTouch}
-            </a>
           </div>
         </div>
       </section>
     </div>
+  )
+}
+
+function Field({
+  label,
+  value,
+  mono,
+}: {
+  readonly label: string
+  readonly value: string
+  readonly mono?: boolean
+}) {
+  return (
+    <div>
+      <div className="pp-tick">{label}</div>
+      <div
+        className={`mt-1 ${mono ? "pp-num text-cyber-cyan" : "text-foreground"} text-sm`}
+      >
+        {value}
+      </div>
+    </div>
+  )
+}
+
+function ConnectivityItem({
+  href,
+  label,
+  value,
+  icon,
+  iconDark,
+}: {
+  readonly href?: string
+  readonly label: string
+  readonly value: string
+  readonly icon: React.ReactNode
+  readonly iconDark?: React.ReactNode
+}) {
+  const inner = (
+    <>
+      <div className="flex h-8 w-8 shrink-0 items-center justify-center border border-cyber-line bg-cyber-bg-1">
+        {icon}
+        {iconDark}
+      </div>
+      <div>
+        <div className="pp-tick">{label}</div>
+        <div className="pp-num text-sm text-foreground">{value}</div>
+      </div>
+    </>
+  )
+  return (
+    <li className="flex items-center gap-3">
+      {href ? (
+        <a
+          href={href}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="group flex w-full items-center gap-3 transition-colors hover:text-cyber-cyan"
+        >
+          {inner}
+        </a>
+      ) : (
+        inner
+      )}
+    </li>
   )
 }

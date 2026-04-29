@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, mock, test } from "bun:test"
 import { cleanup, render } from "@testing-library/react"
 import type { Post } from "@/lib/content/types"
+import { getDictionary } from "@/lib/i18n/get-dictionary"
 
 mock.module("next/link", () => ({
   default: ({
@@ -24,6 +25,7 @@ mock.module("next/image", () => ({
 }))
 
 const { BentoGrid } = await import("@/components/home/bento-grid")
+const dictionary = getDictionary("en")
 
 afterEach(cleanup)
 
@@ -73,22 +75,28 @@ describe("BentoGrid", () => {
         },
       }),
     ]
-    const { container } = render(<BentoGrid locale="en" posts={posts} />)
+    const { container } = render(
+      <BentoGrid locale="en" posts={posts} dictionary={dictionary} />,
+    )
     expect(container.textContent).toContain("First Post")
     expect(container.textContent).toContain("Second Post")
     expect(container.textContent).toContain("Third Post")
     expect(container.textContent).toContain("react")
-    expect(container.textContent).toContain("min read")
+    expect(container.textContent).toContain("MIN")
   })
 
   test("returns null when posts array is empty", () => {
-    const { container } = render(<BentoGrid locale="en" posts={[]} />)
+    const { container } = render(
+      <BentoGrid locale="en" posts={[]} dictionary={dictionary} />,
+    )
     expect(container.innerHTML).toBe("")
   })
 
   test("renders 1 post as full-width card", () => {
     const posts = [createMockPost({ slug: "solo" })]
-    const { container } = render(<BentoGrid locale="en" posts={posts} />)
+    const { container } = render(
+      <BentoGrid locale="en" posts={posts} dictionary={dictionary} />,
+    )
     expect(container.textContent).toContain("Test Post")
     const grid = container.querySelector(".grid")
     expect(grid?.className).toContain("grid-cols-1")
@@ -116,7 +124,9 @@ describe("BentoGrid", () => {
         },
       }),
     ]
-    const { container } = render(<BentoGrid locale="en" posts={posts} />)
+    const { container } = render(
+      <BentoGrid locale="en" posts={posts} dictionary={dictionary} />,
+    )
     expect(container.textContent).toContain("Post A")
     expect(container.textContent).toContain("Post B")
     const grid = container.querySelector(".grid")
@@ -133,10 +143,16 @@ describe("BentoGrid", () => {
       ["post-b", 456],
     ])
     const { container } = render(
-      <BentoGrid locale="en" posts={posts} viewCounts={viewCounts} />,
+      <BentoGrid
+        locale="en"
+        posts={posts}
+        viewCounts={viewCounts}
+        dictionary={dictionary}
+      />,
     )
-    expect(container.textContent).toContain("123 views")
-    expect(container.textContent).toContain("456 views")
+    expect(container.textContent).toContain("123")
+    expect(container.textContent).toContain("456")
+    expect(container.textContent).toContain("VIEWS")
   })
 
   test("falls back to 0 views when viewCounts is omitted", () => {
@@ -144,8 +160,10 @@ describe("BentoGrid", () => {
       createMockPost({ slug: "post-a" }),
       createMockPost({ slug: "post-b" }),
     ]
-    const { container } = render(<BentoGrid locale="en" posts={posts} />)
-    const matches = container.textContent?.match(/0 views/g)
+    const { container } = render(
+      <BentoGrid locale="en" posts={posts} dictionary={dictionary} />,
+    )
+    const matches = container.textContent?.match(/0 VIEWS/g)
     expect(matches).toHaveLength(2)
   })
 
@@ -156,10 +174,15 @@ describe("BentoGrid", () => {
     ]
     const viewCounts = new Map([["post-a", 99]])
     const { container } = render(
-      <BentoGrid locale="en" posts={posts} viewCounts={viewCounts} />,
+      <BentoGrid
+        locale="en"
+        posts={posts}
+        viewCounts={viewCounts}
+        dictionary={dictionary}
+      />,
     )
-    expect(container.textContent).toContain("99 views")
-    expect(container.textContent).toContain("0 views")
+    expect(container.textContent).toContain("99")
+    expect(container.textContent).toContain("0 VIEWS")
   })
 
   test("each card links to correct blog post path", () => {
@@ -183,7 +206,9 @@ describe("BentoGrid", () => {
         },
       }),
     ]
-    const { container } = render(<BentoGrid locale="en" posts={posts} />)
+    const { container } = render(
+      <BentoGrid locale="en" posts={posts} dictionary={dictionary} />,
+    )
     const links = container.querySelectorAll("a")
     expect(links[0]?.getAttribute("href")).toBe("/en/blog/alpha")
     expect(links[1]?.getAttribute("href")).toBe("/en/blog/beta")

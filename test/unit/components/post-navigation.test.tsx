@@ -187,9 +187,11 @@ describe("Feature: post-navigation, Property 4: label text matches dictionary", 
               dictionary={dict}
             />,
           )
-          const labels = container.querySelectorAll(".text-sm.text-gray-500")
-          expect(labels[0].textContent).toBe(dict.blog.previousPost)
-          expect(labels[1].textContent).toBe(dict.blog.nextPost)
+          // In the cyber redesign labels live in `.pp-tick` spans and are
+          // decorated with leading/trailing arrows.
+          const labels = container.querySelectorAll(".pp-tick")
+          expect(labels[0].textContent).toContain(dict.blog.previousPost)
+          expect(labels[1].textContent).toContain(dict.blog.nextPost)
         }),
         { numRuns: 100 },
       )

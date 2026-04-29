@@ -46,7 +46,7 @@ describe("RecentDispatches", () => {
     expect(container.textContent).toContain(dictionary.home.recentDescription)
   })
 
-  test("renders post entries with numbered index, title, date, tag", () => {
+  test("renders post entries with numbered index, title, dotted date, tag", () => {
     const posts = [
       createMockPost({
         slug: "post-1",
@@ -70,13 +70,27 @@ describe("RecentDispatches", () => {
     const { container } = render(
       <RecentDispatches locale="en" dictionary={dictionary} posts={posts} />,
     )
-    expect(container.textContent).toContain("01")
-    expect(container.textContent).toContain("02")
+    expect(container.textContent).toContain("001")
+    expect(container.textContent).toContain("002")
     expect(container.textContent).toContain("First")
     expect(container.textContent).toContain("Second")
-    expect(container.textContent).toContain("2024-03-15")
+    // dates are rendered with dot separators in the cyber design
+    expect(container.textContent).toContain("2024.03.15")
     expect(container.textContent).toContain("react")
     expect(container.textContent).toContain("next")
+  })
+
+  test("indexOffset shifts the numbering", () => {
+    const posts = [createMockPost({ slug: "p" })]
+    const { container } = render(
+      <RecentDispatches
+        locale="en"
+        dictionary={dictionary}
+        posts={posts}
+        indexOffset={5}
+      />,
+    )
+    expect(container.textContent).toContain("006")
   })
 
   test("renders View all link to /{locale}/blog", () => {

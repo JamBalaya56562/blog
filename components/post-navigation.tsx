@@ -1,4 +1,5 @@
 import Link from "next/link"
+import { Brackets } from "@/components/ui/brackets"
 import type { AdjacentPosts } from "@/lib/content/adjacent"
 import type { Locale } from "@/lib/i18n/config"
 import type { Dictionary } from "@/lib/i18n/get-dictionary"
@@ -26,12 +27,15 @@ export function PostNavigation({
       {previous ? (
         <Link
           href={getBlogPostPath(locale, previous.slug)}
-          className="flex min-w-0 flex-1 flex-col rounded border border-gray-200 p-4 hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800"
+          className="pp-card-hover relative flex min-w-0 flex-1 flex-col border border-cyber-line bg-cyber-bg-1/40 p-4 transition-colors hover:border-cyber-cyan"
         >
-          <span className="text-sm text-gray-500 dark:text-gray-400">
-            {dictionary.blog.previousPost}
+          <Brackets />
+          <span className="pp-tick mb-1 text-cyber-cyan">
+            ◢ {dictionary.blog.previousPost}
           </span>
-          <span className="truncate font-medium">{previous.title}</span>
+          <span className="pp-display truncate text-base text-foreground">
+            ← {previous.title}
+          </span>
         </Link>
       ) : (
         <div aria-hidden="true" className="hidden flex-1 sm:block" />
@@ -39,12 +43,15 @@ export function PostNavigation({
       {next ? (
         <Link
           href={getBlogPostPath(locale, next.slug)}
-          className="flex min-w-0 flex-1 flex-col rounded border border-gray-200 p-4 text-right hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800"
+          className="pp-card-hover relative flex min-w-0 flex-1 flex-col border border-cyber-line bg-cyber-bg-1/40 p-4 text-right transition-colors hover:border-cyber-cyan"
         >
-          <span className="text-sm text-gray-500 dark:text-gray-400">
-            {dictionary.blog.nextPost}
+          <Brackets />
+          <span className="pp-tick mb-1 text-cyber-amber">
+            {dictionary.blog.nextPost} ◣
           </span>
-          <span className="truncate font-medium">{next.title}</span>
+          <span className="pp-display truncate text-base text-foreground">
+            {next.title} →
+          </span>
         </Link>
       ) : (
         <div aria-hidden="true" className="hidden flex-1 sm:block" />

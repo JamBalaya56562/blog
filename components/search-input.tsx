@@ -56,17 +56,28 @@ export function SearchInput({
   const id = useId()
 
   return (
-    <div className="relative">
+    <div className="relative w-full">
       <label htmlFor={id} className="sr-only">
         {label}
       </label>
+      <span
+        aria-hidden
+        className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-cyber-cyan"
+      >
+        ◢
+      </span>
       <input
         id={id}
         type="search"
         value={value}
         onChange={handleChange}
         placeholder={placeholder}
-        className="w-full rounded-xl border border-outline-variant bg-surface-container-lowest px-4 py-2.5 text-sm text-on-surface placeholder:text-on-surface-variant transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+        className="pp-input w-full"
+        // Inline padding-left wins over .pp-input's `padding: 10px 14px`
+        // (Tailwind's `pl-*` utility lives in @layer utilities and loses to
+        // the unlayered .pp-input shorthand). Hardcoding here guarantees
+        // the typed text never overlaps the leading ◢ glyph.
+        style={{ paddingLeft: "2.25rem" }}
       />
     </div>
   )

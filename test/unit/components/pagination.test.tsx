@@ -77,7 +77,8 @@ describe("Pagination", () => {
     )
     const disabled = container.querySelector("[aria-disabled='true']")
     expect(disabled).not.toBeNull()
-    expect(disabled?.textContent).toBe("Previous")
+    // Cyber redesign: the label is decorated with a leading arrow ("← Previous")
+    expect(disabled?.textContent).toContain("Previous")
   })
 
   // Validates: Requirements 3.6
@@ -93,8 +94,8 @@ describe("Pagination", () => {
     const disabledElements = container.querySelectorAll(
       "[aria-disabled='true']",
     )
-    const nextDisabled = Array.from(disabledElements).find(
-      (el) => el.textContent === "Next",
+    const nextDisabled = Array.from(disabledElements).find((el) =>
+      el.textContent?.includes("Next"),
     )
     expect(nextDisabled).not.toBeUndefined()
   })
@@ -110,8 +111,8 @@ describe("Pagination", () => {
       />,
     )
     const links = container.querySelectorAll("a")
-    const prevLink = Array.from(links).find(
-      (el) => el.textContent === "Previous",
+    const prevLink = Array.from(links).find((el) =>
+      el.textContent?.includes("Previous"),
     )
     expect(prevLink).not.toBeUndefined()
     expect(prevLink?.getAttribute("href")).toBe("/en/blog")
@@ -128,7 +129,9 @@ describe("Pagination", () => {
       />,
     )
     const links = container.querySelectorAll("a")
-    const nextLink = Array.from(links).find((el) => el.textContent === "Next")
+    const nextLink = Array.from(links).find((el) =>
+      el.textContent?.includes("Next"),
+    )
     expect(nextLink).not.toBeUndefined()
     expect(nextLink?.getAttribute("href")).toBe("/en/blog?page=2")
   })

@@ -12,49 +12,50 @@
   "footer": {
     "copyright": "© {year} Jam Balaya. All rights reserved.",
     "privacyPolicy": "プライバシーポリシー",
-    "portfolio": "自己紹介"
+    "portfolio": "自己紹介",
+    "systemsNominal": "ALL SYSTEMS NOMINAL"
+  },
+  "ticker": {
+    "indexed": "POSTS_INDEXED",
+    "latest": "LATEST",
+    "tags": "TAGS",
+    "uplink": "UPLINK",
+    "hue": "HUE"
   },
   "home": {
-    "intro": "ブログへようこそ。Web開発やテクノロジーについて書いています。",
-    "latestPosts": "最新の記事",
-    "badge": "モダンな開発体験",
-    "badge2": "オープンソース志向",
     "title": "プログラミングを",
     "titleAccent": "もっと身近に。",
     "subtitle": "新しい技術を積極的に取り入れて、モダンな開発体験を共有します。",
     "subtitleSecond": "日々のコーディングがもっと楽しくなるヒントや知見をお届けします。",
     "ctaBrowse": "すべての記事を見る",
-    "ctaGithub": "GitHub リポジトリ",
-    "featuredLabel": "注目",
+    "featuredTitle": "RECENT EXPERIMENTS",
     "recentTitle": "最近のディスパッチ",
     "recentDescription": "ラボからの新鮮な視点と技術的な解説。",
     "viewAll": "すべて表示",
-    "readDispatch": "ディスパッチを読む"
+    "readDispatch": "ディスパッチを読む",
+    "entriesShort": "件"
   },
   "blog": {
     "title": "ブログ",
+    "dispatchesMatch": "件のディスパッチがフィルター条件に一致",
     "noPostsFound": "記事が見つかりませんでした。",
-    "filterByTag": "タグで絞り込み:",
-    "noActiveFilter": "すべての記事",
-    "clearFilter": "フィルター解除",
-    "readMore": "続きを読む",
     "translationAvailable": "この記事は以下の言語でも利用できます:",
     "postedOn": "投稿日",
-    "taggedWith": "タグ",
     "toc": "目次",
-    "previousPost": "前の記事",
-    "nextPost": "次の記事",
+    "previousPost": "前のディスパッチ",
+    "nextPost": "次のディスパッチ",
     "continueExploring": "他の記事を探す",
     "previousPage": "前へ",
     "nextPage": "次へ",
     "pagination": "ページナビゲーション",
-    "searchPlaceholder": "記事を検索...",
+    "searchPlaceholder": "// 記事を検索...",
     "searchLabel": "検索",
     "searchResultsFor": "検索結果:",
     "clearSearch": "検索をクリア",
     "sortLabel": "並び替え:",
-    "sortNewest": "新しい順",
-    "sortPopular": "人気順"
+    "sortNewest": "NEWEST",
+    "sortPopular": "VIEWS",
+    "minRead": "MIN READ"
   },
   "language": {
     "switchTo": "English",
@@ -87,7 +88,11 @@
     "activeProject": "アクティブプロジェクト",
     "collaborateCta": "コラボレーションに興味がありますか？",
     "collaborateDescription": "OSSコラボレーションや技術的なディスカッションを歓迎します。",
-    "getInTouch": "お問い合わせ"
+    "getInTouch": "お問い合わせ",
+    "idHandle": "HANDLE",
+    "idName": "ID",
+    "idRole": "ROLE",
+    "idLocation": "LOCATION"
   },
   "privacyPolicy": {
     "title": "プライバシーポリシー",

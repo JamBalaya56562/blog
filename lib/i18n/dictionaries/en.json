@@ -12,49 +12,50 @@
   "footer": {
     "copyright": "© {year} Jam Balaya. All rights reserved.",
     "privacyPolicy": "Privacy Policy",
-    "portfolio": "About Me"
+    "portfolio": "About Me",
+    "systemsNominal": "ALL SYSTEMS NOMINAL"
+  },
+  "ticker": {
+    "indexed": "POSTS_INDEXED",
+    "latest": "LATEST",
+    "tags": "TAGS",
+    "uplink": "UPLINK",
+    "hue": "HUE"
   },
   "home": {
-    "intro": "Welcome to my blog. I write about web development, technology, and more.",
-    "latestPosts": "Latest Posts",
-    "badge": "Modern Dev Experience",
-    "badge2": "Open Source First",
     "title": "Making programming",
     "titleAccent": "more accessible.",
     "subtitle": "Embracing new technologies and sharing modern development experiences.",
     "subtitleSecond": "Tips, tutorials, and real-world insights to make your coding journey smoother.",
     "ctaBrowse": "Browse All Articles",
-    "ctaGithub": "GitHub Repository",
-    "featuredLabel": "FEATURED",
+    "featuredTitle": "RECENT EXPERIMENTS",
     "recentTitle": "Recent Dispatches",
     "recentDescription": "Fresh perspectives and technical breakdowns from the laboratory.",
     "viewAll": "View all",
-    "readDispatch": "Read Dispatch"
+    "readDispatch": "Read Dispatch",
+    "entriesShort": "ENTRIES"
   },
   "blog": {
     "title": "Blog",
+    "dispatchesMatch": "dispatches matching filter",
     "noPostsFound": "No posts found.",
-    "filterByTag": "Filtered by tag:",
-    "noActiveFilter": "All posts",
-    "clearFilter": "Clear filter",
-    "readMore": "Read more",
     "translationAvailable": "This post is also available in:",
     "postedOn": "Posted on",
-    "taggedWith": "Tagged with",
     "toc": "Table of Contents",
-    "previousPost": "Previous Post",
-    "nextPost": "Next Post",
+    "previousPost": "Previous Dispatch",
+    "nextPost": "Next Dispatch",
     "continueExploring": "Continue Exploring",
     "previousPage": "Previous",
     "nextPage": "Next",
     "pagination": "Pagination",
-    "searchPlaceholder": "Search articles...",
+    "searchPlaceholder": "// search dispatches...",
     "searchLabel": "Search",
     "searchResultsFor": "Search results for:",
     "clearSearch": "Clear search",
     "sortLabel": "Sort by:",
-    "sortNewest": "Newest",
-    "sortPopular": "Most viewed"
+    "sortNewest": "NEWEST",
+    "sortPopular": "VIEWS",
+    "minRead": "MIN READ"
   },
   "language": {
     "switchTo": "日本語",
@@ -87,7 +88,11 @@
     "activeProject": "Active Project",
     "collaborateCta": "Interested in collaborating?",
     "collaborateDescription": "I'm open to OSS collaboration and technical discussions.",
-    "getInTouch": "Get in Touch"
+    "getInTouch": "Get in Touch",
+    "idHandle": "HANDLE",
+    "idName": "ID",
+    "idRole": "ROLE",
+    "idLocation": "LOCATION"
   },
   "privacyPolicy": {
     "title": "Privacy Policy",

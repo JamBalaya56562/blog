@@ -7,15 +7,22 @@ interface TagLinkProps {
   readonly tag: string
   readonly locale: Locale
   readonly className?: string
+  readonly active?: boolean
 }
 
-export function TagLink({ tag, locale, className }: Readonly<TagLinkProps>) {
+export function TagLink({
+  tag,
+  locale,
+  className,
+  active,
+}: Readonly<TagLinkProps>) {
   const router = useRouter()
 
   return (
     <button
       type="button"
-      className={`tag-link ${className}`}
+      data-active={active ? "true" : undefined}
+      className={`tag-link ${className ?? ""}`}
       onClick={(e) => {
         e.preventDefault()
         e.stopPropagation()
