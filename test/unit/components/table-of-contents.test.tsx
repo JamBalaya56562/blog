@@ -36,7 +36,9 @@ describe("TableOfContents", () => {
     const { container } = render(<TableOfContents items={items} title="TOC" />)
     const nav = container.querySelector("nav")
     expect(nav?.className).toContain("hidden")
-    expect(nav?.className).toContain("lg:block")
+    // Cyber redesign uses `xl:block` since the floating TOC needs more
+    // horizontal room around the centered article column.
+    expect(nav?.className).toContain("xl:block")
   })
 
   test("renders the provided title", () => {

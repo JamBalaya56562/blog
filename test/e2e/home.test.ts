@@ -1,13 +1,16 @@
 import { expect, test } from "@playwright/test"
 
 test.describe("Home page - Section visibility", () => {
-  test("hero section shows badge, title, subtitle, and CTA button", async ({
+  test("hero section shows title, subtitle, HUD strip, and CTAs", async ({
     page,
   }) => {
     await page.goto("/en")
-    await expect(page.getByText("Modern Dev Experience")).toBeVisible()
     await expect(page.getByText("Making programming")).toBeVisible()
     await expect(page.getByText("more accessible.")).toBeVisible()
+    // The HUD strip beneath the headline replaced the old badge.
+    await expect(page.getByText("POSTS", { exact: true })).toBeVisible()
+    await expect(page.getByText("TAGS", { exact: true })).toBeVisible()
+    await expect(page.getByText("LATEST", { exact: true })).toBeVisible()
     await expect(
       page.getByRole("link", { name: "Browse All Articles" }),
     ).toBeVisible()
@@ -39,7 +42,7 @@ test.describe("Home page - Responsive layout", () => {
   }) => {
     await page.setViewportSize({ width: 375, height: 812 })
     await page.goto("/en")
-    await expect(page.getByText("Modern Dev Experience")).toBeVisible()
+    await expect(page.getByText("Making programming")).toBeVisible()
     await expect(page.locator("a[href*='/en/blog/']").first()).toBeVisible()
   })
 
@@ -64,7 +67,8 @@ test.describe("Home page - Dark mode", () => {
   }) => {
     await page.setViewportSize({ width: 1280, height: 800 })
     await page.goto("/en")
-    // Click the theme toggle button
+    // Click the theme toggle button (only the desktop toggle is in the DOM
+    // at this viewport — the mobile menu is closed and unmounted).
     const themeButton = page.getByRole("button", {
       name: /Switch to dark mode|Switch to light mode/,
     })
@@ -73,8 +77,8 @@ test.describe("Home page - Dark mode", () => {
     const htmlClass = await page.locator("html").getAttribute("class")
     expect(htmlClass).toContain("dark")
     // Verify hero section still renders in dark mode
-    await expect(page.getByText("Modern Dev Experience")).toBeVisible()
     await expect(page.getByText("Making programming")).toBeVisible()
+    await expect(page.getByText("more accessible.")).toBeVisible()
   })
 })
 
@@ -102,8 +106,13 @@ test.describe("Home page - Navigation", () => {
     const firstCard = page.locator("a[href*='/en/blog/']").first()
     const href = await firstCard.getAttribute("href")
     expect(href).toMatch(/\/en\/blog\//)
-    await firstCard.click()
-    await expect(page).toHaveURL(/\/en\/blog\//)
+    // The bento cards live below the fold and have a translateY hover
+    // animation. Scroll into view first so the click target is stable.
+    await firstCard.scrollIntoViewIfNeeded()
+    await Promise.all([
+      page.waitForURL(/\/en\/blog\/[\w-]+/, { timeout: 15000 }),
+      firstCard.click(),
+    ])
   })
 
   test("View all link in Recent Dispatches navigates to blog page", async ({
@@ -122,21 +131,19 @@ test.describe("Home page - Navigation", () => {
 test.describe("Home page - Multilingual", () => {
   test("/en shows English dictionary text", async ({ page }) => {
     await page.goto("/en")
-    await expect(page.getByText("Modern Dev Experience")).toBeVisible()
+    await expect(page.getByText("Making programming")).toBeVisible()
+    await expect(page.getByText("more accessible.")).toBeVisible()
     await expect(
       page.getByRole("link", { name: "Browse All Articles" }),
     ).toBeVisible()
-    await expect(page.getByText("Making programming")).toBeVisible()
   })
 
   test("/ja shows Japanese dictionary text", async ({ page }) => {
     await page.goto("/ja")
-    await expect(
-      page.getByText("モダンな開発体験", { exact: true }),
-    ).toBeVisible()
+    await expect(page.getByText("プログラミングを")).toBeVisible()
+    await expect(page.getByText("もっと身近に。")).toBeVisible()
     await expect(
       page.getByRole("link", { name: "すべての記事を見る" }),
     ).toBeVisible()
-    await expect(page.getByText("プログラミングを")).toBeVisible()
   })
 })

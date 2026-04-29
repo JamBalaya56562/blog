@@ -8,5 +8,10 @@ export function ViewCounter({ slug, count }: { slug: string; count: number }) {
     incrementViewCountAction(slug)
   }, [slug])
 
-  return <span>{count.toLocaleString()} views</span>
+  return (
+    <span>
+      <span className="pp-num text-cyber-cyan">{count.toLocaleString()}</span>{" "}
+      VIEWS
+    </span>
+  )
 }

@@ -1,9 +1,7 @@
 import { notFound } from "next/navigation"
 import { Suspense } from "react"
 import { BentoGrid } from "@/components/home/bento-grid"
-import { CodeRain } from "@/components/home/code-rain"
 import { HeroSection } from "@/components/home/hero-section"
-import { ParticleNetwork } from "@/components/home/particle-network"
 import { RecentDispatches } from "@/components/home/recent-dispatches"
 import { HomeContentSkeleton } from "@/components/skeletons"
 import { createContentLoader } from "@/lib/content/loader"
@@ -12,7 +10,7 @@ import type { Locale } from "@/lib/i18n/config"
 import { isValidLocale } from "@/lib/i18n/config"
 import { getDictionary } from "@/lib/i18n/get-dictionary"
 
-async function HomeContent({ locale }: { locale: Locale }) {
+async function HomeBody({ locale }: { locale: Locale }) {
   "use cache"
   const dictionary = getDictionary(locale)
   const loader = createContentLoader()
@@ -20,21 +18,37 @@ async function HomeContent({ locale }: { locale: Locale }) {
 
   const bentoGridPosts = posts.slice(0, 3)
   const recentPosts = posts.slice(3, 8)
-  const viewCounts = await getViewCounts(bentoGridPosts.map((p) => p.slug))
+  const viewCounts = await getViewCounts(
+    [...bentoGridPosts, ...recentPosts].map((p) => p.slug),
+  )
+
+  const tagSet = new Set<string>()
+  for (const p of posts) {
+    for (const t of p.frontmatter.tags) {
+      tagSet.add(t)
+    }
+  }
 
   return (
     <>
-      <div className="py-20">
-        <BentoGrid
-          locale={locale}
-          posts={bentoGridPosts}
-          viewCounts={viewCounts}
-        />
-      </div>
+      <HeroSection
+        locale={locale}
+        dictionary={dictionary}
+        postCount={posts.length}
+        tagCount={tagSet.size}
+        latestDate={posts[0]?.frontmatter.date}
+      />
+      <BentoGrid
+        locale={locale}
+        posts={bentoGridPosts}
+        viewCounts={viewCounts}
+        dictionary={dictionary}
+      />
       <RecentDispatches
         locale={locale}
         dictionary={dictionary}
         posts={recentPosts}
+        indexOffset={bentoGridPosts.length}
       />
     </>
   )
@@ -50,15 +64,10 @@ export default async function HomePage({
     notFound()
   }
 
-  const dictionary = getDictionary(locale)
-
   return (
     <div className="relative">
-      <ParticleNetwork />
-      <CodeRain />
-      <HeroSection locale={locale} dictionary={dictionary} />
       <Suspense fallback={<HomeContentSkeleton />}>
-        <HomeContent locale={locale} />
+        <HomeBody locale={locale} />
       </Suspense>
     </div>
   )

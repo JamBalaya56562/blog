@@ -34,6 +34,9 @@ function buildHref(
   return (qs ? `${basePath}?${qs}` : basePath) as Route
 }
 
+const baseCell =
+  "flex h-9 min-w-9 items-center justify-center px-3 font-mono text-[11px] uppercase tracking-[0.18em] transition-colors"
+
 export function Pagination({
   currentPage,
   totalPages,
@@ -52,33 +55,32 @@ export function Pagination({
   return (
     <nav
       aria-label={labels.pagination}
-      className="mt-12 flex items-center justify-center gap-1"
+      className="mt-12 flex flex-wrap items-center justify-center gap-1 border-t border-cyber-line pt-6"
     >
       {isFirstPage ? (
         <span
           aria-disabled="true"
-          className="rounded-lg px-3 py-2 text-sm text-on-surface-variant opacity-50 pointer-events-none"
+          className={`${baseCell} pointer-events-none border border-cyber-line text-cyber-dimmer`}
         >
-          {labels.previous}
+          ← {labels.previous}
         </span>
       ) : (
         <Link
           href={buildHref(basePath, currentPage - 1, searchParams)}
-          className="rounded-lg px-3 py-2 text-sm text-on-surface-variant transition-colors hover:bg-surface-container"
+          className={`${baseCell} border border-cyber-line text-cyber-dim hover:border-cyber-cyan hover:text-cyber-cyan`}
         >
-          {labels.previous}
+          ← {labels.previous}
         </Link>
       )}
 
       {pageItems.map((item, _index) => {
         if (item.type === "ellipsis") {
-          // Use surrounding page numbers to create a stable key
           const prevPage = pageItems[_index - 1]
           const keyId = prevPage?.type === "page" ? prevPage.page : _index
           return (
             <span
               key={`ellipsis-after-${keyId}`}
-              className="px-2 py-2 text-sm text-on-surface-variant"
+              className={`${baseCell} text-cyber-dim`}
             >
               …
             </span>
@@ -90,7 +92,7 @@ export function Pagination({
           <span
             key={item.page}
             aria-current="page"
-            className="rounded-lg bg-primary px-3 py-2 text-sm font-medium text-on-primary"
+            className={`${baseCell} bg-cyber-cyan text-cyber-bg-0`}
           >
             {item.page}
           </span>
@@ -98,7 +100,7 @@ export function Pagination({
           <Link
             key={item.page}
             href={buildHref(basePath, item.page, searchParams)}
-            className="rounded-lg px-3 py-2 text-sm text-on-surface-variant transition-colors hover:bg-surface-container"
+            className={`${baseCell} border border-cyber-line text-cyber-dim hover:border-cyber-cyan hover:text-cyber-cyan`}
           >
             {item.page}
           </Link>
@@ -108,16 +110,16 @@ export function Pagination({
       {isLastPage ? (
         <span
           aria-disabled="true"
-          className="rounded-lg px-3 py-2 text-sm text-on-surface-variant opacity-50 pointer-events-none"
+          className={`${baseCell} pointer-events-none border border-cyber-line text-cyber-dimmer`}
         >
-          {labels.next}
+          {labels.next} →
         </span>
       ) : (
         <Link
           href={buildHref(basePath, currentPage + 1, searchParams)}
-          className="rounded-lg px-3 py-2 text-sm text-on-surface-variant transition-colors hover:bg-surface-container"
+          className={`${baseCell} border border-cyber-line text-cyber-dim hover:border-cyber-cyan hover:text-cyber-cyan`}
         >
-          {labels.next}
+          {labels.next} →
         </Link>
       )}
     </nav>

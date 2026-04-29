@@ -62,11 +62,13 @@ describe("ArticleCard rendering", () => {
   })
 
   // Validates: Requirements 2.3
-  test("image has aspect-video class applied", () => {
+  test("image wrapper has aspect-video class applied", () => {
     const { container } = render(<ArticleCard post={basePost} locale="en" />)
     const img = container.querySelector("img")
     expect(img).not.toBeNull()
-    expect(img?.className).toContain("aspect-video")
+    // In the cyber redesign the aspect ratio lives on the wrapper, not the img.
+    const wrapper = img?.closest("div")
+    expect(wrapper?.className).toContain("aspect-video")
   })
 
   // Validates: Requirements 1.5, 6.4
@@ -98,12 +100,12 @@ describe("ArticleCard rendering", () => {
       <ArticleCard post={basePost} locale="en" viewCount={1234} />,
     )
     expect(container.textContent).toContain("1,234")
-    expect(container.textContent).toContain("views")
+    expect(container.textContent).toContain("VIEWS")
   })
 
   test("viewCount defaults to 0 views when omitted", () => {
     const { container } = render(<ArticleCard post={basePost} locale="en" />)
-    expect(container.textContent).toContain("0 views")
+    expect(container.textContent).toContain("0 VIEWS")
   })
 
   test("viewCount of zero is displayed", () => {
@@ -111,6 +113,6 @@ describe("ArticleCard rendering", () => {
       <ArticleCard post={basePost} locale="en" viewCount={0} />,
     )
     expect(container.textContent).toContain("0")
-    expect(container.textContent).toContain("views")
+    expect(container.textContent).toContain("VIEWS")
   })
 })

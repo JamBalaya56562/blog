@@ -11,12 +11,14 @@ import {
 } from "@/components/article-card"
 import { PostNavigation } from "@/components/post-navigation"
 import { getRelatedPosts, RelatedPosts } from "@/components/related-posts"
+import { ScrollProgress } from "@/components/scroll-progress"
 import { BlogPostSkeleton } from "@/components/skeletons"
 import { TableOfContents } from "@/components/table-of-contents"
+import { Brackets } from "@/components/ui/brackets"
 import { ViewCounter } from "@/components/view-counter"
 import { findAdjacentPosts } from "@/lib/content/adjacent"
 import { createContentLoader } from "@/lib/content/loader"
-import { getViewCount } from "@/lib/db/queries"
+import { getViewCount, getViewCounts } from "@/lib/db/queries"
 import type { Locale } from "@/lib/i18n/config"
 import { isValidLocale, locales } from "@/lib/i18n/config"
 import { getDictionary } from "@/lib/i18n/get-dictionary"
@@ -105,79 +107,100 @@ async function BlogPostContent({
     getViewCount(slug),
   ])
   const adjacentPosts = findAdjacentPosts(allPosts, slug)
+  const related = getRelatedPosts(allPosts, slug)
+  const relatedViewCounts = await getViewCounts(related.map((p) => p.slug))
+  const readMin = estimateReadingTime(post.content)
+  const category = post.frontmatter.tags[0]?.toUpperCase() ?? "DISPATCH"
 
   return (
-    <div className="mx-auto max-w-3xl">
+    <>
+      <ScrollProgress />
       <TableOfContents items={tocItems} title={dictionary.blog.toc} />
-      <article>
-        <header className="mb-8">
-          <ViewTransition name={`post-title-${slug}`} share="morph">
-            <h1 className="text-4xl font-bold">{post.frontmatter.title}</h1>
-          </ViewTransition>
-          <ViewTransition name={`post-meta-${slug}`} share="morph">
-            <div className="mt-2 flex flex-wrap items-center gap-x-3 text-gray-500 dark:text-gray-400">
-              <span className="basis-full md:basis-auto">
-                {dictionary.blog.postedOn} {post.frontmatter.date}
-              </span>
-              <span className="hidden md:inline">·</span>
-              <ViewCounter slug={slug} count={viewCount} />
-              <span>·</span>
-              <span>{estimateReadingTime(post.content)} min read</span>
+      <div className="mx-auto max-w-3xl px-4 py-10 sm:px-6">
+        <article>
+          <header className="mb-10">
+            <div className="pp-tick mb-3">◢ DISPATCH / {category}</div>
+            <ViewTransition name={`post-title-${slug}`} share="morph">
+              <h1 className="pp-display text-[clamp(28px,5vw,52px)] leading-[1.1] tracking-tight text-foreground">
+                {post.frontmatter.title}
+              </h1>
+            </ViewTransition>
+            <ViewTransition name={`post-meta-${slug}`} share="morph">
+              <div className="pp-tick mt-5 flex flex-wrap items-center gap-3">
+                <span>
+                  {dictionary.blog.postedOn}{" "}
+                  {post.frontmatter.date.replace(/-/g, ".")}
+                </span>
+                <span className="text-cyber-line-hi">·</span>
+                <span>
+                  <span className="pp-num text-cyber-cyan">{readMin}</span>{" "}
+                  {dictionary.blog.minRead}
+                </span>
+                <span className="text-cyber-line-hi">·</span>
+                <ViewCounter slug={slug} count={viewCount} />
+              </div>
+            </ViewTransition>
+            <div className="mt-3 flex flex-wrap gap-1.5">
+              {post.frontmatter.tags.map((tag) => (
+                <Link
+                  key={tag}
+                  href={
+                    `/${locale}/blog?tag=${encodeURIComponent(tag)}` as Route
+                  }
+                  className="pp-tag"
+                >
+                  {tag}
+                </Link>
+              ))}
+            </div>
+            {translationLocale && (
+              <p className="pp-tick mt-4">
+                ◢ {dictionary.blog.translationAvailable}{" "}
+                <Link
+                  href={getBlogPostPath(translationLocale, slug)}
+                  className="pp-link text-cyber-cyan transition-colors hover:text-cyber-cyan-bright"
+                >
+                  {getDictionary(translationLocale).language.current}
+                </Link>
+              </p>
+            )}
+          </header>
+
+          <ViewTransition name={`post-image-${slug}`} share="morph">
+            <div className="relative mb-12 aspect-[21/9] overflow-hidden border border-cyber-line">
+              <Brackets />
+              <Image
+                src={post.frontmatter.image ?? DEFAULT_THUMBNAIL}
+                alt={post.frontmatter.title}
+                width={1200}
+                height={514}
+                className="h-full w-full object-cover"
+              />
             </div>
           </ViewTransition>
-          <div className="mt-2 flex gap-2">
-            {post.frontmatter.tags.map((tag) => (
-              <Link
-                key={tag}
-                href={`/${locale}/blog?tag=${encodeURIComponent(tag)}` as Route}
-                className="rounded bg-gray-100 px-2 py-0.5 text-xs text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
-              >
-                {tag}
-              </Link>
-            ))}
-          </div>
-          {translationLocale && (
-            <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">
-              {dictionary.blog.translationAvailable}{" "}
-              <Link
-                href={getBlogPostPath(translationLocale, slug)}
-                className="text-blue-600 hover:underline dark:text-blue-400"
-              >
-                {getDictionary(translationLocale).language.current}
-              </Link>
-            </p>
-          )}
-        </header>
-        <ViewTransition name={`post-image-${slug}`} share="morph">
-          <div className="mb-12 overflow-hidden rounded-xl aspect-[21/9]">
-            <Image
-              src={post.frontmatter.image ?? DEFAULT_THUMBNAIL}
-              alt={post.frontmatter.title}
-              width={1200}
-              height={514}
-              className="h-full w-full object-cover"
+
+          <div className="prose-cyber max-w-none">
+            <MDXRemote
+              source={post.content}
+              options={{ mdxOptions: { remarkPlugins: [remarkGfm] } }}
+              components={useMDXComponents()}
             />
           </div>
-        </ViewTransition>
-        <div className="prose dark:prose-invert max-w-none">
-          <MDXRemote
-            source={post.content}
-            options={{ mdxOptions: { remarkPlugins: [remarkGfm] } }}
-            components={useMDXComponents()}
-          />
-        </div>
-      </article>
-      <RelatedPosts
-        locale={locale}
-        posts={getRelatedPosts(allPosts, slug)}
-        dictionary={dictionary}
-      />
-      <PostNavigation
-        locale={locale}
-        adjacentPosts={adjacentPosts}
-        dictionary={dictionary}
-      />
-    </div>
+        </article>
+
+        <RelatedPosts
+          locale={locale}
+          posts={related}
+          dictionary={dictionary}
+          viewCounts={relatedViewCounts}
+        />
+        <PostNavigation
+          locale={locale}
+          adjacentPosts={adjacentPosts}
+          dictionary={dictionary}
+        />
+      </div>
+    </>
   )
 }
 

@@ -2,7 +2,6 @@
 
 import type { Route } from "next"
 import { useRouter, useSearchParams } from "next/navigation"
-import { useId } from "react"
 
 interface SortSelectProps {
   readonly labels: {
@@ -13,16 +12,18 @@ interface SortSelectProps {
   readonly basePath: string
 }
 
+/**
+ * Tab-style sort switch (newest / most-viewed) — replaces the old <select>.
+ */
 export function SortSelect({ labels, basePath }: SortSelectProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const id = useId()
   const sortParam = searchParams.get("sort")
   const current = sortParam === "popular" ? "popular" : "newest"
 
-  function handleChange(e: React.ChangeEvent<HTMLSelectElement>) {
+  function setSort(next: "newest" | "popular") {
     const params = new URLSearchParams(searchParams.toString())
-    if (e.target.value === "popular") {
+    if (next === "popular") {
       params.set("sort", "popular")
     } else {
       params.delete("sort")
@@ -33,23 +34,34 @@ export function SortSelect({ labels, basePath }: SortSelectProps) {
     router.push(href as Route)
   }
 
+  const options: Array<{ value: "newest" | "popular"; label: string }> = [
+    { value: "newest", label: labels.sortNewest },
+    { value: "popular", label: labels.sortPopular },
+  ]
+
   return (
-    <div className="flex items-center gap-2">
-      <label
-        htmlFor={id}
-        className="text-sm text-on-surface-variant whitespace-nowrap"
-      >
-        {labels.sortLabel}
-      </label>
-      <select
-        id={id}
-        value={current}
-        onChange={handleChange}
-        className="rounded-xl border border-outline-variant bg-surface-container-lowest px-3 py-2.5 text-sm text-on-surface transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
-      >
-        <option value="newest">{labels.sortNewest}</option>
-        <option value="popular">{labels.sortPopular}</option>
-      </select>
-    </div>
+    <fieldset className="flex border border-cyber-line">
+      <legend className="sr-only">{labels.sortLabel}</legend>
+      {options.map((opt, i) => {
+        const active = opt.value === current
+        return (
+          <button
+            type="button"
+            key={opt.value}
+            onClick={() => setSort(opt.value)}
+            aria-pressed={active}
+            className={`px-4 py-2 font-mono text-[10px] uppercase tracking-[0.18em] transition-colors ${
+              i > 0 ? "border-l border-cyber-line" : ""
+            } ${
+              active
+                ? "bg-cyber-cyan text-cyber-bg-0"
+                : "text-cyber-dim hover:text-cyber-cyan"
+            }`}
+          >
+            {opt.label}
+          </button>
+        )
+      })}
+    </fieldset>
   )
 }

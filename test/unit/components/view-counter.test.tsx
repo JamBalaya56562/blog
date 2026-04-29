@@ -18,7 +18,7 @@ describe("ViewCounter", () => {
   test("renders view count immediately from prop", () => {
     const { container } = render(<ViewCounter slug="test-post" count={42} />)
     expect(container.textContent).toContain("42")
-    expect(container.textContent).toContain("views")
+    expect(container.textContent).toContain("VIEWS")
   })
 
   test("calls incrementViewCountAction on mount", async () => {
@@ -32,7 +32,7 @@ describe("ViewCounter", () => {
 
   test("formats large numbers with locale separators", () => {
     const { container } = render(<ViewCounter slug="popular" count={1234567} />)
-    expect(container.textContent).toContain("views")
+    expect(container.textContent).toContain("VIEWS")
     // toLocaleString() formats differently by locale, just check it's not raw digits
     expect(container.textContent).not.toContain("1234567")
   })
@@ -40,6 +40,6 @@ describe("ViewCounter", () => {
   test("renders 0 views when count is 0", () => {
     const { container } = render(<ViewCounter slug="new-post" count={0} />)
     expect(container.textContent).toContain("0")
-    expect(container.textContent).toContain("views")
+    expect(container.textContent).toContain("VIEWS")
   })
 })

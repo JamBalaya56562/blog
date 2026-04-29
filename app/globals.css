@@ -2,29 +2,122 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* ──────────────────────────────────────────────
+   Sibyl-System Cyberpunk Theme — Light & Dark
+   ──────────────────────────────────────────── */
+
 :root {
-  --background: #f8f9fb;
-  --foreground: #191c1e;
-  --surface: #f8f9fb;
-  --surface-container-low: #f2f4f6;
-  --surface-container: #eceef0;
+  /* Light theme — toned-down cyber palette on near-white */
+  --background: #f4f7fa;
+  --foreground: #0a1620;
+  --surface: #f4f7fa;
+  --surface-container-low: #ebf0f5;
+  --surface-container: #e1e8ef;
   --surface-container-lowest: #ffffff;
-  --on-surface: #191c1e;
-  --on-surface-variant: #44474b;
-  --primary: #001333;
-  --primary-container: #00275a;
+  --on-surface: #0a1620;
+  --on-surface-variant: #4a5664;
+  --primary: #006a8c;
+  --primary-container: #b9e7f7;
   --on-primary: #ffffff;
-  --on-primary-container: #488dff;
-  --primary-fixed: #d8e2ff;
-  --primary-fixed-dim: #adc6ff;
-  --secondary: #565f69;
-  --secondary-container: #dae3ef;
-  --on-secondary-container: #5c656f;
-  --outline: #75777b;
-  --outline-variant: #c5c6cb;
+  --on-primary-container: #001f2c;
+  --primary-fixed: #b9e7f7;
+  --primary-fixed-dim: #7be4ff;
+  --secondary: #5b6b76;
+  --secondary-container: #d6e6ee;
+  --on-secondary-container: #1a2a32;
+  --outline: #6e7884;
+  --outline-variant: #c5d2dd;
   --error: #ba1a1a;
   --error-container: #ffdad6;
-  --surface-tint: #005bc0;
+  --surface-tint: #006a8c;
+
+  /* Sibyl brand palette (theme-stable) */
+  --cyber-cyan: #06a7d4;
+  --cyber-cyan-bright: #0bbce8;
+  --cyber-amber: #d97706;
+  --cyber-magenta: #c2185b;
+  --cyber-lime: #4d8b1f;
+  --cyber-red: #c81d3a;
+
+  /* Frame backgrounds (used by .pp-frame; light variant) */
+  --cyber-bg-0: #f4f7fa;
+  --cyber-bg-1: #ebf0f5;
+  --cyber-bg-2: #dde6ed;
+  --cyber-line: rgba(6, 167, 212, 0.18);
+  --cyber-line-hi: rgba(6, 167, 212, 0.45);
+  --cyber-text: #0a1620;
+  --cyber-dim: rgba(10, 22, 32, 0.55);
+  --cyber-dimmer: rgba(10, 22, 32, 0.3);
+
+  /* Font tokens — namespaced to avoid colliding with Tailwind's own
+     `--font-sans` / `--font-mono` defaults (whose self-referential mappings
+     created an infinite resolution loop). Each token folds in the matching
+     next/font CSS variable as the first family in the stack.
+     Browsers resolve font-family per-glyph: when the first family lacks a
+     character, the next family is tried. So Latin glyphs use the cyber
+     Latin font; Japanese glyphs fall through to the matching JP font in
+     the same family below. */
+  --blog-font-sans:
+    var(--font-sans-loaded), "Noto Sans JP", "Space Grotesk", system-ui,
+    sans-serif;
+  /* Headline JP fallback: when Orbitron / Syne / Space Grotesk lack a
+     glyph (true for any kana/kanji), drop into Noto Sans JP at heavy
+     weight so the hero headline doesn't fall to MS Gothic. */
+  --blog-font-headline:
+    var(--font-orbitron-loaded), "Orbitron", "Syne", "Space Grotesk",
+    var(--font-sans-loaded), "Noto Sans JP", sans-serif;
+  /* Mono JP fallback: JetBrains Mono has no Japanese glyphs. Without a
+     dedicated JP mono, Windows hands JP characters to MS Gothic which
+     looks cheap next to the cyber HUD. M PLUS 1 Code is a clean modern
+     monospace JP face that pairs visually with JetBrains Mono. */
+  --blog-font-mono:
+    var(--font-mono-loaded), "JetBrains Mono", var(--font-jp-mono-loaded),
+    "M PLUS 1 Code", ui-monospace, monospace;
+  --blog-font-rune:
+    var(--font-rune-loaded), "Major Mono Display", var(--font-jp-mono-loaded),
+    "M PLUS 1 Code", "JetBrains Mono", monospace;
+}
+
+.dark {
+  --background: #04060a;
+  --foreground: #e6f4ff;
+  --surface: #04060a;
+  --surface-container-low: #080c12;
+  --surface-container: #0d141d;
+  --surface-container-lowest: #02040a;
+  --on-surface: #e6f4ff;
+  --on-surface-variant: rgba(230, 244, 255, 0.7);
+  --primary: #7be4ff;
+  --primary-container: #0d141d;
+  --on-primary: #04060a;
+  --on-primary-container: #7be4ff;
+  --primary-fixed: rgba(123, 228, 255, 0.18);
+  --primary-fixed-dim: #7be4ff;
+  --secondary: #ffb84d;
+  --secondary-container: rgba(255, 184, 77, 0.12);
+  --on-secondary-container: #ffb84d;
+  --outline: rgba(230, 244, 255, 0.3);
+  --outline-variant: rgba(120, 200, 255, 0.18);
+  --error: #ff3344;
+  --error-container: rgba(255, 51, 68, 0.18);
+  --surface-tint: #7be4ff;
+
+  /* Sibyl brand palette — dark variant */
+  --cyber-cyan: #7be4ff;
+  --cyber-cyan-bright: #b6f1ff;
+  --cyber-amber: #ffb84d;
+  --cyber-magenta: #ff4d8f;
+  --cyber-lime: #9dff7b;
+  --cyber-red: #ff3344;
+
+  --cyber-bg-0: #04060a;
+  --cyber-bg-1: #080c12;
+  --cyber-bg-2: #0d141d;
+  --cyber-line: rgba(120, 200, 255, 0.18);
+  --cyber-line-hi: rgba(123, 228, 255, 0.5);
+  --cyber-text: #e6f4ff;
+  --cyber-dim: rgba(230, 244, 255, 0.55);
+  --cyber-dimmer: rgba(230, 244, 255, 0.3);
 }
 
 @theme inline {
@@ -50,267 +143,630 @@
   --color-error: var(--error);
   --color-error-container: var(--error-container);
   --color-surface-tint: var(--surface-tint);
-  --font-sans: var(--font-inter);
-  --font-headline: var(--font-manrope);
-  --font-mono: var(--font-geist-mono);
-}
 
-.dark {
-  --background: #191c1e;
-  --foreground: #e0e3e5;
-  --surface: #191c1e;
-  --surface-container-low: #1e2124;
-  --surface-container: #232629;
-  --surface-container-lowest: #121416;
-  --on-surface: #e0e3e5;
-  --on-surface-variant: #c5c6cb;
-  --primary: #adc6ff;
-  --primary-container: #00275a;
-  --on-primary: #002f6c;
-  --on-primary-container: #488dff;
-  --primary-fixed: #d8e2ff;
-  --primary-fixed-dim: #adc6ff;
-  --secondary: #bec7d3;
-  --secondary-container: #3f4851;
-  --on-secondary-container: #dae3ef;
-  --outline: #8e9093;
-  --outline-variant: #44474b;
-  --surface-tint: #adc6ff;
+  --color-cyber-cyan: var(--cyber-cyan);
+  --color-cyber-cyan-bright: var(--cyber-cyan-bright);
+  --color-cyber-amber: var(--cyber-amber);
+  --color-cyber-magenta: var(--cyber-magenta);
+  --color-cyber-lime: var(--cyber-lime);
+  --color-cyber-red: var(--cyber-red);
+  --color-cyber-line: var(--cyber-line);
+  --color-cyber-line-hi: var(--cyber-line-hi);
+  --color-cyber-bg-0: var(--cyber-bg-0);
+  --color-cyber-bg-1: var(--cyber-bg-1);
+  --color-cyber-bg-2: var(--cyber-bg-2);
+  --color-cyber-dim: var(--cyber-dim);
+  --color-cyber-dimmer: var(--cyber-dimmer);
+
+  /* Expose the namespaced font tokens as Tailwind utility classes:
+     `font-sans` / `font-mono` / `font-headline` / `font-rune`. */
+  --font-sans: var(--blog-font-sans);
+  --font-headline: var(--blog-font-headline);
+  --font-mono: var(--blog-font-mono);
+  --font-rune: var(--blog-font-rune);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
+  font-family: var(--blog-font-sans);
+  -webkit-font-smoothing: antialiased;
 }
 
-/* Card title turns blue on card hover, but reverts when a tag is hovered */
-.card-title-hover:hover:not(:has(.tag-link:hover)) .card-title {
-  color: var(--on-primary-container);
+/* ──────────────────────────────────────────────
+   Sibyl utility classes (.pp-*)
+   Mirror of Blog/approach-a/sibyl-system.jsx primitives,
+   adapted to light & dark themes via CSS variables.
+   ──────────────────────────────────────────── */
+
+.pp-tick {
+  font-family: var(--blog-font-mono);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-size: 10px;
+  color: var(--cyber-dim);
 }
 
-@keyframes codeFloat {
-  0% {
-    transform: translateY(110vh) rotate(0deg);
-    opacity: 0;
-  }
-  5% {
-    opacity: 1;
-  }
-  95% {
-    opacity: 1;
-  }
-  100% {
-    transform: translateY(-10vh) rotate(3deg);
-    opacity: 0;
-  }
+.pp-num {
+  font-family: var(--blog-font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.05em;
 }
 
-@keyframes orbDrift1 {
-  0%,
-  100% {
-    transform: translate(0, 0) scale(1);
-  }
-  33% {
-    transform: translate(60px, -40px) scale(1.1);
-  }
-  66% {
-    transform: translate(-30px, 30px) scale(0.95);
-  }
+.pp-display {
+  font-family: var(--blog-font-headline);
+  letter-spacing: 0.04em;
+  font-weight: 700;
 }
 
-@keyframes orbDrift2 {
-  0%,
-  100% {
-    transform: translate(0, 0) scale(1);
-  }
-  33% {
-    transform: translate(-50px, 40px) scale(1.05);
-  }
-  66% {
-    transform: translate(40px, -50px) scale(0.9);
-  }
+.pp-rune {
+  font-family: var(--blog-font-rune);
 }
 
-@keyframes orbDrift3 {
-  0%,
-  100% {
-    transform: translate(0, 0) scale(1);
-  }
-  33% {
-    transform: translate(40px, 30px) scale(1.08);
-  }
-  66% {
-    transform: translate(-50px, -20px) scale(0.92);
-  }
+.pp-corner {
+  color: var(--cyber-dim);
+  font-family: var(--blog-font-mono);
+  font-size: 9px;
+  letter-spacing: 0.2em;
 }
 
-@keyframes matrixFall {
-  0% {
-    transform: translateY(-100%);
-    opacity: 0;
-  }
-  10% {
-    opacity: 1;
-  }
-  90% {
-    opacity: 1;
-  }
-  100% {
-    transform: translateY(calc(100vh + 100%));
-    opacity: 0;
-  }
+.pp-h-line {
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--cyber-cyan),
+    transparent
+  );
 }
 
-@keyframes snippetDrift1 {
-  0%,
-  100% {
-    transform: translate(0, 0) rotate(0deg);
-    opacity: 0.6;
-  }
-  25% {
-    transform: translate(30px, -20px) rotate(3deg);
-    opacity: 1;
-  }
-  50% {
-    transform: translate(-15px, 15px) rotate(-2deg);
-    opacity: 0.8;
-  }
-  75% {
-    transform: translate(20px, 10px) rotate(1deg);
-    opacity: 1;
-  }
+/* tag chips */
+.pp-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border: 1px solid var(--cyber-line-hi);
+  font-family: var(--blog-font-mono);
+  font-size: 9px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--cyber-text);
+  background: transparent;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    color 0.15s,
+    border-color 0.15s;
+}
+.pp-tag:hover,
+.pp-tag[data-active="true"] {
+  background: var(--cyber-cyan);
+  color: var(--cyber-bg-0);
+  border-color: var(--cyber-cyan);
 }
 
-@keyframes snippetDrift2 {
-  0%,
-  100% {
-    transform: translate(0, 0) rotate(0deg);
-    opacity: 0.8;
-  }
-  25% {
-    transform: translate(-25px, 15px) rotate(-3deg);
-    opacity: 0.6;
-  }
-  50% {
-    transform: translate(20px, -25px) rotate(2deg);
-    opacity: 1;
-  }
-  75% {
-    transform: translate(-10px, -10px) rotate(-1deg);
-    opacity: 0.7;
-  }
+/* link with [ ] brackets that appear on hover */
+.pp-link {
+  position: relative;
+  cursor: pointer;
 }
-
-@keyframes snippetDrift3 {
-  0%,
-  100% {
-    transform: translate(0, 0) rotate(0deg);
-    opacity: 0.7;
-  }
-  25% {
-    transform: translate(15px, 25px) rotate(2deg);
-    opacity: 1;
-  }
-  50% {
-    transform: translate(-30px, -10px) rotate(-3deg);
-    opacity: 0.6;
-  }
-  75% {
-    transform: translate(10px, -20px) rotate(1deg);
-    opacity: 0.9;
-  }
-}
-
-.circuit-path {
-  stroke-width: 1.5;
-  opacity: 0.08;
-  animation: circuitDraw var(--circuit-dur) ease-in-out var(--circuit-delay)
-    infinite;
-}
-
-.circuit-node {
-  fill: none;
+.pp-link::before {
+  content: "[";
   opacity: 0;
+  margin-right: 4px;
+  transition:
+    opacity 0.18s,
+    transform 0.18s;
+  transform: translateX(8px);
+  display: inline-block;
+  color: var(--cyber-cyan);
+}
+.pp-link::after {
+  content: "]";
+  opacity: 0;
+  margin-left: 4px;
+  transition:
+    opacity 0.18s,
+    transform 0.18s;
+  transform: translateX(-8px);
+  display: inline-block;
+  color: var(--cyber-cyan);
+}
+.pp-link:hover::before,
+.pp-link:hover::after {
+  opacity: 1;
+  transform: translateX(0);
 }
 
-.circuit-node-dot {
-  opacity: 0;
+/* HUD-style outline button */
+.pp-btn {
+  background: transparent;
+  color: var(--cyber-cyan);
+  border: 1px solid var(--cyber-cyan);
+  padding: 10px 22px;
+  font-family: var(--blog-font-mono);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: color 0.2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.pp-btn::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--cyber-cyan);
+  transform: translateX(-101%);
+  transition: transform 0.25s cubic-bezier(0.2, 0.7, 0.3, 1);
+}
+.pp-btn:hover {
+  color: var(--cyber-bg-0);
+}
+.pp-btn:hover::before {
+  transform: translateX(0);
+}
+.pp-btn > * {
+  position: relative;
+  z-index: 1;
+}
+
+.pp-btn-amber {
+  color: var(--cyber-amber);
+  border-color: var(--cyber-amber);
+}
+.pp-btn-amber::before {
+  background: var(--cyber-amber);
+}
+
+/* monospace input */
+.pp-input {
+  background: transparent;
+  border: 1px solid var(--cyber-line);
+  color: var(--cyber-text);
+  padding: 10px 14px;
+  font-family: var(--blog-font-mono);
+  font-size: 13px;
+  outline: none;
+  transition:
+    border-color 0.15s,
+    background 0.15s;
+}
+.pp-input:focus {
+  border-color: var(--cyber-cyan);
+  background: color-mix(in srgb, var(--cyber-cyan) 6%, transparent);
+}
+.pp-input::placeholder {
+  color: var(--cyber-dimmer);
+}
+
+/* card hover lift */
+.pp-card-hover {
+  transition:
+    transform 0.25s cubic-bezier(0.2, 0.7, 0.3, 1),
+    box-shadow 0.25s,
+    border-color 0.25s;
+}
+.pp-card-hover:hover {
+  transform: translate3d(0, -4px, 0) rotateX(2deg) rotateY(-1deg);
+  box-shadow:
+    0 12px 40px color-mix(in srgb, var(--cyber-cyan) 14%, transparent),
+    0 0 0 1px var(--cyber-cyan);
+}
+
+/* threat coefficient bar */
+.pp-bar {
+  height: 4px;
+  background: color-mix(in srgb, var(--cyber-cyan) 12%, transparent);
+  position: relative;
+  overflow: hidden;
+}
+.pp-bar-fill {
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    var(--cyber-cyan) 0%,
+    var(--cyber-amber) 60%,
+    var(--cyber-magenta) 100%
+  );
+  position: relative;
+  transition: width 0.5s cubic-bezier(0.2, 0.7, 0.3, 1);
+}
+.pp-bar-fill::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 12px;
+  background: var(--cyber-text);
+  box-shadow: 0 0 12px var(--cyber-text);
+  opacity: 0.85;
+}
+
+/* background layers */
+.pp-grid-bg {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(var(--cyber-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--cyber-line) 1px, transparent 1px);
+  background-size: 40px 40px;
+  opacity: 0.35;
+  pointer-events: none;
+}
+.pp-noise {
+  position: absolute;
+  inset: -50%;
+  pointer-events: none;
+  mix-blend-mode: overlay;
+  opacity: 0.06;
+  background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence baseFrequency='0.9' numOctaves='2' seed='2'/><feColorMatrix values='0 0 0 0 0.7  0 0 0 0 0.9  0 0 0 0 1  0 0 0 1 0'/></filter><rect width='180' height='180' filter='url(%23n)'/></svg>");
+  animation: noiseShift 0.4s steps(4) infinite;
+}
+.pp-scan {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    transparent 0,
+    transparent 2px,
+    color-mix(in srgb, var(--cyber-cyan) 8%, transparent) 3px
+  );
+  mix-blend-mode: screen;
+}
+.pp-scan-sweep {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 140px;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    color-mix(in srgb, var(--cyber-cyan) 12%, transparent) 50%,
+    transparent 100%
+  );
+  animation: ppSweep 6s linear infinite;
+  pointer-events: none;
+}
+
+/* HUD pulse */
+.pp-pulse {
+  animation: hudPulse 2s ease-in-out infinite;
+}
+
+/* rotors for SVG ornaments */
+.pp-rotor {
+  animation: spinSlow 24s linear infinite;
+  transform-origin: center;
+}
+.pp-rotor-rev {
+  animation: spinSlow 38s linear infinite reverse;
+  transform-origin: center;
+}
+
+/* marquee ticker */
+.pp-marquee-track {
+  display: flex;
+  gap: 60px;
+  animation: ppMarquee 40s linear infinite;
+  white-space: nowrap;
+}
+
+/* corner brackets helper (used as 4 children inside relative parent) */
+.pp-brackets > .pp-bracket {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border: 0 solid var(--cyber-cyan);
+  pointer-events: none;
+}
+.pp-brackets > .pp-bracket-tl {
+  top: 0;
+  left: 0;
+  border-top-width: 1px;
+  border-left-width: 1px;
+}
+.pp-brackets > .pp-bracket-tr {
+  top: 0;
+  right: 0;
+  border-top-width: 1px;
+  border-right-width: 1px;
+}
+.pp-brackets > .pp-bracket-bl {
+  bottom: 0;
+  left: 0;
+  border-bottom-width: 1px;
+  border-left-width: 1px;
+}
+.pp-brackets > .pp-bracket-br {
+  bottom: 0;
+  right: 0;
+  border-bottom-width: 1px;
+  border-right-width: 1px;
+}
+.pp-brackets[data-color="amber"] > .pp-bracket {
+  border-color: var(--cyber-amber);
+}
+.pp-brackets[data-color="magenta"] > .pp-bracket {
+  border-color: var(--cyber-magenta);
+}
+
+/* Custom cursor ring overlay (desktop, motion-OK only).
+   Uses a strong glow + drop-shadow combo instead of mix-blend-mode so it
+   stays visible on every background, light or dark. */
+.pp-cursor-ring {
+  position: fixed;
+  left: -100px;
+  top: -100px;
+  pointer-events: none;
+  border: 1.5px solid var(--cyber-cyan);
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
   transform: translate(-50%, -50%);
-  animation: circuitNodeFade var(--circuit-dur) ease-in-out var(--circuit-delay)
-    infinite;
+  box-shadow:
+    0 0 10px var(--cyber-cyan),
+    inset 0 0 6px color-mix(in srgb, var(--cyber-cyan) 40%, transparent);
+  transition:
+    opacity 0.15s,
+    width 0.15s,
+    height 0.15s,
+    border-color 0.15s,
+    box-shadow 0.15s;
+  z-index: 9999;
+  opacity: 0;
+  will-change: left, top, width, height;
+}
+.pp-cursor-ring[data-visible="true"] {
+  opacity: 1;
+}
+.pp-cursor-ring[data-active="true"] {
+  width: 52px;
+  height: 52px;
+  border-color: var(--cyber-amber);
+  box-shadow:
+    0 0 14px var(--cyber-amber),
+    inset 0 0 10px color-mix(in srgb, var(--cyber-amber) 40%, transparent);
+}
+@media (pointer: coarse) {
+  .pp-cursor-ring {
+    display: none;
+  }
 }
 
-@keyframes circuitNodeFade {
+/* MDX prose tweaks (post detail) */
+.prose-cyber {
+  color: color-mix(in srgb, var(--cyber-text) 88%, transparent);
+  font-family:
+    "Noto Sans JP", "Space Grotesk", var(--blog-font-mono), system-ui,
+    sans-serif;
+  font-size: 16px;
+  line-height: 1.85;
+}
+.prose-cyber h1,
+.prose-cyber h2,
+.prose-cyber h3,
+.prose-cyber h4 {
+  font-family: var(--blog-font-headline);
+  color: var(--cyber-text);
+  letter-spacing: 0.02em;
+  margin-top: 1.6em;
+  margin-bottom: 0.6em;
+}
+.prose-cyber h2 {
+  font-size: 1.6em;
+  border-left: 2px solid var(--cyber-cyan);
+  padding-left: 12px;
+}
+.prose-cyber h3 {
+  font-size: 1.3em;
+}
+.prose-cyber a {
+  color: var(--cyber-cyan);
+  border-bottom: 1px dashed var(--cyber-cyan);
+  text-decoration: none;
+}
+.prose-cyber a:hover {
+  background: color-mix(in srgb, var(--cyber-cyan) 14%, transparent);
+}
+.prose-cyber strong {
+  color: var(--cyber-amber);
+}
+.prose-cyber code {
+  font-family: var(--blog-font-mono);
+  font-size: 0.92em;
+  padding: 0.1em 0.4em;
+  background: var(--cyber-bg-1);
+  border: 1px solid var(--cyber-line);
+  color: var(--cyber-cyan);
+}
+.prose-cyber pre {
+  background: var(--cyber-bg-1);
+  border: 1px solid var(--cyber-line);
+  padding: 16px;
+  font-family: var(--blog-font-mono);
+  font-size: 13px;
+  overflow: auto;
+  position: relative;
+  margin: 1.4em 0;
+}
+.prose-cyber pre code {
+  background: transparent;
+  border: 0;
+  color: inherit;
+  padding: 0;
+}
+.prose-cyber blockquote {
+  border-left: 2px solid var(--cyber-amber);
+  padding-left: 14px;
+  color: var(--cyber-dim);
+  font-style: normal;
+  font-family: var(--blog-font-mono);
+  font-size: 0.95em;
+}
+.prose-cyber ul,
+.prose-cyber ol {
+  padding-left: 1.4em;
+}
+.prose-cyber ul li::marker {
+  color: var(--cyber-cyan);
+}
+.prose-cyber img {
+  border: 1px solid var(--cyber-line);
+}
+.prose-cyber hr {
+  border: 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--cyber-line-hi),
+    transparent
+  );
+  margin: 2em 0;
+}
+.prose-cyber table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--blog-font-mono);
+  font-size: 13px;
+}
+.prose-cyber th,
+.prose-cyber td {
+  border: 1px solid var(--cyber-line);
+  padding: 8px 12px;
+  text-align: left;
+}
+.prose-cyber th {
+  background: var(--cyber-bg-1);
+  color: var(--cyber-cyan);
+}
+
+/* Card title turns cyan on card hover, but reverts when a tag is hovered */
+.card-title-hover:hover:not(:has(.tag-link:hover)) .card-title {
+  color: var(--cyber-cyan);
+}
+
+/* ──────────────────────────────────────────────
+   Keyframes
+   ──────────────────────────────────────────── */
+
+@keyframes ppSweep {
+  0% {
+    top: -200px;
+  }
+  100% {
+    top: 100%;
+  }
+}
+@keyframes ppMarquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+@keyframes hudPulse {
   0%,
   100% {
-    opacity: 0;
-    transform: translate(-50%, -50%) scale(0.8);
-  }
-  30%,
-  70% {
-    opacity: 0.18;
-    transform: translate(-50%, -50%) scale(1.2);
+    opacity: 0.4;
   }
   50% {
-    opacity: 0.25;
-    transform: translate(-50%, -50%) scale(1.4);
+    opacity: 1;
   }
 }
-
-@keyframes circuitDraw {
+@keyframes spinSlow {
+  from {
+    transform: rotate(0);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes splitRise {
+  from {
+    transform: translateY(0.6em);
+    opacity: 0;
+    filter: blur(4px);
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+    filter: blur(0);
+  }
+}
+@keyframes splitGlitch {
   0% {
-    stroke-dashoffset: var(--circuit-len);
+    transform: translateY(0.4em);
     opacity: 0;
   }
-  10% {
-    opacity: 0.08;
+  40% {
+    transform: translateY(-0.1em);
+    opacity: 1;
   }
-  50% {
-    stroke-dashoffset: 0;
-    opacity: 0.12;
+  60% {
+    transform: translate(2px, -0.1em);
   }
   80% {
-    stroke-dashoffset: 0;
-    opacity: 0.08;
+    transform: translate(-1px, 0);
   }
   100% {
-    stroke-dashoffset: var(--circuit-len);
+    transform: translate(0);
+    opacity: 1;
+  }
+}
+@keyframes glitchSlide {
+  0%,
+  100% {
+    clip-path: inset(0 0 0 0);
+    transform: translate(0);
+  }
+  20% {
+    clip-path: inset(20% 0 60% 0);
+    transform: translate(-2px, 0);
+  }
+  40% {
+    clip-path: inset(60% 0 20% 0);
+    transform: translate(2px, 0);
+  }
+  60% {
+    clip-path: inset(40% 0 40% 0);
+    transform: translate(-1px, 0);
+  }
+  80% {
+    clip-path: inset(10% 0 70% 0);
+    transform: translate(1px, 0);
+  }
+}
+@keyframes noiseShift {
+  0% {
+    transform: translate(0, 0);
+  }
+  25% {
+    transform: translate(-5%, -3%);
+  }
+  50% {
+    transform: translate(3%, 4%);
+  }
+  75% {
+    transform: translate(-2%, 2%);
+  }
+  100% {
+    transform: translate(0, 0);
+  }
+}
+@keyframes blink {
+  50% {
     opacity: 0;
   }
 }
-
-@media (prefers-reduced-motion: reduce) {
-  .circuit-path,
-  .circuit-node-dot,
-  .animate-ping,
-  .animate-shimmer {
-    animation: none;
-  }
-
-  .animate-shimmer {
-    background: var(--surface-container);
-  }
-
-  .circuit-path {
-    stroke-dashoffset: 0;
-    opacity: 0.06;
-  }
-
-  .circuit-node-dot {
-    opacity: 0.1;
-  }
-
-  .animate-ping {
-    opacity: 0;
-  }
-
-  ::view-transition-group(*),
-  ::view-transition-old(*),
-  ::view-transition-new(*) {
-    animation-duration: 0.01ms;
-  }
-}
-
 @keyframes shimmer {
   0% {
     background-position: -200% 0;
@@ -320,57 +776,61 @@ body {
   }
 }
 
-@keyframes circuitPulse {
-  0%,
-  100% {
-    opacity: 0;
-    r: 3;
+/* ──────────────────────────────────────────────
+   prefers-reduced-motion: keep visuals, drop motion
+   ──────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .pp-noise,
+  .pp-scan-sweep,
+  .pp-pulse,
+  .pp-rotor,
+  .pp-rotor-rev,
+  .pp-marquee-track,
+  .animate-ping,
+  .animate-shimmer {
+    animation: none;
   }
-  30%,
-  70% {
-    opacity: 0.35;
-    r: 6;
+  .pp-cursor-ring {
+    display: none;
   }
-  50% {
-    opacity: 0.5;
-    r: 7;
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation-duration: 0.01ms;
   }
 }
 
-/* ===== View Transitions ===== */
+/* ──────────────────────────────────────────────
+   View Transitions (kept from previous design)
+   ──────────────────────────────────────────── */
 @keyframes fade-in {
   from {
     opacity: 0;
   }
 }
-
 @keyframes fade-out {
   to {
     opacity: 0;
   }
 }
-
 @keyframes slide-from-right {
   from {
     transform: translateX(30px);
     opacity: 0;
   }
 }
-
 @keyframes slide-to-left {
   to {
     transform: translateX(-30px);
     opacity: 0;
   }
 }
-
 @keyframes slide-from-left {
   from {
     transform: translateX(-30px);
     opacity: 0;
   }
 }
-
 @keyframes slide-to-right {
   to {
     transform: translateX(30px);
@@ -378,42 +838,32 @@ body {
   }
 }
 
-/* Forward navigation */
 ::view-transition-old(.nav-forward) {
   animation:
     90ms cubic-bezier(0.4, 0, 1, 1) both fade-out,
     300ms cubic-bezier(0.4, 0, 0.2, 1) both slide-to-left;
 }
-
 ::view-transition-new(.nav-forward) {
   animation:
     210ms cubic-bezier(0, 0, 0.2, 1) 90ms both fade-in,
     300ms cubic-bezier(0.4, 0, 0.2, 1) both slide-from-right;
 }
-
-/* Back navigation */
 ::view-transition-old(.nav-back) {
   animation:
     90ms cubic-bezier(0.4, 0, 1, 1) both fade-out,
     300ms cubic-bezier(0.4, 0, 0.2, 1) both slide-to-right;
 }
-
 ::view-transition-new(.nav-back) {
   animation:
     210ms cubic-bezier(0, 0, 0.2, 1) 90ms both fade-in,
     300ms cubic-bezier(0.4, 0, 0.2, 1) both slide-from-left;
 }
-
-/* Default cross-fade */
 ::view-transition-old(root) {
   animation: 90ms cubic-bezier(0.4, 0, 1, 1) both fade-out;
 }
-
 ::view-transition-new(root) {
   animation: 210ms cubic-bezier(0, 0, 0.2, 1) 90ms both fade-in;
 }
-
-/* Shared element morph timing */
 ::view-transition-group(*) {
   animation-duration: 300ms;
   animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);

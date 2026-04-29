@@ -14,9 +14,9 @@ export function ThemeToggle({
       <button
         type="button"
         aria-label={dictionary.theme.switchToDark}
-        className="rounded px-2 py-1 text-foreground hover:bg-gray-100 dark:hover:bg-gray-800"
+        className="flex h-7 w-7 items-center justify-center border border-cyber-line text-cyber-dim"
       >
-        <Moon size={18} className="text-indigo-400" fill="currentColor" />
+        <Moon size={14} />
       </button>
     )
   }
@@ -30,12 +30,12 @@ export function ThemeToggle({
           ? dictionary.theme.switchToLight
           : dictionary.theme.switchToDark
       }
-      className="rounded px-2 py-1 text-foreground hover:bg-gray-100 dark:hover:bg-gray-800"
+      className="flex h-7 w-7 items-center justify-center border border-cyber-line text-cyber-dim transition-colors hover:border-cyber-cyan hover:text-cyber-cyan"
     >
       {theme === "dark" ? (
-        <Sun size={18} className="text-amber-400" fill="currentColor" />
+        <Sun size={14} className="text-cyber-amber" fill="currentColor" />
       ) : (
-        <Moon size={18} className="text-indigo-400" fill="currentColor" />
+        <Moon size={14} />
       )}
     </button>
   )
