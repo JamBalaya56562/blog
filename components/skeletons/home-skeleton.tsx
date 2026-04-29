@@ -44,7 +44,10 @@ function BentoGridSkeleton() {
       <div className="mb-6 flex items-baseline justify-between gap-4 sm:justify-start">
         <Skeleton className="h-3 w-16" />
         <Skeleton className="hidden h-5 w-56 sm:block" />
-        <span aria-hidden className="hidden h-px flex-1 bg-cyber-line sm:block" />
+        <span
+          aria-hidden
+          className="hidden h-px flex-1 bg-cyber-line sm:block"
+        />
         <Skeleton className="h-3 w-20" />
       </div>
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">

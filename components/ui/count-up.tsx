@@ -67,7 +67,9 @@ export function CountUp({
     return () => cancelAnimationFrame(raf)
   }, [started, target, durationMs])
 
-  const display = padTo ? String(val).padStart(padTo, "0") : val.toLocaleString()
+  const display = padTo
+    ? String(val).padStart(padTo, "0")
+    : val.toLocaleString()
 
   return (
     <span ref={ref} className={className}>

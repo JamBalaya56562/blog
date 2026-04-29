@@ -47,7 +47,10 @@ export function BentoGrid({
         <span className="pp-display hidden text-lg tracking-[0.04em] text-foreground sm:block sm:text-xl">
           {dictionary.home.featuredTitle}
         </span>
-        <span aria-hidden className="hidden h-px flex-1 bg-cyber-line sm:block" />
+        <span
+          aria-hidden
+          className="hidden h-px flex-1 bg-cyber-line sm:block"
+        />
         <span className="pp-tick">
           {posts.length} {dictionary.home.entriesShort}
         </span>

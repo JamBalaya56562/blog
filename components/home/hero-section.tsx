@@ -72,7 +72,10 @@ export function HeroSection({
         <HudCell
           label="POSTS"
           value={
-            <CountUp target={postCount} className="pp-display text-cyber-cyan" />
+            <CountUp
+              target={postCount}
+              className="pp-display text-cyber-cyan"
+            />
           }
           sub="PUBLISHED"
           dotColor="lime"

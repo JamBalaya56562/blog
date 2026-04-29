@@ -2,7 +2,7 @@
 
 import Image from "next/image"
 import Link from "next/link"
-import { ViewTransition, useEffect, useState } from "react"
+import { useEffect, useState, ViewTransition } from "react"
 import {
   ArticleCard,
   DEFAULT_THUMBNAIL,
@@ -172,4 +172,3 @@ function DesktopRow({
     </Link>
   )
 }
-

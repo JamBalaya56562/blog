@@ -167,9 +167,7 @@ test.describe("404", () => {
     // served with HTTP 200 and the not-found UI streams in. Assert the
     // rendered content instead of relying on the response status.
     await page.goto("/en/blog/non-existent-post")
-    await expect(
-      page.getByText("This page could not be found"),
-    ).toBeVisible()
+    await expect(page.getByText("This page could not be found")).toBeVisible()
   })
 
   test("returns 404 for invalid locale", async ({ page }) => {

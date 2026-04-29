@@ -1,6 +1,6 @@
 import { ArticleCardSkeleton } from "@/components/skeletons/article-card-skeleton"
-import { Brackets } from "@/components/ui/brackets"
 import { Skeleton } from "@/components/skeletons/skeleton-primitives"
+import { Brackets } from "@/components/ui/brackets"
 
 function RelatedPostsSkeleton() {
   return (

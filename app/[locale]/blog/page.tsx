@@ -19,7 +19,6 @@ import type { Locale } from "@/lib/i18n/config"
 import { isValidLocale } from "@/lib/i18n/config"
 import { getDictionary } from "@/lib/i18n/get-dictionary"
 import { POSTS_PER_PAGE, paginate } from "@/lib/pagination"
-import { getBlogPostPath } from "@/lib/routes"
 
 async function getCachedPosts(locale: Locale) {
   "use cache"

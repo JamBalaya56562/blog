@@ -71,12 +71,11 @@
      looks cheap next to the cyber HUD. M PLUS 1 Code is a clean modern
      monospace JP face that pairs visually with JetBrains Mono. */
   --blog-font-mono:
-    var(--font-mono-loaded), "JetBrains Mono",
-    var(--font-jp-mono-loaded), "M PLUS 1 Code", ui-monospace, monospace;
+    var(--font-mono-loaded), "JetBrains Mono", var(--font-jp-mono-loaded),
+    "M PLUS 1 Code", ui-monospace, monospace;
   --blog-font-rune:
-    var(--font-rune-loaded), "Major Mono Display",
-    var(--font-jp-mono-loaded), "M PLUS 1 Code",
-    "JetBrains Mono", monospace;
+    var(--font-rune-loaded), "Major Mono Display", var(--font-jp-mono-loaded),
+    "M PLUS 1 Code", "JetBrains Mono", monospace;
 }
 
 .dark {
@@ -545,7 +544,8 @@ body {
 .prose-cyber {
   color: color-mix(in srgb, var(--cyber-text) 88%, transparent);
   font-family:
-    "Noto Sans JP", "Space Grotesk", var(--blog-font-mono), system-ui, sans-serif;
+    "Noto Sans JP", "Space Grotesk", var(--blog-font-mono), system-ui,
+    sans-serif;
   font-size: 16px;
   line-height: 1.85;
 }

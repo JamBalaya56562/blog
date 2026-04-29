@@ -1,5 +1,5 @@
-import { Brackets } from "@/components/ui/brackets"
 import { Skeleton } from "@/components/skeletons/skeleton-primitives"
+import { Brackets } from "@/components/ui/brackets"
 
 interface ArticleCardSkeletonProps {
   readonly isLarge?: boolean
@@ -18,7 +18,9 @@ export function ArticleCardSkeleton({
       className={`relative border border-cyber-line bg-cyber-bg-1/40 ${isLarge ? "md:col-span-2" : ""}`}
     >
       <Brackets />
-      <Skeleton className={`aspect-video w-full ${isLarge ? "md:aspect-[16/9]" : ""}`} />
+      <Skeleton
+        className={`aspect-video w-full ${isLarge ? "md:aspect-[16/9]" : ""}`}
+      />
       <div className="p-4">
         <Skeleton className={`h-5 w-3/4 ${isLarge ? "md:h-7 md:w-2/3" : ""}`} />
         <Skeleton className="mt-2 h-3 w-full" />
