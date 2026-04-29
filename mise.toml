@@ -47,7 +47,7 @@ run = ["mise run db:health", "mise run db:push"]
 auto = true
 
 [hooks]
-enter = ["mise i -q", "mise deps -q"]
+enter = ["mise upgrade -q", "mise deps -q"]
 
 [settings]
 experimental = true
