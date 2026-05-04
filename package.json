@@ -55,12 +55,12 @@
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
     "remark-gfm": "^4.0.1",
-    "yaml": "^2.8.3"
+    "yaml": "^2.8.4"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.4.13",
+    "@biomejs/biome": "^2.4.14",
     "@happy-dom/global-registrator": "^20.9.0",
-    "@playwright/mcp": "^0.0.72",
+    "@playwright/mcp": "^0.0.73",
     "@playwright/test": "next",
     "@tailwindcss/postcss": "^4.2.4",
     "@testing-library/dom": "^10.4.1",
