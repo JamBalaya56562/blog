@@ -1,0 +1,13 @@
+[global]
+flavor = "mdx"
+respect-gitignore = true
+disable = ["MD057"]
+exclude = [
+    ".github/pull_request_template.md",
+    "CODE_OF_CONDUCT.md",
+    "CONTRIBUTING.md",
+    "README.md",
+]
+
+[MD013]
+line-length = 120
