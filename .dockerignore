@@ -5,8 +5,8 @@
 .github
 .gitignore
 .jj
-.markdownlint-cli2.yaml
 .next
+.rumdl.toml
 .sl
 .vscode
 AGENTS.md
