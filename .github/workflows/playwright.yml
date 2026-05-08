@@ -39,8 +39,29 @@ permissions:
 
 jobs:
   test:
+    name: 🧪 ${{ matrix.project }}
     timeout-minutes: 30
     runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - project: chromium
+            browser: chromium
+            artifact: chromium
+          - project: firefox
+            browser: firefox
+            artifact: firefox
+          - project: webkit
+            browser: webkit
+            artifact: webkit
+          - project: Mobile Chrome
+            browser: chromium
+            artifact: mobile-chrome
+          - project: Mobile Safari
+            browser: webkit
+            artifact: mobile-safari
 
     steps:
       - name: 📥 Checkout
@@ -63,15 +84,15 @@ jobs:
         run: bun run build
 
       - name: 🎭 Install Playwright Browsers
-        run: bun playwright install --with-deps
+        run: bun playwright install --with-deps ${{ matrix.browser }}
 
       - name: 🧪 Run Playwright tests
-        run: bun playwright test
+        run: bun playwright test --project="${{ matrix.project }}"
 
       - name: 🆙 Upload Test Report
         uses: actions/upload-artifact@v7
         if: ${{ !cancelled() }}
         with:
-          name: playwright-report
+          name: playwright-report-${{ matrix.artifact }}
           path: playwright-report/
           retention-days: 30
