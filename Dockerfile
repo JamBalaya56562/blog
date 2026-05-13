@@ -1,4 +1,4 @@
-# syntax=docker.io/docker/dockerfile-upstream:1.24.0-rc1-labs
+# syntax=docker.io/docker/dockerfile-upstream:1.24.0-labs
 # check=error=true
 FROM oven/bun:canary AS builder
 WORKDIR /usr/src/app
@@ -17,7 +17,7 @@ ARG DATABASE_URL
 ENV CONTENT_SOURCE=${CONTENT_SOURCE} GITHUB_OWNER=${GITHUB_OWNER} GITHUB_REPO=${GITHUB_REPO} GITHUB_BRANCH=${GITHUB_BRANCH} GITHUB_CONTENT_PATH=${GITHUB_CONTENT_PATH} DATABASE_URL=${DATABASE_URL}
 RUN bun run build
 
-FROM gcr.io/distroless/nodejs24-debian13:nonroot
+FROM gcr.io/distroless/nodejs26-debian13:nonroot
 WORKDIR /app
 COPY --from=public.ecr.aws/awsguru/aws-lambda-adapter:1.0.0 /lambda-adapter /opt/extensions/lambda-adapter
 
