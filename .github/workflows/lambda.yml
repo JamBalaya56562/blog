@@ -80,7 +80,7 @@ jobs:
           DATABASE_URL=${{ secrets.DATABASE_URL }}
 
     - name: 🥩 Deploy Lambda function with container image
-      uses: aws-actions/aws-lambda-deploy@20039225425cbacb648cf1ffe08cc221f19b65a0
+      uses: aws-actions/aws-lambda-deploy@d496277188b89f0be02d7a2216fc912c0427702a
       with:
         function-name: ${{ env.LAMBDA_FUNCTION_NAME }}
         package-type: Image
