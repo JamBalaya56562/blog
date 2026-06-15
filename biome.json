@@ -6,6 +6,9 @@
     "useIgnoreFile": true,
     "defaultBranch": "main"
   },
+  "files": {
+    "includes": ["**", "!**/*.svg"]
+  },
   "linter": {
     "rules": {
       "correctness": {
