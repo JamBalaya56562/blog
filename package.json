@@ -72,7 +72,7 @@
     "babel-plugin-react-compiler": "experimental",
     "drizzle-kit": "0.31.10",
     "fast-check": "^4.9.0",
-    "postcss": "^8.5.16",
+    "postcss": "^8.5.19",
     "tailwindcss": "^4.3.2",
     "typescript": "^7.0.2"
   },
