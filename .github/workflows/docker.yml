@@ -59,7 +59,7 @@ env:
   GHCR_REGISTRY: ghcr.io
   GHCR_REPOSITORY: jambalaya56562/blog
   SHA: ${{ github.event.pull_request.head.sha || github.sha }}
-  CONTEXT: ${{ github.server_url }}/${{ github.repository }}.git#${{ github.sha }}
+  CONTEXT: ${{ github.server_url }}/${{ github.repository }}.git#${{ github.event.pull_request.head.sha || github.sha }}
   IS_PUSH: ${{ github.event_name == 'push' || inputs.push == true }}
 
 jobs:
