@@ -9,7 +9,14 @@ export interface ContentLoader {
 
 export function createContentLoader(): ContentLoader {
   const source = process.env.CONTENT_SOURCE ?? "local"
-  if (source === "github") {
+  // During `next build`, always read content from the local filesystem.
+  // The content lives in the repo (copied into the builder image), so the
+  // build never depends on the GitHub API — which is unauthenticated here
+  // and rate-limited to 60 req/h, causing 403s that make generateStaticParams
+  // return empty and fail the build under Cache Components. At runtime the
+  // configured source (e.g. "github") is still used for revalidation.
+  const isBuild = process.env.NEXT_PHASE === "phase-production-build"
+  if (source === "github" && !isBuild) {
     const { GitHubContentLoader } = require("./github-loader")
     return new GitHubContentLoader()
   }
