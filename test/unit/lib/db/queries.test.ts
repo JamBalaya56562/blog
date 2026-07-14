@@ -47,7 +47,7 @@ describe("incrementViewCount", () => {
 
   test("calls insert with upsert when db is available", async () => {
     const onConflictDoUpdateMock = mock(() => Promise.resolve())
-    const valuesMock = mock(() => ({
+    const valuesMock = mock((_values: { slug: string; count: number }) => ({
       onConflictDoUpdate: onConflictDoUpdateMock,
     }))
     const insertMock = mock(() => ({ values: valuesMock }))
