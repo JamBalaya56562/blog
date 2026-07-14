@@ -9,7 +9,8 @@ export interface ContentLoader {
 
 export function createContentLoader(): ContentLoader {
   const source = process.env.CONTENT_SOURCE ?? "local"
-  if (source === "github") {
+  const isBuild = process.env.NEXT_PHASE === "phase-production-build"
+  if (source === "github" && !isBuild) {
     const { GitHubContentLoader } = require("./github-loader")
     return new GitHubContentLoader()
   }
