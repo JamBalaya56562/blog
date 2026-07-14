@@ -59,7 +59,6 @@ env:
   GHCR_REGISTRY: ghcr.io
   GHCR_REPOSITORY: jambalaya56562/blog
   SHA: ${{ github.event.pull_request.head.sha || github.sha }}
-  CONTEXT: ${{ github.server_url }}/${{ github.repository }}.git#${{ github.sha }}
   IS_PUSH: ${{ github.event_name == 'push' || inputs.push == true }}
 
 jobs:
@@ -120,7 +119,7 @@ jobs:
           annotations: ${{ steps.meta.outputs.annotations }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          context: ${{ github.event_name == 'pull_request_target' && env.CONTEXT || '.' }}
+          context: ${{ github.event_name == 'pull_request_target' && format('{0}/{1}.git#{2}', github.server_url, github.repository, env.SHA) || '.' }}
           labels: ${{ steps.meta.outputs.labels }}
           load: ${{ !fromJSON(env.IS_PUSH) }}
           no-cache: ${{ inputs.no-cache == true }}
