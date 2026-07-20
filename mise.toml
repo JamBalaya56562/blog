@@ -11,8 +11,8 @@ description = "Check markdown files for linting issues"
 run = "rumdl check --fix ."
 
 [tasks.update]
-description = "Update bun dependencies and reinstall with isolated linker"
-run = ["bun update", "bun i --linker=isolated", "mise deps"]
+description = "Update bun dependencies and reinstall"
+run = ["bun update", "bun i", "mise deps"]
 
 [tasks."db:env"]
 description = "Generate .env file with default development values"
