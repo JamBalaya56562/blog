@@ -52,14 +52,14 @@
     "next": "canary",
     "next-mdx-remote-client": "^2.1.11",
     "postgres": "^3.4.9",
-    "react": "^19.2.7",
-    "react-dom": "^19.2.7",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
     "remark-gfm": "^4.0.1",
     "yaml": "^2.9.0"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.5.4",
-    "@happy-dom/global-registrator": "^20.10.6",
+    "@biomejs/biome": "^2.5.5",
+    "@happy-dom/global-registrator": "^20.11.0",
     "@playwright/mcp": "^0.0.78",
     "@playwright/test": "next",
     "@tailwindcss/postcss": "^4.3.3",
@@ -72,7 +72,7 @@
     "babel-plugin-react-compiler": "experimental",
     "drizzle-kit": "0.31.10",
     "fast-check": "^4.9.0",
-    "postcss": "^8.5.19",
+    "postcss": "^8.5.22",
     "tailwindcss": "^4.3.3",
     "typescript": "^7.0.2"
   },
