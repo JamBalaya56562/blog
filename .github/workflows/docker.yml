@@ -119,7 +119,7 @@ jobs:
         with:
           annotations: ${{ steps.meta.outputs.annotations }}
           cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-to: ${{ github.event_name != 'pull_request_target' && 'type=gha,mode=max' || '' }}
           context: ${{ github.event_name == 'pull_request_target' && env.CONTEXT || '.' }}
           labels: ${{ steps.meta.outputs.labels }}
           load: ${{ !fromJSON(env.IS_PUSH) }}
