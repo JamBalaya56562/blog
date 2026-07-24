@@ -228,7 +228,7 @@
 
     "@playwright/mcp": ["@playwright/mcp@0.0.78", "", { "dependencies": { "playwright": "1.62.0-alpha-1783623505000", "playwright-core": "1.62.0-alpha-1783623505000" }, "bin": { "playwright-mcp": "cli.js" } }, "sha512-XLTUeA6mEN9sQ+hJ4dfG8EIkDbxS0K3Trc2RBkUJuf02TgE2FQRNTMtq/aJfhyRMINsRl/Ybc4sxcWLtFn4/TQ=="],
 
-    "@playwright/test": ["@playwright/test@1.62.0-alpha-2026-07-23", "", { "dependencies": { "playwright": "1.62.0-alpha-2026-07-23" }, "bin": { "playwright": "cli.js" } }, "sha512-cdSRaYNA9C7L/gJt7d/X43GqACHhXCBetC9NtOm48WSdQXHzqP7JvqvhFAdjaIm3fR/ORsRzStXrCQFfkpfpfA=="],
+    "@playwright/test": ["@playwright/test@1.63.0-alpha-2026-07-24", "", { "dependencies": { "playwright": "1.63.0-alpha-2026-07-24" }, "bin": { "playwright": "cli.js" } }, "sha512-1IFtAkizJNP52A92HpmgBlHxbMnUDXHrwuiZoZsv2Ty7i205lhWX2s7MN0znj8LnOiC0qwf2IGjNzNBARyzzUA=="],
 
     "@swc/helpers": ["@swc/helpers@0.5.15", "", { "dependencies": { "tslib": "^2.8.0" } }, "sha512-JQ5TuMi45Owi4/BIMAJBoSQoOJu12oOk/gADqlcUL9JEdHB8vyjUSsxqeNXnmXHjYKMi2WcYtezGEEhqUI/E2g=="],
 
@@ -762,7 +762,7 @@
 
     "@mdx-js/react/@types/mdx": ["@types/mdx@2.0.13", "", {}, "sha512-+OWZQfAYyio6YkJb3HLxDrvnx6SWWDbC0zVPfBRzUk0/nqoDyf6dNxQi3eArPe8rJ473nobTMQ/8Zk+LxJ+Yuw=="],
 
-    "@playwright/test/playwright": ["playwright@1.62.0-alpha-2026-07-23", "", { "dependencies": { "playwright-core": "1.62.0-alpha-2026-07-23" }, "optionalDependencies": { "fsevents": "2.3.2" }, "bin": { "playwright": "cli.js" } }, "sha512-v0mtpDynyrqnu6+L4HyNSChw6bX7LlcOF2LMp6+//V4oXRvyG16FAZZskOvzmOTRcnabNUhicvarDbT4aYcyeQ=="],
+    "@playwright/test/playwright": ["playwright@1.63.0-alpha-2026-07-24", "", { "dependencies": { "playwright-core": "1.63.0-alpha-2026-07-24" }, "optionalDependencies": { "fsevents": "2.3.2" }, "bin": { "playwright": "cli.js" } }, "sha512-3zu9j+h2Sjhv0ajevdgSp9n/M46EVvWPw63lXw4kqHi5p1+9bRw4VTKpz6Nn74/WrbeOdlNJ7NDH0OrM/zZsjw=="],
 
     "@tailwindcss/oxide-wasm32-wasi/@emnapi/core": ["@emnapi/core@1.11.1", "", { "dependencies": { "@emnapi/wasi-threads": "1.2.2", "tslib": "^2.4.0" }, "bundled": true }, "sha512-RSvbQmHzdKzNsLYa/wHrbc3KN4sYLKAdPZxqiM2HATqv/SBk2/ENSHpvXGaLOMcsAyz0poEGqkmmKYG3OWiJEQ=="],
 
@@ -844,7 +844,7 @@
 
     "@esbuild-kit/core-utils/esbuild/@esbuild/win32-x64": ["@esbuild/win32-x64@0.18.20", "", { "os": "win32", "cpu": "x64" }, "sha512-kTdfRcSiDfQca/y9QIkng02avJ+NCaQvrMejlsB3RRv5sE9rRoeBPISaZpKxHELzRxZyLvNts1P27W3wV+8geQ=="],
 
-    "@playwright/test/playwright/playwright-core": ["playwright-core@1.62.0-alpha-2026-07-23", "", { "bin": { "playwright-core": "cli.js" } }, "sha512-D0934egkm34bL+WTRoFNASM4x3lnCnQsOG+3JLuZDVcdpFaGTn2212SsfyGryYyrgKLoEIBmoHJxuO5XEakcUw=="],
+    "@playwright/test/playwright/playwright-core": ["playwright-core@1.63.0-alpha-2026-07-24", "", { "bin": { "playwright-core": "cli.js" } }, "sha512-CpDV1o9v+GIOsmA653G9ofH4Dhyr9l7VvScVOzVq7wGENbS90vYJtXdoMhFWaEHx9La7Vx0Sdgj2Y9LdJiL8EA=="],
 
     "@tailwindcss/oxide-wasm32-wasi/@napi-rs/wasm-runtime/@tybys/wasm-util": ["@tybys/wasm-util@0.10.1", "", { "dependencies": { "tslib": "^2.4.0" } }, "sha512-9tTaPJLSiejZKx+Bmog4uSubteqTvFrVrURwkmHixBo0G4seD0zUxp98E1DzUBJxLQ3NPwXrGKDiVjwx/DpPsg=="],
 
