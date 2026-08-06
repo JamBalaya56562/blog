@@ -31,13 +31,13 @@ export async function incrementViewCount(slug: string): Promise<void> {
   try {
     await db
       .insert(pageViews)
-      .values({ slug, count: 1 })
+      .values({ count: 1, slug })
       .onConflictDoUpdate({
-        target: pageViews.slug,
         set: {
           count: sql`${pageViews.count} + 1`,
           updatedAt: sql`now()`,
         },
+        target: pageViews.slug,
       })
   } catch (e) {
     console.error("[incrementViewCount] failed for slug:", slug, e)
@@ -54,7 +54,7 @@ export async function getViewCounts(
 
   try {
     const results = await db
-      .select({ slug: pageViews.slug, count: pageViews.count })
+      .select({ count: pageViews.count, slug: pageViews.slug })
       .from(pageViews)
       .where(inArray(pageViews.slug, slugs))
 

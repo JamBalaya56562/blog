@@ -2,13 +2,13 @@ import { readFile } from "node:fs/promises"
 import { join } from "node:path"
 
 const MIME_TYPES: Record<string, string> = {
-  ".png": "image/png",
-  ".jpg": "image/jpeg",
-  ".jpeg": "image/jpeg",
-  ".gif": "image/gif",
-  ".webp": "image/webp",
   ".avif": "image/avif",
+  ".gif": "image/gif",
+  ".jpeg": "image/jpeg",
+  ".jpg": "image/jpeg",
+  ".png": "image/png",
   ".svg": "image/svg+xml",
+  ".webp": "image/webp",
 }
 
 function getMimeType(path: string): string {

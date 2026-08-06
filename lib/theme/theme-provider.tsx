@@ -68,7 +68,7 @@ export function ThemeProvider({
   }, [])
 
   return (
-    <ThemeContext value={{ theme, toggleTheme, mounted }}>
+    <ThemeContext value={{ mounted, theme, toggleTheme }}>
       {children}
     </ThemeContext>
   )

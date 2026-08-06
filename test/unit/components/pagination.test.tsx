@@ -16,9 +16,9 @@ mock.module("next/link", () => ({
 const { Pagination } = await import("@/components/pagination")
 
 const defaultLabels = {
-  previous: "Previous",
   next: "Next",
   pagination: "Pagination",
+  previous: "Previous",
 }
 
 describe("Pagination", () => {

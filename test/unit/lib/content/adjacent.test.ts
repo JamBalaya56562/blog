@@ -4,15 +4,15 @@ import type { Post } from "@/lib/content/types"
 
 function makePost(slug: string, date: string, title?: string): Post {
   return {
-    slug,
-    locale: "en",
+    content: "",
     frontmatter: {
-      title: title ?? `Title for ${slug}`,
       date,
       description: "desc",
       tags: [],
+      title: title ?? `Title for ${slug}`,
     },
-    content: "",
+    locale: "en",
+    slug,
   }
 }
 
@@ -71,13 +71,13 @@ describe("Feature: post-navigation, Property 1: accurate identification of adjac
    */
   const postsWithIndex = fc
     .uniqueArray(
-      fc.string({ minLength: 1, maxLength: 20, unit: "grapheme-ascii" }),
-      { minLength: 1, maxLength: 50 },
+      fc.string({ maxLength: 20, minLength: 1, unit: "grapheme-ascii" }),
+      { maxLength: 50, minLength: 1 },
     )
     .chain((slugs) =>
       fc.record({
+        index: fc.integer({ max: slugs.length - 1, min: 0 }),
         slugs: fc.constant(slugs),
-        index: fc.integer({ min: 0, max: slugs.length - 1 }),
       }),
     )
 

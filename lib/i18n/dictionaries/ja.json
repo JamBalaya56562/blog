@@ -1,105 +1,105 @@
 {
-  "nav": {
-    "home": "ホーム",
-    "blog": "ブログ",
-    "openMenu": "メニューを開く",
-    "closeMenu": "メニューを閉じる",
-    "scrollToTop": "トップへ戻る"
+  "blog": {
+    "clearSearch": "検索をクリア",
+    "continueExploring": "他の記事を探す",
+    "dispatchesMatch": "件のディスパッチがフィルター条件に一致",
+    "minRead": "MIN READ",
+    "nextPage": "次へ",
+    "nextPost": "次のディスパッチ",
+    "noPostsFound": "記事が見つかりませんでした。",
+    "pagination": "ページナビゲーション",
+    "postedOn": "投稿日",
+    "previousPage": "前へ",
+    "previousPost": "前のディスパッチ",
+    "searchLabel": "検索",
+    "searchPlaceholder": "// 記事を検索...",
+    "searchResultsFor": "検索結果:",
+    "sortLabel": "並び替え:",
+    "sortNewest": "NEWEST",
+    "sortPopular": "VIEWS",
+    "title": "ブログ",
+    "toc": "目次",
+    "translationAvailable": "この記事は以下の言語でも利用できます:"
+  },
+  "footer": {
+    "copyright": "© {year} Jam Balaya. All rights reserved.",
+    "portfolio": "自己紹介",
+    "privacyPolicy": "プライバシーポリシー",
+    "systemsNominal": "ALL SYSTEMS NOMINAL"
   },
   "header": {
     "siteName": "Jamのブログ"
   },
-  "footer": {
-    "copyright": "© {year} Jam Balaya. All rights reserved.",
-    "privacyPolicy": "プライバシーポリシー",
-    "portfolio": "自己紹介",
-    "systemsNominal": "ALL SYSTEMS NOMINAL"
-  },
-  "ticker": {
-    "indexed": "POSTS_INDEXED",
-    "latest": "LATEST",
-    "tags": "TAGS",
-    "uplink": "UPLINK",
-    "hue": "HUE"
-  },
   "home": {
-    "title": "プログラミングを",
-    "titleAccent": "もっと身近に。",
+    "ctaBrowse": "すべての記事を見る",
+    "entriesShort": "件",
+    "featuredTitle": "RECENT EXPERIMENTS",
+    "readDispatch": "ディスパッチを読む",
+    "recentDescription": "ラボからの新鮮な視点と技術的な解説。",
+    "recentTitle": "最近のディスパッチ",
     "subtitle": "新しい技術を積極的に取り入れて、モダンな開発体験を共有します。",
     "subtitleSecond": "日々のコーディングがもっと楽しくなるヒントや知見をお届けします。",
-    "ctaBrowse": "すべての記事を見る",
-    "featuredTitle": "RECENT EXPERIMENTS",
-    "recentTitle": "最近のディスパッチ",
-    "recentDescription": "ラボからの新鮮な視点と技術的な解説。",
-    "viewAll": "すべて表示",
-    "readDispatch": "ディスパッチを読む",
-    "entriesShort": "件"
-  },
-  "blog": {
-    "title": "ブログ",
-    "dispatchesMatch": "件のディスパッチがフィルター条件に一致",
-    "noPostsFound": "記事が見つかりませんでした。",
-    "translationAvailable": "この記事は以下の言語でも利用できます:",
-    "postedOn": "投稿日",
-    "toc": "目次",
-    "previousPost": "前のディスパッチ",
-    "nextPost": "次のディスパッチ",
-    "continueExploring": "他の記事を探す",
-    "previousPage": "前へ",
-    "nextPage": "次へ",
-    "pagination": "ページナビゲーション",
-    "searchPlaceholder": "// 記事を検索...",
-    "searchLabel": "検索",
-    "searchResultsFor": "検索結果:",
-    "clearSearch": "検索をクリア",
-    "sortLabel": "並び替え:",
-    "sortNewest": "NEWEST",
-    "sortPopular": "VIEWS",
-    "minRead": "MIN READ"
+    "title": "プログラミングを",
+    "titleAccent": "もっと身近に。",
+    "viewAll": "すべて表示"
   },
   "language": {
-    "switchTo": "English",
-    "current": "日本語"
+    "current": "日本語",
+    "switchTo": "English"
+  },
+  "nav": {
+    "blog": "ブログ",
+    "closeMenu": "メニューを閉じる",
+    "home": "ホーム",
+    "openMenu": "メニューを開く",
+    "scrollToTop": "トップへ戻る"
   },
   "portfolio": {
-    "title": "自己紹介",
-    "intro": "こんにちは、Jam Balayaです。日本在住のWeb開発者です。将棋と麻雀が趣味です♟️🀄",
-    "skills": "スキル",
-    "projects": "プロジェクト",
-    "links": "リンク",
-    "blogDescription": "Next.js、TypeScript、Tailwind CSS、Bun、Biomeで構築した個人ブログです。",
-    "ossContributions": "OSS コントリビューション",
-    "ossDescription": "Next.js、Biome、Mise、Dev Containersなどのオープンソースプロジェクトに積極的に貢献しています。",
-    "subtitle": "フルスタック開発者、テクニカルライター、オープンソース愛好家。",
-    "bioTitle": "これまでの歩み",
+    "activeProject": "アクティブプロジェクト",
     "bioText1": "ターミナルウィンドウでスクリプトをいじることから始まり、ソフトウェアを作る楽しさに魅了されました。その好奇心は、フルスタック開発、オープンソースへの貢献、テクニカルライティングへと広がっていきました。",
     "bioText2": "Jam Blogの哲学はシンプルです。学んだことを共有し、意味のあるツールを作り、コードをきれいに保つこと。React Server Componentsの深掘りからBunのちょっとしたTipsまで、開発者がより良いソフトウェアを届けるために書いています。",
-    "techCore": "技術スタック",
-    "quickConnectivity": "クイックリンク",
-    "github": "GitHub",
-    "githubSponsors": "GitHub Sponsors",
-    "location": "所在地",
-    "locationValue": "日本",
-    "quoteText": "「シンプルさは究極の洗練である。」",
-    "quoteAuthor": "— レオナルド・ダ・ヴィンチ",
-    "sideProjects": "プロジェクト",
-    "sideProjectsDescription": "オープンソースへの貢献と実験的なプロジェクト。",
-    "viewAllOnGithub": "GitHubですべて見る",
-    "activeProject": "アクティブプロジェクト",
+    "bioTitle": "これまでの歩み",
+    "blogDescription": "Next.js、TypeScript、Tailwind CSS、Bun、Biomeで構築した個人ブログです。",
     "collaborateCta": "コラボレーションに興味がありますか？",
     "collaborateDescription": "OSSコラボレーションや技術的なディスカッションを歓迎します。",
     "getInTouch": "お問い合わせ",
+    "github": "GitHub",
+    "githubSponsors": "GitHub Sponsors",
     "idHandle": "HANDLE",
+    "idLocation": "LOCATION",
     "idName": "ID",
     "idRole": "ROLE",
-    "idLocation": "LOCATION"
+    "intro": "こんにちは、Jam Balayaです。日本在住のWeb開発者です。将棋と麻雀が趣味です♟️🀄",
+    "links": "リンク",
+    "location": "所在地",
+    "locationValue": "日本",
+    "ossContributions": "OSS コントリビューション",
+    "ossDescription": "Next.js、Biome、Mise、Dev Containersなどのオープンソースプロジェクトに積極的に貢献しています。",
+    "projects": "プロジェクト",
+    "quickConnectivity": "クイックリンク",
+    "quoteAuthor": "— レオナルド・ダ・ヴィンチ",
+    "quoteText": "「シンプルさは究極の洗練である。」",
+    "sideProjects": "プロジェクト",
+    "sideProjectsDescription": "オープンソースへの貢献と実験的なプロジェクト。",
+    "skills": "スキル",
+    "subtitle": "フルスタック開発者、テクニカルライター、オープンソース愛好家。",
+    "techCore": "技術スタック",
+    "title": "自己紹介",
+    "viewAllOnGithub": "GitHubですべて見る"
   },
   "privacyPolicy": {
-    "title": "プライバシーポリシー",
-    "body": "当サイトはお客様のプライバシーを尊重いたします。基本的な機能に必要な範囲を超えて個人情報を収集することはありません。ブラウジング体験を向上させるためにCookieを使用する場合があります。当サイトをご利用いただくことで、Cookieの使用およびここに記載されたデータの取り扱いに同意したものとみなされます。"
+    "body": "当サイトはお客様のプライバシーを尊重いたします。基本的な機能に必要な範囲を超えて個人情報を収集することはありません。ブラウジング体験を向上させるためにCookieを使用する場合があります。当サイトをご利用いただくことで、Cookieの使用およびここに記載されたデータの取り扱いに同意したものとみなされます。",
+    "title": "プライバシーポリシー"
   },
   "theme": {
-    "switchToLight": "ライトモードに切り替え",
-    "switchToDark": "ダークモードに切り替え"
+    "switchToDark": "ダークモードに切り替え",
+    "switchToLight": "ライトモードに切り替え"
+  },
+  "ticker": {
+    "hue": "HUE",
+    "indexed": "POSTS_INDEXED",
+    "latest": "LATEST",
+    "tags": "TAGS",
+    "uplink": "UPLINK"
   }
 }

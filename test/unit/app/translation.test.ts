@@ -26,15 +26,15 @@ function getTranslationPair(
 
 function makePost(slug: string, locale: Locale): Post {
   return {
-    slug,
-    locale,
+    content: "c",
     frontmatter: {
-      title: "t",
       date: "2025-01-01",
       description: "d",
       tags: ["a"],
+      title: "t",
     },
-    content: "c",
+    locale,
+    slug,
   }
 }
 
@@ -43,15 +43,15 @@ describe("Translation", () => {
     await fc.assert(
       fc.asyncProperty(
         fc.array(fc.stringMatching(/^[a-z]{1,10}$/), {
-          minLength: 1,
           maxLength: 5,
+          minLength: 1,
         }),
         async (sharedSlugs) => {
           const enPosts = sharedSlugs.map((s) => makePost(s, "en"))
           const jaPosts = sharedSlugs.map((s) => makePost(s, "ja"))
           const loader: ContentLoader = {
-            async getPostSlugs(locale) {
-              return (locale === "en" ? enPosts : jaPosts).map((p) => p.slug)
+            async getAllPosts(locale) {
+              return locale === "en" ? enPosts : jaPosts
             },
             async getPost(locale, slug) {
               return (
@@ -60,8 +60,8 @@ describe("Translation", () => {
                 ) ?? null
               )
             },
-            async getAllPosts(locale) {
-              return locale === "en" ? enPosts : jaPosts
+            async getPostSlugs(locale) {
+              return (locale === "en" ? enPosts : jaPosts).map((p) => p.slug)
             },
           }
           for (const slug of sharedSlugs) {

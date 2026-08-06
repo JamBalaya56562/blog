@@ -18,7 +18,7 @@ export function findAdjacentPosts(
   posts: Post[],
   currentSlug: string,
 ): AdjacentPosts {
-  const nullResult: AdjacentPosts = { previous: null, next: null }
+  const nullResult: AdjacentPosts = { next: null, previous: null }
 
   if (posts.length <= 1) {
     return nullResult
@@ -52,5 +52,5 @@ export function findAdjacentPosts(
         }
       : null
 
-  return { previous, next }
+  return { next, previous }
 }

@@ -5,9 +5,9 @@ import type { TocItem } from "@/lib/toc"
 const { TableOfContents } = await import("@/components/table-of-contents")
 
 const items: TocItem[] = [
-  { id: "intro", text: "Introduction", level: 2 },
-  { id: "details", text: "Details", level: 3 },
-  { id: "conclusion", text: "Conclusion", level: 2 },
+  { id: "intro", level: 2, text: "Introduction" },
+  { id: "details", level: 3, text: "Details" },
+  { id: "conclusion", level: 2, text: "Conclusion" },
 ]
 
 describe("TableOfContents", () => {

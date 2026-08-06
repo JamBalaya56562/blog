@@ -7,26 +7,26 @@ import { locales } from "@/lib/i18n/config"
 
 function createMockLoader(posts: Map<string, Post[]>): ContentLoader {
   return {
-    async getPostSlugs(locale: Locale) {
-      return (posts.get(locale) ?? []).map((p) => p.slug)
+    async getAllPosts(locale: Locale) {
+      return posts.get(locale) ?? []
     },
     async getPost(locale: Locale, slug: string) {
       return (posts.get(locale) ?? []).find((p) => p.slug === slug) ?? null
     },
-    async getAllPosts(locale: Locale) {
-      return posts.get(locale) ?? []
+    async getPostSlugs(locale: Locale) {
+      return (posts.get(locale) ?? []).map((p) => p.slug)
     },
   }
 }
 
 const dateArb = fc
-  .integer({ min: 2000, max: 2099 })
+  .integer({ max: 2099, min: 2000 })
   .chain((year) =>
     fc
-      .integer({ min: 1, max: 12 })
+      .integer({ max: 12, min: 1 })
       .chain((month) =>
         fc
-          .integer({ min: 1, max: 28 })
+          .integer({ max: 28, min: 1 })
           .map(
             (day) =>
               `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`,
@@ -36,18 +36,18 @@ const dateArb = fc
 
 const postArb = (locale: Locale): fc.Arbitrary<Post> =>
   fc.record({
-    slug: fc.stringMatching(/^[a-z][a-z0-9-]{0,19}$/),
-    locale: fc.constant(locale),
+    content: fc.constant("content"),
     frontmatter: fc.record({
-      title: fc.stringMatching(/^[a-zA-Z0-9 ]{1,30}$/),
       date: dateArb,
       description: fc.stringMatching(/^[a-zA-Z0-9 ]{1,50}$/),
       tags: fc.array(fc.stringMatching(/^[a-z]{1,10}$/), {
-        minLength: 1,
         maxLength: 3,
+        minLength: 1,
       }),
+      title: fc.stringMatching(/^[a-zA-Z0-9 ]{1,30}$/),
     }),
-    content: fc.constant("content"),
+    locale: fc.constant(locale),
+    slug: fc.stringMatching(/^[a-z][a-z0-9-]{0,19}$/),
   })
 
 function uniqueBySlug(posts: Post[]): Post[] {
@@ -66,7 +66,7 @@ describe("ContentLoader", () => {
     await fc.assert(
       fc.asyncProperty(
         fc
-          .array(postArb("en"), { minLength: 1, maxLength: 20 })
+          .array(postArb("en"), { maxLength: 20, minLength: 1 })
           .map(uniqueBySlug),
         async (posts) => {
           const loader = createMockLoader(new Map([["en", posts]]))
@@ -82,10 +82,10 @@ describe("ContentLoader", () => {
     await fc.assert(
       fc.asyncProperty(
         fc
-          .array(postArb("en"), { minLength: 1, maxLength: 10 })
+          .array(postArb("en"), { maxLength: 10, minLength: 1 })
           .map(uniqueBySlug),
         fc
-          .array(postArb("ja"), { minLength: 1, maxLength: 10 })
+          .array(postArb("ja"), { maxLength: 10, minLength: 1 })
           .map(uniqueBySlug),
         async (enPosts, jaPosts) => {
           const loader = createMockLoader(

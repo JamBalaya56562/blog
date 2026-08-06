@@ -23,26 +23,26 @@ import { ThemeProvider } from "@/lib/theme/theme-provider"
 import "@/app/globals.css"
 
 const jetbrainsMono = JetBrains_Mono({
-  variable: "--font-mono-loaded",
   subsets: ["latin"],
+  variable: "--font-mono-loaded",
   weight: ["300", "400", "500", "700"],
 })
 
 const orbitron = Orbitron({
-  variable: "--font-orbitron-loaded",
   subsets: ["latin"],
+  variable: "--font-orbitron-loaded",
   weight: ["400", "500", "700", "900"],
 })
 
 const majorMono = Major_Mono_Display({
-  variable: "--font-rune-loaded",
   subsets: ["latin"],
+  variable: "--font-rune-loaded",
   weight: ["400"],
 })
 
 const notoSansJp = Noto_Sans_JP({
-  variable: "--font-sans-loaded",
   subsets: ["latin"],
+  variable: "--font-sans-loaded",
   weight: ["300", "400", "500", "700", "900"],
 })
 
@@ -51,17 +51,17 @@ const notoSansJp = Noto_Sans_JP({
 // cheap next to the cyberpunk HUD. M PLUS 1 Code is a clean modern mono
 // designed to harmonise with Latin coding fonts.
 const mPlus1Code = M_PLUS_1_Code({
-  variable: "--font-jp-mono-loaded",
   subsets: ["latin"],
+  variable: "--font-jp-mono-loaded",
   weight: ["400", "500", "700"],
 })
 
 export const metadata: Metadata = {
+  description: "A blog about web development, built with Next.js and MDX.",
   title: {
     default: "Jam's Blog",
     template: "%s | Jam's Blog",
   },
-  description: "A blog about web development, built with Next.js and MDX.",
 }
 
 export async function generateStaticParams() {

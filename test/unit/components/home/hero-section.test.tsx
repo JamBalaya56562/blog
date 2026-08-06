@@ -19,9 +19,9 @@ const { HeroSection } = await import("@/components/home/hero-section")
 afterEach(cleanup)
 
 const COMMON = {
+  latestDate: "2026-04-01",
   postCount: 12,
   tagCount: 5,
-  latestDate: "2026-04-01",
 } as const
 
 describe("HeroSection", () => {

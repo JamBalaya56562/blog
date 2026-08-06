@@ -8,13 +8,13 @@ import {
 import type { Frontmatter } from "@/lib/content/types"
 
 const dateArb = fc
-  .integer({ min: 2000, max: 2099 })
+  .integer({ max: 2099, min: 2000 })
   .chain((year) =>
     fc
-      .integer({ min: 1, max: 12 })
+      .integer({ max: 12, min: 1 })
       .chain((month) =>
         fc
-          .integer({ min: 1, max: 28 })
+          .integer({ max: 28, min: 1 })
           .map(
             (day) =>
               `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`,
@@ -23,13 +23,13 @@ const dateArb = fc
   )
 
 const frontmatterArb: fc.Arbitrary<Frontmatter> = fc.record({
-  title: fc.stringMatching(/^[a-zA-Z0-9 ]{1,50}$/),
   date: dateArb,
   description: fc.stringMatching(/^[a-zA-Z0-9 ]{1,100}$/),
   tags: fc.array(fc.stringMatching(/^[a-z0-9]{1,15}$/), {
-    minLength: 1,
     maxLength: 5,
+    minLength: 1,
   }),
+  title: fc.stringMatching(/^[a-zA-Z0-9 ]{1,50}$/),
 })
 
 describe("Frontmatter", () => {
@@ -66,23 +66,23 @@ describe("Frontmatter", () => {
     const invalidCases: [string, Record<string, unknown>][] = [
       [
         "tags as string",
-        { title: "t", date: "2024-01-01", description: "d", tags: "not-array" },
+        { date: "2024-01-01", description: "d", tags: "not-array", title: "t" },
       ],
       [
         "tags with non-string",
-        { title: "t", date: "2024-01-01", description: "d", tags: [1, 2] },
+        { date: "2024-01-01", description: "d", tags: [1, 2], title: "t" },
       ],
       [
         "title as number",
-        { title: 123, date: "2024-01-01", description: "d", tags: ["a"] },
+        { date: "2024-01-01", description: "d", tags: ["a"], title: 123 },
       ],
       [
         "date as number",
-        { title: "t", date: 2024, description: "d", tags: ["a"] },
+        { date: 2024, description: "d", tags: ["a"], title: "t" },
       ],
       [
         "description as bool",
-        { title: "t", date: "2024-01-01", description: false, tags: ["a"] },
+        { date: "2024-01-01", description: false, tags: ["a"], title: "t" },
       ],
     ]
     for (const [label, data] of invalidCases) {

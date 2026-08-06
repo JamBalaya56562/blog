@@ -4,17 +4,17 @@ import type { Frontmatter } from "@/lib/content/types"
 
 // Extracted metadata generation logic for testability
 function generateMetadataFromFrontmatter(fm: Frontmatter) {
-  return { title: fm.title, description: fm.description }
+  return { description: fm.description, title: fm.title }
 }
 
 const dateArb = fc
-  .integer({ min: 2000, max: 2099 })
+  .integer({ max: 2099, min: 2000 })
   .chain((year) =>
     fc
-      .integer({ min: 1, max: 12 })
+      .integer({ max: 12, min: 1 })
       .chain((month) =>
         fc
-          .integer({ min: 1, max: 28 })
+          .integer({ max: 28, min: 1 })
           .map(
             (day) =>
               `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`,
@@ -23,13 +23,13 @@ const dateArb = fc
   )
 
 const frontmatterArb: fc.Arbitrary<Frontmatter> = fc.record({
-  title: fc.stringMatching(/^[a-zA-Z0-9 ]{1,50}$/),
   date: dateArb,
   description: fc.stringMatching(/^[a-zA-Z0-9 ]{1,100}$/),
   tags: fc.array(fc.stringMatching(/^[a-z0-9]{1,15}$/), {
-    minLength: 1,
     maxLength: 5,
+    minLength: 1,
   }),
+  title: fc.stringMatching(/^[a-zA-Z0-9 ]{1,50}$/),
 })
 
 describe("Metadata", () => {

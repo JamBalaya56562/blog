@@ -30,7 +30,7 @@ export class LocalContentLoader implements ContentLoader {
     try {
       const raw = await readFile(filePath, "utf-8")
       const { frontmatter, content } = parseFrontmatter(raw)
-      return { slug, locale, frontmatter, content }
+      return { content, frontmatter, locale, slug }
     } catch {
       return null
     }

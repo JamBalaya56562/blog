@@ -14,37 +14,37 @@ let storage: Record<string, string>
 function mockLocalStorage() {
   storage = {}
   Object.defineProperty(globalThis, "localStorage", {
+    configurable: true,
     value: {
-      getItem: (key: string) => storage[key] ?? null,
-      setItem: (key: string, value: string) => {
-        storage[key] = value
-      },
-      removeItem: (key: string) => {
-        delete storage[key]
-      },
       clear: () => {
         storage = {}
       },
+      getItem: (key: string) => storage[key] ?? null,
+      removeItem: (key: string) => {
+        delete storage[key]
+      },
+      setItem: (key: string, value: string) => {
+        storage[key] = value
+      },
     },
     writable: true,
-    configurable: true,
   })
 }
 
 function mockMatchMedia(prefersDark: boolean) {
   Object.defineProperty(globalThis, "matchMedia", {
+    configurable: true,
     value: (query: string) => ({
+      addEventListener: () => {},
+      addListener: () => {},
+      dispatchEvent: () => false,
       matches: query === "(prefers-color-scheme: dark)" ? prefersDark : false,
       media: query,
-      addEventListener: () => {},
-      removeEventListener: () => {},
-      addListener: () => {},
-      removeListener: () => {},
       onchange: null,
-      dispatchEvent: () => false,
+      removeEventListener: () => {},
+      removeListener: () => {},
     }),
     writable: true,
-    configurable: true,
   })
 }
 
@@ -68,16 +68,16 @@ describe("localStorage fallback behavior", () => {
   test("falls back to system preference when localStorage.getItem throws", () => {
     // Mock localStorage that throws on getItem
     Object.defineProperty(globalThis, "localStorage", {
+      configurable: true,
       value: {
+        clear: () => {},
         getItem: () => {
           throw new Error("localStorage access denied")
         },
-        setItem: () => {},
         removeItem: () => {},
-        clear: () => {},
+        setItem: () => {},
       },
       writable: true,
-      configurable: true,
     })
     mockMatchMedia(true) // system prefers dark
 
@@ -97,16 +97,16 @@ describe("localStorage fallback behavior", () => {
 
   test("falls back to light when localStorage fails and system prefers light", () => {
     Object.defineProperty(globalThis, "localStorage", {
+      configurable: true,
       value: {
+        clear: () => {},
         getItem: () => {
           throw new Error("localStorage access denied")
         },
-        setItem: () => {},
         removeItem: () => {},
-        clear: () => {},
+        setItem: () => {},
       },
       writable: true,
-      configurable: true,
     })
     mockMatchMedia(false) // system prefers light
 

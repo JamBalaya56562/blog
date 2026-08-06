@@ -33,10 +33,10 @@ export function validateFrontmatter(data: unknown): Frontmatter {
     throw new Error("tags must be an array of strings")
   }
   return {
-    title: record.title,
     date: record.date,
     description: record.description,
     tags: record.tags,
+    title: record.title,
   }
 }
 
@@ -49,7 +49,7 @@ export function parseFrontmatter(raw: string): {
     throw new Error("Invalid frontmatter format")
   }
   const parsed = parse(match[1])
-  return { frontmatter: validateFrontmatter(parsed), content: match[2].trim() }
+  return { content: match[2].trim(), frontmatter: validateFrontmatter(parsed) }
 }
 
 export function serializeFrontmatter(fm: Frontmatter): string {
