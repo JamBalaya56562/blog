@@ -14,9 +14,13 @@ export class LocalContentLoader implements ContentLoader {
   }
 
   async getPostSlugs(locale: Locale): Promise<string[]> {
-    const dir = join(process.cwd(), this.basePath, locale)
+    const dir = join(
+      /*turbopackIgnore: true*/ process.cwd(),
+      this.basePath,
+      locale,
+    )
     try {
-      const files = await readdir(dir)
+      const files = await readdir(/*turbopackIgnore: true*/ dir)
       return files
         .filter((f) => f.endsWith(".mdx"))
         .map((f) => f.replace(/\.mdx$/, ""))
