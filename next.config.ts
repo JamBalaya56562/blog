@@ -5,7 +5,6 @@ const nextConfig: NextConfig = {
   experimental: {
     inlineCss: true,
     isrFlushToDisk: false,
-    useTypeScriptCli: true,
     serverActions: {
       allowedOrigins: ["kokohore56562wanwan.site"],
     },
