@@ -29,10 +29,18 @@ jobs:
           persist-credentials: false
 
       - name: ✅ Check if the release has already been created
-        run: echo RELEASE_EXISTS=$(gh release list | grep "$VERSION") >> $GITHUB_ENV
+        id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "$VERSION" > /dev/null 2>&1; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
 
       - name: 💾 Create release
-        if: env.RELEASE_EXISTS == ''
+        if: steps.check.outputs.exists == 'false'
         run: gh release create "$VERSION" --generate-notes -t "$REPO_NAME $VERSION"
         env:
           GH_TOKEN: ${{ github.token }}
