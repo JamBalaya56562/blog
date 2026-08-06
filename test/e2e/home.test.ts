@@ -40,7 +40,7 @@ test.describe("Home page - Responsive layout", () => {
   test("mobile viewport renders sections in single column", async ({
     page,
   }) => {
-    await page.setViewportSize({ width: 375, height: 812 })
+    await page.setViewportSize({ height: 812, width: 375 })
     await page.goto("/en")
     await expect(page.getByText("Making programming")).toBeVisible()
     await expect(page.locator("a[href*='/en/blog/']").first()).toBeVisible()
@@ -49,7 +49,7 @@ test.describe("Home page - Responsive layout", () => {
   test("desktop viewport renders bento grid in multi-column layout", async ({
     page,
   }) => {
-    await page.setViewportSize({ width: 1280, height: 800 })
+    await page.setViewportSize({ height: 800, width: 1280 })
     await page.goto("/en")
     // Verify the grid container uses CSS grid
     const gridContainer = page.locator("section .grid").first()
@@ -65,7 +65,7 @@ test.describe("Home page - Dark mode", () => {
   test("toggling dark mode applies dark class and page renders correctly", async ({
     page,
   }) => {
-    await page.setViewportSize({ width: 1280, height: 800 })
+    await page.setViewportSize({ height: 800, width: 1280 })
     await page.goto("/en")
     // Click the theme toggle button (only the desktop toggle is in the DOM
     // at this viewport — the mobile menu is closed and unmounted).

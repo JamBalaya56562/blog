@@ -1,13 +1,29 @@
 {
   "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
-  "vcs": {
-    "enabled": true,
-    "clientKind": "git",
-    "useIgnoreFile": true,
-    "defaultBranch": "main"
+  "assist": {
+    "actions": {
+      "source": {
+        "noDuplicateClasses": "on",
+        "useSortedKeys": "on",
+        "useSortedPackageJson": "on"
+      }
+    }
+  },
+  "css": {
+    "parser": {
+      "tailwindDirectives": true
+    }
   },
   "files": {
-    "includes": ["**", "!**/*.svg"]
+    "includes": ["**", "!**/*.svg", "!**/.sl"]
+  },
+  "formatter": {
+    "useEditorconfig": true
+  },
+  "javascript": {
+    "formatter": {
+      "semicolons": "asNeeded"
+    }
   },
   "linter": {
     "domains": {
@@ -30,27 +46,17 @@
       }
     }
   },
-  "assist": {
-    "actions": {
-      "source": {
-        "noDuplicateClasses": "on"
-      }
-    }
-  },
-  "formatter": {
-    "useEditorconfig": true
-  },
-  "javascript": {
-    "formatter": {
-      "semicolons": "asNeeded"
-    }
-  },
-  "css": {
-    "parser": {
-      "tailwindDirectives": true
-    }
-  },
   "overrides": [
+    {
+      "assist": {
+        "actions": {
+          "source": {
+            "useSortedKeys": "off"
+          }
+        }
+      },
+      "includes": ["**/package.json"]
+    },
     {
       "includes": ["test/**"],
       "linter": {
@@ -61,5 +67,11 @@
         }
       }
     }
-  ]
+  ],
+  "vcs": {
+    "clientKind": "git",
+    "defaultBranch": "main",
+    "enabled": true,
+    "useIgnoreFile": true
+  }
 }

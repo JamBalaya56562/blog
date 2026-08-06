@@ -42,7 +42,7 @@ export function extractToc(markdown: string): TocItem[] {
   const generateId = createIdGenerator()
   for (const match of markdown.matchAll(/^(#{2,3})\s+(.+)$/gm)) {
     const text = match[2].trim()
-    items.push({ id: generateId(text), text, level: match[1].length })
+    items.push({ id: generateId(text), level: match[1].length, text })
   }
   return items
 }

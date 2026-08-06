@@ -8,9 +8,9 @@ describe("Property 1: ページサイズ上限", () => {
     // **Validates: Requirements 3.1**
     fc.assert(
       fc.property(
-        fc.array(fc.integer(), { minLength: 0, maxLength: 50 }),
-        fc.integer({ min: -10, max: 100 }),
-        fc.integer({ min: 1, max: 20 }),
+        fc.array(fc.integer(), { maxLength: 50, minLength: 0 }),
+        fc.integer({ max: 100, min: -10 }),
+        fc.integer({ max: 20, min: 1 }),
         (items, page, perPage) => {
           const result = paginate(items, page, perPage)
           expect(result.items.length).toBeLessThanOrEqual(perPage)
@@ -27,8 +27,8 @@ describe("Property 2: 全項目保存", () => {
     // **Validates: Requirements 3.1, 4.1**
     fc.assert(
       fc.property(
-        fc.array(fc.integer(), { minLength: 0, maxLength: 50 }),
-        fc.integer({ min: 1, max: 20 }),
+        fc.array(fc.integer(), { maxLength: 50, minLength: 0 }),
+        fc.integer({ max: 20, min: 1 }),
         (items, perPage) => {
           const result = paginate(items, 1, perPage)
           const allItems: number[] = []
@@ -46,10 +46,10 @@ describe("Property 2: 全項目保存", () => {
 
 // Arbitrary: generates a valid { currentPage, totalPages } pair
 const pageParamsArb = fc
-  .integer({ min: 1, max: 100 })
+  .integer({ max: 100, min: 1 })
   .chain((totalPages) =>
     fc
-      .integer({ min: 1, max: totalPages })
+      .integer({ max: totalPages, min: 1 })
       .map((currentPage) => ({ currentPage, totalPages })),
   )
 
@@ -116,9 +116,9 @@ describe("Property 5: ページ番号の境界整合性", () => {
     // **Validates: Requirements 3.5, 3.6, 3.8**
     fc.assert(
       fc.property(
-        fc.array(fc.integer(), { minLength: 1, maxLength: 50 }),
-        fc.integer({ min: -100, max: 200 }),
-        fc.integer({ min: 1, max: 20 }),
+        fc.array(fc.integer(), { maxLength: 50, minLength: 1 }),
+        fc.integer({ max: 200, min: -100 }),
+        fc.integer({ max: 20, min: 1 }),
         (items, page, perPage) => {
           const result = paginate(items, page, perPage)
           expect(result.currentPage).toBeGreaterThanOrEqual(1)

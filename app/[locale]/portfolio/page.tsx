@@ -29,9 +29,9 @@ const skills = [
 
 const projects = [
   {
+    descriptionKey: "blogDescription" as const,
     name: "blog",
     url: "https://github.com/JamBalaya56562/blog",
-    descriptionKey: "blogDescription" as const,
   },
 ]
 
@@ -42,44 +42,44 @@ const projects = [
  */
 const ossContributions = [
   {
-    name: "Next.js",
-    url: "https://github.com/vercel/next.js",
-    Icon: Sparkles,
     accent: "text-violet-400",
     bg: "bg-violet-500/10",
     glow: "shadow-[0_0_24px_-8px_rgb(167_139_250_/_0.6)]",
+    Icon: Sparkles,
+    name: "Next.js",
+    url: "https://github.com/vercel/next.js",
   },
   {
-    name: "Biome",
-    url: "https://github.com/biomejs/biome",
-    Icon: Terminal,
     accent: "text-emerald-400",
     bg: "bg-emerald-500/10",
     glow: "shadow-[0_0_24px_-8px_rgb(52_211_153_/_0.6)]",
+    Icon: Terminal,
+    name: "Biome",
+    url: "https://github.com/biomejs/biome",
   },
   {
-    name: "Mise",
-    url: "https://github.com/jdx/mise",
-    Icon: Wrench,
     accent: "text-amber-400",
     bg: "bg-amber-500/10",
     glow: "shadow-[0_0_24px_-8px_rgb(251_191_36_/_0.6)]",
+    Icon: Wrench,
+    name: "Mise",
+    url: "https://github.com/jdx/mise",
   },
   {
-    name: "Dev Containers",
-    url: "https://github.com/devcontainers",
-    Icon: Box,
     accent: "text-sky-400",
     bg: "bg-sky-500/10",
     glow: "shadow-[0_0_24px_-8px_rgb(56_189_248_/_0.6)]",
+    Icon: Box,
+    name: "Dev Containers",
+    url: "https://github.com/devcontainers",
   },
   {
-    name: "Prettier",
-    url: "https://github.com/prettier/prettier",
-    Icon: Paintbrush,
     accent: "text-rose-400",
     bg: "bg-rose-500/10",
     glow: "shadow-[0_0_24px_-8px_rgb(251_113_133_/_0.6)]",
+    Icon: Paintbrush,
+    name: "Prettier",
+    url: "https://github.com/prettier/prettier",
   },
 ]
 

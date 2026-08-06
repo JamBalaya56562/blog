@@ -16,8 +16,8 @@ const { PostNavigation } = await import("@/components/post-navigation")
 const dictionary = getDictionary("en")
 
 const bothPosts: AdjacentPosts = {
-  previous: { slug: "older-post", title: "Older Post Title" },
   next: { slug: "newer-post", title: "Newer Post Title" },
+  previous: { slug: "older-post", title: "Older Post Title" },
 }
 
 describe("PostNavigation", () => {
@@ -41,7 +41,7 @@ describe("PostNavigation", () => {
     const { container } = render(
       <PostNavigation
         locale="en"
-        adjacentPosts={{ previous: bothPosts.previous, next: null }}
+        adjacentPosts={{ next: null, previous: bothPosts.previous }}
         dictionary={dictionary}
       />,
     )
@@ -54,7 +54,7 @@ describe("PostNavigation", () => {
     const { container } = render(
       <PostNavigation
         locale="en"
-        adjacentPosts={{ previous: null, next: bothPosts.next }}
+        adjacentPosts={{ next: bothPosts.next, previous: null }}
         dictionary={dictionary}
       />,
     )
@@ -67,7 +67,7 @@ describe("PostNavigation", () => {
     const { container } = render(
       <PostNavigation
         locale="en"
-        adjacentPosts={{ previous: null, next: null }}
+        adjacentPosts={{ next: null, previous: null }}
         dictionary={dictionary}
       />,
     )
@@ -105,12 +105,12 @@ const slugArb = fc.stringMatching(/^[a-z0-9]+(-[a-z0-9]+)*$/)
 
 const adjacentPostArb = fc.record({
   slug: slugArb,
-  title: fc.string({ minLength: 1, maxLength: 100, unit: "grapheme-ascii" }),
+  title: fc.string({ maxLength: 100, minLength: 1, unit: "grapheme-ascii" }),
 })
 
 const adjacentPostsArb: fc.Arbitrary<AdjacentPosts> = fc.record({
-  previous: fc.option(adjacentPostArb, { nil: null }),
   next: fc.option(adjacentPostArb, { nil: null }),
+  previous: fc.option(adjacentPostArb, { nil: null }),
 })
 
 const localeArb = fc.constantFrom(...locales)
@@ -148,8 +148,8 @@ describe("Feature: post-navigation, Property 3: link href accuracy", () => {
         fc.property(
           localeArb,
           fc.record({
-            previous: adjacentPostArb,
             next: adjacentPostArb,
+            previous: adjacentPostArb,
           }),
           (locale, adjacentPosts) => {
             const { container } = render(

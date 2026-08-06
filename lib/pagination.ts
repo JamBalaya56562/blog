@@ -22,8 +22,8 @@ export function paginate<T>(
   const currentPage = Math.min(clampedPage, totalPages)
   const start = (currentPage - 1) * perPage
   return {
-    items: items.slice(start, start + perPage),
     currentPage,
+    items: items.slice(start, start + perPage),
     totalPages,
   }
 }
@@ -35,8 +35,8 @@ export function generatePageNumbers(
 ): PageItem[] {
   if (totalPages <= 5) {
     return Array.from({ length: totalPages }, (_, i) => ({
-      type: "page" as const,
       page: i + 1,
+      type: "page" as const,
     }))
   }
 
@@ -58,7 +58,7 @@ export function generatePageNumbers(
     if (i > 0 && sorted[i] - sorted[i - 1] > 1) {
       result.push({ type: "ellipsis" })
     }
-    result.push({ type: "page", page: sorted[i] })
+    result.push({ page: sorted[i], type: "page" })
   }
 
   return result

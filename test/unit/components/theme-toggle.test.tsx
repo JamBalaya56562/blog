@@ -21,34 +21,34 @@ let storage: Record<string, string> = {}
 beforeEach(() => {
   storage = {}
   Object.defineProperty(globalThis, "localStorage", {
+    configurable: true,
     value: {
-      getItem: (key: string) => storage[key] ?? null,
-      setItem: (key: string, value: string) => {
-        storage[key] = value
-      },
-      removeItem: (key: string) => {
-        delete storage[key]
-      },
       clear: () => {
         storage = {}
       },
+      getItem: (key: string) => storage[key] ?? null,
+      removeItem: (key: string) => {
+        delete storage[key]
+      },
+      setItem: (key: string, value: string) => {
+        storage[key] = value
+      },
     },
     writable: true,
-    configurable: true,
   })
   Object.defineProperty(globalThis, "matchMedia", {
+    configurable: true,
     value: (query: string) => ({
+      addEventListener: () => {},
+      addListener: () => {},
+      dispatchEvent: () => false,
       matches: false,
       media: query,
-      addEventListener: () => {},
-      removeEventListener: () => {},
-      addListener: () => {},
-      removeListener: () => {},
       onchange: null,
-      dispatchEvent: () => false,
+      removeEventListener: () => {},
+      removeListener: () => {},
     }),
     writable: true,
-    configurable: true,
   })
   document.documentElement.classList.remove("dark")
 })

@@ -32,28 +32,28 @@ function wrapper({ children }: Readonly<{ children: ReactNode }>) {
 
 beforeEach(() => {
   Object.defineProperty(globalThis, "localStorage", {
+    configurable: true,
     value: {
-      getItem: () => null,
-      setItem: () => {},
-      removeItem: () => {},
       clear: () => {},
+      getItem: () => null,
+      removeItem: () => {},
+      setItem: () => {},
     },
     writable: true,
-    configurable: true,
   })
   Object.defineProperty(globalThis, "matchMedia", {
+    configurable: true,
     value: (query: string) => ({
+      addEventListener: () => {},
+      addListener: () => {},
+      dispatchEvent: () => false,
       matches: false,
       media: query,
-      addEventListener: () => {},
-      removeEventListener: () => {},
-      addListener: () => {},
-      removeListener: () => {},
       onchange: null,
-      dispatchEvent: () => false,
+      removeEventListener: () => {},
+      removeListener: () => {},
     }),
     writable: true,
-    configurable: true,
   })
   document.documentElement.classList.remove("dark")
 })

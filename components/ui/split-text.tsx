@@ -28,10 +28,10 @@ export function SplitText({
           // biome-ignore lint/suspicious/noArrayIndexKey: char position is the natural key
           key={i}
           style={{
-            display: "inline-block",
-            opacity: 0,
             animation: `${keyframe} 0.55s cubic-bezier(.2,.7,.3,1) forwards`,
             animationDelay: `${delay + i * stagger}ms`,
+            display: "inline-block",
+            opacity: 0,
             whiteSpace: c === " " ? "pre" : "normal",
           }}
         >

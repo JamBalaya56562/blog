@@ -1,13 +1,4 @@
 {
-  "name": "Blog",
-  "image": "mcr.microsoft.com/devcontainers/typescript-node:dev-24",
-  "features": {
-    "ghcr.io/devcontainers/features/github-cli:1": {}
-  },
-  "forwardPorts": [3000],
-  "remoteUser": "root",
-  "postCreateCommand": "npm install -g bun && bun i",
-  "postStartCommand": "bun dev",
   "customizations": {
     "vscode": {
       "extensions": [
@@ -20,5 +11,14 @@
         "MS-vsliveshare.vsliveshare"
       ]
     }
-  }
+  },
+  "features": {
+    "ghcr.io/devcontainers/features/github-cli:1": {}
+  },
+  "forwardPorts": [3000],
+  "image": "mcr.microsoft.com/devcontainers/typescript-node:dev-24",
+  "name": "Blog",
+  "postCreateCommand": "npm install -g bun && bun i",
+  "postStartCommand": "bun dev",
+  "remoteUser": "root"
 }

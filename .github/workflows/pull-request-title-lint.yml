@@ -27,7 +27,7 @@ jobs:
       - name: 🐣 Install bun
         uses: oven-sh/setup-bun@v2
         with:
-          bun-version: canary
+          bun-version: latest
       - name: 📦 Install commitlint
         run: bun add -d @commitlint/cli @commitlint/config-conventional
       - name: 📝 Create commitlint config

@@ -14,7 +14,7 @@ test.describe("Locale redirect", () => {
 
 test.describe("Home page", () => {
   test("shows site name, navigation, and hero section", async ({ page }) => {
-    await page.setViewportSize({ width: 1280, height: 800 })
+    await page.setViewportSize({ height: 800, width: 1280 })
     await page.goto("/en")
     await expect(page).toHaveTitle(/Jam's Blog/)
     await expect(page.locator('header img[alt="Jam\'s Blog"]')).toBeVisible()
@@ -48,7 +48,7 @@ test.describe("Blog list page", () => {
     // The "ALL" link is what clears the filter — it is rendered as a
     // regular pp-tag chip pointing back to /en/blog (no query string).
     await expect(
-      page.getByRole("main").getByRole("link", { name: "ALL", exact: true }),
+      page.getByRole("main").getByRole("link", { exact: true, name: "ALL" }),
     ).toBeVisible()
   })
 
@@ -56,7 +56,7 @@ test.describe("Blog list page", () => {
     await page.goto("/en/blog?tag=typescript")
     const allChip = page
       .getByRole("main")
-      .getByRole("link", { name: "ALL", exact: true })
+      .getByRole("link", { exact: true, name: "ALL" })
     await Promise.all([
       page.waitForURL(/\/en\/blog$/, { timeout: 15000 }),
       allChip.click(),
@@ -138,7 +138,7 @@ test.describe("Japanese locale", () => {
 
 test.describe("Language switch", () => {
   test("switching from English to Japanese", async ({ page }) => {
-    await page.setViewportSize({ width: 1280, height: 800 })
+    await page.setViewportSize({ height: 800, width: 1280 })
     await page.goto("/en")
     // The desktop locale switcher renders a single "JA / EN" link that
     // toggles to the other locale. The mobile menu uses the dictionary
@@ -151,7 +151,7 @@ test.describe("Language switch", () => {
   })
 
   test("switching from Japanese to English", async ({ page }) => {
-    await page.setViewportSize({ width: 1280, height: 800 })
+    await page.setViewportSize({ height: 800, width: 1280 })
     await page.goto("/ja")
     await Promise.all([
       page.waitForURL(/\/en$/, { timeout: 15000 }),

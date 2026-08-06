@@ -31,15 +31,15 @@ afterEach(cleanup)
 
 function createMockPost(overrides: Partial<Post> = {}): Post {
   return {
-    slug: "test-post",
-    locale: "en",
+    content: "Some content for reading time estimation.",
     frontmatter: {
-      title: "Test Post",
       date: "2024-01-01",
       description: "Test description",
       tags: ["typescript"],
+      title: "Test Post",
     },
-    content: "Some content for reading time estimation.",
+    locale: "en",
+    slug: "test-post",
     ...overrides,
   }
 }
@@ -48,31 +48,31 @@ describe("BentoGrid", () => {
   test("renders 3 posts with tags and reading time", () => {
     const posts = [
       createMockPost({
-        slug: "post-1",
         frontmatter: {
-          title: "First Post",
           date: "2024-01-01",
           description: "Desc 1",
           tags: ["react"],
+          title: "First Post",
         },
+        slug: "post-1",
       }),
       createMockPost({
-        slug: "post-2",
         frontmatter: {
-          title: "Second Post",
           date: "2024-01-02",
           description: "Desc 2",
           tags: ["next"],
+          title: "Second Post",
         },
+        slug: "post-2",
       }),
       createMockPost({
-        slug: "post-3",
         frontmatter: {
-          title: "Third Post",
           date: "2024-01-03",
           description: "Desc 3",
           tags: ["bun"],
+          title: "Third Post",
         },
+        slug: "post-3",
       }),
     ]
     const { container } = render(
@@ -106,22 +106,22 @@ describe("BentoGrid", () => {
   test("renders 2 posts in 2-column layout", () => {
     const posts = [
       createMockPost({
-        slug: "post-a",
         frontmatter: {
-          title: "Post A",
           date: "2024-01-01",
           description: "A",
           tags: ["ts"],
+          title: "Post A",
         },
+        slug: "post-a",
       }),
       createMockPost({
-        slug: "post-b",
         frontmatter: {
-          title: "Post B",
           date: "2024-01-02",
           description: "B",
           tags: ["js"],
+          title: "Post B",
         },
+        slug: "post-b",
       }),
     ]
     const { container } = render(
@@ -188,22 +188,22 @@ describe("BentoGrid", () => {
   test("each card links to correct blog post path", () => {
     const posts = [
       createMockPost({
-        slug: "alpha",
         frontmatter: {
-          title: "Alpha",
           date: "2024-01-01",
           description: "A",
           tags: ["ts"],
+          title: "Alpha",
         },
+        slug: "alpha",
       }),
       createMockPost({
-        slug: "beta",
         frontmatter: {
-          title: "Beta",
           date: "2024-01-02",
           description: "B",
           tags: ["js"],
+          title: "Beta",
         },
+        slug: "beta",
       }),
     ]
     const { container } = render(

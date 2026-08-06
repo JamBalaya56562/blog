@@ -39,16 +39,16 @@ mock.module("@/lib/routes", () => ({
 const { ArticleCard } = await import("@/components/article-card")
 
 const basePost = {
-  slug: "test-post",
-  locale: "en" as const,
+  content: "Some content here for reading time estimation.",
   frontmatter: {
-    title: "Test Article Title",
     date: "2025-01-15",
     description: "This is a test description for the article card.",
-    tags: ["react", "nextjs"],
     image: "https://example.com/image.png",
+    tags: ["react", "nextjs"],
+    title: "Test Article Title",
   },
-  content: "Some content here for reading time estimation.",
+  locale: "en" as const,
+  slug: "test-post",
 }
 
 describe("ArticleCard rendering", () => {

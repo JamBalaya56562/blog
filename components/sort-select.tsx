@@ -35,8 +35,8 @@ export function SortSelect({ labels, basePath }: SortSelectProps) {
   }
 
   const options: Array<{ value: "newest" | "popular"; label: string }> = [
-    { value: "newest", label: labels.sortNewest },
-    { value: "popular", label: labels.sortPopular },
+    { label: labels.sortNewest, value: "newest" },
+    { label: labels.sortPopular, value: "popular" },
   ]
 
   return (

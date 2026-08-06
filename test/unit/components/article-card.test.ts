@@ -60,10 +60,9 @@ import fc from "fast-check"
 import { DEFAULT_THUMBNAIL } from "@/components/article-card"
 
 const arbFrontmatter = fc.record({
-  title: fc.string({ minLength: 1 }),
-  date: fc.integer({ min: 2000, max: 2030 }).chain((y) =>
-    fc.integer({ min: 1, max: 12 }).chain((m) =>
-      fc.integer({ min: 1, max: 28 }).map((d) => {
+  date: fc.integer({ max: 2030, min: 2000 }).chain((y) =>
+    fc.integer({ max: 12, min: 1 }).chain((m) =>
+      fc.integer({ max: 28, min: 1 }).map((d) => {
         const mm = String(m).padStart(2, "0")
         const dd = String(d).padStart(2, "0")
         return `${y}-${mm}-${dd}`
@@ -71,17 +70,18 @@ const arbFrontmatter = fc.record({
     ),
   ),
   description: fc.string(),
-  tags: fc.array(fc.string({ minLength: 1 }), { maxLength: 5 }),
   image: fc.option(fc.constant("https://example.com/image.png"), {
     nil: undefined,
   }),
+  tags: fc.array(fc.string({ minLength: 1 }), { maxLength: 5 }),
+  title: fc.string({ minLength: 1 }),
 })
 
 const arbPost = fc.record({
-  slug: fc.string({ minLength: 1 }),
-  locale: fc.constantFrom("en" as const, "ja" as const),
-  frontmatter: arbFrontmatter,
   content: fc.string(),
+  frontmatter: arbFrontmatter,
+  locale: fc.constantFrom("en" as const, "ja" as const),
+  slug: fc.string({ minLength: 1 }),
 })
 
 describe("Property 1: 画像ソースの解決", () => {

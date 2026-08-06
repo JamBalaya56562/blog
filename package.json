@@ -2,7 +2,6 @@
   "name": "@jambalaya56562/blog",
   "version": "0.8.0",
   "private": true,
-  "type": "module",
   "description": "JamBalaya56562's blog built with Next.js",
   "keywords": [
     "biome",
@@ -13,34 +12,35 @@
     "tailwindcss",
     "typescript"
   ],
-  "author": "Jam Balaya <jambalaya.pyoncafe@outlook.jp> (https://github.com/JamBalaya56562)",
-  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/JamBalaya56562/blog/issues"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/JamBalaya56562/blog.git"
-  },
-  "bugs": {
-    "url": "https://github.com/JamBalaya56562/blog/issues"
   },
   "funding": {
     "type": "github",
     "url": "https://github.com/sponsors/JamBalaya56562"
   },
+  "license": "MIT",
+  "author": "Jam Balaya <jambalaya.pyoncafe@outlook.jp> (https://github.com/JamBalaya56562)",
+  "type": "module",
   "scripts": {
-    "dev": "next dev",
-    "dev-win": "WATCHPACK_POLLING=true next dev",
     "build": "next build",
-    "start": "next start",
-    "lint": "biome lint --write",
-    "format": "biome format --write",
-    "lint:fix": "biome check --write",
-    "test:unit": "bun test test/unit",
-    "test:e2e": "playwright test",
-    "test:report": "playwright show-report",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
-    "db:studio": "drizzle-kit studio"
+    "db:studio": "drizzle-kit studio",
+    "dev": "next dev",
+    "dev-win": "WATCHPACK_POLLING=true next dev",
+    "format": "biome format --write",
+    "lint": "biome lint --write",
+    "lint:fix": "biome check --write",
+    "start": "next start",
+    "test:e2e": "playwright test",
+    "test:report": "playwright show-report",
+    "test:unit": "bun test test/unit"
   },
   "dependencies": {
     "@mdx-js/loader": "^3.1.1",

@@ -57,7 +57,7 @@ export class GitHubContentLoader implements ContentLoader {
       }
       const raw = await res.text()
       const { frontmatter, content } = parseFrontmatter(raw)
-      return { slug, locale, frontmatter, content }
+      return { content, frontmatter, locale, slug }
     } catch (e) {
       console.error("GitHub raw fetch failed:", e)
       return null

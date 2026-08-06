@@ -211,9 +211,9 @@ async function BlogListContent({
             basePath={`/${locale}/blog`}
             searchParams={paginationSearchParams}
             labels={{
-              previous: dictionary.blog.previousPage,
               next: dictionary.blog.nextPage,
               pagination: dictionary.blog.pagination,
+              previous: dictionary.blog.previousPage,
             }}
           />
         </>

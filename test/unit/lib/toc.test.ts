@@ -26,16 +26,16 @@ describe("extractToc", () => {
   test("extracts h2 and h3 headings", () => {
     const md = "## First\n### Second\n## Third"
     expect(extractToc(md)).toEqual([
-      { id: "first", text: "First", level: 2 },
-      { id: "second", text: "Second", level: 3 },
-      { id: "third", text: "Third", level: 2 },
+      { id: "first", level: 2, text: "First" },
+      { id: "second", level: 3, text: "Second" },
+      { id: "third", level: 2, text: "Third" },
     ] satisfies TocItem[])
   })
 
   test("ignores h1 and h4+", () => {
     const md = "# Title\n## Included\n#### Ignored"
     expect(extractToc(md)).toEqual([
-      { id: "included", text: "Included", level: 2 },
+      { id: "included", level: 2, text: "Included" },
     ])
   })
 

@@ -28,8 +28,8 @@ import { nextNavigationMock } from "../setup-next-navigation-mock"
 
 mock.module("next/navigation", () => ({
   ...nextNavigationMock,
-  useRouter: () => ({ push: () => {} }),
   usePathname: () => "/en",
+  useRouter: () => ({ push: () => {} }),
 }))
 
 const { RelatedPosts, getRelatedPosts } = await import(
@@ -40,16 +40,16 @@ afterEach(cleanup)
 
 function createMockPost(overrides: Partial<Post> = {}): Post {
   return {
-    slug: "test-post",
-    locale: "en",
     content: "Test content",
     frontmatter: {
-      title: "Test Post",
       date: "2025-01-01",
       description: "A test post",
       tags: ["test"],
+      title: "Test Post",
       ...overrides.frontmatter,
     },
+    locale: "en",
+    slug: "test-post",
     ...overrides,
   }
 }
@@ -76,7 +76,7 @@ describe("RelatedPosts", () => {
 
   test("displays '他の記事を探す' heading for Japanese locale", () => {
     const dictionary = getDictionary("ja")
-    const posts = [createMockPost({ slug: "post-1", locale: "ja" })]
+    const posts = [createMockPost({ locale: "ja", slug: "post-1" })]
     const { container } = render(
       <RelatedPosts locale="ja" posts={posts} dictionary={dictionary} />,
     )
@@ -87,10 +87,9 @@ describe("RelatedPosts", () => {
 import fc from "fast-check"
 
 const arbFrontmatter = fc.record({
-  title: fc.string({ minLength: 1 }),
-  date: fc.integer({ min: 2000, max: 2030 }).chain((y) =>
-    fc.integer({ min: 1, max: 12 }).chain((m) =>
-      fc.integer({ min: 1, max: 28 }).map((d) => {
+  date: fc.integer({ max: 2030, min: 2000 }).chain((y) =>
+    fc.integer({ max: 12, min: 1 }).chain((m) =>
+      fc.integer({ max: 28, min: 1 }).map((d) => {
         const mm = String(m).padStart(2, "0")
         const dd = String(d).padStart(2, "0")
         return `${y}-${mm}-${dd}`
@@ -98,24 +97,25 @@ const arbFrontmatter = fc.record({
     ),
   ),
   description: fc.string(),
-  tags: fc.array(fc.string({ minLength: 1 }), { maxLength: 5 }),
   image: fc.option(fc.constant("https://example.com/image.png"), {
     nil: undefined,
   }),
+  tags: fc.array(fc.string({ minLength: 1 }), { maxLength: 5 }),
+  title: fc.string({ minLength: 1 }),
 })
 
 const arbPost = fc.record({
-  slug: fc.string({ minLength: 1 }),
-  locale: fc.constantFrom("en" as const, "ja" as const),
-  frontmatter: arbFrontmatter,
   content: fc.string(),
+  frontmatter: arbFrontmatter,
+  locale: fc.constantFrom("en" as const, "ja" as const),
+  slug: fc.string({ minLength: 1 }),
 })
 
 describe("Property 2: 記事フィルタリングと件数制限", () => {
   test("filtered results exclude current slug and have at most 3 items", () => {
     fc.assert(
       fc.property(
-        fc.array(arbPost, { minLength: 0, maxLength: 10 }),
+        fc.array(arbPost, { maxLength: 10, minLength: 0 }),
         fc.string({ minLength: 1 }),
         (posts, currentSlug) => {
           const filtered = getRelatedPosts(posts, currentSlug)
@@ -133,18 +133,18 @@ describe("Property 2: 記事フィルタリングと件数制限", () => {
     fc.assert(
       fc.property(
         fc.string({ minLength: 1 }),
-        fc.integer({ min: 1, max: 5 }),
+        fc.integer({ max: 5, min: 1 }),
         (slug, count) => {
           const posts = Array.from({ length: count }, (_, i) => ({
-            slug,
-            locale: "en" as const,
+            content: "",
             frontmatter: {
-              title: `Post ${i}`,
               date: "2025-01-01",
               description: "",
               tags: [],
+              title: `Post ${i}`,
             },
-            content: "",
+            locale: "en" as const,
+            slug,
           }))
           const filtered = getRelatedPosts(posts, slug)
           expect(filtered).toEqual([])

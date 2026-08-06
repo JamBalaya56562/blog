@@ -21,15 +21,15 @@ afterEach(cleanup)
 
 function createMockPost(overrides: Partial<Post> = {}): Post {
   return {
-    slug: "test-post",
-    locale: "en",
+    content: "",
     frontmatter: {
-      title: "Test Post",
       date: "2024-01-01",
       description: "Test description",
       tags: ["typescript"],
+      title: "Test Post",
     },
-    content: "",
+    locale: "en",
+    slug: "test-post",
     ...overrides,
   }
 }
@@ -49,22 +49,22 @@ describe("RecentDispatches", () => {
   test("renders post entries with numbered index, title, dotted date, tag", () => {
     const posts = [
       createMockPost({
-        slug: "post-1",
         frontmatter: {
-          title: "First",
           date: "2024-03-15",
           description: "d",
           tags: ["react"],
+          title: "First",
         },
+        slug: "post-1",
       }),
       createMockPost({
-        slug: "post-2",
         frontmatter: {
-          title: "Second",
           date: "2024-03-16",
           description: "d",
           tags: ["next"],
+          title: "Second",
         },
+        slug: "post-2",
       }),
     ]
     const { container } = render(
@@ -123,7 +123,7 @@ describe("RecentDispatches", () => {
 
   test("works with ja dictionary", () => {
     const jaDictionary = getDictionary("ja")
-    const posts = [createMockPost({ slug: "ja-post", locale: "ja" })]
+    const posts = [createMockPost({ locale: "ja", slug: "ja-post" })]
     const { container } = render(
       <RecentDispatches locale="ja" dictionary={jaDictionary} posts={posts} />,
     )

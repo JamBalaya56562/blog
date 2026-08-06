@@ -10,35 +10,35 @@ import { mock } from "bun:test"
 // on Bun canary (Linux CI), causing "Export named '...' not found" errors.
 // See: https://github.com/oven-sh/bun/issues/12823
 export const nextNavigationMock = {
+  forbidden: () => {
+    throw new Error("NEXT_FORBIDDEN")
+  },
+  notFound: () => {
+    throw new Error("NEXT_NOT_FOUND")
+  },
+  permanentRedirect: () => {},
+  RedirectType: { push: "push", replace: "replace" },
   redirect: () => {
     throw Object.assign(new Error("NEXT_REDIRECT"), {
       digest: "NEXT_REDIRECT;replace;/en",
     })
   },
-  permanentRedirect: () => {},
-  usePathname: () => "/en",
-  useRouter: () => ({
-    push: () => {},
-    replace: () => {},
-    refresh: () => {},
-    back: () => {},
-    forward: () => {},
-    prefetch: () => {},
-  }),
-  useSearchParams: () => new URLSearchParams(),
-  useParams: () => ({}),
-  useSelectedLayoutSegment: () => null,
-  useSelectedLayoutSegments: () => [],
-  notFound: () => {
-    throw new Error("NEXT_NOT_FOUND")
-  },
-  forbidden: () => {
-    throw new Error("NEXT_FORBIDDEN")
-  },
   unauthorized: () => {
     throw new Error("NEXT_UNAUTHORIZED")
   },
-  RedirectType: { push: "push", replace: "replace" },
+  useParams: () => ({}),
+  usePathname: () => "/en",
+  useRouter: () => ({
+    back: () => {},
+    forward: () => {},
+    prefetch: () => {},
+    push: () => {},
+    refresh: () => {},
+    replace: () => {},
+  }),
+  useSearchParams: () => new URLSearchParams(),
+  useSelectedLayoutSegment: () => null,
+  useSelectedLayoutSegments: () => [],
 }
 
 mock.module("next/navigation", () => nextNavigationMock)

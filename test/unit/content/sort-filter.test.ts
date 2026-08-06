@@ -8,13 +8,13 @@ import {
 import type { Post } from "@/lib/content/types"
 
 const dateArb = fc
-  .integer({ min: 2000, max: 2099 })
+  .integer({ max: 2099, min: 2000 })
   .chain((year) =>
     fc
-      .integer({ min: 1, max: 12 })
+      .integer({ max: 12, min: 1 })
       .chain((month) =>
         fc
-          .integer({ min: 1, max: 28 })
+          .integer({ max: 28, min: 1 })
           .map(
             (day) =>
               `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`,
@@ -23,25 +23,25 @@ const dateArb = fc
   )
 
 const postArb: fc.Arbitrary<Post> = fc.record({
-  slug: fc.stringMatching(/^[a-z][a-z0-9-]{0,19}$/),
-  locale: fc.constantFrom("en" as const, "ja" as const),
+  content: fc.constant("content"),
   frontmatter: fc.record({
-    title: fc.stringMatching(/^[a-zA-Z0-9 ]{1,30}$/),
     date: dateArb,
     description: fc.stringMatching(/^[a-zA-Z0-9 ]{1,50}$/),
     tags: fc.array(fc.stringMatching(/^[a-z]{1,10}$/), {
-      minLength: 1,
       maxLength: 5,
+      minLength: 1,
     }),
+    title: fc.stringMatching(/^[a-zA-Z0-9 ]{1,30}$/),
   }),
-  content: fc.constant("content"),
+  locale: fc.constantFrom("en" as const, "ja" as const),
+  slug: fc.stringMatching(/^[a-z][a-z0-9-]{0,19}$/),
 })
 
 describe("Sort and Filter", () => {
   test("Property 6: date descending sort", () => {
     fc.assert(
       fc.property(
-        fc.array(postArb, { minLength: 1, maxLength: 20 }),
+        fc.array(postArb, { maxLength: 20, minLength: 1 }),
         (posts) => {
           const sorted = sortPostsByDate(posts)
           for (let i = 0; i < sorted.length - 1; i++) {
@@ -58,7 +58,7 @@ describe("Sort and Filter", () => {
   test("Property 7: tag filtering accuracy", () => {
     fc.assert(
       fc.property(
-        fc.array(postArb, { minLength: 1, maxLength: 20 }),
+        fc.array(postArb, { maxLength: 20, minLength: 1 }),
         fc.stringMatching(/^[a-z]{1,10}$/),
         (posts, tag) => {
           const filtered = filterPostsByTag(posts, tag)
@@ -74,7 +74,7 @@ describe("Sort and Filter", () => {
   test("Property: keyword filtering returns only matching posts", () => {
     fc.assert(
       fc.property(
-        fc.array(postArb, { minLength: 1, maxLength: 20 }),
+        fc.array(postArb, { maxLength: 20, minLength: 1 }),
         (posts) => {
           const keyword = posts[0].frontmatter.title.slice(0, 3).trim()
           if (!keyword) {
@@ -114,7 +114,7 @@ describe("Sort and Filter", () => {
   test("Property: empty keyword returns all posts", () => {
     fc.assert(
       fc.property(
-        fc.array(postArb, { minLength: 0, maxLength: 20 }),
+        fc.array(postArb, { maxLength: 20, minLength: 0 }),
         (posts) => {
           const filtered = filterPostsByKeyword(posts, "")
           expect(filtered.length).toBe(posts.length)
@@ -127,7 +127,7 @@ describe("Sort and Filter", () => {
   test("Property 8: sort preserved after filtering", () => {
     fc.assert(
       fc.property(
-        fc.array(postArb, { minLength: 1, maxLength: 20 }),
+        fc.array(postArb, { maxLength: 20, minLength: 1 }),
         fc.stringMatching(/^[a-z]{1,10}$/),
         (posts, tag) => {
           const sorted = sortPostsByDate(posts)

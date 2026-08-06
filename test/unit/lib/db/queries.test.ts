@@ -57,7 +57,7 @@ describe("incrementViewCount", () => {
 
     expect(insertMock).toHaveBeenCalledTimes(1)
     expect(valuesMock).toHaveBeenCalledTimes(1)
-    expect(valuesMock.mock.calls[0][0]).toEqual({ slug: "my-post", count: 1 })
+    expect(valuesMock.mock.calls[0][0]).toEqual({ count: 1, slug: "my-post" })
     expect(onConflictDoUpdateMock).toHaveBeenCalledTimes(1)
   })
 })
