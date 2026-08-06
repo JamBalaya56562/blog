@@ -13,6 +13,9 @@ const nextConfig: NextConfig = {
   },
   images: { unoptimized: true },
   output: "standalone",
+  outputFileTracingExcludes: {
+    "**/*": ["./node_modules/@img/**", "./node_modules/sharp/**"],
+  },
   pageExtensions: ["js", "jsx", "md", "mdx", "ts", "tsx"],
   reactCompiler: true,
   typedRoutes: true,
