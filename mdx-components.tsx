@@ -60,6 +60,7 @@ const components: MDXComponents = {
     const resolvedSrc =
       src && !src.startsWith("http") ? resolveImagePath(src) : src
     return (
+      // biome-ignore lint/performance/noImgElement: MDX images have unknown intrinsic dimensions and `images.unoptimized` is enabled, so next/image adds no benefit here
       <img
         src={resolvedSrc}
         alt={alt ?? ""}
