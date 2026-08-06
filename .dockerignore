@@ -1,11 +1,14 @@
+.claude
 .devcontainer
 .editorconfig
+.env*
 .git
 .gitattributes
 .github
 .gitignore
 .jj
 .next
+.playwright-mcp
 .rumdl.toml
 .sl
 .vscode
@@ -17,5 +20,7 @@ LICENSE
 next-env.d.ts
 node_modules
 pitchfork.toml
+playwright-report
 README.md
 SECURITY.md
+test-results
