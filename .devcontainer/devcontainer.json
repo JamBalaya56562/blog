@@ -1,24 +1,28 @@
 {
+  "containerEnv": {
+    "PATH": "/root/.local/share/mise/shims:${containerEnv:PATH}"
+  },
   "customizations": {
     "vscode": {
       "extensions": [
         "biomejs.biome",
-        "Codeium.codeium",
         "editorconfig.editorconfig",
         "github.vscode-github-actions",
         "GitHub.vscode-pull-request-github",
-        "ms-azuretools.vscode-docker",
+        "ms-azuretools.vscode-containers",
+        "ms-playwright.playwright",
         "MS-vsliveshare.vsliveshare"
       ]
     }
   },
   "features": {
+    "ghcr.io/devcontainers-extra/features/mise:1": {},
     "ghcr.io/devcontainers/features/github-cli:1": {}
   },
   "forwardPorts": [3000],
   "image": "mcr.microsoft.com/devcontainers/typescript-node:dev-24",
   "name": "Blog",
-  "postCreateCommand": "npm install -g bun && bun i",
+  "postCreateCommand": "mise trust && mise install && bun i",
   "postStartCommand": "bun dev",
   "remoteUser": "root"
 }
