@@ -5,7 +5,7 @@ This repository is a multilingual blog built with Next.js (App Router).
 ## Tech Stack
 
 - **Framework**: Next.js (canary) — App Router, React Server Components, `"use cache"` directive
-- **Language**: TypeScript (strict mode, `"module": "esnext"`)
+- **Language**: TypeScript (strict mode, `"module": "preserve"`, `verbatimModuleSyntax`)
 - **Runtime / Package Manager**: Bun
 - **Styling**: Tailwind CSS v4 + PostCSS
 - **Content**: MDX (`next-mdx-remote-client`, `remark-gfm`)

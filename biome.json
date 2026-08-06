@@ -10,6 +10,16 @@
     "includes": ["**", "!**/*.svg"]
   },
   "linter": {
+    "domains": {
+      "drizzle": "recommended",
+      "next": "recommended",
+      "playwright": "recommended",
+      "project": "recommended",
+      "react": "recommended",
+      "tailwind": "recommended",
+      "test": "recommended",
+      "types": "recommended"
+    },
     "rules": {
       "correctness": {
         "noUnusedImports": "error"
@@ -20,23 +30,36 @@
       }
     }
   },
+  "assist": {
+    "actions": {
+      "source": {
+        "noDuplicateClasses": "on"
+      }
+    }
+  },
   "formatter": {
-    "indentStyle": "space"
+    "useEditorconfig": true
   },
   "javascript": {
     "formatter": {
-      "semicolons": "asNeeded",
-      "indentStyle": "space"
-    }
-  },
-  "json": {
-    "formatter": {
-      "indentStyle": "space"
+      "semicolons": "asNeeded"
     }
   },
   "css": {
     "parser": {
       "tailwindDirectives": true
     }
-  }
+  },
+  "overrides": [
+    {
+      "includes": ["test/**"],
+      "linter": {
+        "rules": {
+          "performance": {
+            "noImgElement": "off"
+          }
+        }
+      }
+    }
+  ]
 }
