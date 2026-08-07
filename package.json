@@ -48,7 +48,7 @@
     "@next/mdx": "canary",
     "@types/mdx": "^2.0.14",
     "drizzle-orm": "0.45.2",
-    "lucide-react": "^1.28.0",
+    "lucide-react": "^1.30.0",
     "next": "canary",
     "next-mdx-remote-client": "^2.1.11",
     "postgres": "^3.4.9",
@@ -71,7 +71,7 @@
     "babel-plugin-react-compiler": "experimental",
     "drizzle-kit": "0.31.10",
     "fast-check": "^4.9.0",
-    "postcss": "^8.5.25",
+    "postcss": "^8.5.26",
     "tailwindcss": "^4.3.3",
     "typescript": "^7.0.2"
   },
