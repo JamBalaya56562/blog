@@ -8,22 +8,32 @@ on:
   pull_request:
     paths:
       - "app/**"
+      - "components/**"
+      - "content/**"
+      - "lib/**"
       - "public/**"
       - "test/**"
       - ".dockerignore"
       - "bun.lock"
       - "Dockerfile"
+      - "mdx-components.tsx"
       - "package.json"
+      - "proxy.ts"
       - "*config.*"
   push:
     paths:
       - "app/**"
+      - "components/**"
+      - "content/**"
+      - "lib/**"
       - "public/**"
       - "test/**"
       - ".dockerignore"
       - "bun.lock"
       - "Dockerfile"
+      - "mdx-components.tsx"
       - "package.json"
+      - "proxy.ts"
       - "*config.*"
   workflow_dispatch:
 
