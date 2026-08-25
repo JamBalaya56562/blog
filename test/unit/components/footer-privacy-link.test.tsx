@@ -31,7 +31,12 @@ describe("Feature: privacy-policy-page, Property 3: フッターリンクの正�
         expect(link?.getAttribute("href")).toBe(`/${locale}/privacy-policy`)
         expect(link?.textContent).toBe(dictionary.footer.privacyPolicy)
       }),
-      { numRuns: 100 },
+      // The input domain is `locales` (2 values), so 100 runs re-tests the same
+      // inputs ~50x each without adding coverage. Each run does a full React
+      // render of Footer, which pushed this test past bun's 5s default timeout
+      // on the QEMU-emulated linux/arm64 stage of the Docker build (~20x slower
+      // than native).
+      { numRuns: 10 },
     )
   })
 })
