@@ -7,6 +7,7 @@ concurrency:
 on:
   pull_request:
   push:
+    branches: main
   workflow_dispatch:
 
 permissions:
@@ -18,7 +19,6 @@ jobs:
     outputs:
       is_success: ${{ steps.commitlint.outputs.is_success }}
       commitlint_log: ${{ steps.commitlint.outputs.commitlint_log }}
-    if: startsWith(github.ref_name, 'sapling-pr-archive-') == false
 
     steps:
       - name: 📥 Checkout

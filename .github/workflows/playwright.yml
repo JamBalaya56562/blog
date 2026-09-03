@@ -19,6 +19,7 @@ on:
       - "package.json"
       - "*config.*"
   push:
+    branches: main
     paths:
       - "app/**"
       - "components/**"

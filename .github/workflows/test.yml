@@ -21,6 +21,7 @@ on:
       - "proxy.ts"
       - "*config.*"
   push:
+    branches: main
     paths:
       - "app/**"
       - "components/**"
