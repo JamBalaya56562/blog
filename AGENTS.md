@@ -65,6 +65,31 @@ test/
 - Apply `Readonly<>` to component props
 - Use typed routes (`typedRoutes: true`)
 
+### Styling
+
+`app/globals.css` and Tailwind utilities share the same elements, so ownership
+is split **by property**, not by element.
+
+- **`@layer components` owns multi-property primitives** — `.pp-btn`,
+  `.pp-tag`, `.prose-cyber` and friends. Whatever they declare belongs to the
+  stylesheet.
+- **Utility classes own per-instance adjustments** — spacing, layout,
+  one-off colours.
+- **Never declare the same property in both for the same element.** The
+  utility wins, so the stylesheet's value becomes dead code that still reads as
+  if it applies.
+
+Every rule added to `globals.css` must go **inside a layer**. Tailwind's
+`@import` establishes `theme, base, components, utilities`, and an unlayered
+rule outranks every layered one regardless of specificity — it would silently
+beat any utility written on the same element. Only put a rule outside a layer
+when it must outrank utilities (`prefers-reduced-motion`) or when no utility
+can reach it (view transition pseudo-elements, `:root` theme tokens), and say
+why in a comment. `test/unit/globals-css.test.ts` enforces this.
+
+MDX output follows the same split: `.prose-cyber` owns what it declares, and
+`mdx-components.tsx` supplies only the rest.
+
 ### Content
 
 - Blog posts are placed as MDX files in `content/posts/{locale}/`
