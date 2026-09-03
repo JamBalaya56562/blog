@@ -107,9 +107,13 @@ function NavTab({
   return (
     <Link
       href={href}
-      className="group relative inline-flex items-center px-3 py-2 font-mono text-[11px] uppercase tracking-[0.2em] text-foreground transition-colors hover:text-cyber-cyan"
+      className="group relative inline-flex items-center py-2 pr-3 pl-6 font-mono text-[11px] uppercase tracking-[0.2em] text-foreground transition-colors hover:text-cyber-cyan"
     >
-      {/* ◢ symbol slides in from the left on hover */}
+      {/* ◢ slides in from the left on hover. The 24px left padding is its
+          column: the glyph is 13.2px wide and settles at 4-17.2px, so the
+          label clears it by the width of one space in this font. Reserving
+          the room rather than sliding over the text mirrors `.pp-link`,
+          whose brackets are inline-block and always occupy their space. */}
       <span
         aria-hidden
         className="pointer-events-none absolute left-0 -translate-x-2 text-cyber-cyan opacity-0 transition-all duration-200 ease-out group-hover:translate-x-1 group-hover:opacity-100"
@@ -120,7 +124,7 @@ function NavTab({
       {/* Underline grows from left on hover */}
       <span
         aria-hidden
-        className="pointer-events-none absolute inset-x-3 bottom-1 h-px origin-left scale-x-0 bg-cyber-cyan transition-transform duration-300 ease-out group-hover:scale-x-100"
+        className="pointer-events-none absolute right-3 bottom-1 left-6 h-px origin-left scale-x-0 bg-cyber-cyan transition-transform duration-300 ease-out group-hover:scale-x-100"
       />
     </Link>
   )
