@@ -121,7 +121,7 @@ async function BlogPostContent({
           <header className="mb-10">
             <div className="pp-tick mb-3">◢ DISPATCH / {category}</div>
             <ViewTransition name={`post-title-${slug}`} share="morph">
-              <h1 className="pp-display text-[clamp(28px,5vw,52px)] leading-[1.1] tracking-tight text-foreground">
+              <h1 className="pp-display text-[clamp(28px,5vw,52px)] leading-[1.1] text-foreground">
                 {post.frontmatter.title}
               </h1>
             </ViewTransition>

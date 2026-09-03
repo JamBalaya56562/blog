@@ -230,7 +230,7 @@ export default async function PortfolioPage({
       <section className="mt-16">
         <div className="mb-6 flex flex-wrap items-baseline gap-4">
           <span className="pp-tick">◢ DEPLOYMENT_LOG</span>
-          <h2 className="pp-display text-3xl tracking-tight text-foreground sm:text-4xl">
+          <h2 className="pp-display text-3xl text-foreground sm:text-4xl">
             {dictionary.portfolio.sideProjects}
           </h2>
           <span className="h-px flex-1 bg-cyber-line" />
