@@ -203,6 +203,40 @@ body {
   font-family: var(--blog-font-rune);
 }
 
+/* Hero headline — must render on a single line at every desktop width.
+
+   `8vw` alone could not do this: the type is capped at 96px while the line
+   needs ~12.3em, so the headline wrapped between roughly 1000px and 1300px of
+   viewport width. Instead the size is derived from the container width
+   divided by the string's own width in em (`--pp-headline-em`, computed
+   server-side by `estimateHeadlineEm`), which adapts to any container width,
+   locale and headline length.
+
+   Below `sm` the old fluid scale is kept: forcing one line on a phone would
+   drop the headline to ~25px. */
+.pp-hero-title {
+  container-type: inline-size;
+}
+
+.pp-hero-line {
+  display: block;
+  font-size: clamp(40px, 8vw, 96px);
+  /* Re-declared from `.pp-display`: em letter-spacing resolves against the
+     element's own font-size, and the size now lives here rather than on the
+     h1. Inheriting it would resolve 0.04em against the h1's 16px. */
+  letter-spacing: 0.04em;
+}
+
+@media (width >= 40rem) {
+  .pp-hero-line {
+    /* SplitText renders every character as an atomic inline-block, and CSS
+       puts a soft wrap opportunity around each one — without this the line
+       can break mid-word. */
+    white-space: nowrap;
+    font-size: min(96px, calc(100cqi / var(--pp-headline-em, 13)));
+  }
+}
+
 .pp-corner {
   color: var(--cyber-dim);
   font-family: var(--blog-font-mono);

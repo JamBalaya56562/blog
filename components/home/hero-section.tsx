@@ -4,6 +4,7 @@ import { CountUp } from "@/components/ui/count-up"
 import { SplitText } from "@/components/ui/split-text"
 import type { Locale } from "@/lib/i18n/config"
 import type { Dictionary } from "@/lib/i18n/get-dictionary"
+import { estimateHeadlineEm } from "@/lib/typography"
 
 interface HeroSectionProps {
   readonly locale: Locale
@@ -30,13 +31,24 @@ export function HeroSection({
   tagCount,
   latestDate,
 }: Readonly<HeroSectionProps>) {
+  // Both lines share one size, taken from whichever is wider, so the headline
+  // reads as a single block. `.pp-hero-line` divides the container width by
+  // this to land on a size that always fits on one line.
+  const headlineEm = Math.max(
+    estimateHeadlineEm(dictionary.home.title),
+    estimateHeadlineEm(dictionary.home.titleAccent),
+  )
+
   return (
     <section className="relative overflow-hidden px-7 pb-12 pt-16 sm:pt-24">
-      <h1 className="pp-display m-0 text-[clamp(40px,8vw,96px)] font-extrabold leading-[0.95] tracking-tight">
-        <span className="block text-foreground">
+      <h1
+        className="pp-display pp-hero-title m-0 font-extrabold leading-[0.95]"
+        style={{ "--pp-headline-em": headlineEm } as React.CSSProperties}
+      >
+        <span className="pp-hero-line text-foreground">
           <SplitText text={dictionary.home.title} stagger={40} />
         </span>
-        <span className="block text-cyber-cyan">
+        <span className="pp-hero-line text-cyber-cyan">
           <SplitText
             text={dictionary.home.titleAccent}
             delay={400}
