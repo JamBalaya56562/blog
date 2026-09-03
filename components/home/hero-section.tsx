@@ -42,7 +42,7 @@ export function HeroSection({
   return (
     <section className="relative overflow-hidden px-7 pb-12 pt-16 sm:pt-24">
       <h1
-        className="pp-display pp-hero-title m-0 font-extrabold leading-[0.95]"
+        className="pp-display pp-hero-title m-0 leading-[0.95]"
         style={{ "--pp-headline-em": headlineEm } as React.CSSProperties}
       >
         <span className="pp-hero-line text-foreground">
