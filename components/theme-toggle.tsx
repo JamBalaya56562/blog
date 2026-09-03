@@ -10,9 +10,14 @@ export function ThemeToggle({
   const { theme, toggleTheme, mounted } = useTheme()
 
   if (!mounted) {
+    // Pre-hydration placeholder: same size and label as the real control so
+    // the header does not shift, but `disabled` until `toggleTheme` exists.
+    // Without it a click landing before hydration hits a button with no
+    // handler and is silently lost.
     return (
       <button
         type="button"
+        disabled
         aria-label={dictionary.theme.switchToDark}
         className="flex h-7 w-7 items-center justify-center border border-cyber-line text-cyber-dim"
       >
