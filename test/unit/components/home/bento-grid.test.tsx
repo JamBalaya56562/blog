@@ -3,13 +3,26 @@ import { cleanup, render } from "@testing-library/react"
 import type { Post } from "@/lib/content/types"
 import { getDictionary } from "@/lib/i18n/get-dictionary"
 
+// The real `next/link` consumes `transitionTypes` and never forwards it to
+// the DOM. Mirror that here — spreading it onto an `<a>` would warn about an
+// unknown prop — and surface it as a data attribute so tests can assert the
+// navigation direction a link carries.
 mock.module("next/link", () => ({
   default: ({
     href,
     children,
+    transitionTypes,
     ...props
-  }: { href: string; children: React.ReactNode } & Record<string, unknown>) => (
-    <a href={href} {...props}>
+  }: {
+    href: string
+    children: React.ReactNode
+    transitionTypes?: string[]
+  } & Record<string, unknown>) => (
+    <a
+      href={href}
+      data-transition-types={transitionTypes?.join(" ")}
+      {...props}
+    >
       {children}
     </a>
   ),

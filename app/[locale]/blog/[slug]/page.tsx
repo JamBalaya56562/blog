@@ -9,6 +9,7 @@ import {
   DEFAULT_THUMBNAIL,
   estimateReadingTime,
 } from "@/components/article-card"
+import { PageTransition } from "@/components/page-transition"
 import { PostNavigation } from "@/components/post-navigation"
 import { getRelatedPosts, RelatedPosts } from "@/components/related-posts"
 import { ScrollProgress } from "@/components/scroll-progress"
@@ -147,6 +148,7 @@ async function BlogPostContent({
                   href={
                     `/${locale}/blog?tag=${encodeURIComponent(tag)}` as Route
                   }
+                  transitionTypes={["nav-back"]}
                   className="pp-tag"
                 >
                   {tag}
@@ -219,9 +221,14 @@ export default async function BlogPostPage({
     notFound()
   }
 
+  // The wrapper sits outside the Suspense boundary on purpose: if it were
+  // inside, a destination that streams its fallback first would commit
+  // without it and the enter would never pair with the navigation.
   return (
-    <Suspense fallback={<BlogPostSkeleton />}>
-      <BlogPostContent locale={locale} slug={slug} />
-    </Suspense>
+    <PageTransition>
+      <Suspense fallback={<BlogPostSkeleton />}>
+        <BlogPostContent locale={locale} slug={slug} />
+      </Suspense>
+    </PageTransition>
   )
 }

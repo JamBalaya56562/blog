@@ -27,6 +27,7 @@ export function PostNavigation({
       {previous ? (
         <Link
           href={getBlogPostPath(locale, previous.slug)}
+          transitionTypes={["nav-back"]}
           className="pp-card-hover relative flex min-w-0 flex-1 flex-col border border-cyber-line bg-cyber-bg-1/40 p-4 hover:border-cyber-cyan"
         >
           <Brackets />
@@ -43,6 +44,7 @@ export function PostNavigation({
       {next ? (
         <Link
           href={getBlogPostPath(locale, next.slug)}
+          transitionTypes={["nav-forward"]}
           className="pp-card-hover relative flex min-w-0 flex-1 flex-col border border-cyber-line bg-cyber-bg-1/40 p-4 text-right hover:border-cyber-cyan"
         >
           <Brackets />
