@@ -18,6 +18,7 @@ import { ThemeInitScript } from "@/components/theme-init-script"
 import { createContentLoader } from "@/lib/content/loader"
 import { isValidLocale, type Locale, locales } from "@/lib/i18n/config"
 import { type Dictionary, getDictionary } from "@/lib/i18n/get-dictionary"
+import { SITE_URL } from "@/lib/site"
 import { ThemeProvider } from "@/lib/theme/theme-provider"
 import "@/app/globals.css"
 
@@ -51,6 +52,10 @@ const mPlus1Code = M_PLUS_1_Code({
 
 export const metadata: Metadata = {
   description: "A blog about web development, built with Next.js and MDX.",
+  // Resolves the relative `openGraph.images` paths the post pages hand back.
+  // Without it Next falls back to `http://localhost:3000`, so every share
+  // card in production pointed at an image nobody else can fetch.
+  metadataBase: SITE_URL,
   title: {
     default: "Jam's Blog",
     template: "%s | Jam's Blog",
