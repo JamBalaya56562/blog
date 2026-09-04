@@ -899,32 +899,37 @@
 }
 @keyframes slide-from-right {
   from {
-    transform: translateX(30px);
+    transform: translateX(60px);
     opacity: 0;
   }
 }
 @keyframes slide-to-left {
   to {
-    transform: translateX(-30px);
+    transform: translateX(-60px);
     opacity: 0;
   }
 }
 @keyframes slide-from-left {
   from {
-    transform: translateX(-30px);
+    transform: translateX(-60px);
     opacity: 0;
   }
 }
 @keyframes slide-to-right {
   to {
-    transform: translateX(30px);
+    transform: translateX(60px);
     opacity: 0;
   }
 }
 
+/* The fade has to outlast most of the slide. `fade-out` wins the opacity —
+   the slide keyframes set it too, but the shorter animation is what the page
+   actually renders — so a 90ms fade against a 300ms slide left the outgoing
+   page transparent after 10px of a 30px travel, which read as no transition
+   at all. At 180ms against 60px it now clears 50px before it goes. */
 ::view-transition-old(.nav-forward) {
   animation:
-    90ms cubic-bezier(0.4, 0, 1, 1) both fade-out,
+    180ms cubic-bezier(0.4, 0, 1, 1) both fade-out,
     300ms cubic-bezier(0.4, 0, 0.2, 1) both slide-to-left;
 }
 ::view-transition-new(.nav-forward) {
@@ -934,7 +939,7 @@
 }
 ::view-transition-old(.nav-back) {
   animation:
-    90ms cubic-bezier(0.4, 0, 1, 1) both fade-out,
+    180ms cubic-bezier(0.4, 0, 1, 1) both fade-out,
     300ms cubic-bezier(0.4, 0, 0.2, 1) both slide-to-right;
 }
 ::view-transition-new(.nav-back) {

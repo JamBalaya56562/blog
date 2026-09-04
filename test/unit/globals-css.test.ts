@@ -262,3 +262,72 @@ describe("app/globals.css reduced motion — transitions", () => {
     }
   })
 })
+
+describe("app/globals.css directional slide is perceptible", () => {
+  /** `180ms ... both fade-out, 300ms ... both slide-to-left` -> durations. */
+  function slideRuleTimings(css: string) {
+    const root = postcss.parse(css)
+    const rules: { selector: string; fade: number; slide: number }[] = []
+    root.walkRules(
+      /^::view-transition-old\(\.nav-(forward|back)\)$/,
+      (rule) => {
+        const value = rule.nodes
+          .filter((node) => node.type === "decl" && node.prop === "animation")
+          .map((node) => (node as { value: string }).value)
+          .join("")
+        const fade = value.match(
+          /(\d+)ms\s+cubic-bezier\([^)]*\)\s+both\s+fade-out/,
+        )
+        const slide = value.match(
+          /(\d+)ms\s+cubic-bezier\([^)]*\)\s+both\s+slide-/,
+        )
+        if (fade && slide) {
+          rules.push({
+            fade: Number(fade[1]),
+            selector: rule.selector,
+            slide: Number(slide[1]),
+          })
+        }
+      },
+    )
+    return rules
+  }
+
+  /** Travel distance of each `slide-*` keyframe, in px. */
+  function slideDistances(css: string) {
+    const root = postcss.parse(css)
+    const distances: number[] = []
+    root.walkAtRules("keyframes", (atRule) => {
+      if (!atRule.params.startsWith("slide-")) {
+        return
+      }
+      atRule.walkDecls("transform", (decl) => {
+        const match = decl.value.match(/translateX\((-?\d+)px\)/)
+        if (match) {
+          distances.push(Math.abs(Number(match[1])))
+        }
+      })
+    })
+    return distances
+  }
+
+  test("the outgoing page is still visible for most of its travel", () => {
+    const rules = slideRuleTimings(CSS)
+    expect(rules).toHaveLength(2)
+    for (const rule of rules) {
+      // `fade-out` decides the opacity, so a fade far shorter than the slide
+      // leaves the page transparent before it has moved: at 90ms against a
+      // 300ms slide only a third of the travel was ever on screen, which is
+      // why the directional transition read as missing.
+      expect(rule.fade).toBeGreaterThanOrEqual(rule.slide / 2)
+    }
+  })
+
+  test("the travel is far enough to read as a direction", () => {
+    const distances = slideDistances(CSS)
+    expect(distances).toHaveLength(4)
+    for (const distance of distances) {
+      expect(distance).toBeGreaterThanOrEqual(50)
+    }
+  })
+})
