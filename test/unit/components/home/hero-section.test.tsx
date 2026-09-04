@@ -2,13 +2,26 @@ import { afterEach, describe, expect, mock, test } from "bun:test"
 import { cleanup, render } from "@testing-library/react"
 import { getDictionary } from "@/lib/i18n/get-dictionary"
 
+// The real `next/link` consumes `transitionTypes` and never forwards it to
+// the DOM. Mirror that here — spreading it onto an `<a>` would warn about an
+// unknown prop — and surface it as a data attribute so tests can assert the
+// navigation direction a link carries.
 mock.module("next/link", () => ({
   default: ({
     href,
     children,
+    transitionTypes,
     ...props
-  }: { href: string; children: React.ReactNode } & Record<string, unknown>) => (
-    <a href={href} {...props}>
+  }: {
+    href: string
+    children: React.ReactNode
+    transitionTypes?: string[]
+  } & Record<string, unknown>) => (
+    <a
+      href={href}
+      data-transition-types={transitionTypes?.join(" ")}
+      {...props}
+    >
       {children}
     </a>
   ),
@@ -53,6 +66,20 @@ describe("HeroSection", () => {
     )
     expect(browseLink).toBeDefined()
     expect(browseLink?.getAttribute("href")).toBe("/en/blog")
+  })
+
+  test("both CTAs navigate forward", () => {
+    const dictionary = getDictionary("en")
+    const { container } = render(
+      <HeroSection locale="en" dictionary={dictionary} {...COMMON} />,
+    )
+    // The hero only ever renders on the home page, so every route it links
+    // to is deeper — the direction is unambiguous here in a way it is not
+    // for the header tabs, which are left untyped.
+    const directions = Array.from(container.querySelectorAll("a")).map((a) =>
+      a.getAttribute("data-transition-types"),
+    )
+    expect(directions).toEqual(["nav-forward", "nav-forward"])
   })
 
   test("renders HUD strip with real blog metrics", () => {

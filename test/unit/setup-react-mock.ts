@@ -11,6 +11,11 @@ if (!React.ViewTransition) {
   }: {
     name?: string
     share?: string
+    // Directional props, dropped here the same way `name` / `share` are —
+    // `PageTransition` renders as a plain pass-through in unit tests.
+    default?: string
+    enter?: Record<string, string>
+    exit?: Record<string, string>
     children: unknown
   }) => children
 }
