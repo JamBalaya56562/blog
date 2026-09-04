@@ -171,6 +171,15 @@
    every layered one, so leaving them at the top level silently beat any
    utility class set on the same element. */
 @layer base {
+  /* The header is `sticky top-0` and measures 82.5px, with the post page's
+     2px scroll-progress bar sticking beneath it. Without this, an anchor
+     target lands at y=0 — underneath the header. `scroll-padding-top` sits
+     on the scrollport, so it covers both fragment navigation and the
+     `scrollIntoView()` the table of contents calls. */
+  html {
+    scroll-padding-top: 6.5rem;
+  }
+
   body {
     background: var(--background);
     color: var(--foreground);
@@ -242,6 +251,33 @@
       white-space: nowrap;
       font-size: min(96px, calc(100cqi / var(--pp-headline-em, 13)));
     }
+  }
+
+  /* SplitText characters. The animation is declared here rather than inline
+     on each span so that `prefers-reduced-motion` can switch it off — an
+     inline `animation` beats every rule without `!important`. Only the
+     stagger delay comes in from the component. */
+  .pp-split-char {
+    display: inline-block;
+    /* Keeps the space characters the splitter emits. Each span holds a single
+       character, so this cannot suppress a wrap opportunity between them. */
+    white-space: pre;
+    opacity: 0;
+    animation-duration: 0.55s;
+    animation-timing-function: cubic-bezier(0.2, 0.7, 0.3, 1);
+    animation-fill-mode: forwards;
+    animation-delay: var(--pp-split-delay, 0ms);
+    /* The variant classes below pick the keyframe through a token rather than
+       declaring `animation-name` themselves, so this stays the single rule
+       that starts the animation — and so the single entry in the
+       reduced-motion block below covers every variant. */
+    animation-name: var(--pp-split-keyframe, splitRise);
+  }
+  .pp-split-rise {
+    --pp-split-keyframe: splitRise;
+  }
+  .pp-split-glitch {
+    --pp-split-keyframe: splitGlitch;
   }
 
   .pp-corner {
@@ -474,6 +510,23 @@
     );
     animation: ppSweep 6s linear infinite;
     pointer-events: none;
+  }
+
+  /* Hover scan-line on article card thumbnails. The sweep itself is applied
+     by a `group-hover:` utility on the element; this class carries the
+     appearance and doubles as the hook the reduced-motion block switches
+     off (an unlayered rule outranks the utility). */
+  .pp-card-sweep {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: -200px;
+    height: 1px;
+    background: var(--cyber-cyan);
+    box-shadow: 0 0 12px var(--cyber-cyan);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
   }
 
   /* HUD pulse */
@@ -851,9 +904,17 @@
   .pp-rotor,
   .pp-rotor-rev,
   .pp-marquee-track,
+  .pp-card-sweep,
   .animate-ping,
   .animate-shimmer {
     animation: none;
+  }
+  /* `.pp-split-char` starts at `opacity: 0` and is carried to 1 by the
+     animation's `forwards` fill. Dropping the animation alone would leave
+     the headline invisible, so the end state has to be restored too. */
+  .pp-split-char {
+    animation: none;
+    opacity: 1;
   }
   .pp-cursor-ring {
     display: none;

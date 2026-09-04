@@ -2,8 +2,14 @@
  * Splits text into spans by character with a staggered rise/glitch animation.
  * Pure CSS animation — no JS state, so it can render server-side.
  *
+ * The animation lives in `.pp-split-char` (globals.css) rather than in an
+ * inline style: an inline `animation` outranks every stylesheet rule that
+ * lacks `!important`, so the `prefers-reduced-motion` block could never
+ * switch it off. Only the per-character delay is passed inline, as a custom
+ * property the class reads.
+ *
  * NOTE: each character animation is `forwards`, so the final state is visible
- * even when JS is disabled. Honors `prefers-reduced-motion` via globals.css.
+ * even when JS is disabled.
  */
 export function SplitText({
   text,
@@ -19,7 +25,7 @@ export function SplitText({
   readonly className?: string
 }) {
   const chars = Array.from(text)
-  const keyframe = animation === "rise" ? "splitRise" : "splitGlitch"
+  const variant = animation === "glitch" ? "pp-split-glitch" : "pp-split-rise"
 
   return (
     <span className={className} style={{ display: "inline-block" }}>
@@ -27,13 +33,12 @@ export function SplitText({
         <span
           // biome-ignore lint/suspicious/noArrayIndexKey: char position is the natural key
           key={i}
-          style={{
-            animation: `${keyframe} 0.55s cubic-bezier(.2,.7,.3,1) forwards`,
-            animationDelay: `${delay + i * stagger}ms`,
-            display: "inline-block",
-            opacity: 0,
-            whiteSpace: c === " " ? "pre" : "normal",
-          }}
+          className={`pp-split-char ${variant}`}
+          style={
+            {
+              "--pp-split-delay": `${delay + i * stagger}ms`,
+            } as React.CSSProperties
+          }
         >
           {c}
         </span>
