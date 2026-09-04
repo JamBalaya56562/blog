@@ -22,14 +22,26 @@ export async function getViewCount(slug: string): Promise<number> {
   }
 }
 
-export async function incrementViewCount(slug: string): Promise<void> {
+/**
+ * Records a view and hands back the resulting count.
+ *
+ * Returning it is what lets the counter show a live number. The pages that
+ * render it are `"use cache"` components, so the count they pass down is
+ * whatever was cached, and nothing revalidates it — the figure on screen
+ * could never move. The caller reads this value instead.
+ *
+ * Returns `null` when there is no database, or when the write failed, so the
+ * caller can leave the server-rendered figure alone rather than showing a
+ * zero it just invented.
+ */
+export async function incrementViewCount(slug: string): Promise<number | null> {
   const db = getDb()
   if (!db) {
-    return
+    return null
   }
 
   try {
-    await db
+    const result = await db
       .insert(pageViews)
       .values({ count: 1, slug })
       .onConflictDoUpdate({
@@ -39,8 +51,12 @@ export async function incrementViewCount(slug: string): Promise<void> {
         },
         target: pageViews.slug,
       })
+      .returning({ count: pageViews.count })
+
+    return result[0]?.count ?? null
   } catch (e) {
     console.error("[incrementViewCount] failed for slug:", slug, e)
+    return null
   }
 }
 
