@@ -24,6 +24,7 @@ import type { Locale } from "@/lib/i18n/config"
 import { isValidLocale, locales } from "@/lib/i18n/config"
 import { getDictionary } from "@/lib/i18n/get-dictionary"
 import { getBlogPostPath } from "@/lib/routes"
+import { localeAlternates } from "@/lib/site"
 import { extractToc } from "@/lib/toc"
 import { useMDXComponents } from "@/mdx-components"
 
@@ -76,7 +77,13 @@ export async function generateMetadata({
   if (!post) {
     return {}
   }
+  // Only the locales this post was actually written in. Advertising a
+  // translation that does not exist would point hreflang at a 404.
+  const translationLocale = await getTranslationPair(locale, slug)
+  const available = translationLocale ? [locale, translationLocale] : [locale]
+
   return {
+    alternates: localeAlternates(locale, `/blog/${slug}`, available),
     description: post.frontmatter.description,
     openGraph: {
       description: post.frontmatter.description,

@@ -1,0 +1,28 @@
+---
+title: Tailwind CSS v4 ガイド
+date: "2025-03-01"
+description: Tailwind CSS v4 の新機能を見ていく
+tags:
+  - css
+  - tailwindcss
+---
+
+## v4 の新しいところ
+
+Tailwind CSS v4 では、開発者体験が大きく改善されました。
+
+## 主な変更点
+
+1. **CSS ファーストの設定**: `tailwind.config.js` が不要に
+2. **Lightning CSS**: Lightning CSS によるビルドの高速化
+3. **新しい `@theme` ディレクティブ**: デザイントークンを CSS で定義
+
+## 例
+
+```css
+@import "tailwindcss";
+
+@theme inline {
+  --color-primary: #3b82f6;
+}
+```

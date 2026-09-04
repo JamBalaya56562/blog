@@ -9,12 +9,14 @@ import {
   Terminal,
   Wrench,
 } from "lucide-react"
+import type { Metadata } from "next"
 import Image from "next/image"
 import { notFound } from "next/navigation"
 import { PageTransition } from "@/components/page-transition"
 import { Brackets } from "@/components/ui/brackets"
 import { isValidLocale } from "@/lib/i18n/config"
 import { getDictionary } from "@/lib/i18n/get-dictionary"
+import { localeAlternates } from "@/lib/site"
 
 const skills = [
   "TypeScript",
@@ -83,6 +85,18 @@ const ossContributions = [
     url: "https://github.com/prettier/prettier",
   },
 ]
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>
+}): Promise<Metadata> {
+  const { locale } = await params
+  if (!isValidLocale(locale)) {
+    return {}
+  }
+  return { alternates: localeAlternates(locale, "/portfolio") }
+}
 
 export default async function PortfolioPage({
   params,

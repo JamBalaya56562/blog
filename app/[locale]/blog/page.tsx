@@ -1,4 +1,4 @@
-import type { Route } from "next"
+import type { Metadata, Route } from "next"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import { Suspense } from "react"
@@ -20,6 +20,7 @@ import type { Locale } from "@/lib/i18n/config"
 import { isValidLocale } from "@/lib/i18n/config"
 import { getDictionary } from "@/lib/i18n/get-dictionary"
 import { POSTS_PER_PAGE, paginate } from "@/lib/pagination"
+import { localeAlternates } from "@/lib/site"
 
 async function getCachedPosts(locale: Locale) {
   "use cache"
@@ -221,6 +222,18 @@ async function BlogListContent({
       )}
     </section>
   )
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>
+}): Promise<Metadata> {
+  const { locale } = await params
+  if (!isValidLocale(locale)) {
+    return {}
+  }
+  return { alternates: localeAlternates(locale, "/blog") }
 }
 
 export default async function BlogListPage({
