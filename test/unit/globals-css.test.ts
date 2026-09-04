@@ -238,3 +238,27 @@ describe("app/globals.css directional view transitions", () => {
     expect(flagged).toContain("animation-duration")
   })
 })
+
+describe("app/globals.css reduced motion — transitions", () => {
+  test("the block narrows transition-property to non-motion properties", () => {
+    const root = postcss.parse(CSS)
+    const declared: string[] = []
+    root.walkAtRules("media", (media) => {
+      if (!UNLAYERED_AT_RULE_PARAMS.has(media.params)) {
+        return
+      }
+      media.walkDecls("transition-property", (decl) => {
+        declared.push(decl.value)
+      })
+    })
+
+    // Without this, every `transition-all` / `transition-transform` utility
+    // in the components keeps animating for a reader who asked for less
+    // motion, while the `animation: none` rules above stop everything else.
+    expect(declared).not.toEqual([])
+    for (const value of declared) {
+      expect(value).not.toContain("transform")
+      expect(value).not.toContain("all")
+    }
+  })
+})

@@ -33,6 +33,17 @@ test.describe("Motion — default", () => {
       await sweep.evaluate((el) => getComputedStyle(el).animationName),
     ).toBe("ppSweep")
   })
+
+  test("cards transition their hover lift", async ({ page, isMobile }) => {
+    test.skip(!!isMobile, "hover is a pointer-device interaction")
+    await page.goto("/en")
+    expect(
+      await page
+        .locator("a.pp-card-hover")
+        .first()
+        .evaluate((el) => getComputedStyle(el).transitionProperty),
+    ).toContain("transform")
+  })
 })
 
 test.describe("Motion — prefers-reduced-motion", () => {
@@ -60,6 +71,31 @@ test.describe("Motion — prefers-reduced-motion", () => {
     expect(
       await sweep.evaluate((el) => getComputedStyle(el).animationName),
     ).toBe("none")
+  })
+
+  // The reduced-motion block only ever stopped `animation`, so transform
+  // transitions — the card lift and tilt, the thumbnail zoom, the nav marker
+  // slide — kept animating while the ticker sat frozen. The hovered state is
+  // still reached, just without the travel.
+  test("cards reach their hover state without travelling", async ({
+    page,
+    isMobile,
+  }) => {
+    test.skip(!!isMobile, "hover is a pointer-device interaction")
+    await page.goto("/en")
+    const card = page.locator("a.pp-card-hover").first()
+    await card.scrollIntoViewIfNeeded()
+
+    expect(
+      await card.evaluate((el) => getComputedStyle(el).transitionProperty),
+    ).not.toContain("transform")
+
+    const transform = (el: SVGElement | HTMLElement) =>
+      getComputedStyle(el).transform
+    await card.hover()
+    const midway = await card.evaluate(transform)
+    await page.waitForTimeout(400)
+    expect(await card.evaluate(transform)).toBe(midway)
   })
 })
 
