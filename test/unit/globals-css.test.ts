@@ -92,6 +92,61 @@ function unlayeredStyleRules(css: string): string[] {
   return offenders
 }
 
+/** Selectors listed in the `prefers-reduced-motion` block. */
+function reducedMotionSelectors(css: string): Set<string> {
+  const root = postcss.parse(css)
+  const listed = new Set<string>()
+  root.walkAtRules("media", (media) => {
+    if (!UNLAYERED_AT_RULE_PARAMS.has(media.params)) {
+      return
+    }
+    media.walkRules((rule) => {
+      for (const selector of rule.selectors) {
+        listed.add(selector)
+      }
+    })
+  })
+  return listed
+}
+
+/**
+ * Layered selectors that start an animation but are never switched off for a
+ * user who asked for reduced motion.
+ *
+ * This is the guard for a bug the stylesheet has shipped twice: an animation
+ * added to a component with nothing at the reduced-motion block to match it.
+ * It only sees animations declared in `globals.css` — an inline `style`
+ * animation or a Tailwind arbitrary-value utility has to route through a
+ * class here to be covered at all, which is the point.
+ */
+function unguardedAnimations(css: string): string[] {
+  const root = postcss.parse(css)
+  const listed = reducedMotionSelectors(css)
+  const offenders: string[] = []
+
+  root.walkAtRules("layer", (layer) => {
+    layer.walkRules((rule) => {
+      const starts = rule.nodes?.some(
+        (child) =>
+          child.type === "decl" &&
+          (child.prop === "animation" || child.prop === "animation-name") &&
+          child.value !== "none",
+      )
+      if (!starts) {
+        return
+      }
+      for (const selector of rule.selectors) {
+        if (listed.has(selector)) {
+          continue
+        }
+        offenders.push(selector)
+      }
+    })
+  })
+
+  return offenders
+}
+
 describe("app/globals.css cascade layers", () => {
   test("no style rule sets a normal property outside a layer", () => {
     expect(unlayeredStyleRules(CSS)).toEqual([])
@@ -116,6 +171,30 @@ describe("app/globals.css cascade layers", () => {
   test("still allows a token-only rule outside a layer", () => {
     expect(
       unlayeredStyleRules(`${CSS}\n.high-contrast { --cyber-cyan: #0ff; }\n`),
+    ).toEqual([])
+  })
+})
+
+describe("app/globals.css reduced motion", () => {
+  test("every layered animation is switched off under reduced motion", () => {
+    expect(unguardedAnimations(CSS)).toEqual([])
+  })
+
+  test("catches an animation added with no reduced-motion entry", () => {
+    // The guard is only worth having if it fails on the thing it guards.
+    expect(
+      unguardedAnimations(
+        `${CSS}\n@layer components {\n  .pp-regression { animation: spinSlow 1s linear infinite; }\n}\n`,
+      ),
+    ).toEqual([".pp-regression"])
+  })
+
+  test("accepts an animation that is listed in the block", () => {
+    expect(
+      unguardedAnimations(
+        `${CSS}\n@layer components {\n  .pp-regression { animation: spinSlow 1s linear infinite; }\n}\n` +
+          "@media (prefers-reduced-motion: reduce) {\n  .pp-regression { animation: none; }\n}\n",
+      ),
     ).toEqual([])
   })
 })

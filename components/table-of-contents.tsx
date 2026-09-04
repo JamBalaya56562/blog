@@ -52,9 +52,16 @@ export function TableOfContents({
                 href={`#${item.id}`}
                 onClick={(e) => {
                   e.preventDefault()
-                  document
-                    .getElementById(item.id)
-                    ?.scrollIntoView({ behavior: "smooth" })
+                  // The landing offset comes from `scroll-padding-top` on
+                  // `html`, which the sticky header would otherwise hide the
+                  // heading behind.
+                  document.getElementById(item.id)?.scrollIntoView({
+                    behavior: window.matchMedia(
+                      "(prefers-reduced-motion: reduce)",
+                    ).matches
+                      ? "auto"
+                      : "smooth",
+                  })
                   window.history.pushState(null, "", `#${item.id}`)
                 }}
                 className={`-ml-px block border-l-2 py-1 pl-3 font-mono text-[11px] transition-all ${
