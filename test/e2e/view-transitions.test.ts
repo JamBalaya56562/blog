@@ -325,3 +325,73 @@ test.describe("Directional slide composition", () => {
     expect(measured.travelled ?? 0).toBeGreaterThanOrEqual(30)
   })
 })
+
+test.describe("Post-to-post navigation", () => {
+  test.skip(
+    ({ browserName }) => browserName !== "chromium",
+    "view-transition-class is not supported in this browser",
+  )
+
+  test.beforeEach(async ({ page }) => {
+    await recordTransitions(page)
+  })
+
+  /** Group animations for the shared hero elements, if any ran. */
+  const heroGroups = (page: import("@playwright/test").Page) =>
+    page.evaluate(() =>
+      window.__viewTransitionAnimations.filter((a) =>
+        a.pseudo.startsWith("::view-transition-group(post-"),
+      ),
+    )
+
+  test("does not fly the next post's hero in from a related card", async ({
+    page,
+  }) => {
+    await page.goto("/en/blog/getting-started-with-nextjs")
+    test.skip(
+      !(await page.evaluate(
+        () => typeof document.startViewTransition === "function",
+      )),
+      "no view transition support",
+    )
+
+    await Promise.all([
+      page.waitForURL(/\/en\/blog\/(?!getting-started-with-nextjs)[^/]+$/),
+      clickHydrated(page, "nav a[href^='/en/blog/']"),
+    ])
+
+    // Wait for the animation list, not the transition types: the types land
+    // synchronously when the transition starts, while the animations are only
+    // recorded once it is ready. Polling the types instead let the absence
+    // assertion below read an empty list and pass for the wrong reason.
+    await expect
+      .poll(() => page.evaluate(() => window.__viewTransitionAnimations.length))
+      .toBeGreaterThan(0)
+
+    // The related-dispatch cards further down the page used to name the very
+    // post being opened, pairing with its hero and dropping it 352px across
+    // the viewport at 3.5x scale — which read as the whole transition.
+    expect(await heroGroups(page)).toEqual([])
+  })
+
+  test("opening a post from the list still morphs its hero", async ({
+    page,
+  }) => {
+    await page.goto("/en/blog")
+    test.skip(
+      !(await page.evaluate(
+        () => typeof document.startViewTransition === "function",
+      )),
+      "no view transition support",
+    )
+
+    await Promise.all([
+      page.waitForURL(/\/en\/blog\/.+/),
+      clickHydrated(page, "a[href^='/en/blog/']"),
+    ])
+
+    // The other half of the pair: the card growing into the article is the
+    // effect worth keeping, so removing the names too broadly must fail here.
+    await expect.poll(() => heroGroups(page)).not.toEqual([])
+  })
+})

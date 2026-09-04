@@ -9,6 +9,32 @@ import { getBlogPostPath } from "@/lib/routes"
 
 export const DEFAULT_THUMBNAIL = "/thumbnail_default.png"
 
+/**
+ * Names an element so it can morph into its counterpart on the destination
+ * page, or renders it plainly when `enabled` is false.
+ *
+ * The opt-out exists for cards that sit on a post page. A name only pairs
+ * when the same name exists on both sides, so a related-dispatch card naming
+ * the post you are about to open pairs with that post's hero — and the hero
+ * then flies in from the card's position at the foot of the page. Measured on
+ * a previous/next navigation that was a 352px drop with a 3.5x scale, which
+ * buries the directional slide the navigation is supposed to read as.
+ */
+function Morph({
+  name,
+  enabled,
+  children,
+}: Readonly<{ name: string; enabled: boolean; children: React.ReactNode }>) {
+  if (!enabled) {
+    return children
+  }
+  return (
+    <ViewTransition name={name} share="morph">
+      {children}
+    </ViewTransition>
+  )
+}
+
 export function estimateReadingTime(content: string): number {
   const charCount = content.length
   const wordCount = content.split(/\s+/).length
@@ -28,6 +54,13 @@ interface ArticleCardProps {
    * popularity bar. Defaults to a reasonable floor so the bar is never empty.
    */
   readonly viewMax?: number
+  /**
+   * Whether this card's image, title and date may morph into the post page.
+   * On by default — it is what makes a card grow into the article you just
+   * opened. Turn it off for cards rendered *on* a post page, where the name
+   * would pair with that page's own hero.
+   */
+  readonly morph?: boolean
 }
 
 export function ArticleCard({
@@ -37,6 +70,7 @@ export function ArticleCard({
   viewCount,
   index,
   viewMax,
+  morph = true,
 }: Readonly<ArticleCardProps>) {
   const readMin = estimateReadingTime(post.content)
   const numberLabel =
@@ -62,7 +96,7 @@ export function ArticleCard({
       <div
         className={`relative overflow-hidden ${isLarge ? "aspect-[16/9]" : "aspect-video"}`}
       >
-        <ViewTransition name={`post-image-${post.slug}`} share="morph">
+        <Morph enabled={morph} name={`post-image-${post.slug}`}>
           <Image
             src={post.frontmatter.image ?? DEFAULT_THUMBNAIL}
             alt={post.frontmatter.title}
@@ -70,7 +104,7 @@ export function ArticleCard({
             height={560}
             className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
           />
-        </ViewTransition>
+        </Morph>
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-cyber-bg-0/85" />
         <span className="pp-tick absolute left-3 top-3 border border-cyber-cyan/60 bg-cyber-bg-0/60 px-1.5 py-0.5 text-cyber-cyan">
           {category}
@@ -92,7 +126,7 @@ export function ArticleCard({
       </div>
 
       <div className="p-4">
-        <ViewTransition name={`post-title-${post.slug}`} share="morph">
+        <Morph enabled={morph} name={`post-title-${post.slug}`}>
           <h3
             className={`card-title pp-display font-bold leading-tight text-foreground transition-colors ${
               isLarge ? "text-xl md:text-2xl" : "text-base"
@@ -100,7 +134,7 @@ export function ArticleCard({
           >
             {post.frontmatter.title}
           </h3>
-        </ViewTransition>
+        </Morph>
         {post.frontmatter.description && (
           <p className="mt-2 line-clamp-2 font-mono text-xs leading-relaxed text-cyber-dim">
             {post.frontmatter.description}
@@ -113,7 +147,7 @@ export function ArticleCard({
             ))}
           </div>
         )}
-        <ViewTransition name={`post-meta-${post.slug}`} share="morph">
+        <Morph enabled={morph} name={`post-meta-${post.slug}`}>
           <div className="pp-tick mt-3 flex flex-wrap items-center justify-between gap-2">
             <span>{post.frontmatter.date.replace(/-/g, ".")}</span>
             <span className="flex gap-3">
@@ -128,7 +162,7 @@ export function ArticleCard({
               </span>
             </span>
           </div>
-        </ViewTransition>
+        </Morph>
       </div>
 
       {/* Colourful popularity bar at the foot of the card. The base width
