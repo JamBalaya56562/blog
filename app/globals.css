@@ -529,11 +529,6 @@
     padding-right: 60px;
     white-space: nowrap;
   }
-  /* Pause on hover so a headline can actually be read. */
-  .pp-marquee:hover .pp-marquee-track {
-    animation-play-state: paused;
-  }
-
   /* corner brackets helper (used as 4 children inside relative parent) */
   .pp-brackets > .pp-bracket {
     position: absolute;
