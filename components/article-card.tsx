@@ -81,11 +81,12 @@ export function ArticleCard({
         )}
         {/* Scan-line: a 1px cyan beam that sweeps top-to-bottom across the
             thumbnail while the card is hovered. Uses the shared `ppSweep`
-            keyframe (top: -200px → 100%). prefers-reduced-motion disables
-            the animation in globals.css. */}
+            keyframe (top: -200px → 100%). `.pp-card-sweep` carries the
+            appearance and is the hook the reduced-motion block in
+            globals.css switches the animation off through. */}
         <span
           aria-hidden
-          className="pointer-events-none absolute inset-x-0 -top-[200px] h-px bg-cyber-cyan opacity-0 shadow-[0_0_12px_var(--cyber-cyan)] transition-opacity duration-200 group-hover:opacity-100 group-hover:[animation:ppSweep_1.2s_linear_infinite]"
+          className="pp-card-sweep group-hover:opacity-100 group-hover:[animation:ppSweep_1.2s_linear_infinite]"
         />
       </div>
 
