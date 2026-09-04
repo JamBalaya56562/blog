@@ -24,6 +24,7 @@ export function Header({ locale, dictionary, tickerItems }: HeaderProps) {
       <nav className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-7">
         <Link
           href={`/${locale}` as Route}
+          transitionTypes={["nav-back"]}
           className="flex shrink-0 items-center gap-3 text-foreground"
           aria-label={dictionary.header.siteName}
         >

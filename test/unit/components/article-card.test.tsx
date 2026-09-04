@@ -16,13 +16,26 @@ mock.module("next/image", () => ({
   ),
 }))
 
+// The real `next/link` consumes `transitionTypes` and never forwards it to
+// the DOM. Mirror that here — spreading it onto an `<a>` would warn about an
+// unknown prop — and surface it as a data attribute so tests can assert the
+// navigation direction a link carries.
 mock.module("next/link", () => ({
   default: ({
     href,
     children,
+    transitionTypes,
     ...props
-  }: { href: string; children: React.ReactNode } & Record<string, unknown>) => (
-    <a href={href} {...props}>
+  }: {
+    href: string
+    children: React.ReactNode
+    transitionTypes?: string[]
+  } & Record<string, unknown>) => (
+    <a
+      href={href}
+      data-transition-types={transitionTypes?.join(" ")}
+      {...props}
+    >
       {children}
     </a>
   ),
@@ -52,6 +65,13 @@ const basePost = {
 }
 
 describe("ArticleCard rendering", () => {
+  test("the card link navigates forward into the dispatch", () => {
+    const { container } = render(<ArticleCard post={basePost} locale="en" />)
+    expect(
+      container.querySelector("a")?.getAttribute("data-transition-types"),
+    ).toBe("nav-forward")
+  })
+
   // Validates: Requirements 1.3
   test("description text is displayed with line-clamp-2 class", () => {
     const { container } = render(<ArticleCard post={basePost} locale="en" />)

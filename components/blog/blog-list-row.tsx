@@ -109,6 +109,7 @@ function DesktopRow({
   return (
     <Link
       href={getBlogPostPath(locale, post.slug)}
+      transitionTypes={["nav-forward"]}
       className="group relative grid grid-cols-[56px_140px_1fr_auto] items-center gap-5 px-3 py-5 transition-colors hover:bg-cyber-bg-1/40"
     >
       <span className="pp-num text-base text-cyber-dim transition-colors group-hover:text-cyber-cyan">
