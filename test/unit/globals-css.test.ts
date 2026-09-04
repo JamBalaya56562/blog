@@ -184,7 +184,7 @@ describe("app/globals.css reduced motion", () => {
     // The guard is only worth having if it fails on the thing it guards.
     expect(
       unguardedAnimations(
-        `${CSS}\n@layer components {\n  .pp-regression { animation: spinSlow 1s linear infinite; }\n}\n`,
+        `${CSS}\n@layer components {\n  .pp-regression { animation: hudPulse 1s ease-in-out infinite; }\n}\n`,
       ),
     ).toEqual([".pp-regression"])
   })
@@ -192,7 +192,7 @@ describe("app/globals.css reduced motion", () => {
   test("accepts an animation that is listed in the block", () => {
     expect(
       unguardedAnimations(
-        `${CSS}\n@layer components {\n  .pp-regression { animation: spinSlow 1s linear infinite; }\n}\n` +
+        `${CSS}\n@layer components {\n  .pp-regression { animation: hudPulse 1s ease-in-out infinite; }\n}\n` +
           "@media (prefers-reduced-motion: reduce) {\n  .pp-regression { animation: none; }\n}\n",
       ),
     ).toEqual([])
