@@ -842,6 +842,25 @@
     animation: none;
     opacity: 1;
   }
+  /* The block above only ever stopped `animation`, so every transform-based
+     `transition` kept running: the card lift and 3D tilt, the thumbnail
+     zoom, the nav marker slide and underline growth, the dispatch title
+     nudge, the menu button bars. A reader who asked for less motion saw the
+     ticker freeze while the rest of the page still moved under the pointer.
+
+     Narrowing `transition-property` is what catches them. The travel is the
+     part that reads as motion; colour, opacity and depth may still fade, and
+     the hovered state itself is still reached — instantly, the way the
+     `animation: none` rules above leave their elements in place rather than
+     hiding them. Doing it here also covers the `transition-all` and
+     `transition-transform` utilities scattered through the components
+     without naming each site. */
+  *,
+  *::before,
+  *::after {
+    transition-property:
+      color, background-color, border-color, box-shadow, opacity, fill, stroke;
+  }
   .pp-cursor-ring {
     display: none;
   }
