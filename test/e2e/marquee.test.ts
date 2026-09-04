@@ -35,7 +35,10 @@ test.describe("Header ticker", () => {
     await expect.poll(async () => (await trackState(page)).x).not.toBe(before.x)
   })
 
-  test("hovering does not stop it", async ({ page, isMobile }) => {
+  test("pauses under the pointer and resumes when it leaves", async ({
+    page,
+    isMobile,
+  }) => {
     test.skip(!!isMobile, "hover is a pointer-device interaction")
 
     await page.goto("/en")
@@ -46,14 +49,26 @@ test.describe("Header ticker", () => {
       throw new Error("the ticker strip has no layout box")
     }
 
-    // The strip is full-width and sits at the very top of the page under a
-    // sticky header, so a resting cursor lands on it constantly. Pausing
-    // there once made the ticker look permanently frozen.
+    // Hovering holds a headline still long enough to read it.
     await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+    await expect
+      .poll(async () => (await trackState(page)).playState)
+      .toBe("paused")
+    const paused = await trackState(page)
+    await page.waitForTimeout(1000)
+    expect((await trackState(page)).x).toBe(paused.x)
 
-    const before = await trackState(page)
-    expect(before.playState).toBe("running")
-    await expect.poll(async () => (await trackState(page)).x).not.toBe(before.x)
+    // Resuming matters more than pausing: the strip is full-width at the top
+    // of a sticky header, so a resting cursor sits on it often. If it did not
+    // restart on leave, the ticker would read as permanently frozen.
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height + 300)
+    await expect
+      .poll(async () => (await trackState(page)).playState)
+      .toBe("running")
+    const resumed = await trackState(page)
+    await expect
+      .poll(async () => (await trackState(page)).x)
+      .not.toBe(resumed.x)
   })
 
   test("one group covers the viewport and equals exactly one lap", async ({

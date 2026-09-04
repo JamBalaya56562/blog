@@ -24,8 +24,9 @@ const MARKER_PX = 22
 /** Scroll speed. Deriving the duration from the measured group width keeps
  *  this constant, so the stream reads at the same pace whether the latest
  *  post title is short or long — a fixed duration would speed up as the
- *  content grew. */
-const SCROLL_PX_PER_SEC = 70
+ *  content grew. Half the original 70px/s: at that pace a headline crossed
+ *  faster than it could comfortably be read. */
+const SCROLL_PX_PER_SEC = 35
 
 /**
  * Rough rendered width of one item at 10px mono with 0.2em tracking: a
