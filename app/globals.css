@@ -520,6 +520,11 @@
     animation: ppMarquee var(--pp-marquee-duration, 40s) linear infinite;
     will-change: transform;
   }
+  /* Pause while the pointer is on the strip, so a headline can be read
+     without waiting for it to come round again. */
+  .pp-marquee:hover .pp-marquee-track {
+    animation-play-state: paused;
+  }
   .pp-marquee-group {
     display: flex;
     flex: 0 0 auto;
