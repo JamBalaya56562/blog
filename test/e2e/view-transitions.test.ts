@@ -245,3 +245,83 @@ test.describe("Directional view transitions — the slide itself", () => {
     expect(slides.every((a) => a.duration <= 1)).toBe(true)
   })
 })
+
+test.describe("Directional slide composition", () => {
+  /**
+   * `::view-transition-old(.nav-*)` stacks two animations that both touch
+   * `opacity`: a short `fade-out` and the longer `slide-*`. The later
+   * animation takes precedence, but its implicit `from` keyframe reads the
+   * underlying value — which is the earlier animation's output — so once
+   * `fade-out` has finished the slide animates 0 to 0 and the fade is what
+   * decides when the page disappears.
+   *
+   * That is subtle enough to be worth pinning against the rendered result
+   * rather than the stylesheet text, and to be worth checking on every
+   * engine: this is plain CSS animation composition, not a view-transition
+   * feature, so it runs everywhere rather than Chromium only.
+   */
+  test("the outgoing page is still on screen for most of its travel", async ({
+    page,
+  }) => {
+    await page.goto("/en")
+    const measured = await page.evaluate(async () => {
+      let declaration: string | null = null
+      for (const sheet of Array.from(document.styleSheets)) {
+        let rules: CSSRuleList
+        try {
+          rules = sheet.cssRules
+        } catch {
+          continue // cross-origin sheet
+        }
+        for (const rule of Array.from(rules)) {
+          // Engines normalise the selector differently — Chromium reports
+          // `::view-transition-old(*.nav-forward)` — so match on shape.
+          if (
+            rule instanceof CSSStyleRule &&
+            rule.selectorText.startsWith("::view-transition-old(") &&
+            rule.selectorText.includes("nav-forward")
+          ) {
+            declaration = rule.style.cssText
+          }
+        }
+      }
+      if (!declaration) {
+        return { unsupported: true as const }
+      }
+
+      // Replay the real declaration on a throwaway element: the pseudo
+      // element's own composed opacity is not readable from script.
+      const probe = document.createElement("div")
+      probe.setAttribute(
+        "style",
+        `position:fixed;top:-200px;left:0;width:10px;height:10px;${declaration}`,
+      )
+      document.body.append(probe)
+      const start = performance.now()
+      let travelled: number | null = null
+      for (let frame = 0; frame < 120; frame++) {
+        await new Promise((resolve) => requestAnimationFrame(resolve))
+        const style = getComputedStyle(probe)
+        if (Number(style.opacity) <= 0.02) {
+          travelled = Math.abs(new DOMMatrixReadOnly(style.transform).m41)
+          break
+        }
+      }
+      probe.remove()
+      return {
+        elapsed: performance.now() - start,
+        travelled,
+        unsupported: false as const,
+      }
+    })
+
+    test.skip(
+      measured.unsupported,
+      "this engine does not expose ::view-transition-old(.nav-forward)",
+    )
+    // Half of the 60px travel. At the 90ms fade this PR replaces it was 10px
+    // of 30px, which is why the transition read as if it never ran.
+    expect(measured.travelled).not.toBeNull()
+    expect(measured.travelled ?? 0).toBeGreaterThanOrEqual(30)
+  })
+})
