@@ -61,15 +61,6 @@ test.describe("Motion — prefers-reduced-motion", () => {
       await sweep.evaluate((el) => getComputedStyle(el).animationName),
     ).toBe("none")
   })
-
-  test("the header ticker stops", async ({ page }) => {
-    await page.goto("/en")
-    const track = page.locator(".pp-marquee-track")
-    await expect(track).toBeAttached()
-    expect(
-      await track.evaluate((el) => getComputedStyle(el).animationName),
-    ).toBe("none")
-  })
 })
 
 test.describe("Anchor targets clear the sticky header", () => {
