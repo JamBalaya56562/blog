@@ -79,4 +79,32 @@ describe("Translation", () => {
       { numRuns: 100 },
     )
   })
+
+  /**
+   * A post written in one language only must report no pair, so the page
+   * omits the "also available in" line and hreflang omits that locale.
+   *
+   * This used to be covered end to end by `tailwind-css-v4-guide`, which
+   * existed only in English. It is now translated, so no content exercises
+   * the case any more and the e2e that relied on the gap is gone.
+   */
+  test("a post that exists in one locale only has no translation pair", async () => {
+    const enOnly = [makePost("only-english", "en")]
+    const loader: ContentLoader = {
+      async getAllPosts(locale) {
+        return locale === "en" ? enOnly : []
+      },
+      async getPost(locale, slug) {
+        return locale === "en"
+          ? (enOnly.find((p) => p.slug === slug) ?? null)
+          : null
+      },
+      async getPostSlugs(locale) {
+        return locale === "en" ? enOnly.map((p) => p.slug) : []
+      },
+    }
+
+    expect(await getTranslationPair(loader, "en", "only-english")).toBeNull()
+    expect(await getTranslationPair(loader, "ja", "only-english")).toBe("en")
+  })
 })

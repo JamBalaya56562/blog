@@ -93,16 +93,6 @@ test.describe("Blog post page", () => {
     ).toBeVisible()
   })
 
-  test("does not show translation link for posts without translations", async ({
-    page,
-  }) => {
-    await page.goto("/en/blog/tailwind-css-v4-guide")
-
-    await expect(
-      page.getByText("This post is also available in:"),
-    ).not.toBeVisible()
-  })
-
   test("navigating to translation works", async ({ page }) => {
     await page.goto("/en/blog/getting-started-with-nextjs")
 
@@ -132,7 +122,8 @@ test.describe("Japanese locale", () => {
   test("blog list page shows Japanese heading", async ({ page }) => {
     await page.goto("/ja/blog")
     await expect(page.getByRole("heading", { name: /^ブログ/ })).toBeVisible()
-    await expect(page.locator("a[href*='/ja/blog/']")).toHaveCount(2)
+    // Every post is translated, so this matches the English list above.
+    await expect(page.locator("a[href*='/ja/blog/']")).toHaveCount(3)
   })
 })
 
