@@ -4,6 +4,7 @@ import { notFound } from "next/navigation"
 import { Suspense } from "react"
 import { BlogListRow } from "@/components/blog/blog-list-row"
 import { TagLink } from "@/components/home/tag-link"
+import { PageTransition } from "@/components/page-transition"
 import { Pagination } from "@/components/pagination"
 import { SearchInput } from "@/components/search-input"
 import { BlogListSkeleton } from "@/components/skeletons"
@@ -240,10 +241,12 @@ export default async function BlogListPage({
   }
 
   return (
-    <div className="mx-auto max-w-7xl">
-      <Suspense fallback={<BlogListSkeleton />}>
-        <BlogListContent locale={locale} searchParams={searchParams} />
-      </Suspense>
-    </div>
+    <PageTransition>
+      <div className="mx-auto max-w-7xl">
+        <Suspense fallback={<BlogListSkeleton />}>
+          <BlogListContent locale={locale} searchParams={searchParams} />
+        </Suspense>
+      </div>
+    </PageTransition>
   )
 }

@@ -919,10 +919,23 @@
   .pp-cursor-ring {
     display: none;
   }
+  /* `!important` is load-bearing. The directional rules at the foot of this
+     file select on a class — `::view-transition-old(.nav-forward)` — which
+     takes that argument's specificity, so it outranks the `(*)` form here
+     and appears later in the file besides. They also use the `animation`
+     shorthand, which resets `animation-duration` outright. Without the
+     flags this cap silently loses to them. */
   ::view-transition-group(*),
   ::view-transition-old(*),
   ::view-transition-new(*) {
-    animation-duration: 0.01ms;
+    /* biome-ignore lint/complexity/noImportantStyles: reversing the cascade is
+       the point — a motion-sensitivity opt-out has to outrank the directional
+       rules below, whose class argument gives them the higher specificity.
+       The rule's unsafe autofix is to delete these flags, which autofix.ci
+       would otherwise apply and quietly restore the bug. */
+    animation-delay: 0s !important;
+    /* biome-ignore lint/complexity/noImportantStyles: see above */
+    animation-duration: 0.01ms !important;
   }
 }
 

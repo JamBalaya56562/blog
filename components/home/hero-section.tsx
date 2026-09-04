@@ -66,11 +66,16 @@ export function HeroSection({
       </p>
 
       <div className="mt-9 flex flex-wrap gap-3">
-        <Link href={`/${locale}/blog` as Route} className="pp-btn">
+        <Link
+          href={`/${locale}/blog` as Route}
+          transitionTypes={["nav-forward"]}
+          className="pp-btn"
+        >
           <span>◢ {dictionary.home.ctaBrowse}</span>
         </Link>
         <Link
           href={`/${locale}/portfolio` as Route}
+          transitionTypes={["nav-forward"]}
           className="pp-btn pp-btn-amber"
         >
           <span>◢ {dictionary.footer.portfolio}</span>
