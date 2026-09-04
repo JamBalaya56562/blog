@@ -1,8 +1,10 @@
 import { afterEach, describe, expect, mock, test } from "bun:test"
 import { cleanup, render } from "@testing-library/react"
 
-// Mock the server action
-const incrementMock = mock(() => Promise.resolve())
+// Mock the server action. It returns the count recorded by the write, which
+// is what the counter shows once the effect resolves.
+let actionResult: number | null = null
+const incrementMock = mock(() => Promise.resolve(actionResult))
 mock.module("@/lib/actions/view-count", () => ({
   incrementViewCountAction: incrementMock,
 }))
@@ -10,7 +12,11 @@ mock.module("@/lib/actions/view-count", () => ({
 afterEach(() => {
   cleanup()
   incrementMock.mockClear()
+  actionResult = null
 })
+
+/** Lets the mount effect and its promise settle. */
+const settle = () => new Promise((resolve) => setTimeout(resolve, 10))
 
 const { ViewCounter } = await import("@/components/view-counter")
 
@@ -24,8 +30,7 @@ describe("ViewCounter", () => {
   test("calls incrementViewCountAction on mount", async () => {
     render(<ViewCounter slug="my-slug" count={10} />)
 
-    // Wait a tick for the effect to fire
-    await new Promise((r) => setTimeout(r, 10))
+    await settle()
     expect(incrementMock).toHaveBeenCalledTimes(1)
     expect(incrementMock).toHaveBeenCalledWith("my-slug")
   })
@@ -41,5 +46,28 @@ describe("ViewCounter", () => {
     const { container } = render(<ViewCounter slug="new-post" count={0} />)
     expect(container.textContent).toContain("0")
     expect(container.textContent).toContain("VIEWS")
+  })
+
+  // The pages that render this are `"use cache"` components and nothing
+  // revalidates them, so the prop is always a stale figure. The count the
+  // write returns is the only live one.
+  test("replaces the server-rendered figure with the recorded count", async () => {
+    actionResult = 43
+    const { container } = render(<ViewCounter slug="test-post" count={42} />)
+    expect(container.textContent).toContain("42")
+
+    await settle()
+    expect(container.textContent).toContain("43")
+    expect(container.textContent).not.toContain("42")
+  })
+
+  test("keeps the rendered figure when the write reports nothing", async () => {
+    // No database configured, or the write failed. Showing a zero here would
+    // be worse than showing a stale number.
+    actionResult = null
+    const { container } = render(<ViewCounter slug="test-post" count={42} />)
+
+    await settle()
+    expect(container.textContent).toContain("42")
   })
 })
