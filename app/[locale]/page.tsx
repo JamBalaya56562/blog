@@ -1,3 +1,4 @@
+import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 import { Suspense } from "react"
 import { BentoGrid } from "@/components/home/bento-grid"
@@ -10,6 +11,7 @@ import { getViewCounts } from "@/lib/db/queries"
 import type { Locale } from "@/lib/i18n/config"
 import { isValidLocale } from "@/lib/i18n/config"
 import { getDictionary } from "@/lib/i18n/get-dictionary"
+import { localeAlternates } from "@/lib/site"
 
 async function HomeBody({ locale }: { locale: Locale }) {
   "use cache"
@@ -53,6 +55,18 @@ async function HomeBody({ locale }: { locale: Locale }) {
       />
     </>
   )
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>
+}): Promise<Metadata> {
+  const { locale } = await params
+  if (!isValidLocale(locale)) {
+    return {}
+  }
+  return { alternates: localeAlternates(locale, "") }
 }
 
 export default async function HomePage({

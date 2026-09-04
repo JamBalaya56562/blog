@@ -1,7 +1,21 @@
+import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 import { PageTransition } from "@/components/page-transition"
 import { isValidLocale } from "@/lib/i18n/config"
 import { getDictionary } from "@/lib/i18n/get-dictionary"
+import { localeAlternates } from "@/lib/site"
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>
+}): Promise<Metadata> {
+  const { locale } = await params
+  if (!isValidLocale(locale)) {
+    return {}
+  }
+  return { alternates: localeAlternates(locale, "/privacy-policy") }
+}
 
 export default async function PrivacyPolicyPage({
   params,
