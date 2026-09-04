@@ -28,11 +28,6 @@ async function getCachedPosts(locale: Locale) {
   return loader.getAllPosts(locale)
 }
 
-async function getCachedAllViewCounts() {
-  "use cache"
-  return getAllViewCounts()
-}
-
 const TAG_LIMIT = 12
 
 async function BlogListContent({
@@ -60,7 +55,12 @@ async function BlogListContent({
   }
 
   if (sort === "popular") {
-    const allViews = await getCachedAllViewCounts()
+    // Deliberately uncached. Caching the counts froze the order, so sorting
+    // by views returned whatever ranking happened to be current when the
+    // entry was written — the one thing this sort exists to get right. This
+    // component is already dynamic (it reads `searchParams`), so reading
+    // them live costs one query on the requests that ask for this order.
+    const allViews = await getAllViewCounts()
     const allViewsMap = new Map(allViews.map((v) => [v.slug, v.count]))
     posts = sortPostsByViews(posts, allViewsMap)
   }
