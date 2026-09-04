@@ -52,6 +52,7 @@ export function ArticleCard({
   return (
     <Link
       href={getBlogPostPath(locale, post.slug)}
+      transitionTypes={["nav-forward"]}
       className={`pp-card-hover card-title-hover group relative block border border-cyber-line bg-cyber-bg-1/50 ${
         isLarge ? "md:col-span-2" : ""
       }`}

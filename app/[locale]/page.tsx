@@ -3,6 +3,7 @@ import { Suspense } from "react"
 import { BentoGrid } from "@/components/home/bento-grid"
 import { HeroSection } from "@/components/home/hero-section"
 import { RecentDispatches } from "@/components/home/recent-dispatches"
+import { PageTransition } from "@/components/page-transition"
 import { HomeContentSkeleton } from "@/components/skeletons"
 import { createContentLoader } from "@/lib/content/loader"
 import { getViewCounts } from "@/lib/db/queries"
@@ -65,10 +66,12 @@ export default async function HomePage({
   }
 
   return (
-    <div className="relative">
-      <Suspense fallback={<HomeContentSkeleton />}>
-        <HomeBody locale={locale} />
-      </Suspense>
-    </div>
+    <PageTransition>
+      <div className="relative">
+        <Suspense fallback={<HomeContentSkeleton />}>
+          <HomeBody locale={locale} />
+        </Suspense>
+      </div>
+    </PageTransition>
   )
 }
