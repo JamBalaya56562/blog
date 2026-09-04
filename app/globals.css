@@ -491,12 +491,29 @@
     transform-origin: center;
   }
 
-  /* marquee ticker */
+  /* marquee ticker — seamless electric-signboard scroll.
+     The track carries two identical groups and slides exactly one group
+     width, so the snap back to 0 lands group 2 where group 1 was. This
+     needs `width: max-content`: a plain flex container would be as wide as
+     the header and -50% would stop short of a full lap. */
   .pp-marquee-track {
     display: flex;
+    width: max-content;
+    animation: ppMarquee var(--pp-marquee-duration, 40s) linear infinite;
+    will-change: transform;
+  }
+  .pp-marquee-group {
+    display: flex;
+    flex: 0 0 auto;
     gap: 60px;
-    animation: ppMarquee 40s linear infinite;
+    /* Same as `gap`, so the seam between the two groups is spaced like
+       every other joint. */
+    padding-right: 60px;
     white-space: nowrap;
+  }
+  /* Pause on hover so a headline can actually be read. */
+  .pp-marquee:hover .pp-marquee-track {
+    animation-play-state: paused;
   }
 
   /* corner brackets helper (used as 4 children inside relative parent) */
