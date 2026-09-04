@@ -4,7 +4,6 @@ import type { Metadata } from "next"
 import {
   JetBrains_Mono,
   M_PLUS_1_Code,
-  Major_Mono_Display,
   Noto_Sans_JP,
   Orbitron,
 } from "next/font/google"
@@ -32,12 +31,6 @@ const orbitron = Orbitron({
   subsets: ["latin"],
   variable: "--font-orbitron-loaded",
   weight: ["400", "500", "700", "900"],
-})
-
-const majorMono = Major_Mono_Display({
-  subsets: ["latin"],
-  variable: "--font-rune-loaded",
-  weight: ["400"],
 })
 
 const notoSansJp = Noto_Sans_JP({
@@ -122,7 +115,7 @@ export default async function LocaleLayout({
   // next/font css variables are attached to <html> so that the blog font
   // tokens defined in :root (which reference these variables) can resolve
   // at the :root level itself instead of only inside <body>.
-  const fontVars = `${jetbrainsMono.variable} ${orbitron.variable} ${majorMono.variable} ${notoSansJp.variable} ${mPlus1Code.variable}`
+  const fontVars = `${jetbrainsMono.variable} ${orbitron.variable} ${notoSansJp.variable} ${mPlus1Code.variable}`
 
   return (
     <html lang={locale} suppressHydrationWarning className={fontVars}>

@@ -39,7 +39,7 @@
   --cyber-lime: #4d8b1f;
   --cyber-red: #c81d3a;
 
-  /* Frame backgrounds (used by .pp-frame; light variant) */
+  /* Panel backgrounds — light variant */
   --cyber-bg-0: #f4f7fa;
   --cyber-bg-1: #ebf0f5;
   --cyber-bg-2: #dde6ed;
@@ -73,9 +73,6 @@
   --blog-font-mono:
     var(--font-mono-loaded), "JetBrains Mono", var(--font-jp-mono-loaded),
     "M PLUS 1 Code", ui-monospace, monospace;
-  --blog-font-rune:
-    var(--font-rune-loaded), "Major Mono Display", var(--font-jp-mono-loaded),
-    "M PLUS 1 Code", "JetBrains Mono", monospace;
 }
 
 .dark {
@@ -159,11 +156,10 @@
   --color-cyber-dimmer: var(--cyber-dimmer);
 
   /* Expose the namespaced font tokens as Tailwind utility classes:
-     `font-sans` / `font-mono` / `font-headline` / `font-rune`. */
+     `font-sans` / `font-mono` / `font-headline`. */
   --font-sans: var(--blog-font-sans);
   --font-headline: var(--blog-font-headline);
   --font-mono: var(--blog-font-mono);
-  --font-rune: var(--blog-font-rune);
 }
 
 /* Tailwind's `@import` establishes `theme, base, components, utilities`.
@@ -213,10 +209,6 @@
     font-family: var(--blog-font-headline);
     letter-spacing: 0.04em;
     font-weight: 700;
-  }
-
-  .pp-rune {
-    font-family: var(--blog-font-rune);
   }
 
   /* Hero headline — must render on a single line at every desktop width.
@@ -278,23 +270,6 @@
   }
   .pp-split-glitch {
     --pp-split-keyframe: splitGlitch;
-  }
-
-  .pp-corner {
-    color: var(--cyber-dim);
-    font-family: var(--blog-font-mono);
-    font-size: 9px;
-    letter-spacing: 0.2em;
-  }
-
-  .pp-h-line {
-    height: 1px;
-    background: linear-gradient(
-      90deg,
-      transparent,
-      var(--cyber-cyan),
-      transparent
-    );
   }
 
   /* tag chips */
@@ -532,16 +507,6 @@
   /* HUD pulse */
   .pp-pulse {
     animation: hudPulse 2s ease-in-out infinite;
-  }
-
-  /* rotors for SVG ornaments */
-  .pp-rotor {
-    animation: spinSlow 24s linear infinite;
-    transform-origin: center;
-  }
-  .pp-rotor-rev {
-    animation: spinSlow 38s linear infinite reverse;
-    transform-origin: center;
   }
 
   /* marquee ticker — seamless electric-signboard scroll.
@@ -800,14 +765,6 @@
     opacity: 1;
   }
 }
-@keyframes spinSlow {
-  from {
-    transform: rotate(0);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
 @keyframes splitRise {
   from {
     transform: translateY(0.6em);
@@ -840,29 +797,6 @@
     opacity: 1;
   }
 }
-@keyframes glitchSlide {
-  0%,
-  100% {
-    clip-path: inset(0 0 0 0);
-    transform: translate(0);
-  }
-  20% {
-    clip-path: inset(20% 0 60% 0);
-    transform: translate(-2px, 0);
-  }
-  40% {
-    clip-path: inset(60% 0 20% 0);
-    transform: translate(2px, 0);
-  }
-  60% {
-    clip-path: inset(40% 0 40% 0);
-    transform: translate(-1px, 0);
-  }
-  80% {
-    clip-path: inset(10% 0 70% 0);
-    transform: translate(1px, 0);
-  }
-}
 @keyframes noiseShift {
   0% {
     transform: translate(0, 0);
@@ -878,11 +812,6 @@
   }
   100% {
     transform: translate(0, 0);
-  }
-}
-@keyframes blink {
-  50% {
-    opacity: 0;
   }
 }
 @keyframes shimmer {
@@ -901,11 +830,8 @@
   .pp-noise,
   .pp-scan-sweep,
   .pp-pulse,
-  .pp-rotor,
-  .pp-rotor-rev,
   .pp-marquee-track,
   .pp-card-sweep,
-  .animate-ping,
   .animate-shimmer {
     animation: none;
   }
@@ -919,10 +845,23 @@
   .pp-cursor-ring {
     display: none;
   }
+  /* `!important` is load-bearing. The directional rules at the foot of this
+     file select on a class — `::view-transition-old(.nav-forward)` — which
+     takes that argument's specificity, so it outranks the `(*)` form here
+     and appears later in the file besides. They also use the `animation`
+     shorthand, which resets `animation-duration` outright. Without the
+     flags this cap silently loses to them. */
   ::view-transition-group(*),
   ::view-transition-old(*),
   ::view-transition-new(*) {
-    animation-duration: 0.01ms;
+    /* biome-ignore lint/complexity/noImportantStyles: reversing the cascade is
+       the point — a motion-sensitivity opt-out has to outrank the directional
+       rules below, whose class argument gives them the higher specificity.
+       The rule's unsafe autofix is to delete these flags, which autofix.ci
+       would otherwise apply and quietly restore the bug. */
+    animation-delay: 0s !important;
+    /* biome-ignore lint/complexity/noImportantStyles: see above */
+    animation-duration: 0.01ms !important;
   }
 }
 

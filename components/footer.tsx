@@ -15,6 +15,7 @@ export function Footer({
       <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-4 px-7 py-6">
         <Link
           href={`/${locale}` as Route}
+          transitionTypes={["nav-back"]}
           className="flex shrink-0 items-center gap-2"
           aria-label={dictionary.header.siteName}
         >

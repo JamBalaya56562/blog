@@ -34,6 +34,7 @@ export function RecentDispatches({
         <span className="h-px flex-1 bg-cyber-line" />
         <Link
           href={`/${locale}/blog` as Route}
+          transitionTypes={["nav-forward"]}
           className="pp-tick pp-link transition-colors hover:text-cyber-cyan"
         >
           {dictionary.home.viewAll} →
@@ -52,6 +53,7 @@ export function RecentDispatches({
             <li key={post.slug} className="border-t border-cyber-line">
               <Link
                 href={getBlogPostPath(locale, post.slug)}
+                transitionTypes={["nav-forward"]}
                 className="group relative grid grid-cols-[64px_1fr_auto] items-center gap-5 px-3 py-5 transition-colors last:border-b last:border-cyber-line hover:bg-cyber-bg-1/40"
               >
                 <span className="pp-num text-base text-cyber-dim transition-colors group-hover:text-cyber-cyan">

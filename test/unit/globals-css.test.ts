@@ -184,7 +184,7 @@ describe("app/globals.css reduced motion", () => {
     // The guard is only worth having if it fails on the thing it guards.
     expect(
       unguardedAnimations(
-        `${CSS}\n@layer components {\n  .pp-regression { animation: spinSlow 1s linear infinite; }\n}\n`,
+        `${CSS}\n@layer components {\n  .pp-regression { animation: hudPulse 1s ease-in-out infinite; }\n}\n`,
       ),
     ).toEqual([".pp-regression"])
   })
@@ -192,9 +192,49 @@ describe("app/globals.css reduced motion", () => {
   test("accepts an animation that is listed in the block", () => {
     expect(
       unguardedAnimations(
-        `${CSS}\n@layer components {\n  .pp-regression { animation: spinSlow 1s linear infinite; }\n}\n` +
+        `${CSS}\n@layer components {\n  .pp-regression { animation: hudPulse 1s ease-in-out infinite; }\n}\n` +
           "@media (prefers-reduced-motion: reduce) {\n  .pp-regression { animation: none; }\n}\n",
       ),
     ).toEqual([])
+  })
+})
+
+describe("app/globals.css directional view transitions", () => {
+  /**
+   * These four rules sat in the stylesheet unused for a long time: they
+   * select on a `view-transition-class`, which only exists once a page is
+   * wrapped in `PageTransition` and a link carries `transitionTypes`. Pin
+   * both halves so neither can be removed without the other failing.
+   */
+  test("the nav-forward and nav-back pseudo-element rules are present", () => {
+    const root = postcss.parse(CSS)
+    const selectors = new Set<string>()
+    root.walkRules((rule) => {
+      for (const selector of rule.selectors) {
+        selectors.add(selector)
+      }
+    })
+    for (const direction of ["nav-forward", "nav-back"]) {
+      expect(selectors).toContain(`::view-transition-old(.${direction})`)
+      expect(selectors).toContain(`::view-transition-new(.${direction})`)
+    }
+  })
+
+  test("reduced motion outranks them", () => {
+    // The directional rules take their specificity from the class argument
+    // and sit later in the file, so the `(*)` cap only wins with the flags.
+    const root = postcss.parse(CSS)
+    const flagged: string[] = []
+    root.walkAtRules("media", (media) => {
+      if (!UNLAYERED_AT_RULE_PARAMS.has(media.params)) {
+        return
+      }
+      media.walkDecls((decl) => {
+        if (decl.important) {
+          flagged.push(decl.prop)
+        }
+      })
+    })
+    expect(flagged).toContain("animation-duration")
   })
 })
