@@ -238,7 +238,12 @@
 
   .pp-hero-line {
     display: block;
-    font-size: clamp(40px, 8vw, 96px);
+    /* Narrow screens cannot hold the whole line at a size worth reading, so
+       they wrap. The size is set by the longest word instead: large enough to
+       keep the type at poster scale, small enough that no word has to break.
+       Words are atomic (see `.pp-split-word`), so the wrap lands between
+       them. */
+    font-size: min(48px, calc(100cqi / var(--pp-headline-word-em, 8)));
     /* Re-declared from `.pp-display`: em letter-spacing resolves against the
        element's own font-size, and the size now lives here rather than on the
        h1. Inheriting it would resolve 0.04em against the h1's 16px. */
@@ -259,6 +264,11 @@
      on each span so that `prefers-reduced-motion` can switch it off — an
      inline `animation` beats every rule without `!important`. Only the
      stagger delay comes in from the component. */
+  /* Atomic, so a line can only break between words, never inside one. */
+  .pp-split-word {
+    display: inline-block;
+  }
+
   .pp-split-char {
     display: inline-block;
     /* Keeps the space characters the splitter emits. Each span holds a single

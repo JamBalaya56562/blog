@@ -4,7 +4,7 @@ import { CountUp } from "@/components/ui/count-up"
 import { SplitText } from "@/components/ui/split-text"
 import type { Locale } from "@/lib/i18n/config"
 import type { Dictionary } from "@/lib/i18n/get-dictionary"
-import { estimateHeadlineEm } from "@/lib/typography"
+import { estimateHeadlineEm, estimateLongestWordEm } from "@/lib/typography"
 
 interface HeroSectionProps {
   readonly locale: Locale
@@ -38,12 +38,22 @@ export function HeroSection({
     estimateHeadlineEm(dictionary.home.title),
     estimateHeadlineEm(dictionary.home.titleAccent),
   )
+  // Governs the size below the breakpoint, where the line is allowed to wrap.
+  const headlineWordEm = Math.max(
+    estimateLongestWordEm(dictionary.home.title),
+    estimateLongestWordEm(dictionary.home.titleAccent),
+  )
 
   return (
     <section className="relative overflow-hidden px-7 pb-12 pt-16 sm:pt-24">
       <h1
         className="pp-display pp-hero-title m-0 leading-[0.95]"
-        style={{ "--pp-headline-em": headlineEm } as React.CSSProperties}
+        style={
+          {
+            "--pp-headline-em": headlineEm,
+            "--pp-headline-word-em": headlineWordEm,
+          } as React.CSSProperties
+        }
       >
         <span className="pp-hero-line text-foreground">
           <SplitText text={dictionary.home.title} stagger={40} />
