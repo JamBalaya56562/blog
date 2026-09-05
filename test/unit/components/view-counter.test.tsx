@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, mock, test } from "bun:test"
-import { cleanup, render } from "@testing-library/react"
+import { cleanup, render, waitFor } from "@testing-library/react"
 
 // Mock the server action. It returns the count recorded by the write, which
 // is what the counter shows once the effect resolves.
@@ -19,9 +19,6 @@ afterEach(() => {
   actionResult = null
 })
 
-/** Lets the mount effect and its promise settle. */
-const settle = () => new Promise((resolve) => setTimeout(resolve, 10))
-
 const { ViewCounter } = await import("@/components/view-counter")
 
 describe("ViewCounter", () => {
@@ -34,8 +31,7 @@ describe("ViewCounter", () => {
   test("calls incrementViewCountAction on mount", async () => {
     render(<ViewCounter slug="my-slug" count={10} />)
 
-    await settle()
-    expect(incrementMock).toHaveBeenCalledTimes(1)
+    await waitFor(() => expect(incrementMock).toHaveBeenCalledTimes(1))
     expect(incrementMock).toHaveBeenCalledWith("my-slug")
   })
 
@@ -60,8 +56,7 @@ describe("ViewCounter", () => {
     const { container } = render(<ViewCounter slug="test-post" count={42} />)
     expect(container.textContent).toContain("42")
 
-    await settle()
-    expect(container.textContent).toContain("43")
+    await waitFor(() => expect(container.textContent).toContain("43"))
     expect(container.textContent).not.toContain("42")
   })
 
@@ -71,7 +66,9 @@ describe("ViewCounter", () => {
     actionResult = null
     const { container } = render(<ViewCounter slug="test-post" count={42} />)
 
-    await settle()
+    // Nothing to wait for here: the point is that the figure never changes.
+    // Waiting on the call the effect makes is what proves the effect ran.
+    await waitFor(() => expect(incrementMock).toHaveBeenCalled())
     expect(container.textContent).toContain("42")
   })
 })
