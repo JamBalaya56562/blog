@@ -79,10 +79,14 @@ export function ArticleCard({
   const category = post.frontmatter.tags[0]?.toUpperCase() ?? "DISPATCH"
 
   return (
+    // `self-start` keeps the card at its own content height. Grid items stretch
+    // to the tallest card in the row by default, which left the popularity bar
+    // stranded mid-card on the shorter ones, with empty space and a border
+    // below it. The bar marks the bottom edge, so the edge has to meet it.
     <Link
       href={getBlogPostPath(locale, post.slug)}
       transitionTypes={["nav-forward"]}
-      className={`pp-card-hover card-title-hover group relative block border border-cyber-line bg-cyber-bg-1/50 ${
+      className={`pp-card-hover card-title-hover group relative block self-start border border-cyber-line bg-cyber-bg-1/50 ${
         isLarge ? "md:col-span-2" : ""
       }`}
     >
