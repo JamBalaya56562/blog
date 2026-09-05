@@ -57,7 +57,12 @@ export function HeroSection({
         </span>
       </h1>
 
-      <p className="mt-8 max-w-xl font-mono text-sm leading-[1.8] text-cyber-dim">
+      {/* Wide enough for the longest subtitle to hold one line. In English it
+          needs 672px; the previous 36rem cap wrapped it even on a 1440px
+          screen. Japanese was never affected, since full-width characters put
+          the same sentence at 451px. Narrow screens are bounded by the section
+          padding long before this cap, so they still wrap. */}
+      <p className="mt-8 max-w-3xl font-mono text-sm leading-[1.8] text-cyber-dim">
         <span className="mr-1 text-cyber-cyan">&gt;</span>
         {dictionary.home.subtitle}
         <br />
