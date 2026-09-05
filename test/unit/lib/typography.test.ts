@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test"
-import { estimateHeadlineEm } from "@/lib/typography"
+import { estimateHeadlineEm, estimateLongestWordEm } from "@/lib/typography"
 
 /**
  * Reference widths measured from the rendered hero headline at 96px
@@ -63,5 +63,46 @@ describe("estimateHeadlineEm", () => {
 
   test("handles astral-plane characters as single glyphs", () => {
     expect(estimateHeadlineEm("𝒜")).toBe(estimateHeadlineEm("a"))
+  })
+})
+
+/**
+ * Below the breakpoint the headline wraps, and the size that keeps it from
+ * breaking a word in half comes from the longest word rather than the whole
+ * line. `programming` is the one that governs the English headline: measured
+ * at 7.725em against a 319px column on a 375px phone.
+ */
+describe("estimateLongestWordEm", () => {
+  test("returns 0 for an empty string", () => {
+    expect(estimateLongestWordEm("")).toBe(0)
+  })
+
+  test("picks the widest word, not the first or the last", () => {
+    expect(estimateLongestWordEm("Making programming")).toBe(
+      estimateHeadlineEm("programming"),
+    )
+    expect(estimateLongestWordEm("more accessible.")).toBe(
+      estimateHeadlineEm("accessible."),
+    )
+  })
+
+  test("never under-estimates the word that governs the size", () => {
+    expect(estimateLongestWordEm("Making programming")).toBeGreaterThanOrEqual(
+      7.725,
+    )
+  })
+
+  test("stays below the width of the whole line", () => {
+    for (const line of ["Making programming", "more accessible."]) {
+      expect(estimateLongestWordEm(line)).toBeLessThan(estimateHeadlineEm(line))
+    }
+  })
+
+  // Japanese has no spaces, so the line is its own longest word and the two
+  // estimates agree. That is what puts it on a single line.
+  test("treats a line with no spaces as one word", () => {
+    for (const line of ["プログラミングを", "もっと身近に。"]) {
+      expect(estimateLongestWordEm(line)).toBe(estimateHeadlineEm(line))
+    }
   })
 })
