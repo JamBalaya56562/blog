@@ -54,9 +54,14 @@ describe("Portfolio Page", () => {
       expect(getByText(dictionary.portfolio.quoteText)).toBeDefined()
       expect(getByText(dictionary.portfolio.quoteAuthor)).toBeDefined()
 
-      // Projects section
+      // Contributions section: the featured card, one of the seven that
+      // follow it, and the merged count that orders them.
       expect(getByText(dictionary.portfolio.sideProjects)).toBeDefined()
-      expect(getByText("blog")).toBeDefined()
+      expect(getByText("Mise")).toBeDefined()
+      expect(getByText(dictionary.portfolio.miseDescription)).toBeDefined()
+      expect(getByText("FreshRSS")).toBeDefined()
+      expect(getByText(dictionary.portfolio.freshrssDescription)).toBeDefined()
+      expect(getByText("226")).toBeDefined()
     })
   }
 })
