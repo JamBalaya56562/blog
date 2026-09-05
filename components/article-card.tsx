@@ -3,6 +3,7 @@ import Link from "next/link"
 import { ViewTransition } from "react"
 import { TagLink } from "@/components/home/tag-link"
 import { Brackets } from "@/components/ui/brackets"
+import { PopularityBar, ViewStat } from "@/components/view-counts"
 import type { Post } from "@/lib/content/types"
 import type { Locale } from "@/lib/i18n/config"
 import { getBlogPostPath } from "@/lib/routes"
@@ -77,12 +78,6 @@ export function ArticleCard({
     typeof index === "number" ? String(index + 1).padStart(3, "0") : null
   const category = post.frontmatter.tags[0]?.toUpperCase() ?? "DISPATCH"
 
-  const max = Math.max(viewMax ?? 0, viewCount ?? 0, 100)
-  const popularity = Math.min(
-    1,
-    Math.max(0.05, (viewCount ?? 0) / Math.max(1, max)),
-  )
-
   return (
     <Link
       href={getBlogPostPath(locale, post.slug)}
@@ -155,10 +150,7 @@ export function ArticleCard({
                 <span className="pp-num text-cyber-cyan">{readMin}</span> MIN
               </span>
               <span>
-                <span className="pp-num text-cyber-cyan">
-                  {(viewCount ?? 0).toLocaleString()}
-                </span>{" "}
-                VIEWS
+                <ViewStat slug={post.slug} fallback={viewCount} /> VIEWS
               </span>
             </span>
           </div>
@@ -170,9 +162,10 @@ export function ArticleCard({
           hover it grows out to ~88% as a visual flourish — the gradient
           sweeps cyan → amber → magenta with a glowing white tip. */}
       <div className="pp-bar">
-        <div
-          className="pp-bar-fill group-hover:!w-[88%]"
-          style={{ width: `${Math.max(popularity * 100, 18)}%` }}
+        <PopularityBar
+          slug={post.slug}
+          fallback={viewCount}
+          fallbackMax={viewMax}
         />
       </div>
     </Link>

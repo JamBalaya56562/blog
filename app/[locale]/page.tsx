@@ -6,8 +6,8 @@ import { HeroSection } from "@/components/home/hero-section"
 import { RecentDispatches } from "@/components/home/recent-dispatches"
 import { PageTransition } from "@/components/page-transition"
 import { HomeContentSkeleton } from "@/components/skeletons"
+import { ViewCountsProvider } from "@/components/view-counts"
 import { createContentLoader } from "@/lib/content/loader"
-import { getViewCounts } from "@/lib/db/queries"
 import type { Locale } from "@/lib/i18n/config"
 import { isValidLocale } from "@/lib/i18n/config"
 import { getDictionary } from "@/lib/i18n/get-dictionary"
@@ -21,9 +21,6 @@ async function HomeBody({ locale }: { locale: Locale }) {
 
   const bentoGridPosts = posts.slice(0, 3)
   const recentPosts = posts.slice(3, 8)
-  const viewCounts = await getViewCounts(
-    [...bentoGridPosts, ...recentPosts].map((p) => p.slug),
-  )
 
   const tagSet = new Set<string>()
   for (const p of posts) {
@@ -41,12 +38,16 @@ async function HomeBody({ locale }: { locale: Locale }) {
         tagCount={tagSet.size}
         latestDate={posts[0]?.frontmatter.date}
       />
-      <BentoGrid
-        locale={locale}
-        posts={bentoGridPosts}
-        viewCounts={viewCounts}
-        dictionary={dictionary}
-      />
+      {/* The counts come from the browser. This component is cached, so a
+          server-rendered figure would be the one baked at build time and would
+          never move. */}
+      <ViewCountsProvider slugs={bentoGridPosts.map((p) => p.slug)}>
+        <BentoGrid
+          locale={locale}
+          posts={bentoGridPosts}
+          dictionary={dictionary}
+        />
+      </ViewCountsProvider>
       <RecentDispatches
         locale={locale}
         dictionary={dictionary}
