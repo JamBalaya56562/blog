@@ -1,11 +1,13 @@
 import {
-  Box,
+  Archive,
+  Building2,
+  Container,
   ExternalLink,
-  FolderOpen,
+  GitBranch,
   Heart,
   MapPin,
-  Paintbrush,
-  Sparkles,
+  Palette,
+  Rss,
   Terminal,
   Wrench,
 } from "lucide-react"
@@ -30,13 +32,18 @@ const skills = [
   "Go",
 ]
 
-const projects = [
-  {
-    descriptionKey: "blogDescription" as const,
-    name: "blog",
-    url: "https://github.com/JamBalaya56562/blog",
-  },
-]
+/**
+ * The contribution given the wide card at the head of the grid. Mise is the
+ * one with by far the most merged work, so it leads and the rest follow in
+ * descending order.
+ */
+const featuredContribution = {
+  descriptionKey: "miseDescription" as const,
+  Icon: Wrench,
+  merged: 226,
+  name: "Mise",
+  url: "https://github.com/jdx/mise",
+}
 
 /**
  * Per-OSS visual identity. The cyber frame (border + brackets) stays
@@ -45,44 +52,74 @@ const projects = [
  */
 const ossContributions = [
   {
+    accent: "text-sky-400",
+    bg: "bg-sky-500/10",
+    descriptionKey: "duplicatiDescription" as const,
+    glow: "shadow-[0_0_24px_-8px_rgb(56_189_248_/_0.6)]",
+    Icon: Archive,
+    merged: 119,
+    name: "Duplicati",
+    url: "https://github.com/duplicati/duplicati",
+  },
+  {
     accent: "text-violet-400",
     bg: "bg-violet-500/10",
+    descriptionKey: "ohMyPoshDescription" as const,
     glow: "shadow-[0_0_24px_-8px_rgb(167_139_250_/_0.6)]",
-    Icon: Sparkles,
-    name: "Next.js",
-    url: "https://github.com/vercel/next.js",
+    Icon: Terminal,
+    merged: 62,
+    name: "Oh My Posh",
+    url: "https://github.com/JanDeDobbeleer/oh-my-posh",
+  },
+  {
+    accent: "text-cyan-400",
+    bg: "bg-cyan-500/10",
+    descriptionKey: "dockerMavenPluginDescription" as const,
+    glow: "shadow-[0_0_24px_-8px_rgb(34_211_238_/_0.6)]",
+    Icon: Container,
+    merged: 36,
+    name: "docker-maven-plugin",
+    url: "https://github.com/fabric8io/docker-maven-plugin",
   },
   {
     accent: "text-emerald-400",
     bg: "bg-emerald-500/10",
+    descriptionKey: "goGithubDescription" as const,
     glow: "shadow-[0_0_24px_-8px_rgb(52_211_153_/_0.6)]",
-    Icon: Terminal,
-    name: "Biome",
-    url: "https://github.com/biomejs/biome",
-  },
-  {
-    accent: "text-amber-400",
-    bg: "bg-amber-500/10",
-    glow: "shadow-[0_0_24px_-8px_rgb(251_191_36_/_0.6)]",
-    Icon: Wrench,
-    name: "Mise",
-    url: "https://github.com/jdx/mise",
-  },
-  {
-    accent: "text-sky-400",
-    bg: "bg-sky-500/10",
-    glow: "shadow-[0_0_24px_-8px_rgb(56_189_248_/_0.6)]",
-    Icon: Box,
-    name: "Dev Containers",
-    url: "https://github.com/devcontainers",
+    Icon: GitBranch,
+    merged: 30,
+    name: "go-github",
+    url: "https://github.com/google/go-github",
   },
   {
     accent: "text-rose-400",
     bg: "bg-rose-500/10",
+    descriptionKey: "daisyuiDescription" as const,
     glow: "shadow-[0_0_24px_-8px_rgb(251_113_133_/_0.6)]",
-    Icon: Paintbrush,
-    name: "Prettier",
-    url: "https://github.com/prettier/prettier",
+    Icon: Palette,
+    merged: 26,
+    name: "daisyUI",
+    url: "https://github.com/saadeghi/daisyui",
+  },
+  {
+    accent: "text-amber-400",
+    bg: "bg-amber-500/10",
+    descriptionKey: "dolibarrDescription" as const,
+    glow: "shadow-[0_0_24px_-8px_rgb(251_191_36_/_0.6)]",
+    Icon: Building2,
+    merged: 25,
+    name: "Dolibarr",
+    url: "https://github.com/Dolibarr/dolibarr",
+  },
+  {
+    accent: "text-orange-400",
+    bg: "bg-orange-500/10",
+    descriptionKey: "freshrssDescription" as const,
+    glow: "shadow-[0_0_24px_-8px_rgb(251_146_60_/_0.6)]",
+    Icon: Rss,
+    merged: 16,
+    name: "FreshRSS",
+    url: "https://github.com/FreshRSS/FreshRSS",
   },
 ]
 
@@ -110,10 +147,6 @@ export default async function PortfolioPage({
   }
 
   const dictionary = getDictionary(locale)
-  const project = projects[0]
-  if (!project) {
-    return null
-  }
 
   return (
     <PageTransition>
@@ -268,25 +301,31 @@ export default async function PortfolioPage({
           </p>
 
           <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-            {/* Featured project */}
+            {/* Featured contribution — the wide card at the head of the grid. */}
             <a
-              href={project.url}
+              href={featuredContribution.url}
               target="_blank"
               rel="noopener noreferrer"
               className="pp-card-hover relative border border-cyber-line bg-cyber-bg-1/50 p-6 md:col-span-2"
             >
               <Brackets />
               <div className="mb-4 flex items-center gap-2">
-                <FolderOpen className="h-4 w-4 text-cyber-cyan" />
+                <featuredContribution.Icon className="h-4 w-4 text-cyber-cyan" />
                 <span className="pp-tick text-cyber-cyan">
-                  ◢ {dictionary.portfolio.activeProject}
+                  ◢ {dictionary.portfolio.featuredContribution}
+                </span>
+                <span className="pp-tick ml-auto text-cyber-dim">
+                  <span className="pp-num text-cyber-cyan">
+                    {featuredContribution.merged}
+                  </span>{" "}
+                  MERGED
                 </span>
               </div>
               <h3 className="pp-display mb-3 text-2xl text-foreground">
-                {project.name}
+                {featuredContribution.name}
               </h3>
               <p className="max-w-md font-mono text-sm text-cyber-dim">
-                {dictionary.portfolio[project.descriptionKey]}
+                {dictionary.portfolio[featuredContribution.descriptionKey]}
               </p>
               <div className="pp-bar mt-6">
                 <div className="pp-bar-fill" style={{ width: "78%" }} />
@@ -299,25 +338,46 @@ export default async function PortfolioPage({
                 href={oss.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className={`pp-card-hover group relative overflow-hidden border border-cyber-line p-5 ${oss.bg} ${oss.glow}`}
+                className={`pp-card-hover group relative flex flex-col overflow-hidden border border-cyber-line p-5 ${oss.bg} ${oss.glow}`}
               >
                 <Brackets />
-                {/* Giant faded icon watermark — bleeds out of the card and
-                  brightens on hover for a subtle visual cue. */}
+                {/* Faded icon watermark. Kept small and tucked into the corner
+                    so it never sits behind the description. */}
                 <oss.Icon
                   aria-hidden
-                  className={`pointer-events-none absolute -bottom-6 -right-6 h-28 w-28 opacity-10 transition-opacity duration-300 group-hover:opacity-25 ${oss.accent}`}
+                  className={`pointer-events-none absolute -bottom-4 -right-4 h-20 w-20 opacity-10 transition-opacity duration-300 group-hover:opacity-25 ${oss.accent}`}
                 />
-                <div className="relative">
-                  <div
-                    className={`mb-3 inline-flex h-9 w-9 items-center justify-center border border-cyber-line ${oss.accent} ${oss.bg}`}
-                  >
-                    <oss.Icon className="h-5 w-5" />
+                <div className="relative flex flex-1 flex-col">
+                  {/* Icon, label and name share one row; the merged count sits
+                      at the far end as a HUD readout. */}
+                  <div className="flex items-start gap-3">
+                    <span
+                      className={`inline-flex h-9 w-9 shrink-0 items-center justify-center border border-cyber-line ${oss.accent} ${oss.bg}`}
+                    >
+                      <oss.Icon className="h-5 w-5" />
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="pp-tick block text-cyber-amber/80">
+                        ◢ OSS
+                      </span>
+                      {/* Wraps rather than truncates: `docker-maven-plugin`
+                          overran the row by a few pixels, and a name is not
+                          worth hiding to save one line. */}
+                      <span className="pp-display mt-0.5 block break-words text-lg text-foreground">
+                        {oss.name}
+                      </span>
+                    </span>
+                    <span className="pp-tick shrink-0 whitespace-nowrap text-cyber-dim">
+                      <span className={`pp-num ${oss.accent}`}>
+                        {oss.merged}
+                      </span>{" "}
+                      MERGED
+                    </span>
                   </div>
-                  <div className="pp-tick text-cyber-amber/80">◢ OSS</div>
-                  <h3 className="pp-display mt-1 text-lg text-foreground">
-                    {oss.name}
-                  </h3>
+                  <span className="mt-4 block h-px bg-cyber-line" />
+                  <p className="mt-3 font-mono text-xs leading-relaxed text-cyber-dim">
+                    {dictionary.portfolio[oss.descriptionKey]}
+                  </p>
                 </div>
               </a>
             ))}
