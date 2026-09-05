@@ -116,8 +116,6 @@ jobs:
       - name: 🚀 Build and Push
         uses: docker/build-push-action@v7
         id: push
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
         with:
           annotations: ${{ steps.meta.outputs.annotations }}
           cache-from: type=gha
@@ -134,8 +132,6 @@ jobs:
           build-args: |
             CONTENT_SOURCE=github
             GITHUB_REPO=${{ github.event.repository.name }}
-          secret-envs: |
-            DATABASE_URL=DATABASE_URL
 
       - name: 🪪 Attest
         if: fromJSON(env.IS_PUSH)

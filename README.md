@@ -35,10 +35,10 @@ cd blog && bun i
 
 ### 3. Set up the local database
 
-This project uses PostgreSQL for page view tracking. [Docker](https://www.docker.com/) is required.
+This project uses DynamoDB for page view tracking. A container runtime is required — [wslc](https://learn.microsoft.com/windows/wsl/) is used when available, otherwise [Docker](https://www.docker.com/). Set `RUNTIME` to force one.
 
 ```bash
-# Full setup: generate .env, start PostgreSQL, wait for health check, push schema
+# Full setup: generate .env, start DynamoDB Local, wait for health check, create the table
 mise run db:setup
 ```
 
@@ -48,21 +48,26 @@ Or run each step individually:
 # Generate .env with default values
 mise run db:env
 
-# Start PostgreSQL container (postgres:18-alpine)
+# Start DynamoDB Local container (amazon/dynamodb-local)
 mise run db:start
 
-# Wait for PostgreSQL to be healthy
+# Wait for DynamoDB Local to be healthy
 mise run db:health
 
-# Push Drizzle schema to database
+# Create the DynamoDB table if it does not exist
 mise run db:push
 
-# Open Drizzle Studio (DB GUI)
-mise run db:studio
+# Dump every page view row as JSON
+mise run db:scan
 
-# Stop PostgreSQL container
+# Stop DynamoDB Local container
 mise run db:stop
 ```
+
+The container runs `-inMemory`, so view counts reset when it stops.
+
+No AWS access keys are needed. The local container accepts any signature, and on
+AWS the credentials come from the Lambda execution role.
 
 ### 4. Develop the app
 
@@ -104,7 +109,9 @@ bun start
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `DATABASE_URL` | PostgreSQL connection string | `postgresql://blog:blog_dev_password@localhost:5433/blog` |
+| `DYNAMODB_TABLE_NAME` | DynamoDB table name. Unset disables view tracking | `blog-page-views` |
+| `DYNAMODB_ENDPOINT` | DynamoDB endpoint override. Set for local development only | - |
+| `AWS_REGION` | AWS region | `ap-northeast-1` |
 | `CONTENT_SOURCE` | Content source (`"local"` or `"github"`) | `"local"` |
 | `GITHUB_OWNER` | GitHub repository owner | - |
 | `GITHUB_REPO` | GitHub repository name | - |
@@ -177,16 +184,16 @@ Then check out one of our issues labeled as [😵‍💫help wanted][help] or [g
 
 This software uses the following open source packages:
 
+- [Amazon DynamoDB](https://aws.amazon.com/dynamodb/)
 - [AWS Lambda Web Adapter](https://github.com/awslabs/aws-lambda-web-adapter)
+- [AWS SDK for JavaScript](https://aws.amazon.com/sdk-for-javascript/)
 - [Biome](https://biomejs.dev/)
 - [Bun](https://bun.sh/)
-- [Drizzle ORM](https://orm.drizzle.team/)
 - [HAPPY DOM](https://github.com/capricorn86/happy-dom)
 - [Mise](https://mise.jdx.dev/)
 - [Next.js](https://nextjs.org/)
 - [Node.js](https://nodejs.org/)
 - [Playwright](https://playwright.dev/)
-- [PostgreSQL](https://www.postgresql.org/)
 - [React](https://react.dev/)
 - [StackBlitz Codeflow](https://stackblitz.com/codeflow/)
 - [Tailwind CSS](https://tailwindcss.com/)
