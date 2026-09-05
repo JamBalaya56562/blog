@@ -6,17 +6,23 @@ import { mock } from "bun:test"
 // Individual test files can override this mock with their own mock.module() call.
 const Stub = () => null
 mock.module("lucide-react", () => ({
+  Archive: Stub,
   ArrowUp: Stub,
   BookOpen: Stub,
   Box: Stub,
+  Building2: Stub,
+  Container: Stub,
   ExternalLink: Stub,
   FolderOpen: Stub,
+  GitBranch: Stub,
   Globe: Stub,
   Heart: Stub,
   MapPin: Stub,
   Moon: Stub,
   Paintbrush: Stub,
+  Palette: Stub,
   Puzzle: Stub,
+  Rss: Stub,
   Sparkles: Stub,
   Sun: Stub,
   Terminal: Stub,
