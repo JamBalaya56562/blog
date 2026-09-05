@@ -182,6 +182,16 @@
     font-family: var(--blog-font-sans);
     -webkit-font-smoothing: antialiased;
   }
+
+  /* Browsers give `<button>` the default cursor — only `<a href>` gets the
+     hand. The .pp-* controls each set `cursor: pointer` themselves, so buttons
+     built from utility classes alone were the odd ones out and read as
+     unclickable. Setting it here covers every button, including ones added
+     later. Disabled buttons keep the default, which is what the theme
+     toggle's pre-hydration placeholder wants. */
+  button:not(:disabled) {
+    cursor: pointer;
+  }
 }
 
 /* ──────────────────────────────────────────────
