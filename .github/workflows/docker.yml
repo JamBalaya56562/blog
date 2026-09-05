@@ -130,7 +130,6 @@ jobs:
           sbom: ${{ fromJSON(env.IS_PUSH) }}
           tags: ${{ steps.meta.outputs.tags }}
           build-args: |
-            CONTENT_SOURCE=github
             GITHUB_REPO=${{ github.event.repository.name }}
 
       - name: 🪪 Attest
