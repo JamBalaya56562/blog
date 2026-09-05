@@ -49,12 +49,14 @@ await client.send(
       { AttributeName: PARTITION_KEY, KeyType: "HASH" },
       { AttributeName: SORT_KEY, KeyType: "RANGE" },
     ],
-    // Provisioned, not on-demand: 25 read and 25 write capacity units are in
-    // the always-free tier, while on-demand request pricing is not. DynamoDB
-    // Local ignores these numbers.
+    // Provisioned, not on-demand: provisioned capacity is in the always-free
+    // tier up to 25 read and 25 write units, while on-demand request pricing is
+    // not. Five of each is still tens of times more than this blog needs, and
+    // it leaves the rest of the account's free allowance for other tables.
+    // DynamoDB Local ignores these numbers.
     ProvisionedThroughput: {
-      ReadCapacityUnits: 25,
-      WriteCapacityUnits: 25,
+      ReadCapacityUnits: 5,
+      WriteCapacityUnits: 5,
     },
     TableName: tableName,
   }),

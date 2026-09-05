@@ -3,6 +3,18 @@ import { cleanup, render } from "@testing-library/react"
 import type { Post } from "@/lib/content/types"
 import { getDictionary } from "@/lib/i18n/get-dictionary"
 
+let countsResult: Record<string, number> = {}
+// Both exports are stubbed even though this file only needs one: bun applies
+// mock.module globally for the run, so a partial mock makes the missing export
+// disappear for every other test file too.
+mock.module("@/lib/actions/view-count", () => ({
+  getViewCountsAction: mock(() => Promise.resolve(countsResult)),
+  incrementViewCountAction: mock(() => Promise.resolve(null)),
+}))
+
+/** Lets the provider's mount effect and its promise settle. */
+const settle = () => new Promise((resolve) => setTimeout(resolve, 10))
+
 // The real `next/link` consumes `transitionTypes` and never forwards it to
 // the DOM. Mirror that here — spreading it onto an `<a>` would warn about an
 // unknown prop — and surface it as a data attribute so tests can assert the
@@ -38,9 +50,13 @@ mock.module("next/image", () => ({
 }))
 
 const { BentoGrid } = await import("@/components/home/bento-grid")
+const { ViewCountsProvider } = await import("@/components/view-counts")
 const dictionary = getDictionary("en")
 
-afterEach(cleanup)
+afterEach(() => {
+  cleanup()
+  countsResult = {}
+})
 
 function createMockPost(overrides: Partial<Post> = {}): Post {
   return {
@@ -146,29 +162,7 @@ describe("BentoGrid", () => {
     expect(grid?.className).toContain("md:grid-cols-2")
   })
 
-  test("passes viewCounts to ArticleCard by slug", () => {
-    const posts = [
-      createMockPost({ slug: "post-a" }),
-      createMockPost({ slug: "post-b" }),
-    ]
-    const viewCounts = new Map([
-      ["post-a", 123],
-      ["post-b", 456],
-    ])
-    const { container } = render(
-      <BentoGrid
-        locale="en"
-        posts={posts}
-        viewCounts={viewCounts}
-        dictionary={dictionary}
-      />,
-    )
-    expect(container.textContent).toContain("123")
-    expect(container.textContent).toContain("456")
-    expect(container.textContent).toContain("VIEWS")
-  })
-
-  test("falls back to 0 views when viewCounts is omitted", () => {
+  test("renders 0 views before the counts arrive", () => {
     const posts = [
       createMockPost({ slug: "post-a" }),
       createMockPost({ slug: "post-b" }),
@@ -180,20 +174,39 @@ describe("BentoGrid", () => {
     expect(matches).toHaveLength(2)
   })
 
-  test("uses viewCounts when present and 0 views as fallback when missing", () => {
+  // The counts reach the cards through context rather than a prop: this
+  // component is cached, so a server-rendered figure would never move.
+  test("shows the counts the provider fetched", async () => {
+    countsResult = { "post-a": 123, "post-b": 456 }
     const posts = [
       createMockPost({ slug: "post-a" }),
       createMockPost({ slug: "post-b" }),
     ]
-    const viewCounts = new Map([["post-a", 99]])
     const { container } = render(
-      <BentoGrid
-        locale="en"
-        posts={posts}
-        viewCounts={viewCounts}
-        dictionary={dictionary}
-      />,
+      <ViewCountsProvider slugs={["post-a", "post-b"]}>
+        <BentoGrid locale="en" posts={posts} dictionary={dictionary} />
+      </ViewCountsProvider>,
     )
+
+    await settle()
+    expect(container.textContent).toContain("123")
+    expect(container.textContent).toContain("456")
+    expect(container.textContent).toContain("VIEWS")
+  })
+
+  test("leaves a slug the provider did not return at 0", async () => {
+    countsResult = { "post-a": 99 }
+    const posts = [
+      createMockPost({ slug: "post-a" }),
+      createMockPost({ slug: "post-b" }),
+    ]
+    const { container } = render(
+      <ViewCountsProvider slugs={["post-a", "post-b"]}>
+        <BentoGrid locale="en" posts={posts} dictionary={dictionary} />
+      </ViewCountsProvider>,
+    )
+
+    await settle()
     expect(container.textContent).toContain("99")
     expect(container.textContent).toContain("0 VIEWS")
   })

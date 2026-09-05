@@ -6,14 +6,12 @@ import type { Dictionary } from "@/lib/i18n/get-dictionary"
 interface BentoGridProps {
   readonly locale: Locale
   readonly posts: Post[]
-  readonly viewCounts?: Map<string, number>
   readonly dictionary: Dictionary
 }
 
 export function BentoGrid({
   locale,
   posts,
-  viewCounts,
   dictionary,
 }: Readonly<BentoGridProps>) {
   if (posts.length === 0) {
@@ -22,9 +20,6 @@ export function BentoGrid({
 
   const gridPosts = posts.slice(0, 3)
   const [first, ...rest] = gridPosts
-  const counts = gridPosts.map((p) => viewCounts?.get(p.slug) ?? 0)
-  const viewMax = Math.max(...counts, 100)
-
   if (!first) {
     return null
   }
@@ -56,14 +51,7 @@ export function BentoGrid({
         </span>
       </div>
       <div className={`grid gap-4 ${gridCols}`}>
-        <ArticleCard
-          post={first}
-          locale={locale}
-          isLarge
-          index={0}
-          viewMax={viewMax}
-          viewCount={viewCounts?.get(first.slug)}
-        />
+        <ArticleCard post={first} locale={locale} isLarge index={0} />
         {rest.map((post, i) => (
           <ArticleCard
             key={post.slug}
@@ -71,8 +59,6 @@ export function BentoGrid({
             locale={locale}
             isLarge={false}
             index={i + 1}
-            viewMax={viewMax}
-            viewCount={viewCounts?.get(post.slug)}
           />
         ))}
       </div>
