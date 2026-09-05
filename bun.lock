@@ -30,7 +30,7 @@
         "@types/node": "^26.4.1",
         "@types/react": "^19.2.18",
         "@types/react-dom": "^19.2.7",
-        "babel-plugin-react-compiler": "experimental",
+        "babel-plugin-react-compiler": "^1.0.0",
         "fast-check": "^4.9.0",
         "postcss": "^8.5.28",
         "tailwindcss": "^4.3.3",
@@ -342,7 +342,7 @@
 
     "astring": ["astring@1.9.0", "", { "bin": { "astring": "bin/astring" } }, "sha512-LElXdjswlqjWrPpJFg1Fx4wpkOCxj1TDHlSV4PlaRxHGWko024xICaa97ZkMfs6DRKlCguiAI+rbXv5GWwXIkg=="],
 
-    "babel-plugin-react-compiler": ["babel-plugin-react-compiler@0.0.0-experimental-a1856f3-20260507", "", { "dependencies": { "@babel/types": "^7.26.0" } }, "sha512-NH/o9ojGrQ5xQhkLry8KulKssfWuM68myEGVUpIJhExt1/WVWBOTBPSPGiSRoJtfB9yP8Kj4UXZpLXKFCXineg=="],
+    "babel-plugin-react-compiler": ["babel-plugin-react-compiler@1.0.0", "", { "dependencies": { "@babel/types": "^7.26.0" } }, "sha512-Ixm8tFfoKKIPYdCCKYTsqv+Fd4IJ0DQqMyEimo+pxUOMUR9cVPlwTrFt9Avu+3cb6Zp3mAzl+t1MrG2fxxKsxw=="],
 
     "bail": ["bail@2.0.2", "", {}, "sha512-0xO6mYd7JB2YesxDKplafRpsiOzPt9V02ddPCLbY1xYGPOX24NTyN50qnUxgCPcSoYMhKpAuBTjQoRZCAkUDRw=="],
 
