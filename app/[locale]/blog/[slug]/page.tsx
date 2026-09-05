@@ -2,6 +2,7 @@ import type { Metadata, Route } from "next"
 import Image from "next/image"
 import Link from "next/link"
 import { notFound } from "next/navigation"
+import { connection } from "next/server"
 import { MDXRemote } from "next-mdx-remote-client/rsc"
 import { cache, Suspense, ViewTransition } from "react"
 import remarkGfm from "remark-gfm"
@@ -34,6 +35,12 @@ const getPost = cache(async (locale: Locale, slug: string) => {
   "use cache"
   const loader = createContentLoader()
   return loader.getPost(locale, slug)
+})
+
+const getAllPosts = cache(async (locale: Locale) => {
+  "use cache"
+  const loader = createContentLoader()
+  return loader.getAllPosts(locale)
 })
 
 export async function generateStaticParams() {
@@ -94,6 +101,19 @@ export async function generateMetadata({
   }
 }
 
+/**
+ * Deliberately not `"use cache"`, though `getPost` and `getAllPosts` are.
+ *
+ * Caching the render froze the view counts into the cache entry, and on Lambda
+ * that entry is the one baked at build time: `isrFlushToDisk` is off, so a
+ * revalidated entry never outlives the instance that produced it and every cold
+ * start falls back to the build output. Related-post cards read zero for good.
+ *
+ * Handing the counts in from outside was tried first and does not work here:
+ * opening a dynamic hole in a cached subtree makes the prerender fail on an
+ * unstable `crypto.randomUUID()`. Leaving the content dynamic and caching the
+ * two loads it depends on keeps the expensive part cached anyway.
+ */
 async function BlogPostContent({
   locale,
   slug,
@@ -101,17 +121,21 @@ async function BlogPostContent({
   locale: Locale
   slug: string
 }) {
-  "use cache"
   const post = await getPost(locale, slug)
   if (!post) {
     notFound()
   }
 
+  // Marks everything below as request-time work. Without it the prerender
+  // trips over the random request id the AWS SDK generates, which Next rejects
+  // as an unstable value in a static render.
+  await connection()
+
   const dictionary = getDictionary(locale)
   const [translationLocale, tocItems, allPosts, viewCount] = await Promise.all([
     getTranslationPair(locale, slug),
     Promise.resolve(extractToc(post.content)),
-    createContentLoader().getAllPosts(locale),
+    getAllPosts(locale),
     getViewCount(slug),
   ])
   const adjacentPosts = findAdjacentPosts(allPosts, slug)
