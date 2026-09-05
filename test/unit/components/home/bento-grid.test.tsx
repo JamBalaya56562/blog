@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, mock, test } from "bun:test"
-import { cleanup, render } from "@testing-library/react"
+import { cleanup, render, waitFor } from "@testing-library/react"
 import type { Post } from "@/lib/content/types"
 import { getDictionary } from "@/lib/i18n/get-dictionary"
 
@@ -11,9 +11,6 @@ mock.module("@/lib/actions/view-count", () => ({
   getViewCountsAction: mock(() => Promise.resolve(countsResult)),
   incrementViewCountAction: mock(() => Promise.resolve(null)),
 }))
-
-/** Lets the provider's mount effect and its promise settle. */
-const settle = () => new Promise((resolve) => setTimeout(resolve, 10))
 
 // The real `next/link` consumes `transitionTypes` and never forwards it to
 // the DOM. Mirror that here — spreading it onto an `<a>` would warn about an
@@ -188,8 +185,7 @@ describe("BentoGrid", () => {
       </ViewCountsProvider>,
     )
 
-    await settle()
-    expect(container.textContent).toContain("123")
+    await waitFor(() => expect(container.textContent).toContain("123"))
     expect(container.textContent).toContain("456")
     expect(container.textContent).toContain("VIEWS")
   })
@@ -206,8 +202,7 @@ describe("BentoGrid", () => {
       </ViewCountsProvider>,
     )
 
-    await settle()
-    expect(container.textContent).toContain("99")
+    await waitFor(() => expect(container.textContent).toContain("99"))
     expect(container.textContent).toContain("0 VIEWS")
   })
 
