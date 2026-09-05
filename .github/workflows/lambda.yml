@@ -74,7 +74,6 @@ jobs:
         push: true
         tags: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }}
         build-args: |
-          CONTENT_SOURCE=github
           GITHUB_REPO=${{ github.event.repository.name }}
 
     - name: 🥩 Deploy Lambda function with container image
