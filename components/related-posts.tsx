@@ -12,14 +12,12 @@ interface RelatedPostsProps {
   readonly locale: Locale
   readonly posts: Post[]
   readonly dictionary: Dictionary
-  readonly viewCounts?: Map<string, number>
 }
 
 export function RelatedPosts({
   locale,
   posts,
   dictionary,
-  viewCounts,
 }: Readonly<RelatedPostsProps>): React.JSX.Element | null {
   if (posts.length === 0) {
     return null
@@ -38,7 +36,6 @@ export function RelatedPosts({
             post={post}
             locale={locale}
             index={i}
-            viewCount={viewCounts?.get(post.slug)}
             // These cards sit on a post page, so naming them would pair with
             // the hero of whichever post the reader opens next and fly it in
             // from down here instead of letting the page slide.

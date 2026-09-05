@@ -5,7 +5,11 @@ import { cleanup, render } from "@testing-library/react"
 // is what the counter shows once the effect resolves.
 let actionResult: number | null = null
 const incrementMock = mock(() => Promise.resolve(actionResult))
+// Both exports are stubbed even though this file only needs one: bun applies
+// mock.module globally for the run, so a partial mock makes the missing export
+// disappear for every other test file too.
 mock.module("@/lib/actions/view-count", () => ({
+  getViewCountsAction: mock(() => Promise.resolve({})),
   incrementViewCountAction: incrementMock,
 }))
 

@@ -17,9 +17,10 @@ import { BlogPostSkeleton } from "@/components/skeletons"
 import { TableOfContents } from "@/components/table-of-contents"
 import { Brackets } from "@/components/ui/brackets"
 import { ViewCounter } from "@/components/view-counter"
+import { ViewCountsProvider } from "@/components/view-counts"
 import { findAdjacentPosts } from "@/lib/content/adjacent"
 import { createContentLoader } from "@/lib/content/loader"
-import { getViewCount, getViewCounts } from "@/lib/db/queries"
+import { getViewCount } from "@/lib/db/queries"
 import type { Locale } from "@/lib/i18n/config"
 import { isValidLocale, locales } from "@/lib/i18n/config"
 import { getDictionary } from "@/lib/i18n/get-dictionary"
@@ -116,7 +117,6 @@ async function BlogPostContent({
   ])
   const adjacentPosts = findAdjacentPosts(allPosts, slug)
   const related = getRelatedPosts(allPosts, slug)
-  const relatedViewCounts = await getViewCounts(related.map((p) => p.slug))
   const readMin = estimateReadingTime(post.content)
   const category = post.frontmatter.tags[0]?.toUpperCase() ?? "DISPATCH"
 
@@ -197,12 +197,15 @@ async function BlogPostContent({
           </div>
         </article>
 
-        <RelatedPosts
-          locale={locale}
-          posts={related}
-          dictionary={dictionary}
-          viewCounts={relatedViewCounts}
-        />
+        {/* As on the home page, the counts are fetched in the browser: this
+            component is cached, so anything rendered here would be frozen. */}
+        <ViewCountsProvider slugs={related.map((p) => p.slug)}>
+          <RelatedPosts
+            locale={locale}
+            posts={related}
+            dictionary={dictionary}
+          />
+        </ViewCountsProvider>
         <PostNavigation
           locale={locale}
           adjacentPosts={adjacentPosts}
