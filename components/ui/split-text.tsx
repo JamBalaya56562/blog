@@ -24,25 +24,49 @@ export function SplitText({
   readonly animation?: "rise" | "glitch"
   readonly className?: string
 }) {
-  const chars = Array.from(text)
   const variant = animation === "glitch" ? "pp-split-glitch" : "pp-split-rise"
+
+  // Characters are grouped into words. Each character is its own inline-block,
+  // and CSS opens a wrap opportunity around every one of those, so a line free
+  // to wrap used to break in the middle of a word. An inline-block word is
+  // atomic, which leaves the spaces between words as the only places a line
+  // can break.
+  const words = text.split(" ")
+  let charIndex = 0
 
   return (
     <span className={className} style={{ display: "inline-block" }}>
-      {chars.map((c, i) => (
-        <span
-          // biome-ignore lint/suspicious/noArrayIndexKey: char position is the natural key
-          key={i}
-          className={`pp-split-char ${variant}`}
-          style={
-            {
-              "--pp-split-delay": `${delay + i * stagger}ms`,
-            } as React.CSSProperties
-          }
-        >
-          {c}
-        </span>
-      ))}
+      {words.map((word, wordIndex) => {
+        const chars = Array.from(word)
+        const rendered = (
+          <span
+            // biome-ignore lint/suspicious/noArrayIndexKey: word position is the natural key
+            key={wordIndex}
+            className="pp-split-word"
+          >
+            {chars.map((c, i) => (
+              <span
+                // biome-ignore lint/suspicious/noArrayIndexKey: char position is the natural key
+                key={i}
+                className={`pp-split-char ${variant}`}
+                style={
+                  {
+                    // Counted across the whole line, not restarted per word,
+                    // so the stagger still sweeps left to right.
+                    "--pp-split-delay": `${delay + (charIndex + i) * stagger}ms`,
+                  } as React.CSSProperties
+                }
+              >
+                {c}
+              </span>
+            ))}
+          </span>
+        )
+        // The space consumed by the split still costs a stagger step, so the
+        // rhythm matches what a single run of characters would produce.
+        charIndex += chars.length + 1
+        return wordIndex === words.length - 1 ? rendered : [rendered, " "]
+      })}
     </span>
   )
 }

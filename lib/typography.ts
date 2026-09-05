@@ -61,3 +61,23 @@ export function estimateHeadlineEm(text: string): number {
   }
   return em * SAFETY_FACTOR
 }
+
+/**
+ * Approximate width, in em, of the widest single word in `text`.
+ *
+ * Narrow screens cannot hold the whole headline on one line at a size worth
+ * looking at, so they wrap. The size that governs there is the one that keeps
+ * the longest word whole: anything smaller and the word itself has to break,
+ * which is what the splitter's per-character boxes were doing.
+ *
+ * Japanese has no spaces, so the whole line counts as one word. That is the
+ * conservative answer and it happens to be the right one: the line ends up
+ * sized to fit on its own, which is how it should read.
+ */
+export function estimateLongestWordEm(text: string): number {
+  let widest = 0
+  for (const word of text.split(" ")) {
+    widest = Math.max(widest, estimateHeadlineEm(word))
+  }
+  return widest
+}
