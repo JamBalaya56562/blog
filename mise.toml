@@ -19,27 +19,27 @@ description = "Generate .env file with default development values"
 run = "bun run scripts/setup-env.ts"
 
 [tasks."db:start"]
-description = "Start PostgreSQL container for local development"
+description = "Start DynamoDB Local container for local development"
 run = "bash scripts/db-start.sh"
 
 [tasks."db:health"]
-description = "Wait for PostgreSQL to be healthy"
+description = "Wait for DynamoDB Local to be healthy"
 run = "bash scripts/db-health.sh"
 
 [tasks."db:stop"]
-description = "Stop PostgreSQL container"
-run = "docker stop blog-postgres"
+description = "Stop DynamoDB Local container"
+run = "bash scripts/db-stop.sh"
 
 [tasks."db:push"]
-description = "Push Drizzle schema to database"
-run = "bun drizzle-kit push"
+description = "Create the DynamoDB table if it does not exist"
+run = "bun run scripts/db-push.ts"
 
-[tasks."db:studio"]
-description = "Open Drizzle Studio"
-run = "bun drizzle-kit studio"
+[tasks."db:scan"]
+description = "Dump every page view row as JSON"
+run = "bun run scripts/db-scan.ts"
 
 [tasks."db:setup"]
-description = "Full local DB setup: generate .env, start PostgreSQL, health check, push schema"
+description = "Full local DB setup: generate .env, start DynamoDB Local, health check, create table"
 depends = ["db:env", "db:start"]
 run = ["mise run db:health", "mise run db:push"]
 

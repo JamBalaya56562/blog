@@ -65,8 +65,6 @@ jobs:
 
     - name: 🚀 Build and Push
       uses: docker/build-push-action@v7
-      env:
-        DATABASE_URL: ${{ secrets.DATABASE_URL }}
       with:
         cache-from: type=gha
         cache-to: type=gha,mode=max
@@ -78,8 +76,6 @@ jobs:
         build-args: |
           CONTENT_SOURCE=github
           GITHUB_REPO=${{ github.event.repository.name }}
-        secret-envs: |
-          DATABASE_URL=DATABASE_URL
 
     - name: 🥩 Deploy Lambda function with container image
       uses: aws-actions/aws-lambda-deploy@d496277188b89f0be02d7a2216fc912c0427702a
