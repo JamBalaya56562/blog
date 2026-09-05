@@ -8,7 +8,7 @@ RUN --mount=type=bind,source=package.json,target=package.json \
   bun i --frozen-lockfile
 COPY . .
 RUN bun test:unit
-ARG CONTENT_SOURCE=github
+ARG CONTENT_SOURCE=local
 ARG GITHUB_OWNER=JamBalaya56562
 ARG GITHUB_REPO=blog
 ARG GITHUB_BRANCH=main
@@ -23,9 +23,14 @@ COPY --from=public.ecr.aws/awsguru/aws-lambda-adapter:1.0.1 /lambda-adapter /opt
 COPY --from=builder /usr/src/app/public ./public
 COPY --from=builder /usr/src/app/.next/standalone ./
 COPY --from=builder /usr/src/app/.next/static ./.next/static
+# The posts ship with the server. Every content change already triggers a
+# deploy, so fetching them from GitHub at runtime bought nothing and cost an
+# unauthenticated API call that returns an empty list once rate-limited. They
+# are text: six files come to 4.7 kB against a 92 MB build.
+COPY --from=builder /usr/src/app/content ./content
 
 EXPOSE 3000
-ARG CONTENT_SOURCE=github
+ARG CONTENT_SOURCE=local
 ARG GITHUB_OWNER=JamBalaya56562
 ARG GITHUB_REPO=blog
 ARG GITHUB_BRANCH=main
