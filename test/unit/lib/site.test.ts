@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test"
-import { localeAlternates, SITE_URL } from "@/lib/site"
+import { locales } from "@/lib/i18n/config"
+import { feedPath, feedUrl, localeAlternates, SITE_URL } from "@/lib/site"
 
 describe("localeAlternates", () => {
   test("canonical points at the page itself", () => {
@@ -37,5 +38,22 @@ describe("localeAlternates", () => {
   test("the site origin has no trailing path to double up separators", () => {
     expect(SITE_URL.pathname).toBe("/")
     expect(localeAlternates("en", "/blog").canonical).not.toContain("//blog")
+  })
+
+  // The `<link rel="alternate" type="application/rss+xml">` this becomes is
+  // how feed readers find the feed from any page URL. Every page routes its
+  // alternates through here, so losing it here loses autodiscovery site-wide.
+  test("every page advertises its own locale's feed", () => {
+    for (const locale of locales) {
+      expect(localeAlternates(locale, "/blog").types).toEqual({
+        "application/rss+xml": feedUrl(locale),
+      })
+    }
+  })
+
+  test("the feed advertised is the one the footer links to", () => {
+    for (const locale of locales) {
+      expect(feedUrl(locale).endsWith(feedPath(locale))).toBe(true)
+    }
   })
 })
