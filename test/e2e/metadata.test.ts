@@ -178,3 +178,64 @@ test.describe("Open Graph images", () => {
     expect(new Set(seen).size).toBe(seen.length)
   })
 })
+
+/**
+ * Every page carried og:title, og:description and og:image but nothing that
+ * said what kind of document it was, where it canonically lives, or what
+ * language it is in. Posts additionally had no publication date, which is what
+ * lets a crawler order them.
+ */
+test.describe("Open Graph completeness", () => {
+  const property = (page: import("@playwright/test").Page, name: string) =>
+    page.locator(`meta[property="${name}"]`).getAttribute("content")
+
+  for (const [path, expected] of [
+    ["/en/blog", { alternate: "ja_JP", locale: "en_US", type: "website" }],
+    ["/ja/portfolio", { alternate: "en_US", locale: "ja_JP", type: "website" }],
+  ] as const) {
+    test(`${path} declares type, url, site name and locale`, async ({
+      page,
+    }) => {
+      await page.goto(path)
+
+      expect(await property(page, "og:type")).toBe(expected.type)
+      expect(await property(page, "og:url")).toBe(
+        `https://kokohore56562wanwan.site${path}`,
+      )
+      expect(await property(page, "og:site_name")).toBeTruthy()
+      expect(await property(page, "og:locale")).toBe(expected.locale)
+      expect(await property(page, "og:locale:alternate")).toBe(
+        expected.alternate,
+      )
+
+      const canonical = await page
+        .locator('link[rel="canonical"]')
+        .getAttribute("href")
+      expect(await property(page, "og:url")).toBe(canonical)
+    })
+  }
+
+  for (const path of [
+    "/en/blog/tailwind-css-v4-guide",
+    "/ja/blog/tailwind-css-v4-guide",
+  ]) {
+    test(`${path} is an article with a date and an author`, async ({
+      page,
+    }) => {
+      await page.goto(path)
+
+      expect(await property(page, "og:type")).toBe("article")
+      expect(await property(page, "article:published_time")).toMatch(
+        /^\d{4}-\d{2}-\d{2}T/,
+      )
+      expect(await property(page, "article:author")).toBeTruthy()
+
+      const tags = await page
+        .locator('meta[property="article:tag"]')
+        .evaluateAll((nodes) =>
+          nodes.map((n) => n.getAttribute("content") ?? ""),
+        )
+      expect(tags.length).toBeGreaterThan(0)
+    })
+  }
+})

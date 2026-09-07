@@ -7,6 +7,7 @@ import { isValidLocale } from "@/lib/i18n/config"
 import { getDictionary } from "@/lib/i18n/get-dictionary"
 import { localePageMetadata } from "@/lib/metadata"
 import { featuredContribution, ossContributions, skills } from "@/lib/portfolio"
+import { SITE_AUTHOR } from "@/lib/site"
 
 export const generateMetadata = localePageMetadata("/portfolio", {
   description: (d) => d.portfolio.description,
@@ -62,7 +63,10 @@ export default async function PortfolioPage({
                   value="@JamBalaya56562"
                   mono
                 />
-                <Field label={dictionary.portfolio.idName} value="Jam Balaya" />
+                <Field
+                  label={dictionary.portfolio.idName}
+                  value={SITE_AUTHOR}
+                />
                 <Field
                   label={dictionary.portfolio.idLocation}
                   value={dictionary.portfolio.locationValue}
