@@ -1,16 +1,16 @@
 import type { Locale } from "@/lib/i18n/config"
+import { BaseContentLoader } from "./base-loader"
 import { parseFrontmatter } from "./frontmatter"
-import type { ContentLoader } from "./loader"
-import { sortPostsByDate } from "./sort-filter"
 import type { Post } from "./types"
 
-export class GitHubContentLoader implements ContentLoader {
+export class GitHubContentLoader extends BaseContentLoader {
   private owner: string
   private repo: string
   private branch: string
   private contentPath: string
 
   constructor() {
+    super()
     this.owner = process.env.GITHUB_OWNER ?? ""
     this.repo = process.env.GITHUB_REPO ?? ""
     this.branch = process.env.GITHUB_BRANCH ?? "main"
@@ -62,13 +62,5 @@ export class GitHubContentLoader implements ContentLoader {
       console.error("GitHub raw fetch failed:", e)
       return null
     }
-  }
-
-  async getAllPosts(locale: Locale): Promise<Post[]> {
-    const slugs = await this.getPostSlugs(locale)
-    const posts = await Promise.all(
-      slugs.map((slug) => this.getPost(locale, slug)),
-    )
-    return sortPostsByDate(posts.filter(Boolean) as Post[])
   }
 }

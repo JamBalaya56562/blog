@@ -1,15 +1,15 @@
 import { readdir, readFile } from "node:fs/promises"
 import { join } from "node:path"
 import type { Locale } from "@/lib/i18n/config"
+import { BaseContentLoader } from "./base-loader"
 import { parseFrontmatter } from "./frontmatter"
-import type { ContentLoader } from "./loader"
-import { sortPostsByDate } from "./sort-filter"
 import type { Post } from "./types"
 
-export class LocalContentLoader implements ContentLoader {
+export class LocalContentLoader extends BaseContentLoader {
   private basePath: string
 
   constructor(basePath = "content/posts") {
+    super()
     this.basePath = basePath
   }
 
@@ -38,13 +38,5 @@ export class LocalContentLoader implements ContentLoader {
     } catch {
       return null
     }
-  }
-
-  async getAllPosts(locale: Locale): Promise<Post[]> {
-    const slugs = await this.getPostSlugs(locale)
-    const posts = await Promise.all(
-      slugs.map((slug) => this.getPost(locale, slug)),
-    )
-    return sortPostsByDate(posts.filter(Boolean) as Post[])
   }
 }
