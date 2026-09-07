@@ -1,8 +1,3 @@
-/**
- * Fullscreen cyberpunk background — fixed, behind everything.
- * Layers: grid + noise + scanlines + sweep.
- * Replaces ParticleNetwork / CodeRain / CircuitBackground from the old design.
- */
 export function CyberBackground() {
   return (
     <div

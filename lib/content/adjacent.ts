@@ -10,10 +10,6 @@ export interface AdjacentPosts {
   next: AdjacentPost | null
 }
 
-/**
- * 記事リストから指定slugの前後記事を取得する純粋関数。
- * 内部で日付降順にソートするため、入力の並び順に依存しない。
- */
 export function findAdjacentPosts(
   posts: Post[],
   currentSlug: string,

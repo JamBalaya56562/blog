@@ -52,9 +52,6 @@ export function TableOfContents({
                 href={`#${item.id}`}
                 onClick={(e) => {
                   e.preventDefault()
-                  // The landing offset comes from `scroll-padding-top` on
-                  // `html`, which the sticky header would otherwise hide the
-                  // heading behind.
                   document.getElementById(item.id)?.scrollIntoView({
                     behavior: window.matchMedia(
                       "(prefers-reduced-motion: reduce)",

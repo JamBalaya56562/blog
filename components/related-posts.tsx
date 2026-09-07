@@ -36,9 +36,6 @@ export function RelatedPosts({
             post={post}
             locale={locale}
             index={i}
-            // These cards sit on a post page, so naming them would pair with
-            // the hero of whichever post the reader opens next and fly it in
-            // from down here instead of letting the page slide.
             morph={false}
           />
         ))}

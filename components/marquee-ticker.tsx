@@ -1,40 +1,7 @@
-/**
- * Horizontal scrolling ticker beneath the header — an electric signboard:
- * the text stream never stops and never visibly restarts.
- *
- * Items are pre-collected on the server so the marquee shows real data
- * (latest title, post count, top tags, ...).
- *
- * Seamless loop: the track holds two identical groups and slides by exactly
- * one group width (-50% of the track), so the moment it snaps back, group 2
- * is sitting where group 1 was — the seam is invisible. That only works if
- * the track is as wide as its content, hence `width: max-content` on
- * `.pp-marquee-track` (a plain flex container would stay at the parent's
- * width and -50% would be the wrong distance).
- */
-
-/** Widest viewport we pad the group out for, so a short item list still
- *  covers the screen and never opens a gap mid-scroll. Sized past a 2560px
- *  display. */
 const MIN_GROUP_WIDTH_PX = 2700
-/** Matches `gap` / `padding-right` on `.pp-marquee-group` in globals.css. */
 const GAP_PX = 60
-/** `◢` plus its right margin, at the ticker's 10px type. */
 const MARKER_PX = 22
-/** Scroll speed. Deriving the duration from the measured group width keeps
- *  this constant, so the stream reads at the same pace whether the latest
- *  post title is short or long — a fixed duration would speed up as the
- *  content grew. Half the original 70px/s: at that pace a headline crossed
- *  faster than it could comfortably be read. */
 const SCROLL_PX_PER_SEC = 35
-
-/**
- * Rough rendered width of one item at 10px mono with 0.2em tracking: a
- * 0.6em advance plus 2px of tracking per glyph, and CJK is full-width.
- * Deliberately on the low side — under-estimating only adds a repetition,
- * while over-estimating could leave the group narrower than the screen and
- * open a visible gap.
- */
 const ASCII_CHAR_PX = 8
 const CJK_CHAR_PX = 12
 
@@ -71,7 +38,6 @@ export function MarqueeTicker({
           { "--pp-marquee-duration": `${duration}s` } as React.CSSProperties
         }
       >
-        {/* Two identical groups — see the seamless-loop note above. */}
         {[0, 1].map((copy) => (
           <div key={copy} className="pp-marquee-group">
             {group.map((label, i) => (

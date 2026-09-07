@@ -2,17 +2,6 @@
 
 import { useEffect, useRef, useState } from "react"
 
-/**
- * Custom cursor ring overlay.
- *
- * - Cyan ring everywhere by default
- * - Larger amber ring while hovering anything interactive
- * - Hidden on touch devices (CSS `@media (pointer: coarse)`) and when the
- *   user has requested reduced motion
- *
- * The OS cursor is intentionally left visible — this ring is an overlay,
- * not a replacement.
- */
 export function CursorRing() {
   const ringRef = useRef<HTMLDivElement>(null)
   const [enabled, setEnabled] = useState(false)
@@ -26,8 +15,6 @@ export function CursorRing() {
     setEnabled(true)
   }, [])
 
-  // Separate effect so the ring DOM exists when we attach listeners (we
-  // render the ring conditionally on `enabled`, then this effect runs).
   useEffect(() => {
     if (!enabled) {
       return
@@ -52,7 +39,6 @@ export function CursorRing() {
     const onMove = (e: MouseEvent) => {
       lastX = e.clientX
       lastY = e.clientY
-      // Coalesce updates to one per animation frame for smoother tracking.
       if (!raf) {
         raf = requestAnimationFrame(apply)
       }

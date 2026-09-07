@@ -78,8 +78,6 @@ export async function generateMetadata({
   if (!post) {
     return {}
   }
-  // Only the locales this post was actually written in. Advertising a
-  // translation that does not exist would point hreflang at a 404.
   const translationLocale = await getTranslationPair(locale, slug)
   const available = translationLocale ? [locale, translationLocale] : [locale]
 
@@ -197,8 +195,6 @@ async function BlogPostContent({
           </div>
         </article>
 
-        {/* As on the home page, the counts are fetched in the browser: this
-            component is cached, so anything rendered here would be frozen. */}
         <ViewCountsProvider slugs={related.map((p) => p.slug)}>
           <RelatedPosts
             locale={locale}
@@ -231,9 +227,6 @@ export default async function BlogPostPage({
     notFound()
   }
 
-  // The wrapper sits outside the Suspense boundary on purpose: if it were
-  // inside, a destination that streams its fallback first would commit
-  // without it and the enter would never pair with the navigation.
   return (
     <PageTransition>
       <Suspense fallback={<BlogPostSkeleton />}>

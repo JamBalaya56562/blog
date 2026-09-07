@@ -2,11 +2,6 @@
 
 import { useEffect, useState } from "react"
 
-/**
- * Sticky scroll-progress bar shown at the top of post pages.
- * Spans cyan → amber gradient. Hidden under reduced-motion via globals.css
- * (the bar still renders, but no animation flicker).
- */
 export function ScrollProgress() {
   const [progress, setProgress] = useState(0)
 

@@ -40,10 +40,6 @@ const notoSansJp = Noto_Sans_JP({
   weight: ["300", "400", "500", "700", "900"],
 })
 
-// Japanese-glyph fallback for the monospace stack. JetBrains Mono has no JP
-// glyphs, so without this Windows falls through to MS Gothic which looks
-// cheap next to the cyberpunk HUD. M PLUS 1 Code is a clean modern mono
-// designed to harmonise with Latin coding fonts.
 const mPlus1Code = M_PLUS_1_Code({
   subsets: ["latin"],
   variable: "--font-jp-mono-loaded",
@@ -52,9 +48,6 @@ const mPlus1Code = M_PLUS_1_Code({
 
 export const metadata: Metadata = {
   description: "A blog about web development, built with Next.js and MDX.",
-  // Resolves the relative `openGraph.images` paths the post pages hand back.
-  // Without it Next falls back to `http://localhost:3000`, so every share
-  // card in production pointed at an image nobody else can fetch.
   metadataBase: SITE_URL,
   title: {
     default: "Jam's Blog",
@@ -116,10 +109,6 @@ export default async function LocaleLayout({
 
   const dictionary = getDictionary(locale)
   const tickerItems = await getMarqueeItems(locale, dictionary)
-
-  // next/font css variables are attached to <html> so that the blog font
-  // tokens defined in :root (which reference these variables) can resolve
-  // at the :root level itself instead of only inside <body>.
   const fontVars = `${jetbrainsMono.variable} ${orbitron.variable} ${notoSansJp.variable} ${mPlus1Code.variable}`
 
   return (
