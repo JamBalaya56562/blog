@@ -56,7 +56,8 @@
     "closeMenu": "Close menu",
     "home": "Home",
     "openMenu": "Open menu",
-    "scrollToTop": "Scroll to top"
+    "scrollToTop": "Scroll to top",
+    "skipToContent": "Skip to content"
   },
   "portfolio": {
     "bioText1": "I started my journey in a terminal window, tinkering with scripts and falling in love with the craft of building software. Over the years, that curiosity evolved into a career spanning full-stack development, open-source contribution, and technical writing.",

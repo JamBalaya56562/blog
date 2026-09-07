@@ -19,6 +19,7 @@ describe("localeAlternates", () => {
     expect(localeAlternates("en", "/blog").languages).toEqual({
       en: "https://kokohore56562wanwan.site/en/blog",
       ja: "https://kokohore56562wanwan.site/ja/blog",
+      "x-default": "https://kokohore56562wanwan.site/blog",
     })
   })
 
@@ -31,8 +32,38 @@ describe("localeAlternates", () => {
 
     expect(alternates.languages).toEqual({
       en: "https://kokohore56562wanwan.site/en/blog/only-english",
+      "x-default": "https://kokohore56562wanwan.site/blog/only-english",
     })
     expect(alternates.languages).not.toHaveProperty("ja")
+  })
+
+  // `x-default` is where a crawler sends a reader whose language matches
+  // neither locale. The prefix-less path is right for it because `proxy.ts`
+  // redirects it — /blog goes to /en/blog.
+  test("x-default points at the prefix-less path", () => {
+    const languages = localeAlternates("ja", "/portfolio").languages
+    expect(languages["x-default"]).toBe(
+      "https://kokohore56562wanwan.site/portfolio",
+    )
+  })
+
+  test("the locale root's x-default is the site root, not an empty path", () => {
+    expect(localeAlternates("en", "").languages["x-default"]).toBe(
+      "https://kokohore56562wanwan.site/",
+    )
+  })
+
+  // `proxy.ts` sends the prefix-less path to the default locale, so a post
+  // that does not exist in that locale would have x-default land on a 404.
+  test("a page missing from the default locale advertises no x-default", () => {
+    const languages = localeAlternates("ja", "/blog/only-japanese", [
+      "ja",
+    ]).languages
+
+    expect(languages).not.toHaveProperty("x-default")
+    expect(languages).toEqual({
+      ja: "https://kokohore56562wanwan.site/ja/blog/only-japanese",
+    })
   })
 
   test("the site origin has no trailing path to double up separators", () => {
