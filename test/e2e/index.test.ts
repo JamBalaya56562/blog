@@ -158,8 +158,24 @@ test.describe("404", () => {
     // served with HTTP 200 and the not-found UI streams in. Assert the
     // rendered content instead of relying on the response status.
     await page.goto("/en/blog/non-existent-post")
-    await expect(page.getByText("This page could not be found")).toBeVisible()
+    await expect(page.getByText("SIGNAL LOST")).toBeVisible()
   })
+
+  // A dead end with no way out is the failure mode worth guarding: both
+  // routes back have to be there, in whichever locale the reader landed in.
+  for (const { locale, home, blog } of [
+    { blog: "Blog", home: "RETURN TO HOME", locale: "en" },
+    { blog: "ブログ", home: "ホームへ", locale: "ja" },
+  ]) {
+    test(`offers both ways back in ${locale}`, async ({ page }) => {
+      await page.goto(`/${locale}/blog/non-existent-post`)
+      const body = page.locator("main")
+      await expect(body.getByRole("link", { name: home })).toBeVisible()
+      await expect(
+        body.getByRole("link", { exact: true, name: blog }),
+      ).toBeVisible()
+    })
+  }
 
   test("returns 404 for invalid locale", async ({ page }) => {
     // Unknown locale is rewritten to /en/{locale} by the proxy, which
