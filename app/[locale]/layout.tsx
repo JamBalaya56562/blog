@@ -1,6 +1,6 @@
 "use cache"
 
-import type { Metadata } from "next"
+import type { Metadata, Viewport } from "next"
 import {
   JetBrains_Mono,
   M_PLUS_1_Code,
@@ -19,6 +19,7 @@ import { createContentLoader } from "@/lib/content/loader"
 import { isValidLocale, type Locale, locales } from "@/lib/i18n/config"
 import { type Dictionary, getDictionary } from "@/lib/i18n/get-dictionary"
 import { SITE_URL } from "@/lib/site"
+import { THEME_BACKGROUND } from "@/lib/theme/colors"
 import { ThemeProvider } from "@/lib/theme/theme-provider"
 import "@/app/globals.css"
 
@@ -45,6 +46,13 @@ const mPlus1Code = M_PLUS_1_Code({
   variable: "--font-jp-mono-loaded",
   weight: ["400", "500", "700"],
 })
+
+export const viewport: Viewport = {
+  themeColor: [
+    { color: THEME_BACKGROUND.light, media: "(prefers-color-scheme: light)" },
+    { color: THEME_BACKGROUND.dark, media: "(prefers-color-scheme: dark)" },
+  ],
+}
 
 export const metadata: Metadata = {
   description: "A blog about web development, built with Next.js and MDX.",
