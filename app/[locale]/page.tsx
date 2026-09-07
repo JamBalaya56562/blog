@@ -10,7 +10,7 @@ import { createContentLoader } from "@/lib/content/loader"
 import type { Locale } from "@/lib/i18n/config"
 import { isValidLocale } from "@/lib/i18n/config"
 import { getDictionary } from "@/lib/i18n/get-dictionary"
-import { localeAlternatesMetadata } from "@/lib/metadata"
+import { localePageMetadata } from "@/lib/metadata"
 
 async function HomeBody({ locale }: { locale: Locale }) {
   "use cache"
@@ -54,7 +54,7 @@ async function HomeBody({ locale }: { locale: Locale }) {
   )
 }
 
-export const generateMetadata = localeAlternatesMetadata("")
+export const generateMetadata = localePageMetadata("")
 
 export default async function HomePage({
   params,

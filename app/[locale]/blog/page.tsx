@@ -19,7 +19,7 @@ import { getAllViewCounts, getViewCounts } from "@/lib/db/queries"
 import type { Locale } from "@/lib/i18n/config"
 import { isValidLocale } from "@/lib/i18n/config"
 import { getDictionary } from "@/lib/i18n/get-dictionary"
-import { localeAlternatesMetadata } from "@/lib/metadata"
+import { localePageMetadata } from "@/lib/metadata"
 import { POSTS_PER_PAGE, paginate } from "@/lib/pagination"
 
 async function getCachedPosts(locale: Locale) {
@@ -210,7 +210,7 @@ async function BlogListContent({
   )
 }
 
-export const generateMetadata = localeAlternatesMetadata("/blog")
+export const generateMetadata = localePageMetadata("/blog", (d) => d.blog.title)
 
 export default async function BlogListPage({
   params,
