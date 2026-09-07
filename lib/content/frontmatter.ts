@@ -1,4 +1,4 @@
-import { parse, stringify } from "yaml"
+import { parse } from "yaml"
 import type { Frontmatter } from "./types"
 
 const REQUIRED_FIELDS = ["title", "date", "description", "tags"] as const
@@ -50,8 +50,4 @@ export function parseFrontmatter(raw: string): {
   }
   const parsed = parse(match[1])
   return { content: match[2].trim(), frontmatter: validateFrontmatter(parsed) }
-}
-
-export function serializeFrontmatter(fm: Frontmatter): string {
-  return `---\n${stringify(fm).trim()}\n---`
 }

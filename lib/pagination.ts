@@ -1,10 +1,10 @@
-export interface PaginationResult<T> {
+interface PaginationResult<T> {
   items: T[]
   currentPage: number
   totalPages: number
 }
 
-export type PageItem = { type: "page"; page: number } | { type: "ellipsis" }
+type PageItem = { type: "page"; page: number } | { type: "ellipsis" }
 
 export const POSTS_PER_PAGE = 6
 

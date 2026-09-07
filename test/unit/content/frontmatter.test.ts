@@ -1,11 +1,18 @@
 import { describe, expect, test } from "bun:test"
 import fc from "fast-check"
+import { stringify } from "yaml"
 import {
   parseFrontmatter,
-  serializeFrontmatter,
   validateFrontmatter,
 } from "@/lib/content/frontmatter"
 import type { Frontmatter } from "@/lib/content/types"
+
+// The generator half of the round-trip property below. It lived in
+// `lib/content/frontmatter` but nothing in the app ever wrote frontmatter, so
+// it only existed to be the inverse of `parseFrontmatter` here.
+function serializeFrontmatter(fm: Frontmatter): string {
+  return `---\n${stringify(fm).trim()}\n---`
+}
 
 const dateArb = fc
   .integer({ max: 2099, min: 2000 })
