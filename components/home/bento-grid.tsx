@@ -33,10 +33,6 @@ export function BentoGrid({
 
   return (
     <section className="mx-auto max-w-7xl px-7 py-12">
-      {/* Section header. On mobile we show only the compact `◢ PICKS` /
-          `N ENTRIES` pair pinned to the row's outer edges — the long
-          `featuredTitle` ("RECENT EXPERIMENTS") and the divider line
-          would otherwise overflow narrow viewports. */}
       <div className="mb-6 flex items-baseline justify-between gap-4 sm:justify-start">
         <span className="pp-tick">◢ PICKS</span>
         <span className="pp-display hidden text-lg tracking-[0.04em] text-foreground sm:block sm:text-xl">

@@ -14,16 +14,6 @@ interface HeroSectionProps {
   readonly latestDate?: string
 }
 
-/**
- * Minimal hero — big typography + a small HUD strip beneath, fed by real
- * blog metrics (post count, tag count, latest publication date, total
- * estimated reading time). No fictional sci-fi counters.
- *
- * The all-caps HUD labels are hardcoded English on purpose — they are part
- * of the cyberpunk visual signature (uppercase mono typography), like a
- * Japanese sci-fi game UI. The translatable text (top tick + section titles
- * + body copy) flows through `dictionary`.
- */
 export function HeroSection({
   locale,
   dictionary,
@@ -31,14 +21,10 @@ export function HeroSection({
   tagCount,
   latestDate,
 }: Readonly<HeroSectionProps>) {
-  // Both lines share one size, taken from whichever is wider, so the headline
-  // reads as a single block. `.pp-hero-line` divides the container width by
-  // this to land on a size that always fits on one line.
   const headlineEm = Math.max(
     estimateHeadlineEm(dictionary.home.title),
     estimateHeadlineEm(dictionary.home.titleAccent),
   )
-  // Governs the size below the breakpoint, where the line is allowed to wrap.
   const headlineWordEm = Math.max(
     estimateLongestWordEm(dictionary.home.title),
     estimateLongestWordEm(dictionary.home.titleAccent),
@@ -67,11 +53,6 @@ export function HeroSection({
         </span>
       </h1>
 
-      {/* Wide enough for the longest subtitle to hold one line. In English it
-          needs 672px; the previous 36rem cap wrapped it even on a 1440px
-          screen. Japanese was never affected, since full-width characters put
-          the same sentence at 451px. Narrow screens are bounded by the section
-          padding long before this cap, so they still wrap. */}
       <p className="mt-8 max-w-3xl font-mono text-sm leading-[1.8] text-cyber-dim">
         <span className="mr-1 text-cyber-cyan">&gt;</span>
         {dictionary.home.subtitle}
@@ -97,9 +78,6 @@ export function HeroSection({
         </Link>
       </div>
 
-      {/* HUD readout strip — real blog metrics, no fictional values.
-          Mobile: 2-up POSTS|TAGS, then LATEST as a full-width row beneath
-          (compact, no horizontal overflow on the date). Desktop: 3-up. */}
       <div className="mt-14 grid grid-cols-2 gap-0 border-t border-cyber-line md:grid-cols-3">
         <HudCell
           label="POSTS"
@@ -149,8 +127,6 @@ function HudCell({
   readonly value: React.ReactNode
   readonly sub: string
   readonly dotColor: "lime" | "amber"
-  /** Per-cell border / span classes; the parent grid decides which edges
-   *  each cell needs at each breakpoint. */
   readonly wrapperClass?: string
 }) {
   const dotClass = dotColor === "lime" ? "bg-cyber-lime" : "bg-cyber-amber"

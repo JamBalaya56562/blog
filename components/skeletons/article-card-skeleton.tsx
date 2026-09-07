@@ -5,11 +5,6 @@ interface ArticleCardSkeletonProps {
   readonly isLarge?: boolean
 }
 
-/**
- * Loading placeholder that mirrors the live `ArticleCard`: cyber-line
- * border, corner brackets, aspect-video thumbnail, padded body, and the
- * thin gradient bar at the foot of the card.
- */
 export function ArticleCardSkeleton({
   isLarge = false,
 }: ArticleCardSkeletonProps) {
@@ -38,7 +33,6 @@ export function ArticleCardSkeleton({
           </div>
         </div>
       </div>
-      {/* popularity bar placeholder */}
       <div className="h-1 bg-cyber-line" />
     </div>
   )

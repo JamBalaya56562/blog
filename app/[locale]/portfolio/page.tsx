@@ -32,11 +32,6 @@ const skills = [
   "Go",
 ]
 
-/**
- * The contribution given the wide card at the head of the grid. Mise is the
- * one with by far the most merged work, so it leads and the rest follow in
- * descending order.
- */
 const featuredContribution = {
   descriptionKey: "miseDescription" as const,
   Icon: Wrench,
@@ -45,11 +40,6 @@ const featuredContribution = {
   url: "https://github.com/jdx/mise",
 }
 
-/**
- * Per-OSS visual identity. The cyber frame (border + brackets) stays
- * consistent across all cards; the accent color tints the icon, the
- * background wash, and the giant watermark icon in the corner.
- */
 const ossContributions = [
   {
     accent: "text-sky-400",
@@ -151,7 +141,6 @@ export default async function PortfolioPage({
   return (
     <PageTransition>
       <div className="relative mx-auto max-w-7xl px-7 py-12">
-        {/* Header */}
         <h1 className="pp-display text-5xl text-foreground sm:text-6xl">
           ABOUT<span className="text-cyber-cyan">.</span>
         </h1>
@@ -162,9 +151,7 @@ export default async function PortfolioPage({
           </span>
         </p>
 
-        {/* ID card + bio */}
         <div className="mt-10 grid grid-cols-1 gap-8 lg:grid-cols-12">
-          {/* Left — operator portrait */}
           <aside className="lg:col-span-4">
             <div className="relative border border-cyber-line bg-cyber-bg-1/50 p-5">
               <Brackets />
@@ -195,7 +182,6 @@ export default async function PortfolioPage({
               </div>
             </div>
 
-            {/* Quick connectivity */}
             <div className="mt-6 border border-cyber-line bg-cyber-bg-1/50 p-5">
               <div className="pp-tick mb-4 text-cyber-cyan">◢ CONNECTIVITY</div>
               <h3 className="pp-display mb-4 text-base text-foreground">
@@ -240,7 +226,6 @@ export default async function PortfolioPage({
             </div>
           </aside>
 
-          {/* Right — bio & tech stack */}
           <div className="lg:col-span-8 space-y-12">
             <section>
               <div className="pp-tick mb-3 text-cyber-cyan">◢ BIOGRAPHY</div>
@@ -277,7 +262,6 @@ export default async function PortfolioPage({
           </div>
         </div>
 
-        {/* Deployment log / projects */}
         <section className="mt-16">
           <div className="mb-6 flex flex-wrap items-baseline gap-4">
             <span className="pp-tick">◢ DEPLOYMENT_LOG</span>
@@ -341,15 +325,11 @@ export default async function PortfolioPage({
                 className={`pp-card-hover group relative flex flex-col overflow-hidden border border-cyber-line p-5 ${oss.bg} ${oss.glow}`}
               >
                 <Brackets />
-                {/* Faded icon watermark. Kept small and tucked into the corner
-                    so it never sits behind the description. */}
                 <oss.Icon
                   aria-hidden
                   className={`pointer-events-none absolute -bottom-4 -right-4 h-20 w-20 opacity-10 transition-opacity duration-300 group-hover:opacity-25 ${oss.accent}`}
                 />
                 <div className="relative flex flex-1 flex-col">
-                  {/* Icon, label and name share one row; the merged count sits
-                      at the far end as a HUD readout. */}
                   <div className="flex items-start gap-3">
                     <span
                       className={`inline-flex h-9 w-9 shrink-0 items-center justify-center border border-cyber-line ${oss.accent} ${oss.bg}`}
@@ -360,9 +340,6 @@ export default async function PortfolioPage({
                       <span className="pp-tick block text-cyber-amber/80">
                         ◢ OSS
                       </span>
-                      {/* Wraps rather than truncates: `docker-maven-plugin`
-                          overran the row by a few pixels, and a name is not
-                          worth hiding to save one line. */}
                       <span className="pp-display mt-0.5 block break-words text-lg text-foreground">
                         {oss.name}
                       </span>
@@ -382,7 +359,6 @@ export default async function PortfolioPage({
               </a>
             ))}
 
-            {/* Collaborate CTA */}
             <div className="relative border border-cyber-amber/60 bg-cyber-amber/5 p-6 md:col-span-3">
               <Brackets color="amber" />
               <div className="flex flex-col items-start gap-5 md:flex-row md:items-center md:justify-between">

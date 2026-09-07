@@ -10,17 +10,6 @@ import { getBlogPostPath } from "@/lib/routes"
 
 export const DEFAULT_THUMBNAIL = "/thumbnail_default.png"
 
-/**
- * Names an element so it can morph into its counterpart on the destination
- * page, or renders it plainly when `enabled` is false.
- *
- * The opt-out exists for cards that sit on a post page. A name only pairs
- * when the same name exists on both sides, so a related-dispatch card naming
- * the post you are about to open pairs with that post's hero — and the hero
- * then flies in from the card's position at the foot of the page. Measured on
- * a previous/next navigation that was a 352px drop with a 3.5x scale, which
- * buries the directional slide the navigation is supposed to read as.
- */
 function Morph({
   name,
   enabled,
@@ -50,17 +39,7 @@ interface ArticleCardProps {
   readonly isLarge?: boolean
   readonly viewCount?: number
   readonly index?: number
-  /**
-   * Maximum view count among the cards in the same group, used to render the
-   * popularity bar. Defaults to a reasonable floor so the bar is never empty.
-   */
   readonly viewMax?: number
-  /**
-   * Whether this card's image, title and date may morph into the post page.
-   * On by default — it is what makes a card grow into the article you just
-   * opened. Turn it off for cards rendered *on* a post page, where the name
-   * would pair with that page's own hero.
-   */
   readonly morph?: boolean
 }
 
@@ -79,10 +58,6 @@ export function ArticleCard({
   const category = post.frontmatter.tags[0]?.toUpperCase() ?? "DISPATCH"
 
   return (
-    // `self-start` keeps the card at its own content height. Grid items stretch
-    // to the tallest card in the row by default, which left the popularity bar
-    // stranded mid-card on the shorter ones, with empty space and a border
-    // below it. The bar marks the bottom edge, so the edge has to meet it.
     <Link
       href={getBlogPostPath(locale, post.slug)}
       transitionTypes={["nav-forward"]}
@@ -113,11 +88,6 @@ export function ArticleCard({
             NO.{numberLabel}
           </span>
         )}
-        {/* Scan-line: a 1px cyan beam that sweeps top-to-bottom across the
-            thumbnail while the card is hovered. Uses the shared `ppSweep`
-            keyframe (top: -200px → 100%). `.pp-card-sweep` carries the
-            appearance and is the hook the reduced-motion block in
-            globals.css switches the animation off through. */}
         <span
           aria-hidden
           className="pp-card-sweep group-hover:opacity-100 group-hover:[animation:ppSweep_1.2s_linear_infinite]"
@@ -161,10 +131,6 @@ export function ArticleCard({
         </Morph>
       </div>
 
-      {/* Colourful popularity bar at the foot of the card. The base width
-          tracks each post's view count (relative to the group max), and on
-          hover it grows out to ~88% as a visual flourish — the gradient
-          sweeps cyan → amber → magenta with a glowing white tip. */}
       <div className="pp-bar">
         <PopularityBar
           slug={post.slug}

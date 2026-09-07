@@ -1,17 +1,13 @@
-/** ページネーション計算結果 */
 export interface PaginationResult<T> {
   items: T[]
   currentPage: number
   totalPages: number
 }
 
-/** ページ番号表示用の要素 */
 export type PageItem = { type: "page"; page: number } | { type: "ellipsis" }
 
-/** 1ページあたりの表示件数 */
 export const POSTS_PER_PAGE = 6
 
-/** 配列をページネーションする */
 export function paginate<T>(
   items: T[],
   page: number,
@@ -28,7 +24,6 @@ export function paginate<T>(
   }
 }
 
-/** ページ番号の表示リストを生成する（省略記号含む） */
 export function generatePageNumbers(
   currentPage: number,
   totalPages: number,

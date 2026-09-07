@@ -1,9 +1,5 @@
 type BracketsColor = "cyan" | "amber" | "magenta"
 
-/**
- * Renders 4 corner brackets inside a relatively-positioned parent.
- * Mirrors the PSYCHO-PASS HUD brackets in the mock.
- */
 export function Brackets({
   color = "cyan",
 }: {

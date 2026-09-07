@@ -25,24 +25,6 @@ interface BlogListRowProps {
 
 const DESKTOP_QUERY = "(min-width: 640px)"
 
-/**
- * Render exactly one of two layouts depending on viewport width:
- *   - mobile (< sm): the bento-style `ArticleCard` (image on top, body below)
- *   - sm+: a numbered horizontal row with thumbnail / title / view stats
- *
- * Both layouts wire `<ViewTransition>` to the same `post-image-${slug}` /
- * `post-title-${slug}` names so the morph to the post-detail page works on
- * either breakpoint. We can't ship both layouts in the SSR'd DOM at once
- * (React rejects duplicate ViewTransition names even when one branch is
- * `display: none`) — so this component picks one *exclusively* on the
- * client based on `matchMedia`.
- *
- * Hydration story: SSR + the very first client render always emit the
- * mobile card. After mount, a `useEffect` reads the actual viewport and
- * may swap to the desktop row on a single re-render. Desktop users see a
- * brief layout change on initial load — the price for keeping the
- * markup duplication-free.
- */
 export function BlogListRow({
   post,
   locale,

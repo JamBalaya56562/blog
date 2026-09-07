@@ -9,22 +9,6 @@ function headingId(props: React.HTMLAttributes<HTMLHeadingElement>) {
   return generateId(extractText(props.children))
 }
 
-/**
- * MDX element overrides.
- *
- * Ownership is split with `.prose-cyber` (app/globals.css) by property, not by
- * element: whatever `.prose-cyber` declares for an element belongs to the
- * stylesheet, and everything else belongs here. So the stylesheet owns the
- * theme-driven look — colours, borders, the h2/h3 type scale, table and code
- * padding — while these overrides still supply per-element block spacing
- * (`my-4`, `my-1`), list markers, and the h1/h4 sizes the stylesheet leaves
- * unset.
- *
- * Do not re-state a property `.prose-cyber` already declares: `.prose-cyber`
- * sits in `@layer components`, so a utility written here outranks it and
- * silently wins. `a` and `td` are fully covered by the stylesheet, which is
- * why they have no override at all.
- */
 const components: MDXComponents = {
   blockquote: (props) => <blockquote className="my-4" {...props} />,
   code: (props) => <code className="rounded" {...props} />,

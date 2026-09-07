@@ -73,10 +73,6 @@ export function SearchInput({
         onChange={handleChange}
         placeholder={placeholder}
         className="pp-input w-full"
-        // Inline padding-left wins over .pp-input's `padding: 10px 14px`
-        // (Tailwind's `pl-*` utility lives in @layer utilities and loses to
-        // the unlayered .pp-input shorthand). Hardcoding here guarantees
-        // the typed text never overlaps the leading ◢ glyph.
         style={{ paddingLeft: "2.25rem" }}
       />
     </div>

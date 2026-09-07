@@ -55,11 +55,6 @@ async function BlogListContent({
   }
 
   if (sort === "popular") {
-    // Deliberately uncached. Caching the counts froze the order, so sorting
-    // by views returned whatever ranking happened to be current when the
-    // entry was written — the one thing this sort exists to get right. This
-    // component is already dynamic (it reads `searchParams`), so reading
-    // them live costs one query on the requests that ask for this order.
     const allViews = await getAllViewCounts()
     const allViewsMap = new Map(allViews.map((v) => [v.slug, v.count]))
     posts = sortPostsByViews(posts, allViewsMap)
@@ -74,12 +69,8 @@ async function BlogListContent({
 
   const viewCounts = await getViewCounts(items.map((p) => p.slug))
 
-  // Highest view count on this page — used to scale each ArticleCard's
-  // popularity bar relatively. Floors at 100 so a fresh blog with no
-  // recorded views still renders a non-empty bar.
   const pageViewMax = Math.max(100, ...Array.from(viewCounts.values()))
 
-  // Tag chips: top tags by frequency across all posts
   const tagCounts = new Map<string, number>()
   for (const p of allPosts) {
     for (const t of p.frontmatter.tags) {
@@ -135,7 +126,6 @@ async function BlogListContent({
         </Suspense>
       </div>
 
-      {/* Tag chips */}
       <div className="mt-5 flex flex-wrap gap-1.5">
         <Link
           href={`/${locale}/blog` as Route}
@@ -181,10 +171,6 @@ async function BlogListContent({
         </p>
       ) : (
         <>
-          {/* Each row picks ONE layout (mobile card or desktop numbered
-              row) on the client based on `matchMedia` so we never ship
-              duplicate `view-transition-name`s in the same tree. SSR
-              defaults to the mobile card. */}
           <ul className="mt-8 flex flex-col gap-4 sm:gap-0">
             {items.map((post, i) => {
               const absIndex = (currentPage - 1) * POSTS_PER_PAGE + i

@@ -2,11 +2,6 @@ interface SkeletonProps {
   readonly className?: string
 }
 
-/**
- * Cyber-themed shimmer block. Uses `--cyber-bg-1` ↔ `--cyber-line` so it
- * matches the panel/border palette of the rest of the redesign instead
- * of the legacy Material 3 surface tones.
- */
 export function Skeleton({ className = "" }: SkeletonProps) {
   return (
     <div

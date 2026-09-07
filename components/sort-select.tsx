@@ -12,9 +12,6 @@ interface SortSelectProps {
   readonly basePath: string
 }
 
-/**
- * Tab-style sort switch (newest / most-viewed) — replaces the old <select>.
- */
 export function SortSelect({ labels, basePath }: SortSelectProps) {
   const router = useRouter()
   const searchParams = useSearchParams()

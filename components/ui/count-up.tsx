@@ -2,14 +2,6 @@
 
 import { useEffect, useRef, useState } from "react"
 
-/**
- * Animates a number up to `target` once it scrolls into view.
- * Falls back to the static target value if reduced motion is preferred.
- *
- * Format spec is serializable so this can be invoked from server components:
- *   - `padTo`: zero-pad the integer to N digits (e.g. padTo=4 → "0042")
- *   - default: locale-formatted integer with thousands separators
- */
 export function CountUp({
   target,
   durationMs = 1400,

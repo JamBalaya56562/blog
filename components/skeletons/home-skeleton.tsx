@@ -1,7 +1,6 @@
 import { ArticleCardSkeleton } from "@/components/skeletons/article-card-skeleton"
 import { Skeleton } from "@/components/skeletons/skeleton-primitives"
 
-/** Hero section placeholder — large headline + subtitle + CTA + HUD strip. */
 function HeroSkeleton() {
   return (
     <section className="relative overflow-hidden px-7 pb-12 pt-16 sm:pt-24">
@@ -15,7 +14,6 @@ function HeroSkeleton() {
         <Skeleton className="h-10 w-44" />
         <Skeleton className="h-10 w-36" />
       </div>
-      {/* HUD strip mirror */}
       <div className="mt-14 grid grid-cols-2 gap-0 border-t border-cyber-line md:grid-cols-3">
         <div className="border-b border-r border-cyber-line p-5 md:border-b-0">
           <Skeleton className="h-2 w-16" />
@@ -37,7 +35,6 @@ function HeroSkeleton() {
   )
 }
 
-/** Bento (PICKS) section. */
 function BentoGridSkeleton() {
   return (
     <section className="mx-auto max-w-7xl px-7 py-12">
@@ -59,7 +56,6 @@ function BentoGridSkeleton() {
   )
 }
 
-/** Recent dispatches numbered row list. */
 function RecentDispatchesSkeleton() {
   return (
     <section className="mx-auto max-w-7xl px-7 py-16">

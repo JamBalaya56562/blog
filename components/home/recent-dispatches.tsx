@@ -94,7 +94,6 @@ export function RecentDispatches({
                     {dictionary.home.readDispatch} →
                   </div>
                 </div>
-                {/* hover indicator bar */}
                 <span
                   aria-hidden
                   className="pointer-events-none absolute inset-y-0 left-0 w-0.5 bg-cyber-cyan opacity-0 shadow-[0_0_8px_var(--cyber-cyan)] transition-opacity group-hover:opacity-100"

@@ -37,9 +37,6 @@ export function Header({ locale, dictionary, tickerItems }: HeaderProps) {
           />
         </Link>
 
-        {/* Desktop nav. The site logo on the left already routes back to
-            the home page, so a separate "Home" entry would be redundant —
-            we surface only Blog and About. */}
         <div className="hidden items-center gap-1 md:flex">
           <NavTab
             href={`/${locale}/blog` as Route}
@@ -60,7 +57,6 @@ export function Header({ locale, dictionary, tickerItems }: HeaderProps) {
           <ThemeToggle dictionary={dictionary} />
         </div>
 
-        {/* Mobile nav */}
         <div className="flex items-center md:hidden">
           <MobileMenu dictionary={dictionary}>
             <Link
@@ -110,11 +106,6 @@ function NavTab({
       href={href}
       className="group relative inline-flex items-center py-2 pr-3 pl-6 font-mono text-[11px] uppercase tracking-[0.2em] text-foreground transition-colors hover:text-cyber-cyan"
     >
-      {/* ◢ slides in from the left on hover. The 24px left padding is its
-          column: the glyph is 13.2px wide and settles at 4-17.2px, so the
-          label clears it by the width of one space in this font. Reserving
-          the room rather than sliding over the text mirrors `.pp-link`,
-          whose brackets are inline-block and always occupy their space. */}
       <span
         aria-hidden
         className="pointer-events-none absolute left-0 -translate-x-2 text-cyber-cyan opacity-0 transition-all duration-200 ease-out group-hover:translate-x-1 group-hover:opacity-100"
@@ -122,7 +113,6 @@ function NavTab({
         ◢
       </span>
       <span className="relative z-10">{label}</span>
-      {/* Underline grows from left on hover */}
       <span
         aria-hidden
         className="pointer-events-none absolute right-3 bottom-1 left-6 h-px origin-left scale-x-0 bg-cyber-cyan transition-transform duration-300 ease-out group-hover:scale-x-100"

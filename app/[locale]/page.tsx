@@ -38,9 +38,6 @@ async function HomeBody({ locale }: { locale: Locale }) {
         tagCount={tagSet.size}
         latestDate={posts[0]?.frontmatter.date}
       />
-      {/* The counts come from the browser. This component is cached, so a
-          server-rendered figure would be the one baked at build time and would
-          never move. */}
       <ViewCountsProvider slugs={bentoGridPosts.map((p) => p.slug)}>
         <BentoGrid
           locale={locale}
