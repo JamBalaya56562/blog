@@ -3,7 +3,7 @@ export function SplitText({
   delay = 0,
   stagger = 25,
   animation = "rise",
-  className,
+  className = "",
 }: {
   readonly text: string
   readonly delay?: number
@@ -17,7 +17,7 @@ export function SplitText({
   let charIndex = 0
 
   return (
-    <span className={className} style={{ display: "inline-block" }}>
+    <span className={`inline-block ${className}`}>
       {words.map((word, wordIndex) => {
         const chars = Array.from(word)
         const rendered = (
