@@ -59,6 +59,11 @@
     "scrollToTop": "Scroll to top",
     "skipToContent": "Skip to content"
   },
+  "notFound": {
+    "description": "THE ROUTE YOU REQUESTED IS NOT IN THE INDEX. NO DISPATCH IS REGISTERED AT THIS ADDRESS.",
+    "home": "RETURN TO HOME",
+    "signalLost": "SIGNAL LOST"
+  },
   "portfolio": {
     "bioText1": "I started my journey in a terminal window, tinkering with scripts and falling in love with the craft of building software. Over the years, that curiosity evolved into a career spanning full-stack development, open-source contribution, and technical writing.",
     "bioText2": "My philosophy for Jam Blog is simple: share what I learn, build tools that matter, and keep the code clean. Whether it's a deep dive into React Server Components or a quick tip on Bun, I write to help developers ship better software.",

@@ -977,3 +977,121 @@
   animation-duration: 300ms;
   animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 }
+
+/* ──────────────────────────────────────────────
+   404 — giant glitch type (append to app/globals.css)
+   The three layers share one glyph stack; the ghosts sit on top of the base
+   and only move during the glitch windows, so the type reads as solid most
+   of the time and tears for ~0.4s every cycle.
+   ──────────────────────────────────────────── */
+
+@layer components {
+  .pp-404 {
+    display: block;
+    font-family: var(--blog-font-headline);
+    font-weight: 900;
+    font-size: min(30vw, 290px);
+    line-height: 1;
+    letter-spacing: 0.02em;
+    /* Bleeds slightly past the container's left edge, like the hero. */
+    margin-left: -0.04em;
+  }
+  .pp-404-base {
+    position: relative;
+    color: var(--cyber-text);
+    animation: glitch404Base 4.5s steps(1, end) infinite;
+  }
+  .pp-404-ghost {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+  .pp-404-ghost-cyan {
+    color: var(--cyber-cyan);
+    animation: glitch404Cyan 4.5s steps(1, end) infinite;
+  }
+  .pp-404-ghost-red {
+    color: var(--cyber-red);
+    animation: glitch404Red 4.5s steps(1, end) infinite;
+  }
+  /* The shared .pp-scan-sweep runs at 6s; the 404 page wants it tighter. */
+  .pp-404-sweep {
+    animation-duration: 3.2s;
+    height: 170px;
+  }
+}
+
+@keyframes glitch404Base {
+  0%,
+  88%,
+  100% {
+    transform: translate(0, 0);
+    clip-path: inset(0 0 0 0);
+  }
+  90% {
+    transform: translate(-5px, 2px);
+    clip-path: inset(12% 0 46% 0);
+  }
+  93% {
+    transform: translate(4px, -3px);
+    clip-path: inset(58% 0 8% 0);
+  }
+  96% {
+    transform: translate(-2px, 1px);
+    clip-path: inset(30% 0 34% 0);
+  }
+}
+@keyframes glitch404Cyan {
+  0%,
+  86%,
+  100% {
+    transform: translate(-5px, 4px);
+    opacity: 0.32;
+  }
+  88% {
+    transform: translate(7px, -2px);
+    opacity: 0.75;
+  }
+  92% {
+    transform: translate(-13px, 7px);
+    opacity: 0.6;
+  }
+  97% {
+    transform: translate(3px, 0);
+    opacity: 0.4;
+  }
+}
+@keyframes glitch404Red {
+  0%,
+  84%,
+  100% {
+    transform: translate(5px, -4px);
+    opacity: 0.24;
+  }
+  89% {
+    transform: translate(-9px, 2px);
+    opacity: 0.6;
+  }
+  94% {
+    transform: translate(11px, -6px);
+    opacity: 0.45;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* Matches the existing block: keep the visuals, drop the motion. The
+     ghosts stay where their 0% frame puts them, so the type keeps its
+     chromatic offset without tearing. */
+  .pp-404-base,
+  .pp-404-ghost {
+    animation: none;
+  }
+  .pp-404-ghost-cyan {
+    transform: translate(-5px, 4px);
+    opacity: 0.32;
+  }
+  .pp-404-ghost-red {
+    transform: translate(5px, -4px);
+    opacity: 0.24;
+  }
+}
