@@ -1,16 +1,4 @@
-import {
-  Archive,
-  Building2,
-  Container,
-  ExternalLink,
-  GitBranch,
-  Heart,
-  MapPin,
-  Palette,
-  Rss,
-  Terminal,
-  Wrench,
-} from "lucide-react"
+import { ExternalLink, Heart, MapPin } from "lucide-react"
 import Image from "next/image"
 import { notFound } from "next/navigation"
 import { PageTransition } from "@/components/page-transition"
@@ -18,99 +6,7 @@ import { Brackets } from "@/components/ui/brackets"
 import { isValidLocale } from "@/lib/i18n/config"
 import { getDictionary } from "@/lib/i18n/get-dictionary"
 import { localePageMetadata } from "@/lib/metadata"
-
-const skills = [
-  "TypeScript",
-  "React",
-  "Next.js",
-  "Tailwind CSS",
-  "Bun",
-  "Biome",
-  "Docker",
-  "Rust",
-  "Go",
-]
-
-const featuredContribution = {
-  descriptionKey: "miseDescription" as const,
-  Icon: Wrench,
-  merged: 226,
-  name: "Mise",
-  url: "https://github.com/jdx/mise",
-}
-
-const ossContributions = [
-  {
-    accent: "text-sky-400",
-    bg: "bg-sky-500/10",
-    descriptionKey: "duplicatiDescription" as const,
-    glow: "shadow-[0_0_24px_-8px_rgb(56_189_248_/_0.6)]",
-    Icon: Archive,
-    merged: 119,
-    name: "Duplicati",
-    url: "https://github.com/duplicati/duplicati",
-  },
-  {
-    accent: "text-violet-400",
-    bg: "bg-violet-500/10",
-    descriptionKey: "ohMyPoshDescription" as const,
-    glow: "shadow-[0_0_24px_-8px_rgb(167_139_250_/_0.6)]",
-    Icon: Terminal,
-    merged: 62,
-    name: "Oh My Posh",
-    url: "https://github.com/JanDeDobbeleer/oh-my-posh",
-  },
-  {
-    accent: "text-cyan-400",
-    bg: "bg-cyan-500/10",
-    descriptionKey: "dockerMavenPluginDescription" as const,
-    glow: "shadow-[0_0_24px_-8px_rgb(34_211_238_/_0.6)]",
-    Icon: Container,
-    merged: 36,
-    name: "docker-maven-plugin",
-    url: "https://github.com/fabric8io/docker-maven-plugin",
-  },
-  {
-    accent: "text-emerald-400",
-    bg: "bg-emerald-500/10",
-    descriptionKey: "goGithubDescription" as const,
-    glow: "shadow-[0_0_24px_-8px_rgb(52_211_153_/_0.6)]",
-    Icon: GitBranch,
-    merged: 30,
-    name: "go-github",
-    url: "https://github.com/google/go-github",
-  },
-  {
-    accent: "text-rose-400",
-    bg: "bg-rose-500/10",
-    descriptionKey: "daisyuiDescription" as const,
-    glow: "shadow-[0_0_24px_-8px_rgb(251_113_133_/_0.6)]",
-    Icon: Palette,
-    merged: 26,
-    name: "daisyUI",
-    url: "https://github.com/saadeghi/daisyui",
-  },
-  {
-    accent: "text-amber-400",
-    bg: "bg-amber-500/10",
-    descriptionKey: "dolibarrDescription" as const,
-    glow: "shadow-[0_0_24px_-8px_rgb(251_191_36_/_0.6)]",
-    Icon: Building2,
-    merged: 25,
-    name: "Dolibarr",
-    url: "https://github.com/Dolibarr/dolibarr",
-  },
-  {
-    accent: "text-orange-400",
-    bg: "bg-orange-500/10",
-    descriptionKey: "freshrssDescription" as const,
-    glow: "shadow-[0_0_24px_-8px_rgb(251_146_60_/_0.6)]",
-    Icon: Rss,
-    merged: 16,
-    name: "FreshRSS",
-    url: "https://github.com/FreshRSS/FreshRSS",
-  },
-]
+import { featuredContribution, ossContributions, skills } from "@/lib/portfolio"
 
 export const generateMetadata = localePageMetadata("/portfolio", {
   description: (d) => d.portfolio.description,
