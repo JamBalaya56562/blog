@@ -70,3 +70,52 @@ test.describe("Page titles", () => {
     expect(new Set(titles).size).toBe(titles.length)
   })
 })
+
+/**
+ * Every one of these pages used to fall through to the layout's single
+ * `description`, so the Japanese pages advertised English text and all four
+ * looked like the same document to a crawler. Asserting the exact strings here
+ * would just restate the dictionaries, so this pins the properties that made
+ * the old state wrong: present, distinct, and in the page's own language.
+ */
+test.describe("Page descriptions", () => {
+  const LAYOUT_DEFAULT =
+    "A blog about web development, built with Next.js and MDX."
+  const paths = [
+    "/en",
+    "/ja",
+    "/en/blog",
+    "/ja/blog",
+    "/en/portfolio",
+    "/ja/portfolio",
+    "/en/privacy-policy",
+    "/ja/privacy-policy",
+  ]
+
+  for (const path of paths) {
+    test(`${path} carries its own description`, async ({ page }) => {
+      await page.goto(path)
+      const description = await page
+        .locator('meta[name="description"]')
+        .getAttribute("content")
+
+      expect(description).toBeTruthy()
+      expect(description).not.toBe(LAYOUT_DEFAULT)
+
+      // Kana or CJK: the Japanese pages must not be advertising English.
+      const hasJapanese = /[ぁ-ヿ一-鿿]/.test(description ?? "")
+      expect(hasJapanese).toBe(path.startsWith("/ja"))
+    })
+  }
+
+  test("no two pages share a description", async ({ page }) => {
+    const seen: (string | null)[] = []
+    for (const path of paths) {
+      await page.goto(path)
+      seen.push(
+        await page.locator('meta[name="description"]').getAttribute("content"),
+      )
+    }
+    expect(new Set(seen).size).toBe(seen.length)
+  })
+})

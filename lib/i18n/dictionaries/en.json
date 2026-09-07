@@ -2,6 +2,7 @@
   "blog": {
     "clearSearch": "Clear search",
     "continueExploring": "Continue Exploring",
+    "description": "Every dispatch from the blog — write-ups on TypeScript, Next.js, Tailwind CSS and the tools around them. Search, sort by date or views, and filter by tag.",
     "dispatchesMatch": "dispatches matching filter",
     "minRead": "MIN READ",
     "nextPage": "Next",
@@ -32,6 +33,7 @@
   },
   "home": {
     "ctaBrowse": "Browse All Articles",
+    "description": "Embracing new technologies and sharing modern development experiences — tips, tutorials, and real-world insights to make your coding journey smoother.",
     "entriesShort": "ENTRIES",
     "featuredTitle": "RECENT EXPERIMENTS",
     "readDispatch": "Read Dispatch",
@@ -61,6 +63,7 @@
     "collaborateCta": "Interested in collaborating?",
     "collaborateDescription": "I'm open to OSS collaboration and technical discussions.",
     "daisyuiDescription": "Component library for Tailwind CSS, built as pure class names.",
+    "description": "A full-stack developer and technical writer based in Japan, contributing to open-source projects including Mise, Duplicati, Oh My Posh and go-github.",
     "dockerMavenPluginDescription": "Builds and runs Docker images as part of a Maven build.",
     "dolibarrDescription": "Open-source ERP and CRM for small businesses.",
     "duplicatiDescription": "Encrypted, deduplicated backups to any cloud storage.",
@@ -96,6 +99,7 @@
   },
   "privacyPolicy": {
     "body": "We respect your privacy. This site does not collect personal information beyond what is necessary for basic functionality. We may use cookies to improve your browsing experience. By using this site, you agree to our use of cookies and our handling of any data as described herein.",
+    "description": "How this site handles your data: no personal information is collected beyond what basic functionality requires, and cookies may be used to improve browsing.",
     "title": "Privacy Policy"
   },
   "theme": {

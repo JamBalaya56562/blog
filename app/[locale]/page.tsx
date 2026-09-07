@@ -54,7 +54,9 @@ async function HomeBody({ locale }: { locale: Locale }) {
   )
 }
 
-export const generateMetadata = localePageMetadata("")
+export const generateMetadata = localePageMetadata("", {
+  description: (d) => d.home.description,
+})
 
 export default async function HomePage({
   params,

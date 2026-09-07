@@ -18,21 +18,27 @@ mock.module("next/navigation", () => ({
 // keeps the site-wide default, which is what the locale root wants.
 const pages = [
   {
+    description: (locale: Locale) => getDictionary(locale).home.description,
     path: "",
     specifier: "@/app/[locale]/page",
     title: () => undefined,
   },
   {
+    description: (locale: Locale) => getDictionary(locale).blog.description,
     path: "/blog",
     specifier: "@/app/[locale]/blog/page",
     title: (locale: Locale) => getDictionary(locale).blog.title,
   },
   {
+    description: (locale: Locale) =>
+      getDictionary(locale).portfolio.description,
     path: "/portfolio",
     specifier: "@/app/[locale]/portfolio/page",
     title: (locale: Locale) => getDictionary(locale).portfolio.title,
   },
   {
+    description: (locale: Locale) =>
+      getDictionary(locale).privacyPolicy.description,
     path: "/privacy-policy",
     specifier: "@/app/[locale]/privacy-policy/page",
     title: (locale: Locale) => getDictionary(locale).privacyPolicy.title,
@@ -42,7 +48,7 @@ const pages = [
 const locales: readonly Locale[] = ["en", "ja"]
 
 describe("locale page metadata", () => {
-  for (const { specifier, path, title } of pages) {
+  for (const { specifier, path, title, description } of pages) {
     // Next reads the export at runtime and only calls it when it is a
     // function, so a page that stopped exporting one would lose its hreflang
     // set silently rather than failing the build.
@@ -69,6 +75,14 @@ describe("locale page metadata", () => {
         })
         expect(metadata.title).toBe(title(locale))
       })
+
+      test(`${specifier} carries its ${locale} description`, async () => {
+        const mod = await import(specifier)
+        const metadata = await mod.generateMetadata({
+          params: Promise.resolve({ locale }),
+        })
+        expect(metadata.description).toBe(description(locale))
+      })
     }
   }
 
@@ -88,5 +102,37 @@ describe("locale page metadata", () => {
     )
     expect(new Set(titles).size).toBe(titles.length)
     expect(titles).not.toContain(undefined)
+  })
+})
+
+// Every page used to fall through to the layout's single English description,
+// so the Japanese pages advertised English text and all four looked identical
+// to a crawler.
+describe("locale page descriptions", () => {
+  test("no two pages share a description", async () => {
+    const seen: string[] = []
+    for (const { specifier } of pages) {
+      for (const locale of locales) {
+        const mod = await import(specifier)
+        const metadata = await mod.generateMetadata({
+          params: Promise.resolve({ locale }),
+        })
+        expect(metadata.description).toBeTruthy()
+        seen.push(metadata.description)
+      }
+    }
+    expect(new Set(seen).size).toBe(seen.length)
+  })
+
+  test("no description falls back to the layout's English default", async () => {
+    for (const { specifier } of pages) {
+      const mod = await import(specifier)
+      const metadata = await mod.generateMetadata({
+        params: Promise.resolve({ locale: "ja" }),
+      })
+      expect(metadata.description).not.toBe(
+        "A blog about web development, built with Next.js and MDX.",
+      )
+    }
   })
 })
