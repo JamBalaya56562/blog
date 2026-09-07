@@ -2,6 +2,8 @@ import { type Locale, locales } from "@/lib/i18n/config"
 
 export const SITE_URL = new URL("https://kokohore56562wanwan.site")
 
+export const SITE_AUTHOR = "Jam Balaya"
+
 export function feedPath(locale: Locale): string {
   return `/${locale}/feed.xml`
 }

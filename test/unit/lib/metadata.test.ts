@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test"
 import { getDictionary } from "@/lib/i18n/get-dictionary"
-import { localePageMetadata } from "@/lib/metadata"
+import { localePageMetadata, openGraphSite } from "@/lib/metadata"
 
 describe("localePageMetadata", () => {
   // Next resolves the export at runtime with `typeof mod.generateMetadata ===
@@ -131,5 +131,85 @@ describe("localePageMetadata descriptions", () => {
       params: Promise.resolve({ locale: "en" }),
     })
     expect(metadata.description).toBeUndefined()
+  })
+})
+
+type OgFields = {
+  type?: string
+  url?: string
+  siteName?: string
+  locale?: string
+  alternateLocale?: string[]
+  publishedTime?: string
+  authors?: unknown
+  tags?: unknown
+}
+
+function og(metadata: { openGraph?: unknown }): OgFields {
+  return (metadata.openGraph ?? {}) as OgFields
+}
+
+function canonicalOf(metadata: {
+  alternates?: { canonical?: unknown } | null
+}): string {
+  return String(metadata.alternates?.canonical)
+}
+
+describe("openGraph", () => {
+  // Without these the crawler sees a title and an image but no idea what kind
+  // of document it is, what its canonical address is, or what language it is
+  // in — which is the state every page shipped in until now.
+  test("a locale page declares itself a website with a URL and site name", async () => {
+    const generateMetadata = localePageMetadata("/blog", {
+      title: (d) => d.blog.title,
+    })
+    const metadata = await generateMetadata({
+      params: Promise.resolve({ locale: "ja" }),
+    })
+
+    expect(og(metadata).type).toBe("website")
+    expect(og(metadata).url).toBe("https://kokohore56562wanwan.site/ja/blog")
+    expect(og(metadata).siteName).toBe(getDictionary("ja").header.siteName)
+  })
+
+  // og:locale wants language_TERRITORY, not the bare "ja" the routes use.
+  test("locales are declared in the Open Graph format", async () => {
+    const generateMetadata = localePageMetadata("")
+    const ja = await generateMetadata({
+      params: Promise.resolve({ locale: "ja" }),
+    })
+    expect(og(ja).locale).toBe("ja_JP")
+    expect(og(ja).alternateLocale).toEqual(["en_US"])
+
+    const en = await generateMetadata({
+      params: Promise.resolve({ locale: "en" }),
+    })
+    expect(og(en).locale).toBe("en_US")
+    expect(og(en).alternateLocale).toEqual(["ja_JP"])
+  })
+
+  test("the Open Graph URL is the canonical URL", async () => {
+    const generateMetadata = localePageMetadata("/portfolio")
+    const metadata = await generateMetadata({
+      params: Promise.resolve({ locale: "en" }),
+    })
+    expect(og(metadata).url).toBe(canonicalOf(metadata))
+  })
+
+  test("an unknown locale still yields nothing at all", async () => {
+    const generateMetadata = localePageMetadata("/blog")
+    const metadata = await generateMetadata({
+      params: Promise.resolve({ locale: "fr" }),
+    })
+    expect(metadata).toEqual({})
+  })
+})
+
+describe("openGraphSite", () => {
+  test("it never lists the current locale as an alternate", () => {
+    for (const locale of ["en", "ja"] as const) {
+      const og = openGraphSite(locale, "https://example.test/x")
+      expect(og.alternateLocale).not.toContain(og.locale)
+    }
   })
 })

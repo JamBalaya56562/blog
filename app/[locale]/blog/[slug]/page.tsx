@@ -24,8 +24,9 @@ import { getViewCount } from "@/lib/db/queries"
 import type { Locale } from "@/lib/i18n/config"
 import { isValidLocale, locales } from "@/lib/i18n/config"
 import { getDictionary } from "@/lib/i18n/get-dictionary"
+import { openGraphSite } from "@/lib/metadata"
 import { getBlogPostPath } from "@/lib/routes"
-import { localeAlternates } from "@/lib/site"
+import { localeAlternates, SITE_AUTHOR } from "@/lib/site"
 import { extractToc } from "@/lib/toc"
 import { useMDXComponents } from "@/mdx-components"
 
@@ -80,13 +81,19 @@ export async function generateMetadata({
   }
   const translationLocale = await getTranslationPair(locale, slug)
   const available = translationLocale ? [locale, translationLocale] : [locale]
+  const alternates = localeAlternates(locale, `/blog/${slug}`, available)
 
   return {
-    alternates: localeAlternates(locale, `/blog/${slug}`, available),
+    alternates,
     description: post.frontmatter.description,
     openGraph: {
+      ...openGraphSite(locale, alternates.canonical),
+      authors: [SITE_AUTHOR],
       description: post.frontmatter.description,
+      publishedTime: new Date(post.frontmatter.date).toISOString(),
+      tags: post.frontmatter.tags,
       title: post.frontmatter.title,
+      type: "article",
     },
     title: post.frontmatter.title,
   }
