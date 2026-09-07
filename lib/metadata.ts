@@ -37,16 +37,19 @@ export function localePageMetadata(
     const title = text.title?.(dictionary)
     const description = text.description?.(dictionary)
 
+    const resolved = {
+      ...(title === undefined ? {} : { title }),
+      ...(description === undefined ? {} : { description }),
+    }
+
     return {
       alternates,
-      description,
+      ...resolved,
       openGraph: {
         ...openGraphSite(locale, alternates.canonical),
-        description,
-        title,
+        ...resolved,
         type: "website",
       },
-      title,
     }
   }
 }

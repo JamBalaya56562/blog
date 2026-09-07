@@ -76,13 +76,15 @@ describe("localePageMetadata", () => {
   })
 
   // Omitting the selector is how the locale root keeps the site-wide default
-  // rather than being retitled after its hero headline.
+  // rather than being retitled after its hero headline. The key has to be
+  // absent, not present-and-undefined: Next treats an explicit `undefined` as
+  // an override and the page ends up with an empty <title>.
   test("without a selector no title is set", async () => {
     const generateMetadata = localePageMetadata("")
     const metadata = await generateMetadata({
       params: Promise.resolve({ locale: "en" }),
     })
-    expect(metadata.title).toBeUndefined()
+    expect("title" in metadata).toBe(false)
   })
 })
 
@@ -121,7 +123,7 @@ describe("localePageMetadata descriptions", () => {
     const metadata = await generateMetadata({
       params: Promise.resolve({ locale: "en" }),
     })
-    expect(metadata.title).toBeUndefined()
+    expect("title" in metadata).toBe(false)
     expect(metadata.description).toBe(getDictionary("en").home.description)
   })
 
@@ -130,7 +132,7 @@ describe("localePageMetadata descriptions", () => {
     const metadata = await generateMetadata({
       params: Promise.resolve({ locale: "en" }),
     })
-    expect(metadata.description).toBeUndefined()
+    expect("description" in metadata).toBe(false)
   })
 })
 
