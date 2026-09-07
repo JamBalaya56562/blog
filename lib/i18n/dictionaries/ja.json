@@ -2,6 +2,7 @@
   "blog": {
     "clearSearch": "検索をクリア",
     "continueExploring": "他の記事を探す",
+    "description": "ブログ記事の一覧。TypeScript、Next.js、Tailwind CSS など Web 開発についての記事を、検索・日付順や閲覧数順の並び替え・タグで絞り込めます。",
     "dispatchesMatch": "件のディスパッチがフィルター条件に一致",
     "minRead": "MIN READ",
     "nextPage": "次へ",
@@ -32,6 +33,7 @@
   },
   "home": {
     "ctaBrowse": "すべての記事を見る",
+    "description": "新しい技術を積極的に取り入れて、モダンな開発体験を共有します。日々のコーディングがもっと楽しくなるヒントや知見をお届けします。",
     "entriesShort": "件",
     "featuredTitle": "RECENT EXPERIMENTS",
     "readDispatch": "ディスパッチを読む",
@@ -61,6 +63,7 @@
     "collaborateCta": "コラボレーションに興味がありますか？",
     "collaborateDescription": "OSSコラボレーションや技術的なディスカッションを歓迎します。",
     "daisyuiDescription": "クラス名だけで使える Tailwind CSS のコンポーネント集。",
+    "description": "日本在住のフルスタック開発者・テクニカルライター。Mise、Duplicati、Oh My Posh、go-github などのオープンソースプロジェクトに継続的に貢献しています。",
     "dockerMavenPluginDescription": "Maven のビルドから Docker イメージを構築・実行する。",
     "dolibarrDescription": "中小企業向けのオープンソース ERP・CRM。",
     "duplicatiDescription": "暗号化と重複排除に対応したクラウドバックアップ。",
@@ -96,6 +99,7 @@
   },
   "privacyPolicy": {
     "body": "当サイトはお客様のプライバシーを尊重いたします。基本的な機能に必要な範囲を超えて個人情報を収集することはありません。ブラウジング体験を向上させるためにCookieを使用する場合があります。当サイトをご利用いただくことで、Cookieの使用およびここに記載されたデータの取り扱いに同意したものとみなされます。",
+    "description": "当サイトにおけるデータの取り扱いについて。基本的な機能に必要な範囲を超えて個人情報を収集することはなく、Cookie はブラウジング体験の向上のために使用する場合があります。",
     "title": "プライバシーポリシー"
   },
   "theme": {

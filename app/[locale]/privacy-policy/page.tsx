@@ -4,10 +4,10 @@ import { isValidLocale } from "@/lib/i18n/config"
 import { getDictionary } from "@/lib/i18n/get-dictionary"
 import { localePageMetadata } from "@/lib/metadata"
 
-export const generateMetadata = localePageMetadata(
-  "/privacy-policy",
-  (d) => d.privacyPolicy.title,
-)
+export const generateMetadata = localePageMetadata("/privacy-policy", {
+  description: (d) => d.privacyPolicy.description,
+  title: (d) => d.privacyPolicy.title,
+})
 
 export default async function PrivacyPolicyPage({
   params,

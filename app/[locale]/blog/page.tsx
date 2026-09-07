@@ -210,7 +210,10 @@ async function BlogListContent({
   )
 }
 
-export const generateMetadata = localePageMetadata("/blog", (d) => d.blog.title)
+export const generateMetadata = localePageMetadata("/blog", {
+  description: (d) => d.blog.description,
+  title: (d) => d.blog.title,
+})
 
 export default async function BlogListPage({
   params,

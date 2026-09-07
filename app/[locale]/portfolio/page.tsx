@@ -112,10 +112,10 @@ const ossContributions = [
   },
 ]
 
-export const generateMetadata = localePageMetadata(
-  "/portfolio",
-  (d) => d.portfolio.title,
-)
+export const generateMetadata = localePageMetadata("/portfolio", {
+  description: (d) => d.portfolio.description,
+  title: (d) => d.portfolio.title,
+})
 
 export default async function PortfolioPage({
   params,

@@ -51,7 +51,9 @@ describe("localePageMetadata", () => {
   // The layout supplies `template: "%s | Jam's Blog"`, so the page hands back
   // its own segment only and Next composes the rest.
   test("resolves the title against the locale's dictionary", async () => {
-    const generateMetadata = localePageMetadata("/blog", (d) => d.blog.title)
+    const generateMetadata = localePageMetadata("/blog", {
+      title: (d) => d.blog.title,
+    })
     for (const locale of ["en", "ja"] as const) {
       const metadata = await generateMetadata({
         params: Promise.resolve({ locale }),
@@ -61,7 +63,9 @@ describe("localePageMetadata", () => {
   })
 
   test("the two locales get different titles", async () => {
-    const generateMetadata = localePageMetadata("/blog", (d) => d.blog.title)
+    const generateMetadata = localePageMetadata("/blog", {
+      title: (d) => d.blog.title,
+    })
     const en = await generateMetadata({
       params: Promise.resolve({ locale: "en" }),
     })
@@ -79,5 +83,53 @@ describe("localePageMetadata", () => {
       params: Promise.resolve({ locale: "en" }),
     })
     expect(metadata.title).toBeUndefined()
+  })
+})
+
+describe("localePageMetadata descriptions", () => {
+  test("resolves the description against the locale's dictionary", async () => {
+    const generateMetadata = localePageMetadata("/blog", {
+      description: (d) => d.blog.description,
+    })
+    for (const locale of ["en", "ja"] as const) {
+      const metadata = await generateMetadata({
+        params: Promise.resolve({ locale }),
+      })
+      expect(metadata.description).toBe(getDictionary(locale).blog.description)
+    }
+  })
+
+  test("the two locales get different descriptions", async () => {
+    const generateMetadata = localePageMetadata("/blog", {
+      description: (d) => d.blog.description,
+    })
+    const en = await generateMetadata({
+      params: Promise.resolve({ locale: "en" }),
+    })
+    const ja = await generateMetadata({
+      params: Promise.resolve({ locale: "ja" }),
+    })
+    expect(en.description).not.toBe(ja.description)
+  })
+
+  // Title and description are independent: the locale root takes one without
+  // the other.
+  test("a description can be set without a title", async () => {
+    const generateMetadata = localePageMetadata("", {
+      description: (d) => d.home.description,
+    })
+    const metadata = await generateMetadata({
+      params: Promise.resolve({ locale: "en" }),
+    })
+    expect(metadata.title).toBeUndefined()
+    expect(metadata.description).toBe(getDictionary("en").home.description)
+  })
+
+  test("without a selector no description is set", async () => {
+    const generateMetadata = localePageMetadata("/blog")
+    const metadata = await generateMetadata({
+      params: Promise.resolve({ locale: "en" }),
+    })
+    expect(metadata.description).toBeUndefined()
   })
 })
