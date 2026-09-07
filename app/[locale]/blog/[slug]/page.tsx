@@ -32,6 +32,19 @@ import { useMDXComponents } from "@/mdx-components"
 
 type Params = { locale: string; slug: string }
 
+/**
+ * This route blocks on its params, and that is the point.
+ *
+ * A slug `generateStaticParams` did not produce is a 404, and answering with
+ * the right status means deciding before the response starts. Streaming the
+ * shell first would send 200 and leave a soft 404 behind, which is worse than
+ * waiting: search engines take a 200 as a real page.
+ *
+ * Declaring it here is what tells Next the block is deliberate, instead of
+ * warning that the route could have been prerendered.
+ */
+export const instant = false
+
 const getPost = cache(async (locale: Locale, slug: string) => {
   "use cache"
   const loader = createContentLoader()
