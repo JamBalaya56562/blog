@@ -1,4 +1,6 @@
 import type { Locale } from "@/lib/i18n/config"
+import { GitHubContentLoader } from "./github-loader"
+import { LocalContentLoader } from "./local-loader"
 import type { Post } from "./types"
 
 export interface ContentLoader {
@@ -11,9 +13,7 @@ export function createContentLoader(): ContentLoader {
   const source = process.env.CONTENT_SOURCE ?? "local"
   const isBuild = process.env.NEXT_PHASE === "phase-production-build"
   if (source === "github" && !isBuild) {
-    const { GitHubContentLoader } = require("./github-loader")
     return new GitHubContentLoader()
   }
-  const { LocalContentLoader } = require("./local-loader")
   return new LocalContentLoader()
 }
