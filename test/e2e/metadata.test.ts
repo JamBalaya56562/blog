@@ -239,3 +239,31 @@ test.describe("Open Graph completeness", () => {
     })
   }
 })
+
+/**
+ * `x-default` is what a crawler follows for a reader whose language matches
+ * neither locale. `proxy.ts` redirects the prefix-less path to the default
+ * locale, so that path is the honest answer.
+ */
+test.describe("hreflang x-default", () => {
+  for (const path of ["/en", "/ja", "/en/blog", "/ja/portfolio"]) {
+    test(`${path} advertises a prefix-less default`, async ({
+      page,
+      request,
+    }) => {
+      await page.goto(path)
+
+      const href = await page
+        .locator('link[rel="alternate"][hreflang="x-default"]')
+        .getAttribute("href")
+      expect(href).toBeTruthy()
+
+      const { pathname } = new URL(href ?? "")
+      expect(pathname).not.toMatch(/^\/(en|ja)(\/|$)/)
+
+      // It has to resolve, not 404: a default that dead-ends is worse than none.
+      const response = await request.get(pathname)
+      expect(response.status()).toBe(200)
+    })
+  }
+})

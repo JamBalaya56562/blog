@@ -37,6 +37,7 @@ describe("localePageMetadata", () => {
     expect(metadata.alternates?.languages).toEqual({
       en: "https://kokohore56562wanwan.site/en/portfolio",
       ja: "https://kokohore56562wanwan.site/ja/portfolio",
+      "x-default": "https://kokohore56562wanwan.site/portfolio",
     })
   })
 
