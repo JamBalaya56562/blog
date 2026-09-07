@@ -1,6 +1,6 @@
 import type { Post } from "./types"
 
-export interface AdjacentPost {
+interface AdjacentPost {
   slug: string
   title: string
 }
