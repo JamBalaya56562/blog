@@ -119,3 +119,62 @@ test.describe("Page descriptions", () => {
     expect(new Set(seen).size).toBe(seen.length)
   })
 })
+
+/**
+ * These pages shipped with no Open Graph tags at all, and the post pages
+ * pointed at a hand-made `thumbnail_default.png` that was 4:3 and off-palette.
+ * Every page now renders a generated 1200x630 card, so the thing worth
+ * asserting is that the tag exists and the URL behind it really serves an
+ * image — a card that 404s looks identical to a missing one in the markup.
+ */
+test.describe("Open Graph images", () => {
+  const paths = [
+    "/en",
+    "/ja",
+    "/en/blog",
+    "/ja/blog",
+    "/en/portfolio",
+    "/ja/portfolio",
+    "/en/privacy-policy",
+    "/ja/privacy-policy",
+    "/en/blog/tailwind-css-v4-guide",
+    "/ja/blog/tailwind-css-v4-guide",
+  ]
+
+  for (const path of paths) {
+    test(`${path} serves a generated card`, async ({ page, request }) => {
+      await page.goto(path)
+
+      const image = await page
+        .locator('meta[property="og:image"]')
+        .getAttribute("content")
+      expect(image).toBeTruthy()
+      expect(image).toMatch(/^https?:\/\//)
+      expect(image).not.toContain("localhost")
+      expect(image).not.toContain("thumbnail_default")
+
+      // `metadataBase` resolves og:image against the production origin, so the
+      // absolute URL points at the deployed site rather than the server under
+      // test. Fetch it back by path, or this asserts against production and
+      // 404s for anything not released yet.
+      const { pathname, search } = new URL(image ?? "")
+      const response = await request.get(`${pathname}${search}`)
+      expect(response.status()).toBe(200)
+      expect(response.headers()["content-type"]).toContain("image/png")
+      expect((await response.body()).length).toBeGreaterThan(1000)
+    })
+  }
+
+  test("each page gets its own card rather than one shared image", async ({
+    page,
+  }) => {
+    const seen: (string | null)[] = []
+    for (const path of paths) {
+      await page.goto(path)
+      seen.push(
+        await page.locator('meta[property="og:image"]').getAttribute("content"),
+      )
+    }
+    expect(new Set(seen).size).toBe(seen.length)
+  })
+})
