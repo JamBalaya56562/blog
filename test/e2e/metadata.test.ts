@@ -153,7 +153,12 @@ test.describe("Open Graph images", () => {
       expect(image).not.toContain("localhost")
       expect(image).not.toContain("thumbnail_default")
 
-      const response = await request.get(image ?? "")
+      // `metadataBase` resolves og:image against the production origin, so the
+      // absolute URL points at the deployed site rather than the server under
+      // test. Fetch it back by path, or this asserts against production and
+      // 404s for anything not released yet.
+      const { pathname, search } = new URL(image ?? "")
+      const response = await request.get(`${pathname}${search}`)
       expect(response.status()).toBe(200)
       expect(response.headers()["content-type"]).toContain("image/png")
       expect((await response.body()).length).toBeGreaterThan(1000)
