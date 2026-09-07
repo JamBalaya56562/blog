@@ -24,7 +24,7 @@ import { getViewCount } from "@/lib/db/queries"
 import type { Locale } from "@/lib/i18n/config"
 import { isValidLocale, locales } from "@/lib/i18n/config"
 import { getDictionary } from "@/lib/i18n/get-dictionary"
-import { openGraphSite } from "@/lib/metadata"
+import { ogImages, openGraphSite } from "@/lib/metadata"
 import { getBlogPostPath } from "@/lib/routes"
 import { localeAlternates, SITE_AUTHOR } from "@/lib/site"
 import { extractToc } from "@/lib/toc"
@@ -90,6 +90,7 @@ export async function generateMetadata({
       ...openGraphSite(locale, alternates.canonical),
       authors: [SITE_AUTHOR],
       description: post.frontmatter.description,
+      images: ogImages(alternates.canonical, post.frontmatter.title),
       publishedTime: new Date(post.frontmatter.date).toISOString(),
       tags: post.frontmatter.tags,
       title: post.frontmatter.title,

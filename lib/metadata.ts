@@ -6,9 +6,22 @@ import {
   ogLocale,
 } from "@/lib/i18n/config"
 import { type Dictionary, getDictionary } from "@/lib/i18n/get-dictionary"
+import { OG_CONTENT_TYPE, OG_SIZE } from "@/lib/og/card"
 import { localeAlternates } from "@/lib/site"
 
 type Select = (dictionary: Dictionary) => string
+
+export function ogImages(canonical: string, alt: string) {
+  return [
+    {
+      alt,
+      height: OG_SIZE.height,
+      type: OG_CONTENT_TYPE,
+      url: `${canonical}/opengraph-image`,
+      width: OG_SIZE.width,
+    },
+  ]
+}
 
 export function openGraphSite(locale: Locale, url: string) {
   return {
@@ -48,6 +61,10 @@ export function localePageMetadata(
       openGraph: {
         ...openGraphSite(locale, alternates.canonical),
         ...resolved,
+        images: ogImages(
+          alternates.canonical,
+          title ?? dictionary.header.siteName,
+        ),
         type: "website",
       },
     }

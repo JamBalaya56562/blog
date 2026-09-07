@@ -239,3 +239,42 @@ test.describe("Open Graph completeness", () => {
     })
   }
 })
+
+/**
+ * The `alt` export in an `opengraph-image` route is a module constant, so it
+ * described every card as "Jam's Blog" regardless of locale or post. It is the
+ * text a screen reader announces for a shared link.
+ */
+test.describe("Open Graph image alt", () => {
+  for (const [path, expected] of [
+    ["/en/blog", "Blog"],
+    ["/ja/blog", "ブログ"],
+    ["/en/portfolio", "About Me"],
+    ["/ja/portfolio", "自己紹介"],
+    ["/en/blog/tailwind-css-v4-guide", "Tailwind CSS v4 Guide"],
+    ["/ja/blog/tailwind-css-v4-guide", "Tailwind CSS v4 ガイド"],
+  ] as const) {
+    test(`${path} describes its card as "${expected}"`, async ({ page }) => {
+      await page.goto(path)
+      expect(
+        await page
+          .locator('meta[property="og:image:alt"]')
+          .getAttribute("content"),
+      ).toBe(expected)
+    })
+  }
+
+  test("the image the alt describes is really served", async ({
+    page,
+    request,
+  }) => {
+    await page.goto("/ja/portfolio")
+    const url = await page
+      .locator('meta[property="og:image"]')
+      .getAttribute("content")
+    const { pathname } = new URL(url ?? "")
+    const response = await request.get(pathname)
+    expect(response.status()).toBe(200)
+    expect(response.headers()["content-type"]).toContain("image/png")
+  })
+})

@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test"
 import { getDictionary } from "@/lib/i18n/get-dictionary"
-import { localePageMetadata, openGraphSite } from "@/lib/metadata"
+import { localePageMetadata, ogImages, openGraphSite } from "@/lib/metadata"
 
 describe("localePageMetadata", () => {
   // Next resolves the export at runtime with `typeof mod.generateMetadata ===
@@ -142,6 +142,13 @@ type OgFields = {
   siteName?: string
   locale?: string
   alternateLocale?: string[]
+  images?: {
+    url?: string
+    alt?: string
+    width?: number
+    height?: number
+    type?: string
+  }[]
   publishedTime?: string
   authors?: unknown
   tags?: unknown
@@ -213,5 +220,65 @@ describe("openGraphSite", () => {
       const og = openGraphSite(locale, "https://example.test/x")
       expect(og.alternateLocale).not.toContain(og.locale)
     }
+  })
+})
+
+describe("ogImages", () => {
+  // The route's `alt` export is a module constant, so it cannot vary by locale
+  // or by post — every card described itself as "Jam's Blog". Declaring the
+  // image here is what lets the alt say what the card actually shows.
+  test("it points at the page's own generated card", () => {
+    const [image] = ogImages("https://example.test/ja/blog", "ブログ")
+    expect(image.url).toBe("https://example.test/ja/blog/opengraph-image")
+    expect(image.alt).toBe("ブログ")
+  })
+
+  test("it keeps the size and type the card is rendered at", () => {
+    const [image] = ogImages("https://example.test/en", "Jam's Blog")
+    expect(image.width).toBe(1200)
+    expect(image.height).toBe(630)
+    expect(image.type).toBe("image/png")
+  })
+})
+
+describe("openGraph images", () => {
+  test("a titled page describes its card with that title", async () => {
+    const generateMetadata = localePageMetadata("/blog", {
+      title: (d) => d.blog.title,
+    })
+    for (const locale of ["en", "ja"] as const) {
+      const metadata = await generateMetadata({
+        params: Promise.resolve({ locale }),
+      })
+      const [image] = og(metadata).images ?? []
+      expect(image?.alt).toBe(getDictionary(locale).blog.title)
+      expect(image?.url).toBe(`${canonicalOf(metadata)}/opengraph-image`)
+    }
+  })
+
+  // The locale root has no page title of its own, so the site name is the
+  // closest honest description of its card.
+  test("the locale root falls back to the site name", async () => {
+    const generateMetadata = localePageMetadata("")
+    const metadata = await generateMetadata({
+      params: Promise.resolve({ locale: "ja" }),
+    })
+    const [image] = og(metadata).images ?? []
+    expect(image?.alt).toBe(getDictionary("ja").header.siteName)
+  })
+
+  test("no two locales describe the card the same way", async () => {
+    const generateMetadata = localePageMetadata("/portfolio", {
+      title: (d) => d.portfolio.title,
+    })
+    const alts = await Promise.all(
+      (["en", "ja"] as const).map(async (locale) => {
+        const metadata = await generateMetadata({
+          params: Promise.resolve({ locale }),
+        })
+        return (og(metadata).images ?? [])[0]?.alt
+      }),
+    )
+    expect(alts[0]).not.toBe(alts[1])
   })
 })

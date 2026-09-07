@@ -21,6 +21,7 @@ type OgFields = {
   siteName?: string
   locale?: string
   alternateLocale?: string[]
+  images?: { url?: string; alt?: string }[]
   publishedTime?: string
   authors?: unknown
   tags?: unknown
@@ -68,6 +69,18 @@ describe("post Open Graph metadata", () => {
       )
       expect(fields.authors).toEqual([SITE_AUTHOR])
       expect(fields.tags).toEqual(post?.frontmatter.tags)
+    })
+
+    // The card shows the post title, so that is what it should say it shows.
+    test(`${locale} describes its card with the post title`, async () => {
+      const post = await new LocalContentLoader().getPost(locale, SLUG)
+      const metadata = await generateMetadata({
+        params: Promise.resolve({ locale, slug: SLUG }),
+      })
+      const [image] = og(metadata).images ?? []
+      expect(image?.alt).toBe(post?.frontmatter.title)
+      expect(image?.alt).not.toBe("Jam's Blog")
+      expect(image?.url).toBe(`${canonicalOf(metadata)}/opengraph-image`)
     })
 
     test(`${locale} points og:url at its own canonical`, async () => {
