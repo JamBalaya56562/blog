@@ -72,8 +72,7 @@ export function SearchInput({
         value={value}
         onChange={handleChange}
         placeholder={placeholder}
-        className="pp-input w-full"
-        style={{ paddingLeft: "2.25rem" }}
+        className="pp-input w-full pl-9"
       />
     </div>
   )

@@ -312,7 +312,7 @@ export default async function PortfolioPage({
                 {dictionary.portfolio[featuredContribution.descriptionKey]}
               </p>
               <div className="pp-bar mt-6">
-                <div className="pp-bar-fill" style={{ width: "78%" }} />
+                <div className="pp-bar-fill w-[78%]" />
               </div>
             </a>
 
