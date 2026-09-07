@@ -1,8 +1,10 @@
+import { Rss } from "lucide-react"
 import type { Route } from "next"
 import Image from "next/image"
 import Link from "next/link"
 import type { Locale } from "@/lib/i18n/config"
 import type { Dictionary } from "@/lib/i18n/get-dictionary"
+import { feedPath } from "@/lib/site"
 
 const GITHUB_REPO_URL = "https://github.com/JamBalaya56562/blog"
 
@@ -48,6 +50,13 @@ export function Footer({
           >
             {dictionary.footer.privacyPolicy}
           </Link>
+          <a
+            href={feedPath(locale)}
+            aria-label={dictionary.footer.feed}
+            className="opacity-70 transition-opacity hover:opacity-100"
+          >
+            <Rss className="h-[18px] w-[18px]" />
+          </a>
           <a
             href={GITHUB_REPO_URL}
             target="_blank"
