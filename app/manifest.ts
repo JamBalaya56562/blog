@@ -1,8 +1,13 @@
 import type { MetadataRoute } from "next"
+import { defaultLocale } from "@/lib/i18n/config"
+import { getDictionary } from "@/lib/i18n/get-dictionary"
+import { THEME_BACKGROUND } from "@/lib/theme/colors"
 
 export default function manifest(): MetadataRoute.Manifest {
+  const { siteName } = getDictionary(defaultLocale).header
+
   return {
-    background_color: "#fff",
+    background_color: THEME_BACKGROUND.light,
     description: "A blog about web development, built with Next.js and MDX.",
     display: "standalone",
     icons: [
@@ -17,9 +22,9 @@ export default function manifest(): MetadataRoute.Manifest {
         type: "image/png",
       },
     ],
-    name: "Jam Blog",
-    short_name: "Jam Blog",
+    name: siteName,
+    short_name: siteName,
     start_url: "/",
-    theme_color: "#fff",
+    theme_color: THEME_BACKGROUND.light,
   }
 }
