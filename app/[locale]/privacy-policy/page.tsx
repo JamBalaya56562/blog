@@ -2,9 +2,12 @@ import { notFound } from "next/navigation"
 import { PageTransition } from "@/components/page-transition"
 import { isValidLocale } from "@/lib/i18n/config"
 import { getDictionary } from "@/lib/i18n/get-dictionary"
-import { localeAlternatesMetadata } from "@/lib/metadata"
+import { localePageMetadata } from "@/lib/metadata"
 
-export const generateMetadata = localeAlternatesMetadata("/privacy-policy")
+export const generateMetadata = localePageMetadata(
+  "/privacy-policy",
+  (d) => d.privacyPolicy.title,
+)
 
 export default async function PrivacyPolicyPage({
   params,

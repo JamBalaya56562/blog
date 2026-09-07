@@ -28,3 +28,45 @@ test.describe("Share card metadata", () => {
     })
   }
 })
+
+/**
+ * The blog list, portfolio and privacy policy all shipped as a bare
+ * "Jam's Blog" for a while: their `generateMetadata` returned only
+ * `alternates`, so the layout's `title.default` stood in and three unrelated
+ * pages were indistinguishable in a search result or a tab strip. The page
+ * segment and the layout's `template: "%s | Jam's Blog"` only meet at render
+ * time, so this is the level the composition can be checked at.
+ */
+test.describe("Page titles", () => {
+  for (const [path, title] of [
+    ["/en", "Jam's Blog"],
+    ["/ja", "Jam's Blog"],
+    ["/en/blog", "Blog | Jam's Blog"],
+    ["/ja/blog", "ブログ | Jam's Blog"],
+    ["/en/portfolio", "About Me | Jam's Blog"],
+    ["/ja/portfolio", "自己紹介 | Jam's Blog"],
+    ["/en/privacy-policy", "Privacy Policy | Jam's Blog"],
+    ["/ja/privacy-policy", "プライバシーポリシー | Jam's Blog"],
+  ] as const) {
+    test(`${path} is titled "${title}"`, async ({ page }) => {
+      await page.goto(path)
+      await expect(page).toHaveTitle(title)
+    })
+  }
+
+  test("the subpages do not share the locale root's title", async ({
+    page,
+  }) => {
+    const titles: string[] = []
+    for (const path of [
+      "/en",
+      "/en/blog",
+      "/en/portfolio",
+      "/en/privacy-policy",
+    ]) {
+      await page.goto(path)
+      titles.push(await page.title())
+    }
+    expect(new Set(titles).size).toBe(titles.length)
+  })
+})

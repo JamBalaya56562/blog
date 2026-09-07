@@ -17,7 +17,7 @@ import { PageTransition } from "@/components/page-transition"
 import { Brackets } from "@/components/ui/brackets"
 import { isValidLocale } from "@/lib/i18n/config"
 import { getDictionary } from "@/lib/i18n/get-dictionary"
-import { localeAlternatesMetadata } from "@/lib/metadata"
+import { localePageMetadata } from "@/lib/metadata"
 
 const skills = [
   "TypeScript",
@@ -112,7 +112,10 @@ const ossContributions = [
   },
 ]
 
-export const generateMetadata = localeAlternatesMetadata("/portfolio")
+export const generateMetadata = localePageMetadata(
+  "/portfolio",
+  (d) => d.portfolio.title,
+)
 
 export default async function PortfolioPage({
   params,

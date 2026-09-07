@@ -1,15 +1,16 @@
 import { describe, expect, test } from "bun:test"
-import { localeAlternatesMetadata } from "@/lib/metadata"
+import { getDictionary } from "@/lib/i18n/get-dictionary"
+import { localePageMetadata } from "@/lib/metadata"
 
-describe("localeAlternatesMetadata", () => {
+describe("localePageMetadata", () => {
   // Next resolves the export at runtime with `typeof mod.generateMetadata ===
   // "function"`, so the factory has to hand back a callable, not a promise.
   test("produces a function for Next to call", () => {
-    expect(typeof localeAlternatesMetadata("/blog")).toBe("function")
+    expect(typeof localePageMetadata("/blog")).toBe("function")
   })
 
   test("applies the path it was built with", async () => {
-    const generateMetadata = localeAlternatesMetadata("/blog")
+    const generateMetadata = localePageMetadata("/blog")
     const metadata = await generateMetadata({
       params: Promise.resolve({ locale: "ja" }),
     })
@@ -19,7 +20,7 @@ describe("localeAlternatesMetadata", () => {
   })
 
   test("a locale root keeps the bare locale path", async () => {
-    const generateMetadata = localeAlternatesMetadata("")
+    const generateMetadata = localePageMetadata("")
     const metadata = await generateMetadata({
       params: Promise.resolve({ locale: "en" }),
     })
@@ -29,7 +30,7 @@ describe("localeAlternatesMetadata", () => {
   })
 
   test("lists both locales", async () => {
-    const generateMetadata = localeAlternatesMetadata("/portfolio")
+    const generateMetadata = localePageMetadata("/portfolio")
     const metadata = await generateMetadata({
       params: Promise.resolve({ locale: "en" }),
     })
@@ -41,9 +42,42 @@ describe("localeAlternatesMetadata", () => {
 
   // An unknown locale must not advertise alternates for a page that 404s.
   test("an unknown locale yields no metadata", async () => {
-    const generateMetadata = localeAlternatesMetadata("/blog")
+    const generateMetadata = localePageMetadata("/blog")
     expect(
       await generateMetadata({ params: Promise.resolve({ locale: "fr" }) }),
     ).toEqual({})
+  })
+
+  // The layout supplies `template: "%s | Jam's Blog"`, so the page hands back
+  // its own segment only and Next composes the rest.
+  test("resolves the title against the locale's dictionary", async () => {
+    const generateMetadata = localePageMetadata("/blog", (d) => d.blog.title)
+    for (const locale of ["en", "ja"] as const) {
+      const metadata = await generateMetadata({
+        params: Promise.resolve({ locale }),
+      })
+      expect(metadata.title).toBe(getDictionary(locale).blog.title)
+    }
+  })
+
+  test("the two locales get different titles", async () => {
+    const generateMetadata = localePageMetadata("/blog", (d) => d.blog.title)
+    const en = await generateMetadata({
+      params: Promise.resolve({ locale: "en" }),
+    })
+    const ja = await generateMetadata({
+      params: Promise.resolve({ locale: "ja" }),
+    })
+    expect(en.title).not.toBe(ja.title)
+  })
+
+  // Omitting the selector is how the locale root keeps the site-wide default
+  // rather than being retitled after its hero headline.
+  test("without a selector no title is set", async () => {
+    const generateMetadata = localePageMetadata("")
+    const metadata = await generateMetadata({
+      params: Promise.resolve({ locale: "en" }),
+    })
+    expect(metadata.title).toBeUndefined()
   })
 })

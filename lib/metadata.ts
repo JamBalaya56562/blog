@@ -1,8 +1,12 @@
 import type { Metadata } from "next"
 import { isValidLocale } from "@/lib/i18n/config"
+import { type Dictionary, getDictionary } from "@/lib/i18n/get-dictionary"
 import { localeAlternates } from "@/lib/site"
 
-export function localeAlternatesMetadata(path: string) {
+export function localePageMetadata(
+  path: string,
+  title?: (dictionary: Dictionary) => string,
+) {
   return async ({
     params,
   }: {
@@ -12,6 +16,10 @@ export function localeAlternatesMetadata(path: string) {
     if (!isValidLocale(locale)) {
       return {}
     }
-    return { alternates: localeAlternates(locale, path) }
+    const alternates = localeAlternates(locale, path)
+    if (!title) {
+      return { alternates }
+    }
+    return { alternates, title: title(getDictionary(locale)) }
   }
 }
