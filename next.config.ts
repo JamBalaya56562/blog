@@ -17,14 +17,26 @@ const isDev = process.env.NODE_ENV !== "production"
  * header either. `'unsafe-inline'` in `script-src` is what the guide prescribes
  * for this configuration.
  *
- * So this policy does not stop injected inline script. What it does buy is a
- * closed door on external origins, framing, `<base>`, form targets and plugins.
+ * So this policy does not stop an injected `<script>` block. What it does buy
+ * is a closed door on external origins, framing, `<base>`, form targets and
+ * plugins, and — through `script-src-attr` below — on injected inline event
+ * handlers, which `script-src` alone would have waved through.
  */
 const siteCsp = [
   "default-src 'self'",
   // Next's RSC bootstrap plus components/theme-init-script.tsx, the FOUC guard.
   // 'unsafe-eval' is Turbopack's HMR and must never reach production.
   `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""}`,
+  // `script-src` has to carry 'unsafe-inline' for the reason above, and without
+  // this line `script-src-attr` inherits it, which would let an injected
+  // `onclick=` run. React attaches every listener with addEventListener and
+  // never serialises a handler into an attribute, so nothing here needs them:
+  // the production HTML of every route contains no `on*=` attribute at all.
+  //
+  // This is the one part of the script policy that an injection actually feels,
+  // so it is worth keeping 'none'. Anything that later needs an inline handler
+  // should get a real listener instead of a relaxation here.
+  "script-src-attr 'none'",
   // `experimental.inlineCss` emits the compiled CSS as an inline <style>.
   "style-src 'self' 'unsafe-inline'",
   // The `style={{}}` attributes in scroll-progress, table-of-contents and

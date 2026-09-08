@@ -82,6 +82,10 @@ test.describe("Security headers", () => {
     // Partial prerendering rules out a nonce, so inline script stays allowed.
     // The reasoning is in next.config.ts.
     expect(directives.get("script-src")).toBe("'self' 'unsafe-inline'")
+    // `script-src` cannot drop 'unsafe-inline', so this directive is the only
+    // part of the script policy an injection actually runs into. Losing it
+    // would be silent: nothing renders differently either way.
+    expect(directives.get("script-src-attr")).toBe("'none'")
     expect(directives.get("style-src")).toBe("'self' 'unsafe-inline'")
     expect(directives.get("img-src")).toBe("'self' data:")
     expect(directives.get("font-src")).toBe("'self'")
@@ -223,6 +227,36 @@ test.describe("The policy does not break the page", () => {
       })
     })
   }
+
+  test("an injected inline event handler is refused", async ({ page }) => {
+    // The directive above is asserted as a string; this asserts the behaviour,
+    // which is what actually matters. An `onclick=` attribute added after load
+    // is the shape an HTML injection takes, and `script-src-attr 'none'` has to
+    // stop it from running even though `script-src` allows inline script.
+    await page.goto("/en")
+
+    const fired = await page.evaluate(() => {
+      const probe = document.createElement("button")
+      probe.setAttribute("onclick", "window.__handlerRan = true")
+      document.body.append(probe)
+      probe.click()
+      probe.remove()
+      return (
+        (window as unknown as { __handlerRan?: boolean }).__handlerRan === true
+      )
+    })
+    expect(fired, "an inline onclick attribute executed").toBe(false)
+
+    // The violation is the positive signal that the directive, rather than an
+    // unrelated failure, is what stopped it. All three engines implement
+    // `script-src-attr` (Chrome 75, Firefox 108, Safari 15.4), the same support
+    // floor as the `style-src-attr` this config already relies on, so no engine
+    // is excused here. `toContain` rather than an equality check because the
+    // reported directive name is `script-src-attr` on some engines and the
+    // effective `script-src` on others.
+    const violations = await readViolations(page)
+    expect(violations.join(" ")).toContain("script-src")
+  })
 
   test("Server Actions still reach the origin", async ({ page, baseURL }) => {
     // The home page mounts ViewCountsProvider, which calls a Server Action from
