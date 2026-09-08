@@ -20,7 +20,8 @@
     "sortPopular": "VIEWS",
     "title": "ブログ",
     "toc": "目次",
-    "translationAvailable": "この記事は以下の言語でも利用できます:"
+    "translationAvailable": "この記事は以下の言語でも利用できます:",
+    "updatedOn": "更新日"
   },
   "footer": {
     "copyright": "© {year} Jam Balaya. All rights reserved.",

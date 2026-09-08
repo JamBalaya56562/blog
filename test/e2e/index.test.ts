@@ -71,11 +71,129 @@ test.describe("Blog post page", () => {
     await expect(
       page.getByRole("heading", { name: "Getting Started with Next.js" }),
     ).toBeVisible()
-    await expect(page.getByText("Posted on")).toBeVisible()
-    // Dates are now rendered with dot separators (2025.01.15 instead of
-    // 2025-01-15) to match the cyber-style typography.
-    await expect(page.getByText("2025.01.15")).toBeVisible()
+    // Dates are rendered with dot separators (2025.01.15 instead of
+    // 2025-01-15) to match the cyber-style typography. The bare date now
+    // appears twice in this row — posted and updated — so it is asserted
+    // together with its label rather than on its own.
+    await expect(page.locator("article header .pp-tick").nth(1)).toContainText(
+      "Posted on 2025.01.15",
+    )
     await expect(page.locator("a[href*='tag=nextjs']")).toBeVisible()
+  })
+
+  /**
+   * The revision date is shown whether or not the post has been revised: a post
+   * with no `updated` really was last modified when it was published, so the
+   * fallback is the true date. Every post reads that way today, which is why
+   * these assert the order of the two rather than only that both exist — a
+   * pair of identical dates would satisfy "both visible" in either order.
+   */
+  for (const [locale, posted, updated] of [
+    ["en", "Posted on", "Updated on"],
+    ["ja", "投稿日", "更新日"],
+  ] as const) {
+    test(`${locale} shows the revision date after the posted date`, async ({
+      page,
+    }) => {
+      await page.goto(`/${locale}/blog/getting-started-with-nextjs`)
+
+      const meta = page.locator("article header .pp-tick").nth(1)
+      // textContent, not innerText: the row is uppercased in CSS, and the
+      // labels are only written in one case in the dictionary.
+      const text = (await meta.textContent()) ?? ""
+
+      expect(text).toContain(posted)
+      expect(text).toContain(updated)
+      expect(
+        text.indexOf(updated),
+        "the revision date is not after the posted date",
+      ).toBeGreaterThan(text.indexOf(posted))
+      // Both dates read 2025.01.15 until the post is actually revised.
+      expect(text.match(/2025\.01\.15/g)).toHaveLength(2)
+    })
+  }
+
+  /**
+   * The meta row now carries a fourth item, and a flat run of items and
+   * separators breaks wherever it runs out of width: on a narrow screen it
+   * split "1 MIN READ" from "0 VIEWS" and stranded a separator at the start of
+   * the next line. The items are grouped so the row breaks between units.
+   *
+   * Asserting the exact lines would pin the font metrics, so these assert the
+   * two properties that made the old layout read badly, at the widths where
+   * the row actually has to break.
+   */
+  for (const width of [390, 360, 320]) {
+    // Both locales: the English labels are the longer pair, so English has to
+    // break at a width where Japanese still fits, and each catches what the
+    // other's line lengths happen to hide.
+    for (const [locale, label] of [
+      ["en", "Updated on"],
+      ["ja", "更新日"],
+    ] as const) {
+      test(`the ${locale} meta row breaks between units at ${width}px`, async ({
+        page,
+      }) => {
+        await page.setViewportSize({ height: 800, width })
+        await page.goto(`/${locale}/blog/getting-started-with-nextjs`)
+
+        const meta = page.locator("article header .pp-tick").nth(1)
+        await expect(meta).toBeVisible()
+        await expect(meta).toContainText(label)
+
+        const lines = await meta.evaluate((el) => {
+          const rows = new Map<number, string[]>()
+          for (const child of Array.from(el.children) as HTMLElement[]) {
+            const top = Math.round(child.getBoundingClientRect().top)
+            const key =
+              [...rows.keys()].find((k) => Math.abs(k - top) < 5) ?? top
+            rows.set(key, [
+              ...(rows.get(key) ?? []),
+              (child.textContent ?? "").replace(/\s+/g, " ").trim(),
+            ])
+          }
+          return [...rows.entries()]
+            .sort((a, b) => a[0] - b[0])
+            .map(([, texts]) => texts.join(" "))
+        })
+
+        expect(lines.length).toBeGreaterThan(1)
+        for (const line of lines) {
+          // A line opening with the separator that belongs to the item above.
+          expect(line.startsWith("·"), `stranded separator: ${line}`).toBe(
+            false,
+          )
+        }
+        // Reading time and view count are one thought and stay on one line.
+        const together = lines.find((line) => line.includes("MIN READ"))
+        expect(together, "MIN READ is on no line").toBeTruthy()
+        expect(together, `views split from read time: ${together}`).toContain(
+          "VIEWS",
+        )
+
+        const overflows = await page.evaluate(
+          () =>
+            document.documentElement.scrollWidth >
+            document.documentElement.clientWidth,
+        )
+        expect(overflows, "the page scrolls sideways").toBe(false)
+      })
+    }
+  }
+
+  test("the desktop meta row is still a single line", async ({ page }) => {
+    // The grouping must not change the wide layout: every gap is still the
+    // row's own `gap-3`, so this stays one line at any normal width.
+    await page.setViewportSize({ height: 900, width: 1280 })
+    await page.goto("/en/blog/getting-started-with-nextjs")
+
+    const meta = page.locator("article header .pp-tick").nth(1)
+    const tops = await meta.evaluate((el) =>
+      Array.from(el.children).map((c) =>
+        Math.round(c.getBoundingClientRect().top),
+      ),
+    )
+    expect(new Set(tops).size, "the row wrapped on desktop").toBe(1)
   })
 
   test("shows translation link for posts with translations", async ({
