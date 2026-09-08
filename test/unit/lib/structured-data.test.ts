@@ -105,8 +105,18 @@ describe("blogPostingJsonLd", () => {
   test("carries the dates as ISO 8601", () => {
     const data = blogPostingJsonLd("en", post)
     expect(data.datePublished).toBe("2025-03-01T00:00:00.000Z")
-    // No `updated` field exists in the frontmatter yet, so these are equal on
-    // purpose. If one gains a real value this assertion is what should change.
+  })
+
+  test("reports a revision when the post declares one", () => {
+    const data = blogPostingJsonLd("en", { ...post, updated: "2025-06-15" })
+    expect(data.dateModified).toBe("2025-06-15T00:00:00.000Z")
+    expect(data.datePublished).toBe("2025-03-01T00:00:00.000Z")
+  })
+
+  // Not a placeholder: a post nobody has revised really was last modified when
+  // it was published, so the fallback is the true answer rather than a guess.
+  test("falls back to publication when the post declares none", () => {
+    const data = blogPostingJsonLd("en", post)
     expect(data.dateModified).toBe(data.datePublished)
   })
 

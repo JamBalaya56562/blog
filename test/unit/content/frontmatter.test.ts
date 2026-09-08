@@ -97,3 +97,123 @@ describe("Frontmatter", () => {
     }
   })
 })
+
+/**
+ * `updated` is what `article:modified_time` and JSON-LD's `dateModified` are
+ * built from. Before it existed both repeated the publication date, which is
+ * true for a post nobody has touched and becomes a false claim the first time
+ * one is edited.
+ *
+ * It is optional on purpose. Absent reads as "never revised", not "unknown",
+ * so a post without it still has an honest modified date. What is rejected is
+ * an `updated` that cannot be true, since a wrong date is worse than none: it
+ * goes to crawlers as fact.
+ */
+describe("Frontmatter updated", () => {
+  const base = {
+    date: "2025-01-01",
+    description: "d",
+    tags: ["a"],
+    title: "t",
+  }
+
+  test("survives validation rather than being dropped", () => {
+    const fm = validateFrontmatter({ ...base, updated: "2025-06-01" })
+    expect(fm.updated).toBe("2025-06-01")
+  })
+
+  test("is optional, and its absence is not an error", () => {
+    const fm = validateFrontmatter(base)
+    expect(fm.updated).toBeUndefined()
+  })
+
+  test("round-trips through a real document", () => {
+    const { frontmatter } = parseFrontmatter(
+      `---\ntitle: t\ndate: "2025-01-01"\nupdated: "2025-06-01"\ndescription: d\ntags:\n  - a\n---\n\nBody`,
+    )
+    expect(frontmatter.updated).toBe("2025-06-01")
+  })
+
+  // A year or a month left at the old value is the realistic typo, and it is
+  // the one shape of wrongness that can be detected without knowing the truth.
+  test("rejects a revision that predates publication", () => {
+    expect(() =>
+      validateFrontmatter({ ...base, updated: "2024-12-31" }),
+    ).toThrow(/before date/)
+  })
+
+  test("rejects a value that is not a date", () => {
+    expect(() => validateFrontmatter({ ...base, updated: "soon" })).toThrow(
+      /not a date/,
+    )
+    expect(() => validateFrontmatter({ ...base, updated: 20250101 })).toThrow(
+      /must be a string/,
+    )
+  })
+
+  test("accepts a revision on the publication date itself", () => {
+    expect(validateFrontmatter({ ...base, updated: base.date }).updated).toBe(
+      base.date,
+    )
+  })
+})
+
+/**
+ * `image` was declared on `Frontmatter`, read in three components as
+ * `post.frontmatter.image ?? DEFAULT_THUMBNAIL`, and never copied into the
+ * object `validateFrontmatter` returned. A post could set it and be ignored,
+ * with the build, the type checker and the tests all green — the field simply
+ * evaporated between the file and the page.
+ *
+ * No post declared one, so nothing was visibly broken; it was waiting for the
+ * first post that wanted its own thumbnail.
+ */
+describe("Frontmatter image", () => {
+  const base = {
+    date: "2025-01-01",
+    description: "d",
+    tags: ["a"],
+    title: "t",
+  }
+
+  test("reaches the page rather than evaporating", () => {
+    const fm = validateFrontmatter({ ...base, image: "/api/images/hero.png" })
+    expect(fm.image).toBe("/api/images/hero.png")
+  })
+
+  test("is optional, so a post without one still validates", () => {
+    expect(validateFrontmatter(base).image).toBeUndefined()
+  })
+
+  test("has to be a string, since it is used as an <Image src>", () => {
+    expect(() => validateFrontmatter({ ...base, image: 42 })).toThrow(
+      /image must be a string/,
+    )
+  })
+})
+
+/**
+ * The rule the refactor is meant to hold: the object `validateFrontmatter`
+ * returns is the only list of fields there is. A field that survives round trip
+ * is in it, and one that does not simply does not exist. Asserting it per field
+ * would restate the code, so this asserts the property over every optional
+ * field at once — the next one added is covered without touching this file.
+ */
+describe("no field is silently dropped", () => {
+  test("every optional field written is a field read back", () => {
+    const written = {
+      date: "2025-01-01",
+      description: "d",
+      image: "/api/images/hero.png",
+      tags: ["a"],
+      title: "t",
+      updated: "2025-06-01",
+    }
+    const read = validateFrontmatter(written)
+    for (const [field, value] of Object.entries(written)) {
+      expect(read[field as keyof typeof read], `${field} was dropped`).toEqual(
+        value as never,
+      )
+    }
+  })
+})
