@@ -3,6 +3,7 @@ import { Suspense } from "react"
 import { BentoGrid } from "@/components/home/bento-grid"
 import { HeroSection } from "@/components/home/hero-section"
 import { RecentDispatches } from "@/components/home/recent-dispatches"
+import { JsonLd } from "@/components/json-ld"
 import { PageTransition } from "@/components/page-transition"
 import { HomeContentSkeleton } from "@/components/skeletons"
 import { ViewCountsProvider } from "@/components/view-counts"
@@ -11,6 +12,7 @@ import type { Locale } from "@/lib/i18n/config"
 import { isValidLocale } from "@/lib/i18n/config"
 import { getDictionary } from "@/lib/i18n/get-dictionary"
 import { localePageMetadata } from "@/lib/metadata"
+import { websiteJsonLd } from "@/lib/structured-data"
 
 async function HomeBody({ locale }: { locale: Locale }) {
   "use cache"
@@ -70,6 +72,7 @@ export default async function HomePage({
 
   return (
     <PageTransition>
+      <JsonLd data={websiteJsonLd(locale)} />
       <div className="relative">
         <Suspense fallback={<HomeContentSkeleton />}>
           <HomeBody locale={locale} />

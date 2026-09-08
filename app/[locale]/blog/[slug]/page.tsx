@@ -9,6 +9,7 @@ import {
   DEFAULT_THUMBNAIL,
   estimateReadingTime,
 } from "@/components/article-card"
+import { JsonLd } from "@/components/json-ld"
 import { PageTransition } from "@/components/page-transition"
 import { PostNavigation } from "@/components/post-navigation"
 import { getRelatedPosts, RelatedPosts } from "@/components/related-posts"
@@ -27,6 +28,7 @@ import { getDictionary } from "@/lib/i18n/get-dictionary"
 import { openGraphSite } from "@/lib/metadata"
 import { getBlogPostPath } from "@/lib/routes"
 import { localeAlternates, SITE_AUTHOR } from "@/lib/site"
+import { blogPostingJsonLd, postBreadcrumb } from "@/lib/structured-data"
 import { extractToc } from "@/lib/toc"
 import { useMDXComponents } from "@/mdx-components"
 
@@ -139,6 +141,16 @@ async function BlogPostContent({
 
   return (
     <>
+      <JsonLd
+        data={blogPostingJsonLd(locale, {
+          date: post.frontmatter.date,
+          description: post.frontmatter.description,
+          slug,
+          tags: post.frontmatter.tags,
+          title: post.frontmatter.title,
+        })}
+      />
+      <JsonLd data={postBreadcrumb(locale, slug, post.frontmatter.title)} />
       <ScrollProgress />
       <TableOfContents items={tocItems} title={dictionary.blog.toc} />
       <div className="mx-auto max-w-3xl px-4 py-10 sm:px-6">

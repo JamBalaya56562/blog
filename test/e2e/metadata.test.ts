@@ -307,3 +307,81 @@ test.describe("hreflang x-default", () => {
     })
   }
 })
+
+/**
+ * Open Graph is what a share card is built from; structured data is what a
+ * search result is built from, and Google does not read Open Graph for it. The
+ * site shipped a complete set of the first and none of the second, so these
+ * pin the part the unit tests cannot see: that the block survives rendering,
+ * parses as JSON, and lands on the page it describes.
+ */
+test.describe("Structured data", () => {
+  const blocks = async (page: import("@playwright/test").Page) =>
+    page
+      .locator('script[type="application/ld+json"]')
+      .evaluateAll((nodes) =>
+        nodes.map((n) => JSON.parse(n.textContent ?? "null")),
+      )
+
+  test("the locale root describes the site", async ({ page }) => {
+    await page.goto("/ja")
+    const found = await blocks(page)
+    const site = found.find((b) => b["@type"] === "WebSite")
+    expect(site, "no WebSite block").toBeTruthy()
+    expect(site.name).toBe("Jamのブログ")
+    expect(site.inLanguage).toBe("ja")
+  })
+
+  for (const [path, locale, headline] of [
+    ["/en/blog/tailwind-css-v4-guide", "en", "Tailwind CSS v4 Guide"],
+    ["/ja/blog/tailwind-css-v4-guide", "ja", "Tailwind CSS v4 ガイド"],
+  ] as const) {
+    test(`${path} describes itself as an article`, async ({ page }) => {
+      await page.goto(path)
+      const found = await blocks(page)
+
+      const article = found.find((b) => b["@type"] === "BlogPosting")
+      expect(article, "no BlogPosting block").toBeTruthy()
+      expect(article.headline).toBe(headline)
+      expect(article.inLanguage).toBe(locale)
+      expect(article.datePublished).toMatch(/^\d{4}-\d{2}-\d{2}T/)
+      // The block has to claim this page, not an article elsewhere.
+      expect(article.mainEntityOfPage["@id"]).toBe(
+        `https://kokohore56562wanwan.site${path}`,
+      )
+
+      const crumbs = found.find((b) => b["@type"] === "BreadcrumbList")
+      expect(crumbs, "no BreadcrumbList block").toBeTruthy()
+      expect(crumbs.itemListElement).toHaveLength(3)
+      expect(crumbs.itemListElement.at(-1).name).toBe(headline)
+    })
+  }
+
+  // A page that says nothing is better than a page that says the wrong thing,
+  // and a block whose canonical URL is not this page's is the wrong thing.
+  test("no block claims a page other than the one it is on", async ({
+    page,
+  }) => {
+    for (const path of ["/en", "/ja", "/ja/blog/tailwind-css-v4-guide"]) {
+      await page.goto(path)
+      const canonical = await page
+        .locator('link[rel="canonical"]')
+        .getAttribute("href")
+
+      const found = await blocks(page)
+      // Without this the loop below passes on a page carrying no blocks at
+      // all, which is the state this whole describe exists to rule out.
+      expect(
+        found.length,
+        `${path} carries no structured data`,
+      ).toBeGreaterThan(0)
+
+      for (const block of found) {
+        const claimed = block.mainEntityOfPage?.["@id"] ?? block.url
+        if (claimed) {
+          expect(claimed, `${path} block ${block["@type"]}`).toBe(canonical)
+        }
+      }
+    }
+  })
+})
