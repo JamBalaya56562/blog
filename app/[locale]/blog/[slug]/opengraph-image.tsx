@@ -1,7 +1,8 @@
 import { ImageResponse } from "next/og"
 import { createContentLoader } from "@/lib/content/loader"
 import { defaultLocale, isValidLocale, locales } from "@/lib/i18n/config"
-import { OG_CONTENT_TYPE, OG_SIZE, OgCard } from "@/lib/og/card"
+import { getDictionary } from "@/lib/i18n/get-dictionary"
+import { OG_CONTENT_TYPE, OG_SIZE, OgCard, ogEyebrow } from "@/lib/og/card"
 
 export const alt = "Jam's Blog"
 export const size = OG_SIZE
@@ -26,11 +27,13 @@ export default async function Image({
 }) {
   const { locale, slug } = await params
   const resolved = isValidLocale(locale) ? locale : defaultLocale
+  const dictionary = getDictionary(resolved)
   const post = await createContentLoader().getPost(resolved, slug)
   return new ImageResponse(
     <OgCard
-      title={post?.frontmatter.title ?? "Jam's Blog"}
+      title={post?.frontmatter.title ?? dictionary.header.siteName}
       description={post?.frontmatter.description ?? ""}
+      eyebrow={ogEyebrow(dictionary.header.siteName)}
     />,
     OG_SIZE,
   )

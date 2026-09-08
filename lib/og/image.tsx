@@ -1,7 +1,7 @@
 import { ImageResponse } from "next/og"
 import { defaultLocale, isValidLocale } from "@/lib/i18n/config"
 import { type Dictionary, getDictionary } from "@/lib/i18n/get-dictionary"
-import { OG_SIZE, OgCard } from "./card"
+import { OG_SIZE, OgCard, ogEyebrow } from "./card"
 
 export function localeOgImage(
   select: (dictionary: Dictionary) => { title: string; description: string },
@@ -13,7 +13,11 @@ export function localeOgImage(
     )
     const { title, description } = select(dictionary)
     return new ImageResponse(
-      <OgCard title={title} description={description} />,
+      <OgCard
+        title={title}
+        description={description}
+        eyebrow={ogEyebrow(dictionary.header.siteName)}
+      />,
       OG_SIZE,
     )
   }
