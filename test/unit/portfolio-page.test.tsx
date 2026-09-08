@@ -1,5 +1,5 @@
-import { describe, expect, mock, test } from "bun:test"
-import { render } from "@testing-library/react"
+import { afterEach, describe, expect, mock, test } from "bun:test"
+import { cleanup, render } from "@testing-library/react"
 import { locales } from "@/lib/i18n/config"
 import { getDictionary } from "@/lib/i18n/get-dictionary"
 
@@ -23,6 +23,16 @@ mock.module("next/navigation", () => ({
 }))
 
 const { default: PortfolioPage } = await import("@/app/[locale]/portfolio/page")
+
+// This file renders twice — once per locale — and used to lean on Testing
+// Library's automatic cleanup to keep the two apart. That is not dependable
+// across a whole `bun test` run: any test file importing a stylesheet (which
+// `app/global-error.tsx` must do) leaves a second copy of the library loaded,
+// and the automatic hook then belongs to the copy that did not do the render.
+// The second locale finds two of every element and the failure names the text,
+// not the cause. Every other render test here cleans up explicitly; so does
+// this one now.
+afterEach(cleanup)
 
 describe("Portfolio Page", () => {
   for (const locale of locales) {

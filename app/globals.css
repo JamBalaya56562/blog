@@ -1095,3 +1095,129 @@
     opacity: 0.24;
   }
 }
+
+/* ──────────────────────────────────────────────
+   Fault screens — app/[locale]/error.tsx and app/global-error.tsx
+
+   Same three-layer glitch as the 404 above, re-tinted: amber + red instead of
+   cyan + red, so "route problem" and "system fault" stay distinguishable.
+   ──────────────────────────────────────────── */
+
+@layer components {
+  .pp-500 {
+    display: block;
+    font-family: var(--blog-font-headline);
+    font-weight: 900;
+    font-size: min(30vw, 290px);
+    line-height: 1;
+    letter-spacing: 0.02em;
+    margin-left: -0.04em;
+  }
+  /* Inside the global-error panel the type sits at a fixed size: the panel is
+     720px wide and does not track the viewport. */
+  .pp-500-panel {
+    font-size: min(22vw, 132px);
+    margin-left: -0.03em;
+  }
+  .pp-500-base {
+    position: relative;
+    color: var(--cyber-text);
+    animation: glitch500Base 4.5s steps(1, end) infinite;
+  }
+  .pp-500-ghost {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+  .pp-500-ghost-amber {
+    color: var(--cyber-amber);
+    animation: glitch500Amber 4.5s steps(1, end) infinite;
+  }
+  .pp-500-ghost-red {
+    color: var(--cyber-red);
+    animation: glitch500Red 4.5s steps(1, end) infinite;
+  }
+  /* Red sweep, faster than the site-wide cyan one. */
+  .pp-fault-sweep {
+    animation-duration: 3.6s;
+    height: 170px;
+    background: linear-gradient(
+      180deg,
+      transparent 0%,
+      color-mix(in srgb, var(--cyber-red) 16%, transparent) 50%,
+      transparent 100%
+    );
+  }
+}
+
+@keyframes glitch500Base {
+  0%,
+  88%,
+  100% {
+    transform: translate(0, 0);
+    clip-path: inset(0 0 0 0);
+  }
+  90% {
+    transform: translate(-5px, 2px);
+    clip-path: inset(12% 0 46% 0);
+  }
+  93% {
+    transform: translate(4px, -3px);
+    clip-path: inset(58% 0 8% 0);
+  }
+  96% {
+    transform: translate(-2px, 1px);
+    clip-path: inset(30% 0 34% 0);
+  }
+}
+@keyframes glitch500Amber {
+  0%,
+  86%,
+  100% {
+    transform: translate(5px, -4px);
+    opacity: 0.3;
+  }
+  88% {
+    transform: translate(-8px, 2px);
+    opacity: 0.7;
+  }
+  92% {
+    transform: translate(12px, -7px);
+    opacity: 0.55;
+  }
+  97% {
+    transform: translate(-3px, 0);
+    opacity: 0.4;
+  }
+}
+@keyframes glitch500Red {
+  0%,
+  84%,
+  100% {
+    transform: translate(-5px, 4px);
+    opacity: 0.22;
+  }
+  89% {
+    transform: translate(9px, -2px);
+    opacity: 0.55;
+  }
+  94% {
+    transform: translate(-11px, 6px);
+    opacity: 0.4;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pp-500-base,
+  .pp-500-ghost {
+    animation: none;
+  }
+  .pp-500-ghost-amber {
+    transform: translate(5px, -4px);
+    opacity: 0.3;
+  }
+  .pp-500-ghost-red {
+    transform: translate(-5px, 4px);
+    opacity: 0.22;
+  }
+}
