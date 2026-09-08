@@ -23,6 +23,13 @@
     "translationAvailable": "This post is also available in:",
     "updatedOn": "Updated on"
   },
+  "error": {
+    "description": "AN UNEXPECTED FAULT OCCURRED WHILE RENDERING THIS DISPATCH. THE UPLINK MAY RECOVER ON RETRY.",
+    "fault": "SYSTEM FAULT",
+    "home": "RETURN TO HOME",
+    "retry": "RETRY",
+    "tick": "SIBYL // FAULT REPORT"
+  },
   "footer": {
     "copyright": "© {year} Jam Balaya. All rights reserved.",
     "feed": "RSS feed",

@@ -1,12 +1,6 @@
 "use cache"
 
 import type { Metadata, Viewport } from "next"
-import {
-  JetBrains_Mono,
-  M_PLUS_1_Code,
-  Noto_Sans_JP,
-  Orbitron,
-} from "next/font/google"
 import { notFound } from "next/navigation"
 import type React from "react"
 import { CursorRing } from "@/components/cursor-ring"
@@ -16,6 +10,7 @@ import { Header } from "@/components/header"
 import { ScrollToTop } from "@/components/scroll-to-top"
 import { ThemeInitScript } from "@/components/theme-init-script"
 import { createContentLoader } from "@/lib/content/loader"
+import { fontVars } from "@/lib/fonts"
 import {
   defaultLocale,
   isValidLocale,
@@ -27,30 +22,6 @@ import { SITE_URL } from "@/lib/site"
 import { THEME_BACKGROUND } from "@/lib/theme/colors"
 import { ThemeProvider } from "@/lib/theme/theme-provider"
 import "@/app/globals.css"
-
-const jetbrainsMono = JetBrains_Mono({
-  subsets: ["latin"],
-  variable: "--font-mono-loaded",
-  weight: ["300", "400", "500", "700"],
-})
-
-const orbitron = Orbitron({
-  subsets: ["latin"],
-  variable: "--font-orbitron-loaded",
-  weight: ["400", "500", "700", "900"],
-})
-
-const notoSansJp = Noto_Sans_JP({
-  subsets: ["latin"],
-  variable: "--font-sans-loaded",
-  weight: ["300", "400", "500", "700", "900"],
-})
-
-const mPlus1Code = M_PLUS_1_Code({
-  subsets: ["latin"],
-  variable: "--font-jp-mono-loaded",
-  weight: ["400", "500", "700"],
-})
 
 export const viewport: Viewport = {
   themeColor: [
@@ -146,7 +117,6 @@ export default async function LocaleLayout({
 
   const dictionary = getDictionary(locale)
   const tickerItems = await getMarqueeItems(locale, dictionary)
-  const fontVars = `${jetbrainsMono.variable} ${orbitron.variable} ${notoSansJp.variable} ${mPlus1Code.variable}`
 
   return (
     <html lang={locale} suppressHydrationWarning className={fontVars}>
