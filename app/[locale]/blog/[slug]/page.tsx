@@ -144,6 +144,7 @@ async function BlogPostContent({
   const related = getRelatedPosts(allPosts, slug)
   const readMin = estimateReadingTime(post.content)
   const category = post.frontmatter.tags[0]?.toUpperCase() ?? "DISPATCH"
+  const updatedOn = post.frontmatter.updated ?? post.frontmatter.date
 
   return (
     <>
@@ -170,18 +171,47 @@ async function BlogPostContent({
               </h1>
             </ViewTransition>
             <ViewTransition name={`post-meta-${slug}`} share="morph">
+              {/*
+                Grouped rather than a flat run of items and separators, so the
+                row breaks where it reads well instead of wherever it runs out
+                of width. Flat, a narrow screen split "1 MIN READ" from
+                "0 VIEWS" and left a separator stranded at the start of a line.
+
+                Each group carries its own trailing separator and uses the same
+                `gap-3` as the row, so every gap is still 12px and the desktop
+                line is unchanged — only the units it may break between are.
+              */}
               <div className="pp-tick mt-5 flex flex-wrap items-center gap-3">
-                <span>
-                  {dictionary.blog.postedOn}{" "}
-                  {post.frontmatter.date.replace(/-/g, ".")}
+                <span className="flex items-center gap-3">
+                  <span>
+                    {dictionary.blog.postedOn}{" "}
+                    {post.frontmatter.date.replace(/-/g, ".")}
+                  </span>
+                  <span className="text-cyber-line-hi">·</span>
                 </span>
-                <span className="text-cyber-line-hi">·</span>
-                <span>
-                  <span className="pp-num text-cyber-cyan">{readMin}</span>{" "}
-                  {dictionary.blog.minRead}
+                {/*
+                  Shown whether or not the post has been revised. A post with no
+                  `updated` in its frontmatter really was last modified when it
+                  was published, so the fallback is the true date rather than a
+                  stand-in — the same reasoning `article:modified_time` and
+                  JSON-LD's `dateModified` use.
+                */}
+                <span className="flex items-center gap-3">
+                  <span>
+                    {dictionary.blog.updatedOn} {updatedOn.replace(/-/g, ".")}
+                  </span>
+                  <span className="text-cyber-line-hi">·</span>
                 </span>
-                <span className="text-cyber-line-hi">·</span>
-                <ViewCounter slug={slug} count={viewCount} />
+                {/* Reading time and view count are one thought; they break
+                    together or not at all. */}
+                <span className="flex items-center gap-3">
+                  <span>
+                    <span className="pp-num text-cyber-cyan">{readMin}</span>{" "}
+                    {dictionary.blog.minRead}
+                  </span>
+                  <span className="text-cyber-line-hi">·</span>
+                  <ViewCounter slug={slug} count={viewCount} />
+                </span>
               </div>
             </ViewTransition>
             <div className="mt-3 flex flex-wrap gap-1.5">

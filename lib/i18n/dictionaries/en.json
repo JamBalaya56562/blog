@@ -20,7 +20,8 @@
     "sortPopular": "VIEWS",
     "title": "Blog",
     "toc": "Table of Contents",
-    "translationAvailable": "This post is also available in:"
+    "translationAvailable": "This post is also available in:",
+    "updatedOn": "Updated on"
   },
   "footer": {
     "copyright": "© {year} Jam Balaya. All rights reserved.",
