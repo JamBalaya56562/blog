@@ -233,6 +233,16 @@ test.describe("Open Graph completeness", () => {
       expect(await property(page, "article:published_time")).toMatch(
         /^\d{4}-\d{2}-\d{2}T/,
       )
+      // Absent, a crawler dates the post from its own crawl. The frontmatter's
+      // `updated` feeds this, falling back to publication for a post nobody
+      // has revised — which is the true answer, not a stand-in for one.
+      const modified = await property(page, "article:modified_time")
+      expect(modified).toMatch(/^\d{4}-\d{2}-\d{2}T/)
+      const published = await property(page, "article:published_time")
+      expect(
+        Date.parse(modified ?? ""),
+        "revised before it was published",
+      ).toBeGreaterThanOrEqual(Date.parse(published ?? ""))
       expect(await property(page, "article:author")).toBeTruthy()
 
       const tags = await page

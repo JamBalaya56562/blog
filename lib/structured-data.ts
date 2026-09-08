@@ -61,6 +61,7 @@ export function blogPostingJsonLd(
     title: string
     description: string
     date: string
+    updated?: string
     tags: readonly string[]
   },
 ) {
@@ -71,11 +72,9 @@ export function blogPostingJsonLd(
     "@context": "https://schema.org",
     "@type": "BlogPosting",
     author: person(locale),
-    // Repeats `datePublished` because the frontmatter has no updated field to
-    // read. That is true today — nothing has been revised — and stops being
-    // true the first time a post is edited, so an `updated` field has to land
-    // before that happens rather than after.
-    dateModified: new Date(post.date).toISOString(),
+    // Falls back to the publication date, which is the honest answer for a post
+    // that has never been revised — not a placeholder for one that has.
+    dateModified: new Date(post.updated ?? post.date).toISOString(),
     datePublished: new Date(post.date).toISOString(),
     description: post.description,
     headline: post.title,

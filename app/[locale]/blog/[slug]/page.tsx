@@ -105,6 +105,12 @@ export async function generateMetadata({
       ...openGraphSite(locale, alternates.canonical),
       authors: [SITE_AUTHOR],
       description: post.frontmatter.description,
+      // `modifiedTime` falls back to publication for a post that has never been
+      // revised. Omitting it instead would leave a crawler to guess, and the
+      // guess it makes is the crawl date.
+      modifiedTime: new Date(
+        post.frontmatter.updated ?? post.frontmatter.date,
+      ).toISOString(),
       publishedTime: new Date(post.frontmatter.date).toISOString(),
       tags: post.frontmatter.tags,
       title: post.frontmatter.title,
@@ -148,6 +154,7 @@ async function BlogPostContent({
           slug,
           tags: post.frontmatter.tags,
           title: post.frontmatter.title,
+          updated: post.frontmatter.updated,
         })}
       />
       <JsonLd data={postBreadcrumb(locale, slug, post.frontmatter.title)} />
