@@ -2,6 +2,7 @@ import type { Route } from "next"
 import Link from "next/link"
 import { ViewTransition } from "react"
 import { TagLink } from "@/components/home/tag-link"
+import { PostDate } from "@/components/post-date"
 import type { Post } from "@/lib/content/types"
 import type { Locale } from "@/lib/i18n/config"
 import type { Dictionary } from "@/lib/i18n/get-dictionary"
@@ -65,7 +66,7 @@ export function RecentDispatches({
                       ◢ {cat.toUpperCase()}
                     </span>
                     <span className="pp-tick">
-                      {post.frontmatter.date.replace(/-/g, ".")}
+                      <PostDate date={post.frontmatter.date} locale={locale} />
                     </span>
                   </div>
                   <ViewTransition

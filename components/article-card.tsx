@@ -2,6 +2,7 @@ import Image from "next/image"
 import Link from "next/link"
 import { ViewTransition } from "react"
 import { TagLink } from "@/components/home/tag-link"
+import { PostDate } from "@/components/post-date"
 import { Brackets } from "@/components/ui/brackets"
 import { PopularityBar, ViewStat } from "@/components/view-counts"
 import type { Post } from "@/lib/content/types"
@@ -118,7 +119,9 @@ export function ArticleCard({
         )}
         <Morph enabled={morph} name={`post-meta-${post.slug}`}>
           <div className="pp-tick mt-3 flex flex-wrap items-center justify-between gap-2">
-            <span>{post.frontmatter.date.replace(/-/g, ".")}</span>
+            <span>
+              <PostDate date={post.frontmatter.date} locale={locale} />
+            </span>
             <span className="flex gap-3">
               <span>
                 <span className="pp-num text-cyber-cyan">{readMin}</span> MIN
