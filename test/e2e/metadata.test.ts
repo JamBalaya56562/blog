@@ -34,19 +34,24 @@ test.describe("Share card metadata", () => {
  * "Jam's Blog" for a while: their `generateMetadata` returned only
  * `alternates`, so the layout's `title.default` stood in and three unrelated
  * pages were indistinguishable in a search result or a tab strip. The page
- * segment and the layout's `template: "%s | Jam's Blog"` only meet at render
- * time, so this is the level the composition can be checked at.
+ * segment and the layout's title template only meet at render time, so this is
+ * the level the composition can be checked at.
+ *
+ * The suffix is locale-dependent, and this table used to say "Jam's Blog" on
+ * the Japanese rows — it pinned the bug rather than the intent. The layout's
+ * title now comes from `header.siteName`, the same dictionary entry
+ * `og:site_name` has always used, so the two halves of a Japanese title agree.
  */
 test.describe("Page titles", () => {
   for (const [path, title] of [
     ["/en", "Jam's Blog"],
-    ["/ja", "Jam's Blog"],
+    ["/ja", "Jamのブログ"],
     ["/en/blog", "Blog | Jam's Blog"],
-    ["/ja/blog", "ブログ | Jam's Blog"],
+    ["/ja/blog", "ブログ | Jamのブログ"],
     ["/en/portfolio", "About Me | Jam's Blog"],
-    ["/ja/portfolio", "自己紹介 | Jam's Blog"],
+    ["/ja/portfolio", "自己紹介 | Jamのブログ"],
     ["/en/privacy-policy", "Privacy Policy | Jam's Blog"],
-    ["/ja/privacy-policy", "プライバシーポリシー | Jam's Blog"],
+    ["/ja/privacy-policy", "プライバシーポリシー | Jamのブログ"],
   ] as const) {
     test(`${path} is titled "${title}"`, async ({ page }) => {
       await page.goto(path)
@@ -238,6 +243,41 @@ test.describe("Open Graph completeness", () => {
       expect(tags.length).toBeGreaterThan(0)
     })
   }
+
+  /**
+   * The share card is where the two names sat side by side, and where the
+   * mismatch was visible to anyone who posted a Japanese page: `og:site_name`
+   * read from the dictionary while `og:title` fell through to a hardcoded
+   * English default, so one card carried both "Jamのブログ" and "Jam's Blog".
+   *
+   * Asserting the exact strings would only restate the dictionary. What has to
+   * hold is that the site's name is spelled one way per locale, whichever page
+   * the crawler landed on.
+   */
+  for (const [path, siteName] of [
+    ["/en", "Jam's Blog"],
+    ["/ja", "Jamのブログ"],
+    ["/ja/blog", "Jamのブログ"],
+    ["/ja/blog/tailwind-css-v4-guide", "Jamのブログ"],
+  ] as const) {
+    test(`${path} names the site consistently`, async ({ page }) => {
+      await page.goto(path)
+      expect(await property(page, "og:site_name")).toBe(siteName)
+    })
+  }
+
+  test("the locale root's og:title is the localised site name", async ({
+    page,
+  }) => {
+    // The root is the one page with no title of its own, so it is the only
+    // place `title.default` reaches og:title. That is exactly where the
+    // English default used to leak into the Japanese card.
+    await page.goto("/ja")
+    expect(await property(page, "og:title")).toBe("Jamのブログ")
+    expect(await property(page, "og:title")).toBe(
+      await property(page, "og:site_name"),
+    )
+  })
 })
 
 /**

@@ -16,7 +16,12 @@ import { Header } from "@/components/header"
 import { ScrollToTop } from "@/components/scroll-to-top"
 import { ThemeInitScript } from "@/components/theme-init-script"
 import { createContentLoader } from "@/lib/content/loader"
-import { isValidLocale, type Locale, locales } from "@/lib/i18n/config"
+import {
+  defaultLocale,
+  isValidLocale,
+  type Locale,
+  locales,
+} from "@/lib/i18n/config"
 import { type Dictionary, getDictionary } from "@/lib/i18n/get-dictionary"
 import { SITE_URL } from "@/lib/site"
 import { THEME_BACKGROUND } from "@/lib/theme/colors"
@@ -54,13 +59,37 @@ export const viewport: Viewport = {
   ],
 }
 
-export const metadata: Metadata = {
-  description: "A blog about web development, built with Next.js and MDX.",
-  metadataBase: SITE_URL,
-  title: {
-    default: "Jam's Blog",
-    template: "%s | Jam's Blog",
-  },
+/**
+ * The site name has to come from the dictionary, so this cannot be the static
+ * `metadata` object it used to be.
+ *
+ * `openGraphSite()` already read `header.siteName`, so a Japanese page went
+ * out advertising `og:site_name: Jamのブログ` next to `og:title: Jam's Blog`,
+ * and `/ja/blog` rendered `<title>ブログ | Jam's Blog</title>` — the page's own
+ * segment translated, the suffix behind it not. Both come from here.
+ *
+ * `description` stays a hardcoded English string on purpose. Every real page
+ * overrides it, `app/manifest.ts` repeats the same sentence, and two test files
+ * use it as the sentinel for "this page forgot its own description" — changing
+ * it here would blunt that check for no gain.
+ */
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>
+}): Promise<Metadata> {
+  const { locale } = await params
+  const siteName = getDictionary(isValidLocale(locale) ? locale : defaultLocale)
+    .header.siteName
+
+  return {
+    description: "A blog about web development, built with Next.js and MDX.",
+    metadataBase: SITE_URL,
+    title: {
+      default: siteName,
+      template: `%s | ${siteName}`,
+    },
+  }
 }
 
 export async function generateStaticParams() {
