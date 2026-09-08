@@ -11,6 +11,7 @@ import {
 } from "@/components/article-card"
 import { JsonLd } from "@/components/json-ld"
 import { PageTransition } from "@/components/page-transition"
+import { PostDate } from "@/components/post-date"
 import { PostNavigation } from "@/components/post-navigation"
 import { getRelatedPosts, RelatedPosts } from "@/components/related-posts"
 import { ScrollProgress } from "@/components/scroll-progress"
@@ -185,7 +186,7 @@ async function BlogPostContent({
                 <span className="flex items-center gap-3">
                   <span>
                     {dictionary.blog.postedOn}{" "}
-                    {post.frontmatter.date.replace(/-/g, ".")}
+                    <PostDate date={post.frontmatter.date} locale={locale} />
                   </span>
                   <span className="text-cyber-line-hi">·</span>
                 </span>
@@ -198,7 +199,8 @@ async function BlogPostContent({
                 */}
                 <span className="flex items-center gap-3">
                   <span>
-                    {dictionary.blog.updatedOn} {updatedOn.replace(/-/g, ".")}
+                    {dictionary.blog.updatedOn}{" "}
+                    <PostDate date={updatedOn} locale={locale} />
                   </span>
                   <span className="text-cyber-line-hi">·</span>
                 </span>

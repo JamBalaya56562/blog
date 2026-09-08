@@ -181,6 +181,65 @@ test.describe("Blog post page", () => {
     }
   }
 
+  /**
+   * The dates read as digits and dots to a screen reader — "two thousand
+   * twenty-five point zero three point zero one" — because nothing in the
+   * markup said they were dates. `<time datetime>` does not fix that (it is
+   * not announced) and neither does `aria-label` (ARIA prohibits it on the
+   * roles these elements have), so the dotted form is hidden from the
+   * accessibility tree and a spoken form put beside it.
+   *
+   * These walk the DOM the way assistive technology reads it — skipping
+   * `aria-hidden` subtrees, keeping visually hidden ones — because the whole
+   * point is a difference between what is seen and what is announced.
+   */
+  for (const [locale, spoken] of [
+    ["en", "January 15, 2025"],
+    ["ja", "2025年1月15日"],
+  ] as const) {
+    test(`the ${locale} dates are announced as dates`, async ({ page }) => {
+      await page.goto(`/${locale}/blog/getting-started-with-nextjs`)
+
+      const announced = await page.evaluate(() => {
+        const walk = (node: Node): string => {
+          if (node.nodeType === Node.TEXT_NODE) {
+            return node.textContent ?? ""
+          }
+          const el = node as HTMLElement
+          if (el.getAttribute?.("aria-hidden") === "true") {
+            return ""
+          }
+          return Array.from(node.childNodes).map(walk).join("")
+        }
+        return walk(document.querySelector("main") ?? document.body)
+      })
+
+      expect(announced).toContain(spoken)
+      // The dotted form is what a screen reader used to be left with.
+      expect(
+        announced,
+        "the dotted date is still in the accessibility tree",
+      ).not.toContain("2025.01.15")
+    })
+  }
+
+  test("the spoken date stays off the screen", async ({ page }) => {
+    // The hidden copy must not show up or take space; a broken `sr-only` would
+    // print the long date next to the short one.
+    await page.setViewportSize({ height: 900, width: 1280 })
+    await page.goto("/ja/blog/getting-started-with-nextjs")
+
+    const hidden = page.locator("article header .sr-only").first()
+    await expect(hidden).toHaveText("2025年1月15日")
+    const box = await hidden.boundingBox()
+    expect(box?.width ?? 0).toBeLessThanOrEqual(1)
+    expect(box?.height ?? 0).toBeLessThanOrEqual(1)
+
+    await expect(page.locator("article header .pp-tick").nth(1)).toContainText(
+      "2025.01.15",
+    )
+  })
+
   test("the desktop meta row is still a single line", async ({ page }) => {
     // The grouping must not change the wide layout: every gap is still the
     // row's own `gap-3`, so this stays one line at any normal width.

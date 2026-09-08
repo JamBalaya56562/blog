@@ -1,5 +1,6 @@
 import type { Route } from "next"
 import Link from "next/link"
+import { PostDate } from "@/components/post-date"
 import { CountUp } from "@/components/ui/count-up"
 import { SplitText } from "@/components/ui/split-text"
 import type { Locale } from "@/lib/i18n/config"
@@ -104,7 +105,12 @@ export function HeroSection({
           label="LATEST"
           value={
             <span className="pp-display text-cyber-cyan">
-              {latestDate?.replace(/-/g, ".") ?? "----.--.--"}
+              {/* The placeholder is not a date, so it gets no spoken form. */}
+              {latestDate ? (
+                <PostDate date={latestDate} locale={locale} />
+              ) : (
+                "----.--.--"
+              )}
             </span>
           }
           sub="POST DATE"
