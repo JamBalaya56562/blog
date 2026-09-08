@@ -24,6 +24,18 @@ import { notFound } from "next/navigation"
  * left alone deliberately: those are asset requests, and answering one with a
  * full HTML page would be the wrong reply.
  */
+/**
+ * The same declaration `app/[locale]/blog/[slug]/page.tsx` carries, for the
+ * same reason: this route answers 404 and nothing else, so there is no shell
+ * worth streaming ahead of that decision.
+ *
+ * Without it `cacheComponents` tries to validate `instant` against a segment
+ * that never renders — `notFound()` throws before anything is produced — and
+ * dev logs "Could not validate `instant`" on every 404. Production was
+ * unaffected, which is exactly what makes it worth pinning down here.
+ */
+export const instant = false
+
 export default function CatchAllNotFound(): never {
   notFound()
 }
