@@ -11,6 +11,8 @@ const MIME_TYPES: Record<string, string> = {
   ".webp": "image/webp",
 }
 
+const CACHE_CONTROL = "public, max-age=3600, stale-while-revalidate=604800"
+
 function getMimeType(path: string): string {
   const ext = path.slice(path.lastIndexOf(".")).toLowerCase()
   return MIME_TYPES[ext] ?? "application/octet-stream"
@@ -46,7 +48,10 @@ export async function GET(
         return new Response("Not Found", { status: 404 })
       }
       return new Response(res.body, {
-        headers: { "Content-Type": contentType },
+        headers: {
+          "Cache-Control": CACHE_CONTROL,
+          "Content-Type": contentType,
+        },
       })
     } catch (e) {
       console.error("Image proxy fetch failed:", e)
@@ -57,7 +62,12 @@ export async function GET(
   try {
     const filePath = join(process.cwd(), "content", "images", imagePath)
     const data = await readFile(filePath)
-    return new Response(data, { headers: { "Content-Type": contentType } })
+    return new Response(data, {
+      headers: {
+        "Cache-Control": CACHE_CONTROL,
+        "Content-Type": contentType,
+      },
+    })
   } catch {
     return new Response("Not Found", { status: 404 })
   }

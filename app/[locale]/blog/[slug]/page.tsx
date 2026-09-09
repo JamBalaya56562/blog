@@ -220,6 +220,8 @@ async function BlogPostContent({
                 width={1200}
                 height={514}
                 className="h-full w-full object-cover"
+                priority
+                fetchPriority="high"
               />
             </div>
           </ViewTransition>

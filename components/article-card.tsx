@@ -9,7 +9,7 @@ import type { Post } from "@/lib/content/types"
 import type { Locale } from "@/lib/i18n/config"
 import { getBlogPostPath } from "@/lib/routes"
 
-export const DEFAULT_THUMBNAIL = "/thumbnail_default.png"
+export const DEFAULT_THUMBNAIL = "/thumbnail_default.avif"
 
 function Morph({
   name,
