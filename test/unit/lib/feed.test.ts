@@ -122,6 +122,51 @@ describe("buildFeed", () => {
     )
   })
 
+  // Tags are what a reader filters on, and the author is what it shows next
+  // to the title; neither was carried, so both were invisible to anyone
+  // subscribed rather than visiting.
+  test("an item carries its tags and its author", () => {
+    const xml = buildFeed({
+      ...base,
+      posts: [post("a", "2025-01-01", { tags: ["nextjs", "react"] })],
+    })
+
+    expect(xml).toContain("<category>nextjs</category>")
+    expect(xml).toContain("<category>react</category>")
+    expect(xml).toContain("<dc:creator>Jam Balaya</dc:creator>")
+    expect(xml).toContain('xmlns:dc="http://purl.org/dc/elements/1.1/"')
+  })
+
+  test("a tag with markup in it cannot break the document", () => {
+    const xml = buildFeed({
+      ...base,
+      posts: [post("a", "2025-01-01", { tags: ["a & b", "<script>"] })],
+    })
+
+    expect(xml).toContain("<category>a &amp; b</category>")
+    expect(xml).not.toContain("<category><script></category>")
+    expect(() => new DOMParser().parseFromString(xml, "text/xml")).not.toThrow()
+  })
+
+  // Every post, every request was fine at three of them. A feed carrying the
+  // whole archive grows without bound and readers only show the recent end of
+  // it anyway.
+  test("only the newest twenty posts are carried", () => {
+    const posts = Array.from({ length: 25 }, (_, i) =>
+      post(
+        `post-${String(i).padStart(2, "0")}`,
+        `2025-01-${String(25 - i).padStart(2, "0")}`,
+      ),
+    )
+    const xml = buildFeed({ ...base, posts })
+
+    expect(xml.match(/<item>/g)?.length).toBe(20)
+    expect(xml).toContain("post-00")
+    expect(xml).toContain("post-19")
+    expect(xml).not.toContain("post-20")
+    expect(xml).not.toContain("post-24")
+  })
+
   test("the self link points at this locale's feed", () => {
     const xml = buildFeed({ ...base, locale: "ja", posts: [] })
     expect(xml).toContain('href="https://kokohore56562wanwan.site/ja/feed.xml"')
