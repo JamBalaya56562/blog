@@ -171,6 +171,25 @@ const nextConfig: NextConfig = {
         ],
         source: "/((?!_next/|api/).*\\.(?:avif|jpe?g|png|svg|webp|ico|woff2))",
       },
+      {
+        // All three are generated at build time and cannot change until the
+        // site is redeployed, but Next serves them with
+        // `max-age=0, must-revalidate`, so every request goes back to the
+        // origin to be told nothing changed.
+        //
+        // The manifest is the one that earns this. It is linked from every
+        // page, so a browser revalidating it spends an origin round trip per
+        // page view. The sitemap and robots.txt are read by crawlers a handful
+        // of times a day and are here for consistency rather than for the
+        // saving.
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=3600, stale-while-revalidate=86400",
+          },
+        ],
+        source: "/(sitemap\\.xml|robots\\.txt|manifest\\.webmanifest)",
+      },
     ]
   },
   images: { unoptimized: true },
