@@ -10,26 +10,6 @@
   /* Light theme — toned-down cyber palette on near-white */
   --background: #f4f7fa;
   --foreground: #0a1620;
-  --surface: #f4f7fa;
-  --surface-container-low: #ebf0f5;
-  --surface-container: #e1e8ef;
-  --surface-container-lowest: #ffffff;
-  --on-surface: #0a1620;
-  --on-surface-variant: #4a5664;
-  --primary: #006a8c;
-  --primary-container: #b9e7f7;
-  --on-primary: #ffffff;
-  --on-primary-container: #001f2c;
-  --primary-fixed: #b9e7f7;
-  --primary-fixed-dim: #7be4ff;
-  --secondary: #5b6b76;
-  --secondary-container: #d6e6ee;
-  --on-secondary-container: #1a2a32;
-  --outline: #6e7884;
-  --outline-variant: #c5d2dd;
-  --error: #ba1a1a;
-  --error-container: #ffdad6;
-  --surface-tint: #006a8c;
 
   /* Sibyl brand palette (theme-stable) */
   --cyber-cyan: #06a7d4;
@@ -73,26 +53,6 @@
 .dark {
   --background: #04060a;
   --foreground: #e6f4ff;
-  --surface: #04060a;
-  --surface-container-low: #080c12;
-  --surface-container: #0d141d;
-  --surface-container-lowest: #02040a;
-  --on-surface: #e6f4ff;
-  --on-surface-variant: rgba(230, 244, 255, 0.7);
-  --primary: #7be4ff;
-  --primary-container: #0d141d;
-  --on-primary: #04060a;
-  --on-primary-container: #7be4ff;
-  --primary-fixed: rgba(123, 228, 255, 0.18);
-  --primary-fixed-dim: #7be4ff;
-  --secondary: #ffb84d;
-  --secondary-container: rgba(255, 184, 77, 0.12);
-  --on-secondary-container: #ffb84d;
-  --outline: rgba(230, 244, 255, 0.3);
-  --outline-variant: rgba(120, 200, 255, 0.18);
-  --error: #ff3344;
-  --error-container: rgba(255, 51, 68, 0.18);
-  --surface-tint: #7be4ff;
 
   /* Sibyl brand palette — dark variant */
   --cyber-cyan: #7be4ff;
@@ -115,26 +75,6 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --color-surface: var(--surface);
-  --color-surface-container-low: var(--surface-container-low);
-  --color-surface-container: var(--surface-container);
-  --color-surface-container-lowest: var(--surface-container-lowest);
-  --color-on-surface: var(--on-surface);
-  --color-on-surface-variant: var(--on-surface-variant);
-  --color-primary: var(--primary);
-  --color-primary-container: var(--primary-container);
-  --color-on-primary: var(--on-primary);
-  --color-on-primary-container: var(--on-primary-container);
-  --color-primary-fixed: var(--primary-fixed);
-  --color-primary-fixed-dim: var(--primary-fixed-dim);
-  --color-secondary: var(--secondary);
-  --color-secondary-container: var(--secondary-container);
-  --color-on-secondary-container: var(--on-secondary-container);
-  --color-outline: var(--outline);
-  --color-outline-variant: var(--outline-variant);
-  --color-error: var(--error);
-  --color-error-container: var(--error-container);
-  --color-surface-tint: var(--surface-tint);
 
   --color-cyber-cyan: var(--cyber-cyan);
   --color-cyber-cyan-bright: var(--cyber-cyan-bright);
@@ -153,7 +93,6 @@
   /* Expose the namespaced font tokens as Tailwind utility classes:
      `font-sans` / `font-mono` / `font-headline`. */
   --font-sans: var(--blog-font-sans);
-  --font-headline: var(--blog-font-headline);
   --font-mono: var(--blog-font-mono);
 }
 
