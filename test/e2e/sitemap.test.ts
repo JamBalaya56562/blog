@@ -94,3 +94,30 @@ test.describe("Canonical and hreflang", () => {
     })
   }
 })
+
+/**
+ * These three are generated at build time and cannot change until the site is
+ * redeployed, but Next serves them with `max-age=0, must-revalidate` unless
+ * `next.config.ts` says otherwise. The manifest is the one that matters: it is
+ * linked from every page, so revalidating it costs an origin round trip per
+ * page view.
+ *
+ * Worth pinning because losing it is silent. Nothing renders differently, no
+ * test fails, and the only symptom is the origin being asked about a file that
+ * has not changed since the last deploy.
+ */
+test.describe("Metadata routes are cacheable", () => {
+  for (const path of ["/sitemap.xml", "/robots.txt", "/manifest.webmanifest"]) {
+    test(`${path} tells the CDN it may hold the response`, async ({
+      request,
+    }) => {
+      const cacheControl = (await request.get(path)).headers()["cache-control"]
+
+      expect(cacheControl).toContain("public")
+      expect(cacheControl).toContain("max-age=3600")
+      expect(cacheControl).toContain("stale-while-revalidate=86400")
+      // What Next sends on its own, and what this exists to replace.
+      expect(cacheControl).not.toContain("must-revalidate")
+    })
+  }
+})
