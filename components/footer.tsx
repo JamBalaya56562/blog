@@ -21,14 +21,6 @@ export function Footer({
           className="flex shrink-0 items-center gap-2"
           aria-label={dictionary.header.siteName}
         >
-          {/*
-            Tailwind's preflight gives every image `height: auto`, so the
-            height below never reaches the layout — the browser derives it from
-            the width and the file's own 166x20. Stating 18 here claimed a
-            ratio the SVG does not have, and next/image warned that one
-            dimension had been modified without the other. 140 x 17 is what the
-            footer has always rendered.
-          */}
           <Image
             src="/logo.svg"
             alt={dictionary.header.siteName}
@@ -92,8 +84,6 @@ export function Footer({
 
       <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 border-t border-cyber-line/60 px-7 py-3">
         <span className="pp-tick">
-          {/* The dictionary value already starts with "©" — no need to
-              prefix another one here. */}
           {dictionary.footer.copyright.replace(
             "{year}",
             String(new Date().getFullYear()),

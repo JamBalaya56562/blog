@@ -51,12 +51,10 @@ export function BlogPostSkeleton() {
             <Skeleton className="h-4 w-12" />
           </div>
         </header>
-        {/* Hero image with corner brackets */}
         <div className="relative mb-12 aspect-[21/9] overflow-hidden border border-cyber-line">
           <Brackets />
           <Skeleton className="h-full w-full border-0" />
         </div>
-        {/* Body */}
         <div className="space-y-3">
           <Skeleton className="h-4 w-full" />
           <Skeleton className="h-4 w-full" />

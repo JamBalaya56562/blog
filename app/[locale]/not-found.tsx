@@ -6,14 +6,6 @@ import { usePathname } from "next/navigation"
 import { defaultLocale, isValidLocale } from "@/lib/i18n/config"
 import { getDictionary } from "@/lib/i18n/get-dictionary"
 
-/**
- * Locale-scoped 404. Rendered inside `app/[locale]/layout.tsx`, so the
- * header, footer, fonts, theme init and `CyberBackground` all come from the
- * layout — this file only owns the 404 body.
- *
- * `not-found.tsx` receives no `params`, so the locale is derived from the
- * pathname, the same way `locale-switch-link.tsx` does it.
- */
 export default function NotFound() {
   const pathname = usePathname()
   const segment = pathname?.split("/")[1] ?? ""
@@ -23,7 +15,6 @@ export default function NotFound() {
 
   return (
     <section className="relative overflow-hidden px-4 py-16 sm:px-7 sm:py-24">
-      {/* Faster sweep than the global one: the 404 is the whole page here. */}
       <div aria-hidden className="pp-scan-sweep pp-404-sweep" />
 
       <div className="relative z-10 mx-auto max-w-7xl">

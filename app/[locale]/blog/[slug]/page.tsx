@@ -35,17 +35,6 @@ import { useMDXComponents } from "@/mdx-components"
 
 type Params = { locale: string; slug: string }
 
-/**
- * This route blocks on its params, and that is the point.
- *
- * A slug `generateStaticParams` did not produce is a 404, and answering with
- * the right status means deciding before the response starts. Streaming the
- * shell first would send 200 and leave a soft 404 behind, which is worse than
- * waiting: search engines take a 200 as a real page.
- *
- * Declaring it here is what tells Next the block is deliberate, instead of
- * warning that the route could have been prerendered.
- */
 export const instant = false
 
 const getPost = cache(async (locale: Locale, slug: string) => {
@@ -106,9 +95,6 @@ export async function generateMetadata({
       ...openGraphSite(locale, alternates.canonical),
       authors: [SITE_AUTHOR],
       description: post.frontmatter.description,
-      // `modifiedTime` falls back to publication for a post that has never been
-      // revised. Omitting it instead would leave a crawler to guess, and the
-      // guess it makes is the crawl date.
       modifiedTime: new Date(
         post.frontmatter.updated ?? post.frontmatter.date,
       ).toISOString(),
@@ -172,16 +158,6 @@ async function BlogPostContent({
               </h1>
             </ViewTransition>
             <ViewTransition name={`post-meta-${slug}`} share="morph">
-              {/*
-                Grouped rather than a flat run of items and separators, so the
-                row breaks where it reads well instead of wherever it runs out
-                of width. Flat, a narrow screen split "1 MIN READ" from
-                "0 VIEWS" and left a separator stranded at the start of a line.
-
-                Each group carries its own trailing separator and uses the same
-                `gap-3` as the row, so every gap is still 12px and the desktop
-                line is unchanged — only the units it may break between are.
-              */}
               <div className="pp-tick mt-5 flex flex-wrap items-center gap-3">
                 <span className="flex items-center gap-3">
                   <span>
@@ -190,13 +166,6 @@ async function BlogPostContent({
                   </span>
                   <span className="text-cyber-line-hi">·</span>
                 </span>
-                {/*
-                  Shown whether or not the post has been revised. A post with no
-                  `updated` in its frontmatter really was last modified when it
-                  was published, so the fallback is the true date rather than a
-                  stand-in — the same reasoning `article:modified_time` and
-                  JSON-LD's `dateModified` use.
-                */}
                 <span className="flex items-center gap-3">
                   <span>
                     {dictionary.blog.updatedOn}{" "}
@@ -204,8 +173,6 @@ async function BlogPostContent({
                   </span>
                   <span className="text-cyber-line-hi">·</span>
                 </span>
-                {/* Reading time and view count are one thought; they break
-                    together or not at all. */}
                 <span className="flex items-center gap-3">
                   <span>
                     <span className="pp-num text-cyber-cyan">{readMin}</span>{" "}

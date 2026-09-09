@@ -29,20 +29,6 @@ export const viewport: Viewport = {
   ],
 }
 
-/**
- * The site name has to come from the dictionary, so this cannot be the static
- * `metadata` object it used to be.
- *
- * `openGraphSite()` already read `header.siteName`, so a Japanese page went
- * out advertising `og:site_name: Jamのブログ` next to `og:title: Jam's Blog`,
- * and `/ja/blog` rendered `<title>ブログ | Jam's Blog</title>` — the page's own
- * segment translated, the suffix behind it not. Both come from here.
- *
- * `description` stays a hardcoded English string on purpose. Every real page
- * overrides it, `app/manifest.ts` repeats the same sentence, and two test files
- * use it as the sentinel for "this page forgot its own description" — changing
- * it here would blunt that check for no gain.
- */
 export async function generateMetadata({
   params,
 }: {

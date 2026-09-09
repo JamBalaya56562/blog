@@ -44,11 +44,6 @@ const CORNERS = [
   },
 ]
 
-/**
- * The card's eyebrow is set in caps to match the site's tick labels. Japanese
- * has no case, so `Jamのブログ` passes through as `JAMのブログ` — the Latin part
- * lifts and the kana do not, which is what the header does too.
- */
 export function ogEyebrow(siteName: string): string {
   return siteName.toUpperCase()
 }
@@ -67,14 +62,6 @@ export function titleFontSize(title: string): number {
   return Math.max(TITLE_MIN_PX, Math.min(TITLE_MAX_PX, fit))
 }
 
-/**
- * `eyebrow` is required rather than defaulted, and that is the whole point of
- * this signature. It used to default to `"JAM'S BLOG"`, no caller ever passed
- * anything, and every Japanese card went out with an English site name burned
- * into the image — invisible to the build, to the type checker and to every
- * test, because a default is never missing. Ask for it and a new card cannot
- * repeat that.
- */
 export function OgCard({
   title,
   description,
