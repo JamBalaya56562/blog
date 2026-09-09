@@ -42,10 +42,10 @@ resource "aws_cloudfront_distribution" "blog" {
     allowed_methods        = ["DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT"]
     cached_methods         = ["GET", "HEAD"]
 
-    # Both are AWS-managed, so there is nothing of ours to import for them.
-    # Looked up by name: the IDs are the same in every account, but a UUID in
-    # the file says nothing about what it selects.
-    cache_policy_id          = data.aws_cloudfront_cache_policy.caching_disabled.id
+    cache_policy_id = aws_cloudfront_cache_policy.blog.id
+    # AWS-managed, so there is nothing of ours to import for it. Looked up by
+    # name: the ID is the same in every account, but a UUID in the file says
+    # nothing about what it selects.
     origin_request_policy_id = data.aws_cloudfront_origin_request_policy.all_viewer_except_host_header.id
   }
 
@@ -68,9 +68,64 @@ data "aws_cloudfront_origin_request_policy" "all_viewer_except_host_header" {
   name = "Managed-AllViewerExceptHostHeader"
 }
 
-# CachingDisabled, so the distribution holds nothing and every request reaches
-# the function. It overrides the origin's own `s-maxage`, which the app does
-# send. Recorded as it stands; changing it is a change, not an import.
-data "aws_cloudfront_cache_policy" "caching_disabled" {
-  name = "Managed-CachingDisabled"
+/**
+ * The distribution used to run `Managed-CachingDisabled`, which held nothing:
+ * every request reached the function and the `s-maxage=900` the app takes the
+ * trouble to send was thrown away.
+ *
+ * No managed policy replaces it, because the cache key this app needs is not
+ * one of the shapes AWS ships. Three findings decided its contents, each
+ * measured against the running site rather than assumed.
+ *
+ * `Vary` does nothing here. CloudFront's cache key is the distribution domain,
+ * the path, and whatever this policy names — the origin's `Vary` header is
+ * never consulted. `proxy.ts` sends `Vary: Accept-Language` on its redirect and
+ * that is correct for browsers, but a CDN that ignored it would serve one
+ * reader's language to everyone.
+ *
+ * Query strings carry the RSC variants. Next answers an RSC request with a
+ * redirect to the same path plus `_rsc=<hash>`, and the hash differs for every
+ * combination of RSC headers — prefetch, segment prefetch and the router state
+ * tree all produce their own. Keying on the whole query string therefore
+ * separates them without naming any of them, which is why
+ * `next-router-state-tree`, whose value is different on nearly every
+ * navigation, is deliberately absent below.
+ *
+ * The `rsc` header still has to be named. At one fixed hashed URL the response
+ * is 70,001 bytes of `text/x-component` with the header and 129,451 bytes of
+ * `text/html` without it, and both carry `s-maxage=900`. Left out of the key,
+ * whichever arrived first would be served to the other — HTML to the router, or
+ * a payload to a browser. `next-router-prefetch` behaves the same way.
+ */
+resource "aws_cloudfront_cache_policy" "blog" {
+  name    = "blog"
+  comment = "Next.js on a Lambda function URL: origin decides TTLs, RSC variants stay separate"
+
+  # Zero defaults, a one-year ceiling: the origin's Cache-Control decides. That
+  # is what keeps the locale redirect out of the cache — it carries no
+  # Cache-Control at all, so it is never stored, and the Accept-Language
+  # question never arises.
+  min_ttl     = 0
+  default_ttl = 0
+  max_ttl     = 31536000
+
+  parameters_in_cache_key_and_forwarded_to_origin {
+    enable_accept_encoding_gzip   = true
+    enable_accept_encoding_brotli = true
+
+    cookies_config {
+      cookie_behavior = "none"
+    }
+
+    query_strings_config {
+      query_string_behavior = "all"
+    }
+
+    headers_config {
+      header_behavior = "whitelist"
+      headers {
+        items = ["rsc", "next-router-prefetch", "next-router-segment-prefetch"]
+      }
+    }
+  }
 }
