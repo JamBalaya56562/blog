@@ -3,11 +3,11 @@
 OpenTofu configuration for the AWS account this blog runs in.
 
 Nothing here was created by OpenTofu. The account was built by hand over a
-couple of years, and this directory adopts it: every resource arrives through
-an `import` block in [imports.tf](imports.tf), and the target state is a plan
-that reports **no changes**. That is the contract. A plan proposing to add,
-change or destroy anything means the configuration has drifted from the account,
-not that the account needs correcting.
+couple of years, and this directory adopted it: the resources were brought into
+state through `import` blocks, which have since been deleted. The target state
+is a plan that reports **no changes**. That is the contract. A plan proposing to
+add, change or destroy anything means the configuration has drifted from the
+account, not that the account needs correcting.
 
 ## What is managed
 
@@ -32,15 +32,35 @@ in the file is only what it was when this was written.
 
 ## Running it
 
+Two things are needed, and the second one is easy to forget with expensive
+consequences.
+
 The AWS provider needs credentials. With a browser session from `aws login` or
 an SSO profile, hand them to OpenTofu as environment variables rather than
-configuring the provider:
+configuring the provider.
+
+**And the state has to be fetched first.** It lives in a GitHub Actions
+artifact, so a fresh clone has none, and `tofu plan` against an empty state
+reports every resource as something to create rather than saying no changes. The
+plan is not wrong — it is answering a different question — but it reads like the
+account is empty, and running `apply` on it would try to build a second copy of
+everything.
 
 ```bash
 eval "$(aws configure export-credentials --format env)"
+
+id=$(gh api "repos/JamBalaya56562/blog/actions/artifacts?name=tofu-state&per_page=100" \
+  --jq '[.artifacts[] | select(.expired == false)] | sort_by(.created_at) | last | .id')
+gh api "repos/JamBalaya56562/blog/actions/artifacts/${id}/zip" > state.zip
+unzip -o state.zip
+
 tofu init
 tofu plan
 ```
+
+Delete `terraform.tfstate` when you are done. A copy left behind goes stale the
+moment CI applies anything, and a stale state plans against an account that no
+longer looks like that. Fetch it again next time; it is one command.
 
 `tofu fmt` is part of `mise lint`.
 
@@ -56,10 +76,7 @@ distribution, alias records — is something OpenTofu works out from the
 references. Copying this for another domain is mostly a matter of changing
 `domain_name`.
 
-Four things still differ when the account is empty rather than already built.
-
-**Delete the `import` blocks.** They exist to adopt resources that are already
-running. Against an empty account they fail.
+Three things still differ when the account is empty rather than already built.
 
 **Add `aws_acm_certificate_validation`.** It is a wait, not a resource: it
 blocks until ACM sees the DNS record and issues the certificate. Nothing in AWS
@@ -99,16 +116,21 @@ to build a second copy of an account that already exists. Some of it would fail
 on names already taken — but a second hosted zone for the same domain, with
 different name servers, would be created quite happily.
 
-## The `import` blocks are temporary
+## Why there are no `import` blocks
 
-They come out once the first apply has succeeded and the state artifact exists.
+There were, for exactly one apply. They are gone now, and that is deliberate
+rather than tidying.
 
-Leaving them in looks like insurance and is not. An `import` block whose target
-does not exist is a hard error, so keeping them makes `tofu destroy` a one-way
-door: the next apply stops at the first block rather than rebuilding what was
-destroyed. Being able to tear the stack down and put it back is worth more here
-than a second line of defence against losing the state, which the weekly backup
-already covers.
+Keeping them looks like insurance against a lost state and is not. An `import`
+block whose target does not exist is a hard error, so leaving them in makes
+`tofu destroy` a one-way door: the next apply stops at the first block instead
+of rebuilding what was destroyed. Being able to tear the stack down and put it
+back is worth more than a second line of defence against losing the state, which
+the weekly backup already covers.
+
+If the state is ever lost for real, the way back is to write the blocks again —
+one per resource, `to` the address in these files and `id` the identifier AWS
+already knows — and delete them after the apply, exactly as before.
 
 ## Workflows
 
