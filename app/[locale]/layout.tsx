@@ -18,7 +18,6 @@ import {
   locales,
 } from "@/lib/i18n/config"
 import { type Dictionary, getDictionary } from "@/lib/i18n/get-dictionary"
-import { SITE_URL } from "@/lib/site"
 import { THEME_BACKGROUND } from "@/lib/theme/colors"
 import { ThemeProvider } from "@/lib/theme/theme-provider"
 import "@/app/globals.css"
@@ -55,7 +54,6 @@ export async function generateMetadata({
 
   return {
     description: "A blog about web development, built with Next.js and MDX.",
-    metadataBase: SITE_URL,
     title: {
       default: siteName,
       template: `%s | ${siteName}`,
