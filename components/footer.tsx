@@ -21,11 +21,19 @@ export function Footer({
           className="flex shrink-0 items-center gap-2"
           aria-label={dictionary.header.siteName}
         >
+          {/*
+            Tailwind's preflight gives every image `height: auto`, so the
+            height below never reaches the layout — the browser derives it from
+            the width and the file's own 166x20. Stating 18 here claimed a
+            ratio the SVG does not have, and next/image warned that one
+            dimension had been modified without the other. 140 x 17 is what the
+            footer has always rendered.
+          */}
           <Image
             src="/logo.svg"
             alt={dictionary.header.siteName}
             width={140}
-            height={18}
+            height={17}
           />
         </Link>
 
