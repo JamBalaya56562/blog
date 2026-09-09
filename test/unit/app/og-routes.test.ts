@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test"
+import { readFileSync } from "node:fs"
 import { LocalContentLoader } from "@/lib/content/local-loader"
 import { locales } from "@/lib/i18n/config"
 
@@ -26,8 +27,12 @@ describe("opengraph-image routes", () => {
     })
   }
 
-  // Without params for every route, the card would be rendered on demand in
-  // production — where the distroless image has no fonts of its own.
+  // Params alone do not make a route static. With `cacheComponents`, an
+  // uncached read anywhere in the handler keeps it dynamic: this route had
+  // `generateStaticParams` and still built as `ƒ` while the four locale cards
+  // built as `●`, so production rendered every post's card per request — 2.0s
+  // cold, 0.5s warm, `max-age=0` — and fetched a font subset from Google each
+  // time, on an image that carries no fonts of its own.
   for (const specifier of localeRoutes) {
     test(`${specifier} prerenders both locales`, async () => {
       const mod = await import(specifier)
@@ -55,5 +60,43 @@ describe("opengraph-image routes", () => {
         .map((p: { locale: string; slug: string }) => `${p.locale}/${p.slug}`)
         .sort(),
     ).toEqual(expected.sort())
+  })
+})
+
+/**
+ * The failure above is silent: the card still renders, just slowly and over
+ * the network, so what is pinned is the shape that keeps the route static —
+ * the handler reads nothing itself, and the function that reads is cached.
+ */
+describe("post card stays prerenderable", () => {
+  const SOURCE = readFileSync(
+    new URL(
+      "../../../app/[locale]/blog/[slug]/opengraph-image.tsx",
+      import.meta.url,
+    ),
+    "utf8",
+  )
+
+  function bodyOf(name: string): string {
+    const start = SOURCE.indexOf(`function ${name}(`)
+    if (start === -1) {
+      throw new Error(`no top-level function named ${name}`)
+    }
+    const end = SOURCE.indexOf("\n}\n", start)
+    return SOURCE.slice(start, end === -1 ? undefined : end)
+  }
+
+  test("the handler does not read content itself", () => {
+    expect(bodyOf("Image")).not.toContain("createContentLoader")
+  })
+
+  test("the function that reads content is cached", () => {
+    const reader = [...SOURCE.matchAll(/function (\w+)\(/g)]
+      .map((match) => match[1] as string)
+      .filter((name) => name !== "generateStaticParams")
+      .find((name) => bodyOf(name).includes("createContentLoader"))
+
+    expect(reader).toBeDefined()
+    expect(bodyOf(reader as string)).toContain('"use cache"')
   })
 })
