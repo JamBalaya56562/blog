@@ -43,9 +43,6 @@
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.1128.0",
     "@aws-sdk/lib-dynamodb": "^3.1128.0",
-    "@mdx-js/loader": "^3.1.1",
-    "@mdx-js/react": "^3.1.1",
-    "@next/mdx": "canary",
     "@shikijs/langs": "^4.4.3",
     "@shikijs/rehype": "^4.4.3",
     "@shikijs/themes": "^4.4.3",

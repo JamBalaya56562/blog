@@ -1,4 +1,3 @@
-import createMDX from "@next/mdx"
 import type { NextConfig } from "next"
 
 /**
@@ -176,7 +175,7 @@ const nextConfig: NextConfig = {
   outputFileTracingExcludes: {
     "**/*": ["./node_modules/@img/**", "./node_modules/sharp/**"],
   },
-  pageExtensions: ["js", "jsx", "md", "mdx", "ts", "tsx"],
+  pageExtensions: ["js", "jsx", "ts", "tsx"],
   // Drops the `X-Powered-By: Next.js` fingerprint.
   poweredByHeader: false,
   reactCompiler: true,
@@ -184,10 +183,4 @@ const nextConfig: NextConfig = {
   typedRoutes: true,
 }
 
-const withMDX = createMDX({
-  options: {
-    remarkPlugins: ["remark-gfm"],
-  },
-})
-
-export default withMDX(nextConfig)
+export default nextConfig
