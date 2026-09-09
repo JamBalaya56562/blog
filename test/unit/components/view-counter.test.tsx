@@ -17,6 +17,10 @@ afterEach(() => {
   cleanup()
   incrementMock.mockClear()
   actionResult = null
+  // The counter records what it has counted, and the record outlives a render.
+  try {
+    localStorage.clear()
+  } catch {}
 })
 
 const { ViewCounter } = await import("@/components/view-counter")
@@ -70,5 +74,58 @@ describe("ViewCounter", () => {
     // Waiting on the call the effect makes is what proves the effect ran.
     await waitFor(() => expect(incrementMock).toHaveBeenCalled())
     expect(container.textContent).toContain("42")
+  })
+
+  /**
+   * The write ran on every mount, so a reader who reloaded a post five times
+   * was five views, and every DynamoDB write is billed. The record is
+   * permanent by choice: a second visit next month is not a second view.
+   */
+  describe("counting once", () => {
+    test("a second visit does not write again", async () => {
+      const { unmount } = render(<ViewCounter slug="repeat" count={7} />)
+      await waitFor(() => expect(incrementMock).toHaveBeenCalledTimes(1))
+      unmount()
+
+      render(<ViewCounter slug="repeat" count={8} />)
+      await Promise.resolve()
+
+      expect(incrementMock).toHaveBeenCalledTimes(1)
+    })
+
+    test("another post is still counted", async () => {
+      render(<ViewCounter slug="first" count={1} />)
+      await waitFor(() => expect(incrementMock).toHaveBeenCalledTimes(1))
+      cleanup()
+
+      render(<ViewCounter slug="second" count={1} />)
+      await waitFor(() => expect(incrementMock).toHaveBeenCalledTimes(2))
+      expect(incrementMock).toHaveBeenLastCalledWith("second")
+    })
+
+    // Private browsing, or a browser set to block site data: the accessor
+    // itself throws. A counter that stops counting there would be a silent
+    // undercount.
+    test("a browser that refuses storage is still counted", async () => {
+      const original = Object.getOwnPropertyDescriptor(
+        globalThis,
+        "localStorage",
+      )
+      Object.defineProperty(globalThis, "localStorage", {
+        configurable: true,
+        get() {
+          throw new Error("SecurityError")
+        },
+      })
+
+      try {
+        render(<ViewCounter slug="private" count={3} />)
+        await waitFor(() => expect(incrementMock).toHaveBeenCalledTimes(1))
+      } finally {
+        if (original) {
+          Object.defineProperty(globalThis, "localStorage", original)
+        }
+      }
+    })
   })
 })
