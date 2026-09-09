@@ -1,77 +1,85 @@
 import { describe, expect, test } from "bun:test"
+import fc from "fast-check"
 import { defaultLocale, locales } from "@/lib/i18n/config"
+import { hasLocalePrefix, preferredLocale } from "@/lib/i18n/negotiate"
 
 /**
- * Extract the locale-redirect logic into testable pure functions
- * that mirror what proxy.ts does, so we can unit-test without
- * depending on Next.js request/response internals.
+ * This file used to re-implement `hasLocalePrefix` and the redirect target so
+ * it could avoid importing Next's request types. A copy of the logic passes
+ * whether or not the real one still agrees with it — and the real one had
+ * meanwhile been sending every reader to `/en`. Both functions now live in
+ * `lib/i18n/negotiate.ts`, which `proxy.ts` is a thin adapter over, so the
+ * assertions below are about the code that runs.
  */
-function hasLocalePrefix(pathname: string): boolean {
-  return locales.some(
-    (locale) => pathname === `/${locale}` || pathname.startsWith(`/${locale}/`),
-  )
-}
-
-function getRedirectPathname(pathname: string): string | null {
-  if (hasLocalePrefix(pathname)) {
-    return null
-  }
-  return `/${defaultLocale}${pathname}`
-}
-
-describe("proxy locale redirect", () => {
-  describe("hasLocalePrefix", () => {
-    test("returns true for exact locale path /en", () => {
-      expect(hasLocalePrefix("/en")).toBe(true)
-    })
-
-    test("returns true for exact locale path /ja", () => {
-      expect(hasLocalePrefix("/ja")).toBe(true)
-    })
-
-    test("returns true for locale-prefixed paths", () => {
-      expect(hasLocalePrefix("/en/blog")).toBe(true)
-      expect(hasLocalePrefix("/ja/blog")).toBe(true)
-      expect(hasLocalePrefix("/en/blog/my-post")).toBe(true)
-    })
-
-    test("returns false for root path", () => {
-      expect(hasLocalePrefix("/")).toBe(false)
-    })
-
-    test("returns false for paths without locale prefix", () => {
-      expect(hasLocalePrefix("/blog")).toBe(false)
-      expect(hasLocalePrefix("/about")).toBe(false)
-      expect(hasLocalePrefix("/blog/my-post")).toBe(false)
-    })
-
-    test("returns false for paths that start with locale-like strings but are not locales", () => {
-      expect(hasLocalePrefix("/english")).toBe(false)
-      expect(hasLocalePrefix("/japan")).toBe(false)
-    })
+describe("hasLocalePrefix", () => {
+  test("a locale root and anything under it is already placed", () => {
+    for (const locale of locales) {
+      expect(hasLocalePrefix(`/${locale}`)).toBe(true)
+      expect(hasLocalePrefix(`/${locale}/blog`)).toBe(true)
+      expect(hasLocalePrefix(`/${locale}/blog/my-post`)).toBe(true)
+    }
   })
 
-  describe("getRedirectPathname", () => {
-    test("redirects root / to /en", () => {
-      expect(getRedirectPathname("/")).toBe("/en/")
-    })
+  test("the root and unprefixed paths are not", () => {
+    expect(hasLocalePrefix("/")).toBe(false)
+    expect(hasLocalePrefix("/blog")).toBe(false)
+    expect(hasLocalePrefix("/blog/my-post")).toBe(false)
+  })
 
-    test("redirects /blog to /en/blog", () => {
-      expect(getRedirectPathname("/blog")).toBe("/en/blog")
-    })
+  // `/english` starts with `/en` as a string but is not the English tree.
+  test("a path that merely begins with a locale's letters is not", () => {
+    expect(hasLocalePrefix("/english")).toBe(false)
+    expect(hasLocalePrefix("/japan")).toBe(false)
+  })
+})
 
-    test("redirects nested paths to default locale", () => {
-      expect(getRedirectPathname("/blog/my-post")).toBe("/en/blog/my-post")
-    })
+/**
+ * The redirect ignored `Accept-Language` entirely, so a Japanese reader typing
+ * the domain landed on the English site and had to find the JA / EN switch.
+ * `/` is what hreflang names `x-default`, which is exactly the URL that is
+ * supposed to decide.
+ */
+describe("preferredLocale", () => {
+  test("a Japanese browser gets Japanese", () => {
+    expect(preferredLocale("ja")).toBe("ja")
+    expect(preferredLocale("ja-JP,ja;q=0.9,en;q=0.5")).toBe("ja")
+    expect(preferredLocale("ja,en;q=0.8")).toBe("ja")
+  })
 
-    test("returns null for paths already prefixed with /en", () => {
-      expect(getRedirectPathname("/en")).toBeNull()
-      expect(getRedirectPathname("/en/blog")).toBeNull()
-    })
+  test("an English browser gets English", () => {
+    expect(preferredLocale("en-US,en;q=0.9")).toBe("en")
+  })
 
-    test("returns null for paths already prefixed with /ja", () => {
-      expect(getRedirectPathname("/ja")).toBeNull()
-      expect(getRedirectPathname("/ja/blog")).toBeNull()
-    })
+  // Quality decides, not order in the header.
+  test("the highest quality wins over position", () => {
+    expect(preferredLocale("en;q=0.5,ja;q=0.9")).toBe("ja")
+    expect(preferredLocale("ja;q=0.4,en;q=0.8")).toBe("en")
+  })
+
+  test("a language we do not publish falls back", () => {
+    expect(preferredLocale("fr-FR,fr;q=0.9")).toBe(defaultLocale)
+    expect(preferredLocale("zh-Hans,zh;q=0.9")).toBe(defaultLocale)
+    expect(preferredLocale("*")).toBe(defaultLocale)
+  })
+
+  test("a rejected language is not chosen even when it is the only one", () => {
+    expect(preferredLocale("ja;q=0")).toBe(defaultLocale)
+  })
+
+  test("no header, an empty one, or nonsense falls back", () => {
+    expect(preferredLocale(null)).toBe(defaultLocale)
+    expect(preferredLocale("")).toBe(defaultLocale)
+    expect(preferredLocale(";;;")).toBe(defaultLocale)
+    expect(preferredLocale("ja;q=abc")).toBe(defaultLocale)
+  })
+
+  // A header is attacker-controlled input, and the result indexes a route.
+  test("it always answers with a locale we publish", () => {
+    fc.assert(
+      fc.property(fc.string(), (header) => {
+        expect(locales).toContain(preferredLocale(header))
+      }),
+      { numRuns: 200 },
+    )
   })
 })

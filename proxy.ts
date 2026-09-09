@@ -1,11 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { defaultLocale, locales } from "@/lib/i18n/config"
-
-function hasLocalePrefix(pathname: string): boolean {
-  return locales.some(
-    (locale) => pathname === `/${locale}` || pathname.startsWith(`/${locale}/`),
-  )
-}
+import { hasLocalePrefix, preferredLocale } from "@/lib/i18n/negotiate"
 
 export function proxy(request: NextRequest): NextResponse | undefined {
   const { pathname } = request.nextUrl
@@ -15,8 +9,11 @@ export function proxy(request: NextRequest): NextResponse | undefined {
   }
 
   const url = request.nextUrl.clone()
-  url.pathname = `/${defaultLocale}${pathname}`
-  return NextResponse.redirect(url)
+  url.pathname = `/${preferredLocale(request.headers.get("accept-language"))}${pathname}`
+  const response = NextResponse.redirect(url)
+  response.headers.set("Vary", "Accept-Language")
+
+  return response
 }
 
 export const config = {

@@ -1,14 +1,52 @@
 import { expect, test } from "@playwright/test"
 
+/**
+ * The redirect used to ignore `Accept-Language` and send everyone to `/en`, so
+ * a Japanese reader typing the domain landed on the English site and had to
+ * find the JA / EN switch. These two tests passed throughout, because the
+ * browser Playwright runs happens to ask for English — the language was
+ * assumed rather than stated, which is why it is stated now.
+ */
 test.describe("Locale redirect", () => {
-  test("/ redirects to /en", async ({ page }) => {
-    await page.goto("/")
-    await expect(page).toHaveURL(/\/en$/)
+  test.describe("an English browser", () => {
+    test.use({ locale: "en-US" })
+
+    test("/ lands on /en", async ({ page }) => {
+      await page.goto("/")
+      await expect(page).toHaveURL(/\/en$/)
+    })
+
+    test("/blog lands on /en/blog", async ({ page }) => {
+      await page.goto("/blog")
+      await expect(page).toHaveURL(/\/en\/blog$/)
+    })
   })
 
-  test("/blog redirects to /en/blog", async ({ page }) => {
-    await page.goto("/blog")
-    await expect(page).toHaveURL(/\/en\/blog$/)
+  test.describe("a Japanese browser", () => {
+    test.use({ locale: "ja-JP" })
+
+    test("/ lands on /ja", async ({ page }) => {
+      await page.goto("/")
+      await expect(page).toHaveURL(/\/ja$/)
+    })
+
+    test("/blog lands on /ja/blog", async ({ page }) => {
+      await page.goto("/blog")
+      await expect(page).toHaveURL(/\/ja\/blog$/)
+    })
+  })
+
+  // Without this, a CDN caches whichever language asked first and serves that
+  // redirect to everyone behind it.
+  test("the redirect declares what it varies on", async ({ request }) => {
+    const response = await request.get("/", {
+      headers: { "accept-language": "ja" },
+      maxRedirects: 0,
+    })
+
+    expect(response.status()).toBe(307)
+    expect(response.headers().location).toContain("/ja")
+    expect(response.headers().vary?.toLowerCase()).toContain("accept-language")
   })
 })
 
