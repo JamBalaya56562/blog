@@ -23,6 +23,7 @@ import { ViewCountsProvider } from "@/components/view-counts"
 import { findAdjacentPosts } from "@/lib/content/adjacent"
 import { createContentLoader } from "@/lib/content/loader"
 import { getViewCount } from "@/lib/db/queries"
+import { rehypeHighlight } from "@/lib/highlight"
 import type { Locale } from "@/lib/i18n/config"
 import { isValidLocale, locales } from "@/lib/i18n/config"
 import { getDictionary } from "@/lib/i18n/get-dictionary"
@@ -226,7 +227,12 @@ async function BlogPostContent({
           <div className="prose-cyber max-w-none">
             <MDXRemote
               source={post.content}
-              options={{ mdxOptions: { remarkPlugins: [remarkGfm] } }}
+              options={{
+                mdxOptions: {
+                  rehypePlugins: [await rehypeHighlight()],
+                  remarkPlugins: [remarkGfm],
+                },
+              }}
               components={useMDXComponents()}
             />
           </div>

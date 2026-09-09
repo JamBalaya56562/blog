@@ -38,7 +38,12 @@ const components: MDXComponents = {
     <ol className="my-4 ml-6 list-decimal text-foreground" {...props} />
   ),
   p: (props) => <p className="my-4 leading-7 text-foreground" {...props} />,
-  pre: (props) => <pre className="rounded-lg" {...props} />,
+  pre: ({ className, ...props }) => (
+    <pre
+      className={["rounded-lg", className].filter(Boolean).join(" ")}
+      {...props}
+    />
+  ),
   table: (props) => <table className="my-4 text-foreground" {...props} />,
   th: (props) => <th className="font-semibold" {...props} />,
   ul: (props) => (
