@@ -5,7 +5,11 @@ pitchfork = "latest"
 rumdl = "latest"
 
 [tasks.lint]
-run = ["bun lint:fix --unsafe", "mise lint:md"]
+run = ["bun lint:fix --unsafe", "mise lint:md", "mise lint:tf"]
+
+[tasks."lint:tf"]
+description = "Format the OpenTofu configuration"
+run = "tofu fmt -recursive infra"
 
 [tasks."lint:md"]
 description = "Check markdown files for linting issues"

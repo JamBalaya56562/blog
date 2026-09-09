@@ -1,0 +1,13 @@
+# Copy to terraform.tfvars and edit if you need to override a default.
+# terraform.tfvars is gitignored and must not be committed.
+#
+#   cp terraform.tfvars.example terraform.tfvars
+#   tofu init
+#   tofu plan
+#
+# Every variable has a default that matches the running account, so an empty
+# terraform.tfvars is the normal case. In GitHub Actions no tfvars file is used
+# at all.
+
+# aws_region  = "ap-northeast-1"
+# domain_name = "kokohore56562wanwan.site"

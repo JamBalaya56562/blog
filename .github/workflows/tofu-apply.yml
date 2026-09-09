@@ -1,0 +1,79 @@
+name: 🚜 OpenTofu Apply
+
+# The state is a single artifact with no lock behind it, so two applies running
+# at once would each write a state that does not know about the other. Queued,
+# never cancelled.
+concurrency:
+  group: tofu-state
+  cancel-in-progress: false
+
+on:
+  push:
+    branches: main
+    paths:
+      - "infra/**"
+      - ".github/workflows/tofu-apply.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+  # Read the previous state artifact and write the new one.
+  actions: write
+
+env:
+  AWS_REGION: ap-northeast-1
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    if: github.repository_owner == 'jambalaya56562'
+
+    steps:
+      - name: 📥 Checkout
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: 🪪 Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ vars.AWS_TOFU_APPLY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: 🐣 Setup mise
+        uses: jdx/mise-action@v4.3.0
+
+      - name: 📦 Fetch the current state
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          id=$(gh api "repos/${GITHUB_REPOSITORY}/actions/artifacts?name=tofu-state&per_page=100" \
+            --jq '[.artifacts[] | select(.expired == false)] | sort_by(.created_at) | last | .id // empty')
+          if [ -z "$id" ]; then
+            echo "::notice::No state artifact yet; this run adopts the account through the import blocks."
+            exit 0
+          fi
+          gh api "repos/${GITHUB_REPOSITORY}/actions/artifacts/${id}/zip" > state.zip
+          unzip -o state.zip -d infra/
+          echo "Restored state from artifact ${id}."
+
+      - name: 🚜 Apply
+        working-directory: infra
+        run: |
+          tofu init -input=false
+          tofu apply -input=false -auto-approve -no-color
+
+      # Uploaded whether or not the apply succeeded. A half-applied run still
+      # changed the account, and losing the state that records it is worse than
+      # keeping a state that is mid-flight.
+      - name: 💾 Store the state
+        if: always() && hashFiles('infra/terraform.tfstate') != ''
+        uses: actions/upload-artifact@v7
+        with:
+          name: tofu-state
+          path: infra/terraform.tfstate
+          retention-days: 90
+          overwrite: true
+          if-no-files-found: error

@@ -1,0 +1,68 @@
+name: 🗄️ OpenTofu State Backup
+
+# Shares the apply workflow's group: re-uploading the state while an apply is
+# writing one would be a race for the same name.
+concurrency:
+  group: tofu-state
+  cancel-in-progress: false
+
+# Artifacts expire, and this configuration can sit untouched for months. Every
+# Monday the newest state is downloaded and uploaded again, which restarts its
+# retention clock. Without this the state quietly disappears 90 days after the
+# last apply, and the next apply would try to build a second copy of an account
+# that already exists.
+on:
+  schedule:
+    - cron: "0 3 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: write
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    if: github.repository_owner == 'jambalaya56562'
+
+    steps:
+      - name: 📦 Fetch the current state
+        id: fetch
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p infra
+          id=$(gh api "repos/${GITHUB_REPOSITORY}/actions/artifacts?name=tofu-state&per_page=100" \
+            --jq '[.artifacts[] | select(.expired == false)] | sort_by(.created_at) | last | .id // empty')
+          if [ -z "$id" ]; then
+            echo "::warning::No state artifact to refresh. Nothing has been applied yet, or the state has already been lost."
+            echo "found=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          gh api "repos/${GITHUB_REPOSITORY}/actions/artifacts/${id}/zip" > state.zip
+          unzip -o state.zip -d infra/
+          echo "found=true" >> "$GITHUB_OUTPUT"
+          echo "Refreshing artifact ${id}."
+
+      # A state with no resources in it would overwrite a real one, so the file
+      # is checked before it is trusted.
+      - name: 🔍 Check the state is not empty
+        if: steps.fetch.outputs.found == 'true'
+        run: |
+          count=$(jq '.resources | length' infra/terraform.tfstate)
+          echo "State holds ${count} resources."
+          if [ "$count" -eq 0 ]; then
+            echo "::error::Refusing to re-upload an empty state."
+            exit 1
+          fi
+
+      - name: 💾 Store the state
+        if: steps.fetch.outputs.found == 'true'
+        uses: actions/upload-artifact@v7
+        with:
+          name: tofu-state
+          path: infra/terraform.tfstate
+          retention-days: 90
+          overwrite: true
+          if-no-files-found: error
