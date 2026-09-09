@@ -4,6 +4,7 @@ import { locales } from "@/lib/i18n/config"
 import { buildSitemap } from "@/lib/sitemap"
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  "use cache"
   const loader = createContentLoader()
   const byLocale = await Promise.all(
     locales.map(
