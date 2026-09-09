@@ -38,7 +38,7 @@
     "start": "next start",
     "test:e2e": "playwright test",
     "test:report": "playwright show-report",
-    "test:unit": "bun test"
+    "test:unit": "bun test --isolate"
   },
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.1128.0",

@@ -8,6 +8,7 @@ import { ThemeProvider } from "@/lib/theme/theme-provider"
 
 // Mock next/navigation before importing ThemeToggle
 import { nextNavigationMock } from "../setup-next-navigation-mock"
+import { localStorageStub, matchMediaStub, stubGlobals } from "../stub-global"
 
 mock.module("next/navigation", () => ({
   ...nextNavigationMock,
@@ -18,42 +19,19 @@ const { ThemeToggle } = await import("@/components/theme-toggle")
 
 let storage: Record<string, string> = {}
 
+let restore = () => {}
+
 beforeEach(() => {
   storage = {}
-  Object.defineProperty(globalThis, "localStorage", {
-    configurable: true,
-    value: {
-      clear: () => {
-        storage = {}
-      },
-      getItem: (key: string) => storage[key] ?? null,
-      removeItem: (key: string) => {
-        delete storage[key]
-      },
-      setItem: (key: string, value: string) => {
-        storage[key] = value
-      },
-    },
-    writable: true,
-  })
-  Object.defineProperty(globalThis, "matchMedia", {
-    configurable: true,
-    value: (query: string) => ({
-      addEventListener: () => {},
-      addListener: () => {},
-      dispatchEvent: () => false,
-      matches: false,
-      media: query,
-      onchange: null,
-      removeEventListener: () => {},
-      removeListener: () => {},
-    }),
-    writable: true,
+  restore = stubGlobals({
+    localStorage: localStorageStub(() => storage),
+    matchMedia: matchMediaStub(),
   })
   document.documentElement.classList.remove("dark")
 })
 
 afterEach(() => {
+  restore()
   cleanup()
   document.documentElement.classList.remove("dark")
   storage = {}
