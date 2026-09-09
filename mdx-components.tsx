@@ -29,6 +29,8 @@ const components: MDXComponents = {
         src={resolvedSrc}
         alt={alt ?? ""}
         className="my-4 max-w-full rounded-lg"
+        loading="lazy"
+        decoding="async"
         {...props}
       />
     )
