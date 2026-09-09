@@ -1,6 +1,11 @@
 import { ImageResponse } from "next/og"
 import { createContentLoader } from "@/lib/content/loader"
-import { defaultLocale, isValidLocale, locales } from "@/lib/i18n/config"
+import {
+  defaultLocale,
+  isValidLocale,
+  type Locale,
+  locales,
+} from "@/lib/i18n/config"
 import { getDictionary } from "@/lib/i18n/get-dictionary"
 import { OG_CONTENT_TYPE, OG_SIZE, OgCard, ogEyebrow } from "@/lib/og/card"
 
@@ -20,6 +25,17 @@ export async function generateStaticParams() {
   return params
 }
 
+async function cardText(locale: Locale, slug: string) {
+  "use cache"
+  const post = await createContentLoader().getPost(locale, slug)
+  const dictionary = getDictionary(locale)
+  return {
+    description: post?.frontmatter.description ?? "",
+    eyebrow: ogEyebrow(dictionary.header.siteName),
+    title: post?.frontmatter.title ?? dictionary.header.siteName,
+  }
+}
+
 export default async function Image({
   params,
 }: {
@@ -27,14 +43,9 @@ export default async function Image({
 }) {
   const { locale, slug } = await params
   const resolved = isValidLocale(locale) ? locale : defaultLocale
-  const dictionary = getDictionary(resolved)
-  const post = await createContentLoader().getPost(resolved, slug)
+  const { title, description, eyebrow } = await cardText(resolved, slug)
   return new ImageResponse(
-    <OgCard
-      title={post?.frontmatter.title ?? dictionary.header.siteName}
-      description={post?.frontmatter.description ?? ""}
-      eyebrow={ogEyebrow(dictionary.header.siteName)}
-    />,
+    <OgCard title={title} description={description} eyebrow={eyebrow} />,
     OG_SIZE,
   )
 }
