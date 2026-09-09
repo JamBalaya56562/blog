@@ -1,0 +1,118 @@
+name: 🌱 OpenTofu Plan
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+on:
+  pull_request:
+    paths:
+      - "infra/**"
+      - ".github/workflows/tofu-*.yml"
+
+permissions:
+  contents: read
+  # Assume the read-only role through OIDC.
+  id-token: write
+  # Read the state artifact from an earlier run.
+  actions: read
+  pull-requests: write
+
+env:
+  AWS_REGION: ap-northeast-1
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    if: github.repository_owner == 'jambalaya56562'
+
+    steps:
+      - name: 📥 Checkout
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: 🪪 Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ vars.AWS_TOFU_PLAN_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: 🐣 Setup mise
+        uses: jdx/mise-action@v4.3.0
+
+      # State lives in an artifact rather than a bucket, and artifacts belong to
+      # runs. Rather than tracking a run id in a repository variable, this asks
+      # for the newest unexpired artifact of that name, whichever workflow
+      # produced it — which is what lets the weekly backup keep it alive.
+      #
+      # Missing state is not an error here. On the first run there is none, and
+      # a plan against an empty state is exactly the import plan we want to see.
+      - name: 📦 Fetch the current state
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          id=$(gh api "repos/${GITHUB_REPOSITORY}/actions/artifacts?name=tofu-state&per_page=100" \
+            --jq '[.artifacts[] | select(.expired == false)] | sort_by(.created_at) | last | .id // empty')
+          if [ -z "$id" ]; then
+            echo "::notice::No state artifact yet; planning against an empty state."
+            exit 0
+          fi
+          gh api "repos/${GITHUB_REPOSITORY}/actions/artifacts/${id}/zip" > state.zip
+          unzip -o state.zip -d infra/
+          echo "Restored state from artifact ${id}."
+
+      - name: 🧭 Plan
+        id: plan
+        working-directory: infra
+        run: |
+          tofu init -input=false
+          set +e
+          tofu plan -input=false -no-color -lock=false > plan.txt 2>&1
+          code=$?
+          set -e
+          tail -c 60000 plan.txt
+          echo "exit_code=${code}" >> "$GITHUB_OUTPUT"
+          exit $code
+
+      - name: 💬 Comment the plan on the pull request
+        if: always() && steps.plan.outcome != 'skipped'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # The one line worth reading goes in the summary; the hundreds of
+          # lines behind it go in the fold. A failed plan has no such line, so
+          # it says so rather than showing an empty heading.
+          summary=$(grep -E '^(Plan:|No changes\.)' infra/plan.txt | tail -1)
+          if [ -z "$summary" ]; then
+            summary="Plan failed — see the output"
+          fi
+          {
+            # Invisible in the rendered comment, and the only way to find this
+            # comment again on the next push. `--edit-last` would have been
+            # shorter and wrong: preview-comment posts as the same bot, so the
+            # last comment is not reliably ours.
+            echo "<!-- tofu-plan -->"
+            echo "### 🌱 OpenTofu Plan"
+            echo
+            echo "<details><summary><code>${summary}</code></summary>"
+            echo
+            echo '```'
+            tail -c 60000 infra/plan.txt
+            echo '```'
+            echo
+            echo "</details>"
+          } > comment.md
+
+          # One comment per pull request, rewritten in place. An outdated plan
+          # is not worth scrolling past to reach the current one.
+          id=$(gh api "repos/${GITHUB_REPOSITORY}/issues/${{ github.event.pull_request.number }}/comments" --paginate \
+            --jq '[.[] | select(.body | startswith("<!-- tofu-plan -->"))] | last | .id // empty')
+          if [ -n "$id" ]; then
+            jq -Rs '{body: .}' comment.md \
+              | gh api -X PATCH "repos/${GITHUB_REPOSITORY}/issues/comments/${id}" --input - > /dev/null
+            echo "Updated comment ${id}."
+          else
+            gh pr comment "${{ github.event.pull_request.number }}" --body-file comment.md
+          fi
