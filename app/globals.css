@@ -704,6 +704,16 @@
     color: inherit;
     padding: 0;
   }
+  .prose-cyber .shiki,
+  .prose-cyber .shiki span {
+    color: var(--shiki-light);
+    font-style: var(--shiki-light-font-style, inherit);
+  }
+  .dark .prose-cyber .shiki,
+  .dark .prose-cyber .shiki span {
+    color: var(--shiki-dark);
+    font-style: var(--shiki-dark-font-style, inherit);
+  }
   .prose-cyber blockquote {
     border-left: 2px solid var(--cyber-amber);
     padding-left: 14px;

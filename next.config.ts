@@ -171,6 +171,7 @@ const nextConfig: NextConfig = {
   // Drops the `X-Powered-By: Next.js` fingerprint.
   poweredByHeader: false,
   reactCompiler: true,
+  transpilePackages: ["shiki"],
   typedRoutes: true,
 }
 
