@@ -1,5 +1,6 @@
 [tools]
 bun = "latest"
+opentofu = "latest"
 pitchfork = "latest"
 rumdl = "latest"
 
