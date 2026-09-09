@@ -66,13 +66,8 @@
   --blog-font-headline:
     var(--font-orbitron-loaded), "Orbitron", "Syne", "Space Grotesk",
     var(--font-sans-loaded), "Noto Sans JP", sans-serif;
-  /* Mono JP fallback: JetBrains Mono has no Japanese glyphs. Without a
-     dedicated JP mono, Windows hands JP characters to MS Gothic which
-     looks cheap next to the cyber HUD. M PLUS 1 Code is a clean modern
-     monospace JP face that pairs visually with JetBrains Mono. */
   --blog-font-mono:
-    var(--font-mono-loaded), "JetBrains Mono", var(--font-jp-mono-loaded),
-    "M PLUS 1 Code", ui-monospace, monospace;
+    var(--font-mono-loaded), "JetBrains Mono", ui-monospace, monospace;
 }
 
 .dark {
