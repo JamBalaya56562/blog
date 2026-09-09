@@ -5,9 +5,9 @@ import type { ReactNode } from "react"
 import { locales } from "@/lib/i18n/config"
 import { getDictionary } from "@/lib/i18n/get-dictionary"
 import { ThemeProvider } from "@/lib/theme/theme-provider"
-
 // Mock next/navigation before importing Header (which imports LocaleSwitchLink)
 import { nextNavigationMock } from "../setup-next-navigation-mock"
+import { localStorageStub, matchMediaStub, stubGlobals } from "../stub-global"
 
 const pathnameMock = { value: "/en" }
 mock.module("next/navigation", () => ({
@@ -30,35 +30,18 @@ function wrapper({ children }: Readonly<{ children: ReactNode }>) {
   return <ThemeProvider>{children}</ThemeProvider>
 }
 
+let restore = () => {}
+
 beforeEach(() => {
-  Object.defineProperty(globalThis, "localStorage", {
-    configurable: true,
-    value: {
-      clear: () => {},
-      getItem: () => null,
-      removeItem: () => {},
-      setItem: () => {},
-    },
-    writable: true,
-  })
-  Object.defineProperty(globalThis, "matchMedia", {
-    configurable: true,
-    value: (query: string) => ({
-      addEventListener: () => {},
-      addListener: () => {},
-      dispatchEvent: () => false,
-      matches: false,
-      media: query,
-      onchange: null,
-      removeEventListener: () => {},
-      removeListener: () => {},
-    }),
-    writable: true,
+  restore = stubGlobals({
+    localStorage: localStorageStub(() => ({})),
+    matchMedia: matchMediaStub(),
   })
   document.documentElement.classList.remove("dark")
 })
 
 afterEach(() => {
+  restore()
   document.documentElement.classList.remove("dark")
 })
 

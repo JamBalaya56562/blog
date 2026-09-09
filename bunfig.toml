@@ -1,3 +1,4 @@
 [test]
 root = "./test/unit"
+randomize = true
 preload = ["./happydom.ts", "./test/unit/setup-react-mock.ts", "./test/unit/setup-lucide-mock.ts", "./test/unit/setup-next-navigation-mock.ts"]

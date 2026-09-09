@@ -1,11 +1,11 @@
-import { beforeEach, describe, expect, mock, test } from "bun:test"
+import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test"
 import { render } from "@testing-library/react"
 import type { ReactNode } from "react"
 import { getDictionary } from "@/lib/i18n/get-dictionary"
 import { ThemeProvider } from "@/lib/theme/theme-provider"
-
 // Mock next/navigation before importing Header (which imports LocaleSwitchLink)
 import { nextNavigationMock } from "../setup-next-navigation-mock"
+import { localStorageStub, matchMediaStub, stubGlobals } from "../stub-global"
 
 mock.module("next/navigation", () => ({
   ...nextNavigationMock,
@@ -34,30 +34,16 @@ function wrapper({ children }: Readonly<{ children: ReactNode }>) {
   return <ThemeProvider>{children}</ThemeProvider>
 }
 
+let restore = () => {}
+
+afterEach(() => {
+  restore()
+})
+
 beforeEach(() => {
-  Object.defineProperty(globalThis, "localStorage", {
-    configurable: true,
-    value: {
-      clear: () => {},
-      getItem: () => null,
-      removeItem: () => {},
-      setItem: () => {},
-    },
-    writable: true,
-  })
-  Object.defineProperty(globalThis, "matchMedia", {
-    configurable: true,
-    value: (query: string) => ({
-      addEventListener: () => {},
-      addListener: () => {},
-      dispatchEvent: () => false,
-      matches: false,
-      media: query,
-      onchange: null,
-      removeEventListener: () => {},
-      removeListener: () => {},
-    }),
-    writable: true,
+  restore = stubGlobals({
+    localStorage: localStorageStub(() => ({})),
+    matchMedia: matchMediaStub(),
   })
 })
 
