@@ -36,11 +36,12 @@ const siteCsp = [
   // so it is worth keeping 'none'. Anything that later needs an inline handler
   // should get a real listener instead of a relaxation here.
   "script-src-attr 'none'",
-  // Neither the production nor the development HTML carries an inline <style>
-  // since `experimental.inlineCss` was dropped, so this could tighten to
-  // 'self'. Left until the dev server's own style injection is checked
-  // against it; `style-src-attr` below is the part the app needs.
-  "style-src 'self' 'unsafe-inline'",
+  // No route emits an inline <style> since `experimental.inlineCss` was
+  // dropped, and the only style element the production bundle can create is
+  // React's `<style precedence>` handling, which nothing here renders. The
+  // development overlay is the exception: next-devtools injects its own
+  // stylesheet through style-loader at runtime.
+  `style-src 'self'${isDev ? " 'unsafe-inline'" : ""}`,
   // The `style={{}}` attributes in scroll-progress, table-of-contents and
   // view-counts. All three interpolate a value, so hashing them is not an
   // option.

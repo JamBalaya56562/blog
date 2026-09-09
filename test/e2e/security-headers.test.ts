@@ -86,7 +86,10 @@ test.describe("Security headers", () => {
     // part of the script policy an injection actually runs into. Losing it
     // would be silent: nothing renders differently either way.
     expect(directives.get("script-src-attr")).toBe("'none'")
-    expect(directives.get("style-src")).toBe("'self' 'unsafe-inline'")
+    // Dropped its 'unsafe-inline' when the stylesheet stopped being inlined
+    // into the document. Style *attributes* are a separate directive and are
+    // still allowed; see below.
+    expect(directives.get("style-src")).toBe("'self'")
     expect(directives.get("img-src")).toBe("'self' data:")
     expect(directives.get("font-src")).toBe("'self'")
     expect(directives.get("connect-src")).toBe("'self'")
