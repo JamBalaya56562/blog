@@ -4,6 +4,7 @@ import { type Locale, locales } from "@/lib/i18n/config"
 import { SITE_URL } from "@/lib/site"
 
 const STATIC_PATHS = ["", "/blog", "/portfolio", "/privacy-policy"] as const
+const POST_LISTING_PATHS: readonly string[] = ["", "/blog"]
 
 function absolute(locale: Locale, path: string): string {
   return new URL(`/${locale}${path}`, SITE_URL).href
@@ -18,9 +19,25 @@ function languagesFor(
   )
 }
 
+function newestModified(posts: readonly Post[]): Date | undefined {
+  const times = posts
+    .map((post) =>
+      Date.parse(post.frontmatter.updated ?? post.frontmatter.date),
+    )
+    .filter((time) => Number.isFinite(time))
+
+  return times.length > 0 ? new Date(Math.max(...times)) : undefined
+}
+
 export function buildSitemap(
   byLocale: readonly (readonly [Locale, readonly Post[]])[],
 ): MetadataRoute.Sitemap {
+  const newestByLocale = new Map(
+    byLocale.map(([locale, localePosts]) => [
+      locale,
+      newestModified(localePosts),
+    ]),
+  )
   const posts = new Map<string, Map<Locale, string>>()
   for (const [locale, localePosts] of byLocale) {
     for (const post of localePosts) {
@@ -35,10 +52,17 @@ export function buildSitemap(
   }
 
   const staticEntries = STATIC_PATHS.flatMap((path) =>
-    locales.map((locale) => ({
-      alternates: { languages: languagesFor(locales, path) },
-      url: absolute(locale, path),
-    })),
+    locales.map((locale) => {
+      const newest = POST_LISTING_PATHS.includes(path)
+        ? newestByLocale.get(locale)
+        : undefined
+
+      return {
+        alternates: { languages: languagesFor(locales, path) },
+        ...(newest ? { lastModified: newest } : {}),
+        url: absolute(locale, path),
+      }
+    }),
   )
 
   const postEntries = [...posts.entries()].flatMap(

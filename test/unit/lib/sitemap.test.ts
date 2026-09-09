@@ -102,6 +102,43 @@ describe("sitemap entries", () => {
     expect(Object.keys(solo[0]?.alternates?.languages ?? {})).toEqual(["en"])
   })
 
+  // `lastmod` on a listing page is the newest post it shows, per locale: the
+  // Japanese home page has not changed because an English post was revised.
+  // The portfolio and the privacy policy change when their own source does,
+  // which nothing here tracks, so they carry no date rather than a wrong one.
+  test("the listing pages date from their newest post", () => {
+    const entries = buildSitemap(byLocale)
+    const dateOf = (path: string) =>
+      entries.find((e) => new URL(e.url).pathname === path)?.lastModified
+
+    expect(dateOf("/en")).toEqual(new Date("2025-06-02"))
+    expect(dateOf("/en/blog")).toEqual(new Date("2025-06-02"))
+    expect(dateOf("/ja")).toEqual(new Date("2025-03-01"))
+    expect(dateOf("/ja/blog")).toEqual(new Date("2025-03-01"))
+  })
+
+  test("the pages with no posts behind them carry no date", () => {
+    const entries = buildSitemap(byLocale)
+
+    for (const path of ["/en/portfolio", "/en/privacy-policy"]) {
+      const entry = entries.find((e) => new URL(e.url).pathname === path)
+      expect(entry).toBeDefined()
+      expect(entry?.lastModified).toBeUndefined()
+    }
+  })
+
+  test("a locale with no posts leaves its listing pages undated", () => {
+    const entries = buildSitemap([
+      ["en", [post("solo", "en", "2025-01-01")]],
+      ["ja", []],
+    ])
+    const dateOf = (path: string) =>
+      entries.find((e) => new URL(e.url).pathname === path)?.lastModified
+
+    expect(dateOf("/en")).toEqual(new Date("2025-01-01"))
+    expect(dateOf("/ja")).toBeUndefined()
+  })
+
   test("the static pages are listed in both locales", () => {
     const paths = buildSitemap([]).map((e) => new URL(e.url).pathname)
 
