@@ -177,7 +177,6 @@ export default async function PortfolioPage({
           </p>
 
           <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-            {/* Featured contribution — the wide card at the head of the grid. */}
             <a
               href={featuredContribution.url}
               target="_blank"

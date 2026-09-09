@@ -3,25 +3,8 @@ import { getDictionary } from "@/lib/i18n/get-dictionary"
 import { getBlogPostPath } from "@/lib/routes"
 import { SITE_AUTHOR, SITE_URL } from "@/lib/site"
 
-/**
- * Open Graph and structured data look like the same job and are not. A crawler
- * reads Open Graph to build a share card; Google reads schema.org to build a
- * search result, and ignores Open Graph for that entirely. The site had a
- * complete set of the first and none of the second, so everything #1161 added
- * stopped at the edge of a social post.
- *
- * The strings all come from the same places the metadata uses — the dictionary
- * for names, `lib/site.ts` for the origin — so a page cannot describe itself
- * one way to a crawler and another way to a reader.
- */
-
 const absolute = (path: string) => new URL(path, SITE_URL).href
 
-/**
- * `url` points at the portfolio rather than the origin. It is the page that
- * actually describes this person, and `/` is a redirect to the default locale —
- * a crawler following it from a Japanese page would land in English.
- */
 function person(locale: Locale) {
   return {
     "@type": "Person" as const,
@@ -30,11 +13,6 @@ function person(locale: Locale) {
   }
 }
 
-/**
- * The card image is the route Next generates from `opengraph-image.tsx`, the
- * same picture the share card uses. Google wants an image it can crop, and
- * pointing at a second one would mean maintaining two.
- */
 const cardImage = (path: string) => absolute(`${path}/opengraph-image`)
 
 export function websiteJsonLd(locale: Locale) {
@@ -72,25 +50,18 @@ export function blogPostingJsonLd(
     "@context": "https://schema.org",
     "@type": "BlogPosting",
     author: person(locale),
-    // Falls back to the publication date, which is the honest answer for a post
-    // that has never been revised — not a placeholder for one that has.
     dateModified: new Date(post.updated ?? post.date).toISOString(),
     datePublished: new Date(post.date).toISOString(),
     description: post.description,
     headline: post.title,
     image: cardImage(path),
     inLanguage: locale,
-    // Ties the post to the blog it belongs to, so the posts read as one
-    // publication rather than three unrelated pages that share an origin.
     isPartOf: {
       "@id": absolute(`/${locale}/blog`),
       "@type": "Blog",
       name: getDictionary(locale).blog.title,
     },
     keywords: [...post.tags],
-    // This is what says the markup describes the page it sits on rather than
-    // something the page merely mentions. Without it the block is a floating
-    // description of an article that lives somewhere else.
     mainEntityOfPage: { "@id": url, "@type": "WebPage" },
     publisher: person(locale),
     url,

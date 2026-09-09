@@ -105,7 +105,6 @@ export function HeroSection({
           label="LATEST"
           value={
             <span className="pp-display text-cyber-cyan">
-              {/* The placeholder is not a date, so it gets no spoken form. */}
               {latestDate ? (
                 <PostDate date={latestDate} locale={locale} />
               ) : (

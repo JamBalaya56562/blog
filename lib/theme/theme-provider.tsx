@@ -27,9 +27,7 @@ function readStoredTheme(): Theme | null {
     if (stored === "light" || stored === "dark") {
       return stored
     }
-  } catch {
-    // localStorage inaccessible (e.g. private browsing)
-  }
+  } catch {}
   return null
 }
 
@@ -60,9 +58,7 @@ export function ThemeProvider({
       applyThemeClass(next)
       try {
         localStorage.setItem("theme", next)
-      } catch {
-        // localStorage inaccessible
-      }
+      } catch {}
       return next
     })
   }, [])

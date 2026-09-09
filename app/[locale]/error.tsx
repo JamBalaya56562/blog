@@ -7,20 +7,6 @@ import { useEffect } from "react"
 import { defaultLocale, isValidLocale } from "@/lib/i18n/config"
 import { getDictionary } from "@/lib/i18n/get-dictionary"
 
-/**
- * Route-level error boundary. Rendered inside `app/[locale]/layout.tsx`, so the
- * header, footer, fonts, theme and `CyberBackground` still come from the layout
- * — this file only owns the fault report.
- *
- * It does not cover that layout: an error boundary never wraps the layout of
- * its own segment. `app/global-error.tsx` is what catches those.
- *
- * Cyan is the site's "route" colour (see the 404); a fault is amber + red so
- * the two screens are not mistaken for each other.
- *
- * The locale comes from the pathname because, like `not-found.tsx`, this file
- * receives no `params`.
- */
 export default function LocaleError({
   error,
   retry,
@@ -32,8 +18,6 @@ export default function LocaleError({
   const copy = dictionary.error
 
   useEffect(() => {
-    // The boundary swallows the error; without this it never reaches the
-    // browser console or any client-side reporter.
     console.error(error)
   }, [error])
 
@@ -67,9 +51,6 @@ export default function LocaleError({
             <p className="max-w-[560px] font-mono text-[12.5px] leading-[2] tracking-[0.05em] text-cyber-dim">
               {copy.description}
             </p>
-            {/* Only ever populated in a production build, and it is the one
-                thing that ties what the reader saw to a line in the Lambda
-                logs. */}
             {error.digest && (
               <p className="pp-tick inline-flex items-center gap-2.5 border border-cyber-line bg-cyber-bg-1/65 px-3 py-2">
                 <span className="text-cyber-amber">TRACE</span>
@@ -78,13 +59,6 @@ export default function LocaleError({
             )}
           </div>
           <div className="flex flex-wrap gap-3">
-            {/*
-              `retry()`, not `reset()`. The faults worth offering a button for
-              are the transient ones — a database timeout, a content read that
-              lost its connection — and only `retry` re-fetches the segment.
-              `reset` re-renders the same failed result, so the button would
-              look broken in exactly the case it exists for.
-            */}
             <button
               type="button"
               onClick={() => retry()}

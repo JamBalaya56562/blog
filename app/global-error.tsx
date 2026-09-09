@@ -6,20 +6,6 @@ import { fontVars } from "@/lib/fonts"
 import { ThemeProvider } from "@/lib/theme/theme-provider"
 import "@/app/globals.css"
 
-/**
- * Root error boundary. It REPLACES `app/layout.tsx` and every nested layout,
- * so nothing from `app/[locale]/layout.tsx` is available: this file has to
- * bring its own `<html>`, `<body>`, stylesheet, fonts and theme class, and
- * cannot use `next/link` for navigation — the router tree it would need may be
- * the thing that failed. Plain anchors instead.
- *
- * `metadata` exports do not work in an error boundary, so the tab name comes
- * from a React `<title>`; without it the tab shows the raw URL.
- *
- * Copy is not locale-switched here. The failure can happen before any locale is
- * resolved — `app/[locale]/layout.tsx` reads content for the ticker before it
- * renders anything — so both languages are shown, English first.
- */
 export default function GlobalError({
   error,
   retry,
@@ -31,23 +17,11 @@ export default function GlobalError({
   return (
     <html lang="en" suppressHydrationWarning className={fontVars}>
       <head>
-        {/* The root layout's `viewport` export is gone with the root layout,
-            and Next injects no default here — measured, not assumed. Without
-            this the fault page renders at desktop width on a phone. */}
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <title>500 · SYSTEM FAULT — Jam&apos;s Blog</title>
         <ThemeInitScript />
       </head>
       <body className="bg-background text-foreground antialiased">
-        {/*
-          Two things set the theme here because this page reaches the reader two
-          ways. Server-rendered, `ThemeInitScript` runs while <head> parses and
-          the class is on <html> before first paint. Rendered on the client
-          instead — which is what happens in development, and after a failure
-          past hydration — React never executes that script, and without this
-          provider a dark-mode reader gets a white page. Measured: with only the
-          script, `prefers-color-scheme: dark` still rendered light.
-        */}
         <ThemeProvider>
           <div className="relative flex min-h-screen flex-col overflow-hidden">
             <div aria-hidden className="pp-grid-bg opacity-20" />
@@ -69,7 +43,6 @@ export default function GlobalError({
                   aria-hidden
                   className="absolute inset-x-0 top-0 h-0.5 bg-cyber-red"
                 />
-                {/* Braced so the `//` reads as text rather than a comment. */}
                 <p className="pp-tick">{"SIBYL // FAULT REPORT"}</p>
 
                 <div className="relative mt-1.5">
@@ -100,8 +73,6 @@ export default function GlobalError({
                 )}
 
                 <div className="mt-7 flex flex-wrap gap-3">
-                  {/* `retry()` re-fetches; `reset()` would redraw the same
-                    failure. See the note in app/[locale]/error.tsx. */}
                   <button
                     type="button"
                     onClick={() => retry()}
@@ -110,8 +81,6 @@ export default function GlobalError({
                     <span aria-hidden>◢</span>
                     <span>RETRY / 再試行</span>
                   </button>
-                  {/* proxy.ts redirects a bare `/` to a locale, so this lands
-                    somewhere real even with no router. */}
                   <a href="/en" className="pp-btn">
                     <span aria-hidden>◢</span>
                     <span>RETURN TO HOME</span>
