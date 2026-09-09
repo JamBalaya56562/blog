@@ -13,15 +13,25 @@ function escapeXml(value: string): string {
     .replace(/'/g, "&apos;")
 }
 
+function modifiedAt(post: Post): string {
+  return post.frontmatter.updated ?? post.frontmatter.date
+}
+
 function item(locale: Locale, post: Post): string {
   const link = new URL(`/${locale}/blog/${post.slug}`, SITE_URL).href
+  const { date, description, title, updated } = post.frontmatter
   return [
     "    <item>",
-    `      <title>${escapeXml(post.frontmatter.title)}</title>`,
+    `      <title>${escapeXml(title)}</title>`,
     `      <link>${escapeXml(link)}</link>`,
     `      <guid isPermaLink="true">${escapeXml(link)}</guid>`,
-    `      <pubDate>${new Date(post.frontmatter.date).toUTCString()}</pubDate>`,
-    `      <description>${escapeXml(post.frontmatter.description)}</description>`,
+    `      <pubDate>${new Date(date).toUTCString()}</pubDate>`,
+    ...(updated
+      ? [
+          `      <atom:updated>${new Date(updated).toISOString()}</atom:updated>`,
+        ]
+      : []),
+    `      <description>${escapeXml(description)}</description>`,
     "    </item>",
   ].join("\n")
 }
@@ -38,7 +48,9 @@ export function buildFeed({
   posts: readonly Post[]
 }>): string {
   const home = new URL(`/${locale}`, SITE_URL).href
-  const latest = posts[0]
+  const modified = posts
+    .map((post) => Date.parse(modifiedAt(post)))
+    .filter((time) => Number.isFinite(time))
   return [
     '<?xml version="1.0" encoding="utf-8"?>',
     '<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">',
@@ -48,9 +60,9 @@ export function buildFeed({
     `    <description>${escapeXml(description)}</description>`,
     `    <language>${locale}</language>`,
     `    <atom:link href="${escapeXml(feedUrl(locale))}" rel="self" type="application/rss+xml" />`,
-    ...(latest
+    ...(modified.length > 0
       ? [
-          `    <lastBuildDate>${new Date(latest.frontmatter.date).toUTCString()}</lastBuildDate>`,
+          `    <lastBuildDate>${new Date(Math.max(...modified)).toUTCString()}</lastBuildDate>`,
         ]
       : []),
     ...posts.map((post) => item(locale, post)),

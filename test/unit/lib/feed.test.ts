@@ -84,6 +84,44 @@ describe("buildFeed", () => {
     expect(xml).not.toContain("<lastBuildDate>")
   })
 
+  // `updated` reaches the JSON-LD and the og tags, and used to stop there:
+  // the feed repeated the publication date and nothing told a reader that a
+  // post it already has had changed. RSS 2.0 has no field of its own for it,
+  // and `pubDate` is not that field — moving it would refile the post as newly
+  // published — so the revision goes out as `atom:updated`, in the Atom
+  // namespace the channel already declares for its self link.
+  test("a revised post advertises the revision", () => {
+    const xml = buildFeed({
+      ...base,
+      posts: [post("a", "2025-01-01", { updated: "2025-06-02" })],
+    })
+    expect(xml).toContain("<pubDate>Wed, 01 Jan 2025 00:00:00 GMT</pubDate>")
+    expect(xml).toContain(
+      "<atom:updated>2025-06-02T00:00:00.000Z</atom:updated>",
+    )
+    expect(() => new DOMParser().parseFromString(xml, "text/xml")).not.toThrow()
+  })
+
+  test("an unrevised post claims no revision", () => {
+    const xml = buildFeed({ ...base, posts: [post("a", "2025-01-01")] })
+    expect(xml).not.toContain("atom:updated")
+  })
+
+  // `lastBuildDate` is when the channel last changed, which a revision does
+  // and the previous reading — the first post's publication date — missed.
+  test("lastBuildDate follows the newest revision, not the newest publication", () => {
+    const xml = buildFeed({
+      ...base,
+      posts: [
+        post("newest", "2025-03-01"),
+        post("revised", "2025-01-01", { updated: "2025-06-02" }),
+      ],
+    })
+    expect(xml).toContain(
+      "<lastBuildDate>Mon, 02 Jun 2025 00:00:00 GMT</lastBuildDate>",
+    )
+  })
+
   test("the self link points at this locale's feed", () => {
     const xml = buildFeed({ ...base, locale: "ja", posts: [] })
     expect(xml).toContain('href="https://kokohore56562wanwan.site/ja/feed.xml"')
