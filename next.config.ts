@@ -122,6 +122,23 @@ const commonSecurityHeaders = [
 const nextConfig: NextConfig = {
   agentRules: false,
   cacheComponents: true,
+  /**
+   * Posts are read from disk inside a `use cache` scope, and MDX is never
+   * imported, so nothing in a post is part of the module graph the dev server
+   * watches. Editing an article changed nothing in the browser until the server
+   * was restarted — every time, for every sentence.
+   *
+   * Redefining `default` reaches every `use cache` that names no profile, which
+   * is all of them, so no component has to know about this. It is set only in
+   * development: in production the key is absent and the built-in profile
+   * applies unchanged (stale 5m, revalidate 15m, expire never), which is what
+   * the CloudFront cache key was tuned against.
+   */
+  ...(isDev && {
+    cacheLife: {
+      default: { expire: 60, revalidate: 1, stale: 0 },
+    },
+  }),
   experimental: {
     isrFlushToDisk: false,
     serverActions: {
