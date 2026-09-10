@@ -1,0 +1,270 @@
+---
+title: Writing Tasks with mise
+date: "2026-09-11"
+updated: "2026-09-11"
+description: Collecting a project's commands into mise.toml, and how order, dependencies and arguments behave
+image: /thumbnails/mise-tasks.avif
+tags:
+  - mise
+  - cli
+  - devtools
+---
+
+## What a task is
+
+`[tasks]` in mise is **a place to give the commands you type often a name and keep them in
+`mise.toml`**. Think of it as a language-agnostic task runner, the same idea as
+[just](https://just.systems/) or [make](https://www.gnu.org/software/make/). It looks like `scripts`
+in `package.json` too, but what the two share stops at "give a command a name" — declaring
+dependencies and listing what exists are closer to what `just` does.
+
+[Getting started with mise](/en/blog/getting-started-with-mise) mentioned the problem of commands
+having scattered entry points. The dev server is `bun dev`, migrations are `./scripts/migrate.sh`,
+releases are `make release`. None of that is wrong, but knowing what lives where means opening three
+files. Tasks collapse that into one entry point.
+
+## Writing one
+
+As an example, take a command that formats your code. [Biome](https://biomejs.dev/) is a linter and
+formatter for JavaScript and TypeScript; `biome check --write` inspects and applies whatever fixes
+it can in one pass.
+
+Rather than typing that string every time, give it a name in `mise.toml`.
+
+```toml title="mise.toml"
+[tasks.lint]
+run = "biome check --write"
+```
+
+That makes `mise run lint` available.
+
+Here are a few more. `description` is optional — it changes nothing about how the task runs.
+
+```toml title="mise.toml"
+[tasks.dev]
+description = "Start the dev server"
+run = "bun dev"
+
+[tasks.build]
+description = "Build for production"
+run = "bun run build"
+
+[tasks.test]
+description = "Run the unit tests"
+run = "bun test"
+
+[tasks.lint]
+run = "biome check --write"
+
+[tasks."db:env"]
+description = "Generate .env"
+run = "bun run scripts/setup-env.ts"
+
+[tasks."db:start"]
+description = "Start the local database"
+run = "bash scripts/db-start.sh"
+```
+
+`mise tasks` lists them.
+
+```text
+build     Build for production
+db:env    Generate .env
+db:start  Start the local database
+dev       Start the dev server
+lint
+test      Run the unit tests
+```
+
+They come out **in alphabetical order by name**, not in the order you wrote them. Only the ones
+given a `description` have anything beside them; `lint` is a bare name. Think of that column as
+something you write for yourself in six months rather than for other people.
+
+Separating names with a colon, as in `db:`, puts related tasks next to each other in the listing.
+There is no namespace feature behind it — they are simply sorted by name — but that is enough to be
+useful.
+
+## Running several commands in order
+
+Give `run` an array and the entries run from the top.
+
+```toml title="mise.toml"
+[tasks.check]
+run = [
+  "biome check --write",
+  "mise run test",
+]
+```
+
+A task can call another task, as `mise run test` does here. That makes it easy to define small
+pieces and keep one task that pulls them together.
+
+## It stops where it fails
+
+An array is abandoned at the point something fails. Here is that being checked.
+
+```toml title="mise.toml"
+[tasks.steps]
+run = ["echo step1", "false", "echo step3"]
+```
+
+```text
+[steps] $ echo step1
+step1
+[steps] ERROR task failed
+```
+
+`step3` never ran.
+
+![An array in run executing from the top, cut short at the failing false, with the next line never reached](mise-tasks-fail-stop.svg)
+
+**That matters for the order you put them in.** Tasks split into ones that rewrite files
+(formatters, linters with autofix) and ones that only inspect and report (tests, type checks).
+**Put the rewriting ones first.**
+
+```toml title="mise.toml"
+[tasks.check]
+run = [
+  "biome check --write",   # rewrites
+  "mise run test",         # only reports
+]
+```
+
+Reverse them and a failing test cuts the run short, so the formatting never happens. Locally that
+costs you a "fix it and go again". In CI it is a different matter.
+
+If you use something like [autofix.ci](https://autofix.ci/), where **CI commits the fixes your
+linter produced**, whatever was rewritten before the failure gets committed anyway. Put a
+report-only task in the middle and the run stops there, the formatting behind it never lands, and
+what gets committed is a half-finished state.
+
+Deciding the order is easiest if you sort by **whether the task rewrites files**.
+
+## Declaring dependencies
+
+Things that must happen first go in `depends`.
+
+```toml title="mise.toml"
+[tasks."db:setup"]
+depends = ["db:env", "db:start"]
+run = ["mise run db:health", "mise run db:push"]
+```
+
+`mise run db:setup` generates `.env` and starts the database, and only then moves on to the health
+check and creating the tables.
+
+![The two entries in depends finishing first, followed by the two entries in run executing in order](mise-tasks-depends-run.svg)
+
+`depends` and an array in `run` do different jobs. `depends` declares "this has to have finished",
+while `run` is what this task itself does. The former is reusable from other tasks.
+
+## Passing arguments
+
+Anything after the task name is appended to the end of the command.
+
+```toml title="mise.toml"
+[tasks.greet]
+run = "echo hello"
+```
+
+```bash
+mise run greet world
+```
+
+```text
+[greet] $ echo hello world
+hello world
+```
+
+![mise run greet world appending world to the echo hello written in run](mise-tasks-args.svg)
+
+Once a task takes arguments, **write the usage into its `description`.**
+
+```toml title="mise.toml"
+[tasks.thumbnail]
+description = "Convert a thumbnail to AVIF: mise run thumbnail <png> <slug>"
+run = "bash scripts/thumbnail.sh"
+```
+
+The order of the arguments is something you will forget if you leave it alone for a while. Putting
+it where `mise tasks` will remind you is the cheapest place to keep it.
+
+## On Windows it goes through cmd
+
+If you write tasks on Windows, not knowing this will trip you up. What is in `run` **is handed to
+cmd**. Here is that being checked.
+
+```toml title="mise.toml"
+[tasks.probe]
+run = "echo cmd-style=%OS% bash-style=$OSTYPE"
+```
+
+```text
+cmd-style=Windows_NT bash-style=$OSTYPE
+```
+
+`%OS%` was expanded and `$OSTYPE` was left as it was. Unix shell notation does not apply. `$VAR`,
+control syntax other than `&&`, the finer behaviour of pipes and the quoting rules are all
+different.
+
+## File tasks let a shebang decide
+
+Instead of writing `run`, you can put a script in `mise-tasks/`. It is the equivalent of a shebang
+recipe in [just](https://just.systems/).
+
+```bash title="mise-tasks/filetask"
+#!/usr/bin/env bash
+#MISE description="Check how a file task behaves"
+echo "shell=$OSTYPE args=$*"
+```
+
+```bash
+mise run filetask hello
+```
+
+```text
+shell=cygwin args=hello
+```
+
+**It runs under the interpreter the shebang names rather than under cmd**, and the arguments arrive
+as they were. Write `#MISE description=` and it appears in `mise tasks` with its description
+alongside.
+
+```text
+filetask  Check how a file task behaves
+```
+
+Wanting to write a second line of shell in a task is a good signal to move it out into a file task.
+The body is ordinary bash, and the same file runs on macOS, Linux and Windows.
+
+If you already write things like `run = "bash scripts/db-start.sh"`, moving the script into
+`mise-tasks/` is the whole migration. The directory structure becomes the colon-separated name.
+
+```text
+mise-tasks/db/start   →  mise run db:start
+mise-tasks/thumbnail  →  mise run thumbnail
+```
+
+The wrapper task definitions disappear from `mise.toml`, and `description` moves into the script.
+Having the explanation next to the thing it explains is worth something too.
+
+**One thing to watch when migrating: the working directory of a file task is the project root**, not
+where the script sits. If it reads another file relative to its own location, as in
+`source "$(dirname "$0")/lib.sh"`, it will look in the wrong place and break. Make those paths
+relative to the project root.
+
+The other thing is that **every file under `mise-tasks/` shows up as a task**. A shared library that
+several scripts source belongs outside `mise-tasks/`.
+
+## In closing
+
+- `[tasks]` gives commands a single entry point, and `mise tasks` is the list of it
+- an array in `run` executes from the top and **stops where it fails**; put the tasks that rewrite
+  first and the ones that report last
+- `depends` declares what has to have finished already. It is not the same job as an array in `run`
+- arguments land at the end of the command. Write the usage into `description`
+- on Windows the string goes to cmd. Once you want a second line, move it into a file task under
+  `mise-tasks/` and let a shebang pick the interpreter
+
+Tasks are where the steps that used to sit in the README become code. Write them down and the next
+person only has to type `mise tasks`.

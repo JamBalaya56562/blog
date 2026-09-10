@@ -25,8 +25,8 @@ describe("localeAlternates", () => {
 
   // Every post happens to be translated right now, so only this can cover it:
   // a post written in one language must not advertise the other, or hreflang
-  // points a crawler at a 404. `/ja/blog/tailwind-css-v4-guide` was exactly
-  // that until it was translated.
+  // points a crawler at a 404. The sample posts this blog started with were
+  // exactly that, and they have since been replaced by translated ones.
   test("an untranslated page advertises only the locale it exists in", () => {
     const alternates = localeAlternates("en", "/blog/only-english", ["en"])
 

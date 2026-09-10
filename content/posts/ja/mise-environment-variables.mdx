@@ -1,0 +1,223 @@
+---
+title: mise で環境変数を管理する
+date: "2026-09-11"
+updated: "2026-09-11"
+description: ディレクトリに入ったときだけ効く環境変数を mise.toml に書く方法と、.env を読み込むときの落とし穴
+image: /thumbnails/mise-environment-variables.avif
+tags:
+  - mise
+  - cli
+  - devtools
+---
+
+## 環境変数を mise に持たせるとは
+
+[mise](https://mise.jdx.dev/) の `[env]` は、**そのディレクトリの中にいるあいだだけ有効な環境変数**を定義する仕組みです。
+
+[mise 入門ガイド](/ja/blog/getting-started-with-mise)では、ツールのバージョンについて「設定が打った人ではなくディレクトリに結びつく」と書きました。環境変数も同じです。`export` はそれを打ったシェルにしか効かず、打ち忘れた人には届かず、打ったまま忘れた人にはついて回ります。
+
+## `[env]` の書き方
+
+`mise.toml` に書きます。
+
+```toml title="mise.toml"
+[env]
+NODE_ENV = "development"
+APP_NAME = "envdemo"
+```
+
+いま何が設定されているかは `mise env` で確認できます。
+
+```bash
+mise env
+```
+
+```text
+export APP_NAME=envdemo
+export NODE_ENV=development
+```
+
+このコマンドは、シェルを有効化していなくても使えます。「設定したつもりが効いていない」を切り分けるときの入り口です。
+
+## ディレクトリを出れば消える
+
+`export` との違いはここです。
+
+```bash
+cd ~/work/envdemo
+mise env | grep APP_NAME     # export APP_NAME=envdemo
+
+cd ~
+mise env | grep APP_NAME     # 何も出ない
+```
+
+![ディレクトリの中では mise env に 2 つ出るが、cd で出ると 0 になる図](mise-env-directory-scope.svg)
+
+別のプロジェクトに移った瞬間に、前のプロジェクトの値は消えます。持ち出さないことが保証される、というのが `export` に対する一番の利点です。
+
+## `.env` を読み込む
+
+すでに `.env` を使っているなら、`_.file` で読み込めます。
+
+```toml title="mise.toml"
+[env]
+_.file = ".env"
+```
+
+`.env` の中身がそのまま環境変数になります。
+
+```text
+export API_KEY=from-dotenv
+export DATABASE_URL='postgres://localhost:5432/dev'
+```
+
+`.env` は `.gitignore` に入れたまま、`mise.toml` だけをコミットする、という使い分けができます。値そのものではなく「どこから読むか」を共有する形です。
+
+## 同じキーがあるとき、勝つのは後に書いた方
+
+`[env]` の直接指定と `_.file` の両方に同じキーがあると、**書いた順**で決まります。これは実測しないと分からない挙動なので、両方の順序で確かめました。
+
+```toml title="mise.toml"
+[env]
+SHARED = "from-mise-toml"
+_.file = ".env"
+```
+
+```text
+export SHARED=from-dotenv
+```
+
+順序を入れ替えると、結果も入れ替わります。
+
+```toml title="mise.toml"
+[env]
+_.file = ".env"
+SHARED = "from-mise-toml"
+```
+
+```text
+export SHARED=from-mise-toml
+```
+
+![同じ mise.toml でも SHARED と _.file の記述順を入れ替えると、export される値が入れ替わる図](mise-env-later-wins.svg)
+
+つまり「`.env` が常に優先」でも「`mise.toml` が常に優先」でもありません。上から順に適用され、後から書いたものが前を上書きします。**既定値を `mise.toml` に置き、`.env` で個人ごとに上書きさせたい**なら、`_.file` を後ろに書きます。
+
+## 信頼していない設定ファイルからは読み込まない
+
+初めて設定を置いたディレクトリでは、こう言われます。
+
+```text
+mise ERROR Config files in .../envdemo/mise.toml are not trusted.
+mise ERROR Trust them with `mise trust`.
+```
+
+```bash
+mise trust
+```
+
+一手間に見えますが、理にかなっています。`[env]` は**任意の値をシェルに注入できる**機能です。`mise.toml` を含むリポジトリを clone して中に入っただけで、`PATH` を書き換えられたり、認証情報らしき変数を仕込まれたりしては困ります。ツールのバージョンと違い、環境変数は中身を見ないと危険性が分かりません。だから明示的な承認を求めます。
+
+clone したリポジトリで `mise trust` を打つ前に、`mise.toml` の `[env]` を読む習慣を付けておくと安全です。
+
+## 実際に踏んだ罠 — `.env` が本物の認証情報を覆い隠す
+
+[このブログのリポジトリ](https://github.com/JamBalaya56562/blog)で実際に起きたことです。
+
+AWS の認証を、長期のアクセスキーから [IAM Identity Center](https://docs.aws.amazon.com/singlesignon/latest/userguide/what-is.html)（SSO）に移しました。ところが `aws` コマンドがこう言い続けます。
+
+```text
+Profile 'default' is already configured with Access Key credentials.
+```
+
+原因は `.env` に残っていた古い行でした。
+
+```bash title=".env"
+AWS_ACCESS_KEY_ID=...
+AWS_SECRET_ACCESS_KEY=...
+```
+
+**環境変数は、設定ファイルより優先されます**。AWS CLI も SDK も、環境変数にキーがあればそちらを使います。`aws configure sso` でどれだけ正しく設定しても、このディレクトリで動かすかぎり古いキーが勝ち続けます。しかも、そのキーはもう無効なので、エラーは「認証に失敗した」ではなく「既に設定済み」という、原因から遠い形で出ます。
+
+![.env に残った AWS のキーが ~/.aws/config の SSO 設定を覆い隠し、aws コマンドが既に設定済みと言い続ける図](mise-env-dotenv-shadow.svg)
+
+厄介なのは、**消したはずのものが効いている**という構図です。AWS 側の設定を何度見直しても見つかりません。
+
+対処として、[`.env` を生成するスクリプト](https://github.com/JamBalaya56562/blog/blob/main/scripts/setup-env.ts)が、もう使っていないキーを見つけたら消すようにしました。
+
+```ts title="scripts/setup-env.ts"
+const obsoleteKeys = [
+  "AWS_ACCESS_KEY_ID",
+  "AWS_SECRET_ACCESS_KEY",
+  "AWS_SESSION_TOKEN",
+  "DATABASE_URL",
+]
+```
+
+古い `DATABASE_URL` も同じ理由で入れてあります。使われていない接続先が `.env` に残っていると、生きている設定に見えてしまうためです。
+
+`.env` に「使わなくなった値」を残さないでください。コメントアウトでも同じです。いつか外した人が、原因不明のエラーに数十分溶かします。
+
+## `_.path` で PATH に足す
+
+環境変数と同じ場所で、`PATH` にディレクトリを足せます。
+
+```toml title="mise.toml"
+[env]
+_.path = ["./bin"]
+```
+
+そのディレクトリの `bin/` が `PATH` の先頭に入ります。プロジェクト固有のスクリプトを、フルパスを書かずに名前で呼べるようになります。
+
+これも、ディレクトリを出れば消えます。他のプロジェクトの `bin/` が紛れ込むことはありません。
+
+## タスクごとに違う値を渡す
+
+ここまでは `.env` でもできることです。ディレクトリに入ったときだけ有効、という点は違いますが、値そのものの管理としては大きく変わりません。
+
+**`.env` にできないのはこれです。**[タスク](/ja/blog/mise-tasks)ごとに違う環境変数を渡せます。
+
+```toml title="mise.toml"
+[env]
+NODE_ENV = "development"
+DATABASE_URL = "postgres://localhost:5432/dev"
+
+[tasks.dev]
+run = "bun dev"
+
+[tasks.test]
+env = { NODE_ENV = "test", DATABASE_URL = "postgres://localhost:5432/test" }
+run = "bun test"
+```
+
+`mise run dev` は `[env]` の値をそのまま受け取ります。
+
+```text
+NODE_ENV=development DATABASE_URL=postgres://localhost:5432/dev
+```
+
+`mise run test` だけが、テスト用の値で走ります。
+
+```text
+NODE_ENV=test DATABASE_URL=postgres://localhost:5432/test
+```
+
+**上書きはそのタスクの中だけで、シェルには漏れません。** `mise run test` を実行したあとでも、シェルの `NODE_ENV` は `development` のままです。
+
+これを `.env` でやろうとすると、`.env.test` を用意してテストの起動コマンドで読み分ける、といった仕組みを自前で用意することになります。ツールごとに読み込み方が違うので、テストランナーとビルドツールで別々の設定が必要になることもあります。mise なら、**値の置き場所とコマンドの定義が同じファイルの中で隣り合います**。
+
+`.env` との使い分けは、こう考えると整理しやすいと思います。
+
+- **`.env`** — 個人ごとに違い、コミットしない値（API キー、ローカルの接続先）
+- **`[env]`** — プロジェクト共通で、コミットしてよい既定値
+- **タスクの `env`** — その 1 コマンドの間だけ差し替えたい値
+
+## まとめ
+
+- `[env]` はディレクトリの中でだけ有効。持ち出されないことが `export` との違い
+- `_.file` で既存の `.env` を読める。同じキーは**後に書いた方**が勝つ
+- `mise env` で、いま何が設定されているかを確認できる
+- `.env` に使わなくなった認証情報を残さない。環境変数は設定ファイルより優先されるので、消したはずの値が静かに勝ち続ける
+- **タスクごとに `env` を書ける**。`.env` にはできないことで、値とコマンドが同じファイルで隣り合う
+
+環境変数は、動かなくなって初めて存在に気付く種類の設定です。ディレクトリに結びつけておくと、少なくとも「どこで効いているのか」がファイルを見れば分かります。

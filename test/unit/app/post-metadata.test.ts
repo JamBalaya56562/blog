@@ -13,7 +13,10 @@ mock.module("next/navigation", () => ({
 }))
 
 const { generateMetadata } = await import("@/app/[locale]/blog/[slug]/page")
-const SLUG = "tailwind-css-v4-guide"
+// Read from disk rather than fixtured, so it has to name a post that exists in
+// both locales — the tests below run per locale and compare the generated
+// metadata against that locale's own frontmatter.
+const SLUG = "getting-started-with-mise"
 
 type OgFields = {
   type?: string

@@ -69,8 +69,8 @@ test.describe("Canonical and hreflang", () => {
     "/en/blog",
     "/en/portfolio",
     "/en/privacy-policy",
-    "/en/blog/tailwind-css-v4-guide",
-    "/ja/blog/tailwind-css-v4-guide",
+    "/en/blog/mise-tasks",
+    "/ja/blog/mise-tasks",
   ]) {
     test(`${path} declares itself canonical and links its translation`, async ({
       page,

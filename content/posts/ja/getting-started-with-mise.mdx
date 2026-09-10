@@ -12,13 +12,13 @@ tags:
 
 ## mise とは
 
-mise（ミーズ）は、**開発ツールのバージョン管理・タスク実行・環境変数の設定を 1 つにまとめたコマンドラインツール**です。
+[mise](https://mise.jdx.dev/)（ミーズ）は、**開発ツールのバージョン管理・タスク実行・環境変数の設定を 1 つにまとめたコマンドラインツール**です。
 
 プロジェクトごとに、必要なツールもそのバージョンも違う。動かすための手順も、渡すべき設定値も違う。そしてその大半は、コードではなく README と口頭の申し送りに置かれています。
 
 こうした問題を、**設定ファイル 1 つ**にまとめて解決するのが mise です。
 
-- **ツールのバージョン管理** — nvm・pyenv・rbenv などを 1 つに置き換える
+- **ツールのバージョン管理** — [nvm](https://github.com/nvm-sh/nvm)・[pyenv](https://github.com/pyenv/pyenv)・[rbenv](https://github.com/rbenv/rbenv) などを 1 つに置き換える
 - **タスクランナー** — `package.json` の `scripts` に相当するものを、言語に依存せず書ける
 - **環境変数** — ディレクトリに入ったときだけ効く環境変数を定義できる
 
@@ -73,7 +73,7 @@ cd ~
 echo $DATABASE_URL   # 空
 ```
 
-この記事で扱うのは、この 3 つのうち **1 つ目のツールのバージョン管理**だけです。タスクと環境変数はそれぞれ書くことが多いので、別の記事にします。
+この記事で扱うのは、この 3 つのうち **1 つ目のツールのバージョン管理**だけです。残りの 2 つはそれぞれ書くことが多いので、別の記事にしました。[タスク編](/ja/blog/mise-tasks)と[環境変数編](/ja/blog/mise-environment-variables)です。
 
 ## mise のインストール
 
@@ -180,7 +180,7 @@ mise use node@22
 
 このコマンドは 2 つのことを同時に行います。**Node.js 22 をインストールし、`mise.toml` に書き込む**。
 
-```toml
+```toml title="mise.toml"
 [tools]
 node = "22"
 ```
@@ -200,11 +200,11 @@ mise は 1 つの方法でツールを取ってくるわけではありません
 | バックエンド | 書き方 | 性格 |
 |---|---|---|
 | core | `node`, `python` | mise 内蔵。主要な言語はこれ |
-| aqua | `aqua:cli/cli` | チェックサムと署名を検証するレジストリ |
+| [aqua](https://aquaproj.github.io/) | `aqua:cli/cli` | チェックサムと署名を検証するレジストリ |
 | npm | `npm:prettier` | npm パッケージをそのまま |
 | cargo | `cargo:ripgrep` | Rust 製。手元でビルドするので時間がかかる |
 | github | `github:owner/repo` | GitHub Releases から直接 |
-| conda | `conda:ffmpeg` | conda パッケージ。依存ごと展開する |
+| [conda](https://docs.conda.io/) | `conda:ffmpeg` | conda パッケージ。依存ごと展開する |
 
 ### 短い名前がどこに解決されるか
 
@@ -232,7 +232,7 @@ aqua:BurntSushi/ripgrep cargo:ripgrep
 
 ### 短い名前を信じて 9 分待たされた話
 
-このブログのリポジトリで ffmpeg が必要になったとき、素直にこう書きました。
+[このブログのリポジトリ](https://github.com/JamBalaya56562/blog)で ffmpeg が必要になったとき、素直にこう書きました。
 
 ```bash
 mise install ffmpeg@latest
@@ -266,14 +266,14 @@ mise install "github:BtbN/FFmpeg-Builds[exe=ffmpeg]@autobuild-2026-09-08-23-15"
 
 **112 秒**で終わりました。`mise.toml` にはこう書きます。
 
-```toml
+```toml title="mise.toml"
 [tools]
 "github:BtbN/FFmpeg-Builds" = { version = "autobuild-2026-09-08-23-15", exe = "ffmpeg" }
 ```
 
 `exe=ffmpeg` が必要なのは、mise が既定でリポジトリ名から実行ファイル名を推測するためです。ここでは `FFmpeg-Builds.exe` を探しにいって見つからず、失敗します。
 
-バージョンを固定しているのにも理由があります。このリポジトリが配っているのはリリース版ではなく日付つきの master ビルドで、`latest` にすると公開されるたび（ほぼ毎日）に数百 MB を取り直すことになります。
+バージョンを固定しているのにも理由があります。[このリポジトリ](https://github.com/BtbN/FFmpeg-Builds)が配っているのはリリース版ではなく日付つきの master ビルドで、`latest` にすると公開されるたび（ほぼ毎日）に数百 MB を取り直すことになります。
 
 ### どれを選ぶか
 

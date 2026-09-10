@@ -88,10 +88,18 @@ test.describe("Blog list page", () => {
   })
 
   test("filters posts by tag", async ({ page }) => {
-    await page.goto("/en/blog?tag=typescript")
-    // Each post row that has the "typescript" tag also renders an active
-    // TagLink, so multiple `[data-active="true"]` elements exist on the
-    // page — scope to the first one (the top filter bar chip).
+    // Every post carries `mise` at the moment, so this cannot assert that the
+    // list got shorter. What it does cover is that a tag in the query string
+    // reaches the chips and the rows: an unknown tag renders neither an active
+    // chip nor any post, which is the failure this catches.
+    await page.goto("/en/blog?tag=nothing-carries-this")
+    await expect(page.locator("a[href*='/en/blog/']")).toHaveCount(0)
+
+    await page.goto("/en/blog?tag=mise")
+    await expect(page.locator("a[href*='/en/blog/']")).toHaveCount(3)
+    // Each post row that has the "mise" tag also renders an active TagLink, so
+    // multiple `[data-active="true"]` elements exist on the page — scope to the
+    // first one (the top filter bar chip).
     await expect(
       page.getByRole("main").locator('[data-active="true"]').first(),
     ).toBeVisible()
@@ -103,7 +111,7 @@ test.describe("Blog list page", () => {
   })
 
   test("clear filter returns to unfiltered list", async ({ page }) => {
-    await page.goto("/en/blog?tag=typescript")
+    await page.goto("/en/blog?tag=mise")
     const allChip = page
       .getByRole("main")
       .getByRole("link", { exact: true, name: "ALL" })

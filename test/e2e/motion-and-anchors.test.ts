@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test"
 
-const POST = "/en/blog/tailwind-css-v4-guide"
+const POST = "/en/blog/mise-tasks"
 
 /** Computed animation state of the first hero headline character. */
 async function heroChar(page: import("@playwright/test").Page) {
