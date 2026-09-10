@@ -212,13 +212,20 @@ async function BlogPostContent({
           </header>
 
           <ViewTransition name={`post-image-${slug}`} share="morph">
-            <div className="relative mb-12 aspect-[21/9] overflow-hidden border border-cyber-line">
+            {/*
+              16:9, the same as the cards and the list rows. It used to be
+              21:9, which meant one thumbnail was cropped differently on every
+              surface it appeared on — a picture that fits the card loses its
+              top and bottom here. That is the site's problem to solve, not
+              something each thumbnail should be drawn around.
+            */}
+            <div className="relative mb-12 aspect-video overflow-hidden border border-cyber-line">
               <Brackets />
               <Image
                 src={post.frontmatter.image ?? DEFAULT_THUMBNAIL}
                 alt={post.frontmatter.title}
-                width={1200}
-                height={514}
+                width={1280}
+                height={720}
                 className="h-full w-full object-cover"
                 priority
                 fetchPriority="high"

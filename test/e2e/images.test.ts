@@ -1,13 +1,14 @@
 import { expect, test } from "@playwright/test"
 
 const POST = "/en/blog/getting-started-with-nextjs"
+const POST_HERO = "/thumbnails/getting-started-with-nextjs.avif"
 
 /**
- * The default thumbnail is the hero of every post and the card of every list
- * entry. It shipped as an 852KB PNG that was lazily loaded and served with
- * `max-age=0`: the largest element in the viewport, fetched late, and fetched
- * again on the next visit. It is now a 7KB AVIF, eager, with a week of
- * caching.
+ * The hero is the largest element in the viewport on a post, so how it is
+ * fetched decides what the reader waits for. It shipped as an 852KB PNG,
+ * lazily loaded and served with `max-age=0`: fetched late, and fetched again
+ * on the next visit. Posts now carry their own AVIF, eager, with a week of
+ * caching, and posts without one still fall back to the default.
  *
  * AVIF is served without a fallback, so `naturalWidth` is the assertion that
  * matters — it is the one thing that fails if a browser cannot decode the
@@ -17,7 +18,7 @@ test.describe("Post images", () => {
   test("the hero decodes and is not deferred", async ({ page }) => {
     await page.goto(POST)
 
-    const hero = page.locator('img[src$="thumbnail_default.avif"]').first()
+    const hero = page.locator("main img").first()
     await expect(hero).toBeVisible()
     await expect(hero).not.toHaveAttribute("loading", "lazy")
     await expect(hero).toHaveAttribute("fetchpriority", "high")
@@ -26,6 +27,37 @@ test.describe("Post images", () => {
       (img: HTMLImageElement) => img.naturalWidth,
     )
     expect(width).toBeGreaterThan(0)
+  })
+
+  /**
+   * One thumbnail is drawn once and shown in three places, so the three have
+   * to ask for the same shape. The hero was 21:9 while the cards and the list
+   * rows were 16:9, which meant a picture composed for the card lost its top
+   * and bottom on the post — and no thumbnail can be drawn to satisfy both.
+   */
+  test("the hero and the cards frame the image identically", async ({
+    page,
+  }) => {
+    const ratioOf = async (path: string, selector: string) => {
+      await page.goto(path)
+      // Both surfaces stream their content in from a Suspense boundary, so
+      // `goto` resolving is not the same as the image existing. Measuring
+      // without this waits on nothing and fails on whichever engine is
+      // slowest that day.
+      const image = page.locator(selector).first()
+      await expect(image).toBeVisible()
+      const box = await image.boundingBox()
+      if (!box) {
+        throw new Error(`no ${selector} on ${path}`)
+      }
+      return box.width / box.height
+    }
+
+    const hero = await ratioOf(POST, "main img")
+    const card = await ratioOf("/en", `img[src="${POST_HERO}"]`)
+
+    expect(hero).toBeCloseTo(16 / 9, 1)
+    expect(card).toBeCloseTo(hero, 1)
   })
 
   test("the thumbnail is cacheable and small", async ({ request }) => {
@@ -60,7 +92,9 @@ test.describe("Post images", () => {
       (tag) => tag.includes('rel="preload"') && tag.includes("/api/images/"),
     )
 
-    expect(html).toContain("thumbnail_default.avif")
+    // The hero has to be in the served HTML for the assertion below to mean
+    // anything: a page with no hero preloads nothing either.
+    expect(html).toContain(POST_HERO)
     expect(preloadedBodyImages).toEqual([])
   })
 })
