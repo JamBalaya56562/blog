@@ -20,6 +20,16 @@ describe("slugify", () => {
   test("collapses multiple spaces", () => {
     expect(slugify("a   b")).toBe("a-b")
   })
+
+  // Every Japanese heading on the site used to slugify to "", so the first one
+  // on a page reached the DOM as `id=""` and the rest as `id="-1"`, `id="-2"`.
+  test("keeps non-ASCII letters", () => {
+    expect(slugify("環境変数が手渡しになっている")).toBe(
+      "環境変数が手渡しになっている",
+    )
+    expect(slugify("mise とは")).toBe("mise-とは")
+    expect(slugify("`latest` を書くかどうか")).toBe("latest-を書くかどうか")
+  })
 })
 
 describe("extractToc", () => {
