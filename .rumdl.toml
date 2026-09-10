@@ -9,5 +9,15 @@ exclude = [
     "README.md",
 ]
 
+# Line length is a rule for languages that put spaces between words, where the
+# wrap point is a space and Markdown collapses the newline back into the space
+# it replaced. Japanese has no such spaces, so a wrapped paragraph renders with
+# a gap that is not in the text: adjacent characters normally sit 0px apart and
+# ones either side of a source newline sit 1.9px apart. The prose is written on
+# one line per paragraph instead, which is what this rule would otherwise
+# forbid. Only the rule is lifted — every other check still applies.
+[per-file-ignores]
+"content/posts/ja/**/*.mdx" = ["MD013"]
+
 [MD013]
 line-length = 120
