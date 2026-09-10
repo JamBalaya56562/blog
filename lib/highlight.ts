@@ -42,6 +42,17 @@ export async function rehypeHighlight() {
     addLanguageClass: true,
     defaultColor: false,
     fallbackLanguage: "text",
+    /**
+     * `title="mise.toml"` after the language on a fence, the way Docusaurus and
+     * VitePress spell it. What is returned here is merged into the meta Shiki
+     * puts on the `<pre>` it builds, so the title arrives as an attribute;
+     * `mdx-components.tsx` takes it off there and draws the filename strip,
+     * which also stops it from becoming a browser tooltip.
+     */
+    parseMetaString: (meta) => {
+      const title = meta.match(/(?:^|\s)title="([^"]*)"/)?.[1]
+      return title ? { title } : null
+    },
     themes: THEMES,
   })
 

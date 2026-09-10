@@ -641,6 +641,29 @@
     position: relative;
     margin: 1.4em 0;
   }
+  /* A code block that names the file it came from. Same construction as the
+     tabbed blocks below: the frame belongs to the wrapper so the strip and the
+     code read as one panel. */
+  .prose-cyber .pp-code-titled {
+    margin: 1.4em 0;
+    border: 1px solid var(--cyber-line);
+    border-radius: 8px;
+    overflow: hidden;
+    background: var(--cyber-code-bg);
+  }
+  .prose-cyber .pp-code-title {
+    font-family: var(--blog-font-mono);
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    padding: 8px 14px;
+    color: var(--cyber-dim);
+    border-bottom: 1px solid var(--cyber-line);
+  }
+  .prose-cyber .pp-code-titled pre {
+    margin: 0;
+    border: 0;
+    border-radius: 0;
+  }
   /* Tabbed code blocks. The frame moves out to the wrapper so the tab strip and
      the code read as one panel, which means the `pre` inside has to give up the
      border, radius and vertical margin it carries on its own. */
