@@ -46,7 +46,7 @@ export default async function PortfolioPage({
               <Brackets />
               <div className="relative aspect-square overflow-hidden border border-cyber-line">
                 <Image
-                  src="/jambalaya.jpg"
+                  src="/jambalaya.avif"
                   alt={dictionary.portfolio.title}
                   width={320}
                   height={320}

@@ -1,7 +1,9 @@
 import { expect, test } from "@playwright/test"
 
-const POST = "/en/blog/getting-started-with-nextjs"
-const POST_HERO = "/thumbnails/getting-started-with-nextjs.avif"
+// This post carries both of the things asserted below: a thumbnail of its own
+// rather than the default, and a figure inside the article body.
+const POST = "/en/blog/getting-started-with-mise"
+const POST_HERO = "/thumbnails/getting-started-with-mise.avif"
 
 /**
  * The hero is the largest element in the viewport on a post, so how it is
@@ -60,6 +62,24 @@ test.describe("Post images", () => {
     expect(card).toBeCloseTo(hero, 1)
   })
 
+  /**
+   * The portrait is AVIF with no fallback, the same as the heroes, and it is
+   * the one image a reader meets outside the blog. It is also `priority`, so a
+   * bad encode is the first thing that fails to appear on the page. The markup
+   * looks right either way, which is why this asserts on `naturalWidth`.
+   */
+  test("the portfolio portrait decodes", async ({ page }) => {
+    await page.goto("/en/portfolio")
+
+    const portrait = page.locator('img[src="/jambalaya.avif"]')
+    await expect(portrait).toBeVisible()
+
+    const width = await portrait.evaluate(
+      (img: HTMLImageElement) => img.naturalWidth,
+    )
+    expect(width).toBeGreaterThan(0)
+  })
+
   test("the thumbnail is cacheable and small", async ({ request }) => {
     const response = await request.get("/thumbnail_default.avif")
 
@@ -79,10 +99,10 @@ test.describe("Post images", () => {
   })
 
   // React preloads an eager image, and the body image was eager: the served
-  // HTML asked for `/api/images/next.svg` — below the fold, in the article —
-  // before the hero it was competing with. Asserted against the HTML rather
-  // than the live DOM, because next/image inserts its own preload for the
-  // hero after hydration and that one belongs there.
+  // HTML asked for the article's own figure — below the fold — before the hero
+  // it was competing with. Asserted against the HTML rather than the live DOM,
+  // because next/image inserts its own preload for the hero after hydration and
+  // that one belongs there.
   test("the served HTML does not preload an image from the article body", async ({
     request,
   }) => {

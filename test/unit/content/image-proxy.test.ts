@@ -29,9 +29,9 @@ describe("Image Proxy", () => {
 describe("Image proxy caching", () => {
   test("a served image is cacheable", async () => {
     const response = await GET(
-      new Request("http://localhost/api/images/next.svg"),
+      new Request("http://localhost/api/images/mise-one-file.svg"),
       {
-        params: Promise.resolve({ path: ["next.svg"] }),
+        params: Promise.resolve({ path: ["mise-one-file.svg"] }),
       },
     )
 

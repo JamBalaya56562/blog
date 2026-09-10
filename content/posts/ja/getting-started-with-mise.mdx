@@ -1,0 +1,338 @@
+---
+title: mise 入門ガイド
+date: "2026-09-10"
+updated: "2026-09-10"
+description: mise のインストールから、ツールの入れ方・使い方・入手経路の選び方まで
+image: /thumbnails/getting-started-with-mise.avif
+tags:
+  - mise
+  - cli
+  - devtools
+---
+
+## mise とは
+
+mise（ミーズ）は、**開発ツールのバージョン管理・タスク実行・環境変数の設定を 1 つにまとめた
+コマンドラインツール**です。
+
+プロジェクトごとに、必要なツールもそのバージョンも違う。動かすための手順も、渡すべき設定値も違う。
+そしてその大半は、コードではなく README と口頭の申し送りに置かれています。
+
+こうした問題を、**設定ファイル 1 つ**にまとめて解決するのが mise です。
+
+- **ツールのバージョン管理** — nvm・pyenv・rbenv などを 1 つに置き換える
+- **タスクランナー** — `package.json` の `scripts` に相当するものを、言語に依存せず書ける
+- **環境変数** — ディレクトリに入ったときだけ効く環境変数を定義できる
+
+3 つが別々のツールだったものが、`mise.toml` 1 ファイルに収まります。
+
+![.nvmrc・Makefile・.envrc の 3 ファイルが、mise.toml 1 つの tools・tasks・env に収まる図](mise-one-file.svg)
+
+この 3 つが、それぞれどういう不便を消してくれるのか。1 つずつ具体的に見ていきます。
+
+### ツールのバージョンが揃わない
+
+新しく入った人がリポジトリを clone して、書いてあるとおりにコマンドを打つ。それが動かない。
+調べてみると、その人の手元の Node.js が 20 で、プロジェクトが前提にしていたのは 22 だった。
+よくある話です。
+
+厄介なのは、**エラーメッセージがバージョンの話をしてくれない**ことです。
+構文エラーや「そんな関数は無い」とだけ言われるので、
+そこからバージョン違いを疑うまでに時間が溶けます。
+
+nvm や pyenv でも解決できます。ただし切り替えは手作業です。
+`nvm use` を打ち忘れたまま作業を始めれば、結局同じことが起きます。
+
+mise は、`mise.toml` のあるディレクトリに**入った瞬間に**切り替えます。打ち忘れる操作がありません。
+
+```bash
+cd ~/work/blog      # ここで node が 26 になる
+cd ~/work/old-app   # ここで 22 に戻る
+```
+
+### コマンドの入り口がばらばら
+
+開発サーバーは `bun dev`、マイグレーションは `./scripts/migrate.sh`、リリースは `make release`。
+どれも間違ってはいません。ただ、**どこに何があるのか**は 3 つのファイルを開かないと分かりません。
+
+README に一覧が書いてあることもありますが、更新が止まっているのが常です。
+
+mise を使うと、入り口が 1 つになります。
+
+```bash
+mise tasks       # このプロジェクトで打てるものが全部出る
+mise run dev
+```
+
+`package.json` の `scripts` と違うのは、**JavaScript のプロジェクトでなくても使える**ことです。
+シェルスクリプトでも、別ファイルに切り出したものでも、同じ一覧に並びます。
+
+### 環境変数が手渡しになっている
+
+`.env.example` をコピーして `.env` を作る。手順書に書かれた `export` をシェルに打つ。
+どちらも打った人の環境にだけ効くので、次に困るのは打ち忘れた人です。
+
+もっと危ないのは逆のパターンで、**打ったまま忘れる**場合です。
+あるプロジェクトで `export DATABASE_URL=...` した状態のまま別のプロジェクトに移り、
+そちらのスクリプトが前のデータベースを向いてしまう。これは実際に起こります。
+
+mise の `[env]` は、そのディレクトリの中でだけ有効です。出れば消えます。
+
+```bash
+cd ~/work/blog
+echo $DATABASE_URL   # postgres://localhost:5432/dev
+cd ~
+echo $DATABASE_URL   # 空
+```
+
+この記事で扱うのは、この 3 つのうち **1 つ目のツールのバージョン管理**だけです。
+タスクと環境変数はそれぞれ書くことが多いので、別の記事にします。
+
+## mise のインストール
+
+使っている OS で選んでください。
+
+<CodeTabs labels={["macOS / Linux", "Windows"]}>
+
+```bash
+curl -fsSL https://mise.run | sh
+```
+
+```powershell
+winget install jdx.mise
+```
+
+</CodeTabs>
+
+macOS で Homebrew を使っているなら `brew install mise` でも入ります。
+Windows では winget のほかに `scoop install mise` と `choco install mise` があり、
+すでに使っているパッケージマネージャに合わせるのが後々楽です。
+
+入ったかどうかは、バージョンを聞いてみるのが手っ取り早いです。
+
+```bash
+mise --version
+```
+
+```text
+2026.9.4 windows-x64 (2026-09-09)
+```
+
+このように、バージョン・プラットフォーム・ビルド日が返ってくれば成功です。
+`command not found` になる場合は、まだ PATH が通っていません。
+インストーラーが最後に出す案内のとおりに、シェルを開き直してから試してください。
+
+## ツールを入れて、使う
+
+ツールを入れるコマンドは `mise install` です。`@` の後ろにバージョンを書きます。
+
+```bash
+mise install node@22
+mise install node@20   # 別のバージョンも並べて置ける
+```
+
+入っているものは `mise ls` で一覧できます。
+
+ただし、入れただけでは `node` と打っても動きません。mise が入れたツールは PATH に
+置かれていないからです。実行するには `mise exec` を挟みます。
+
+```bash
+mise exec node@22 -- node --version
+```
+
+`--` の前が「どのツールで」、後ろが「何を実行するか」です。
+
+> 「そんなツールは入っていない」と結論づける前に、`mise ls` を確認してください。
+> 入っているのに PATH から見えていないだけ、というのがよくあります。
+
+ここまでは、正直なところ Homebrew や apt でツールを入れて使うのと大きく変わりません。
+バージョンを並べて持てるのは便利ですが、それだけなら nvm や pyenv でもできます。
+
+## ここからが mise の本領
+
+mise が他と違うのは、**設定が「打った人」ではなく「ディレクトリ」に結びつく**ところです。
+そのための道具が 2 つあります。
+
+### `mise activate` — 打たなくても切り替わるようにする
+
+シェルの設定ファイルに 1 行足します。
+
+<CodeTabs labels={["macOS / Linux", "Windows"]}>
+
+```bash
+# ~/.bashrc なら
+echo 'eval "$(mise activate bash)"' >> ~/.bashrc
+
+# ~/.zshrc なら
+echo 'eval "$(mise activate zsh)"' >> ~/.zshrc
+```
+
+```powershell
+# プロファイルが無ければ作ってから追記する
+if (-not (Test-Path $PROFILE)) { New-Item -ItemType File -Path $PROFILE -Force }
+Add-Content -Path $PROFILE -Value '(&mise activate pwsh) | Out-String | Invoke-Expression'
+```
+
+</CodeTabs>
+
+PowerShell のプロファイルはターミナルやエディタごとに別のものが読まれることがあります。
+反映されないときは、そのアプリで `$PROFILE` が何を指しているかを確認してください。
+
+これを入れると、`mise exec` が要らなくなります。
+ディレクトリに入った時点で、そこで使うバージョンに PATH が差し替わるからです。
+
+```bash
+cd ~/work/blog
+node --version    # v26.0.1
+
+cd ~/work/old-app
+node --version    # v22.11.0
+```
+
+![ディレクトリごとに mise.toml が違い、cd すると PATH の先頭が入れ替わる図](mise-activate-path.svg)
+
+`nvm use` のような**打ち忘れる操作が無くなる**、というのがここでの要点です。
+
+### `mise use` — 設定をファイルに残す
+
+では、そのディレクトリで使うバージョンはどこに書いてあるのか。それが `mise.toml` で、
+それを書くコマンドが `mise use` です。
+
+```bash
+mise use node@22
+```
+
+このコマンドは 2 つのことを同時に行います。**Node.js 22 をインストールし、`mise.toml` に書き込む**。
+
+```toml
+[tools]
+node = "22"
+```
+
+ここが `mise install` との違いです。
+自分の環境にツールを置くだけで終わらせず、プロジェクトの設定として残す。それが `mise use` です。
+
+![mise install は自分の環境にツールを置くだけ、mise use はさらに mise.toml に書き残す図](mise-install-vs-use.svg)
+
+このファイルをコミットすれば、次に clone した人は `mise install` だけで同じバージョンが揃います。
+「Node は 22 を使ってください」と口頭で伝える必要がなくなります。
+
+## そのツールはどこから来るのか — バックエンド
+
+`mise install node@22` と打ったとき、mise はどこから node を取ってくるのか。
+ここを知らないと、この節の後半で紹介するような形で足を取られます。
+
+mise は 1 つの方法でツールを取ってくるわけではありません。
+**バックエンド**と呼ばれる入手経路を複数持っていて、ツールごとに使い分けています。
+
+| バックエンド | 書き方 | 性格 |
+|---|---|---|
+| core | `node`, `python` | mise 内蔵。主要な言語はこれ |
+| aqua | `aqua:cli/cli` | チェックサムと署名を検証するレジストリ |
+| npm | `npm:prettier` | npm パッケージをそのまま |
+| cargo | `cargo:ripgrep` | Rust 製。手元でビルドするので時間がかかる |
+| github | `github:owner/repo` | GitHub Releases から直接 |
+| conda | `conda:ffmpeg` | conda パッケージ。依存ごと展開する |
+
+### 短い名前がどこに解決されるか
+
+`node` や `ffmpeg` のような短い名前を書いたとき、どの経路になるかは mise の
+レジストリが決めています。調べるコマンドがあります。
+
+```bash
+mise registry node
+```
+
+```text
+core:node
+```
+
+複数の候補を持つツールもあります。
+
+```bash
+mise registry ripgrep
+```
+
+```text
+aqua:BurntSushi/ripgrep cargo:ripgrep
+```
+
+候補が並んでいるときは**左から順に試されます**。ripgrep なら、まず aqua の
+ビルド済みバイナリを取りにいって、駄目なら cargo で手元ビルドに落ちる、という順です。
+
+### 短い名前を信じて 9 分待たされた話
+
+このブログのリポジトリで ffmpeg が必要になったとき、素直にこう書きました。
+
+```bash
+mise install ffmpeg@latest
+```
+
+**9 分経っても終わりませんでした**。ログにはこう出ていました。
+
+```text
+ffmpeg@9.0.1  installing tzdata  525.0s
+```
+
+タイムゾーンのデータベースは、動画のエンコードとは何の関係もありません。
+理由はレジストリを見れば分かります。
+
+```bash
+mise registry ffmpeg
+```
+
+```text
+conda:ffmpeg
+```
+
+conda パッケージとして解決されるので、依存ツリーごと展開していたわけです。
+ffmpeg 自体は 1 つの実行ファイルで済むのに、パッケージマネージャの都合で
+そうなっていません。
+
+### 経路を自分で指定する
+
+GitHub Releases から直接取れば済む話でした。
+
+```bash
+mise install "github:BtbN/FFmpeg-Builds[exe=ffmpeg]@autobuild-2026-09-08-23-15"
+```
+
+**112 秒**で終わりました。`mise.toml` にはこう書きます。
+
+```toml
+[tools]
+"github:BtbN/FFmpeg-Builds" = { version = "autobuild-2026-09-08-23-15", exe = "ffmpeg" }
+```
+
+`exe=ffmpeg` が必要なのは、mise が既定でリポジトリ名から実行ファイル名を
+推測するためです。ここでは `FFmpeg-Builds.exe` を探しにいって見つからず、失敗します。
+
+バージョンを固定しているのにも理由があります。このリポジトリが配っているのは
+リリース版ではなく日付つきの master ビルドで、`latest` にすると
+公開されるたび（ほぼ毎日）に数百 MB を取り直すことになります。
+
+### どれを選ぶか
+
+- **迷ったら短い名前のまま**でよい。たいていのツールは妥当な経路に解決されます
+- **遅い・入らないと感じたら `mise registry`** で経路を確認する。原因はここにあることが多い
+- **検証を重視するなら `aqua`**。展開する前にチェックサムと署名を確認します
+- **レジストリに無い、または新しすぎるものは `github:`**。その代わり、
+  実行ファイル名とバージョンの面倒は自分で見ることになります
+
+## よく使うコマンド
+
+```bash
+mise ls              # 入っているもの
+mise ls-remote node  # 入れられるバージョン
+mise install         # mise.toml のものを揃える
+mise upgrade         # 更新する
+mise doctor          # 設定の診断
+```
+
+## まとめ
+
+- `mise install` は自分の環境に入れるだけ、`mise use` はプロジェクトの設定として残す
+- `mise activate` を入れておけば、ディレクトリに入るだけで版が切り替わる
+- 遅い・入らないと感じたら `mise registry` でバックエンドを疑う
+
+「手元では動く」を減らすための道具です。設定ファイルが 1 つ増える代わりに、口頭とREADMEで伝えていた前提がコードになります。

@@ -1,6 +1,18 @@
 import { expect, test } from "@playwright/test"
 
 /**
+ * The posted date of `getting-started-with-mise`, per locale, in both the form
+ * that is shown and the form that is spoken. Kept here rather than inline
+ * because the assertions below are about how a date is rendered, not about
+ * which date it is — rewriting a post should not mean hunting through this
+ * file.
+ */
+const DATES = {
+  en: { dotted: "2026.09.10", spoken: "September 10, 2026" },
+  ja: { dotted: "2026.09.10", spoken: "2026年9月10日" },
+} as const
+
+/**
  * The redirect used to ignore `Accept-Language` and send everyone to `/en`, so
  * a Japanese reader typing the domain landed on the English site and had to
  * find the JA / EN switch. These two tests passed throughout, because the
@@ -104,19 +116,19 @@ test.describe("Blog list page", () => {
 
 test.describe("Blog post page", () => {
   test("displays post content and metadata", async ({ page }) => {
-    await page.goto("/en/blog/getting-started-with-nextjs")
+    await page.goto("/en/blog/getting-started-with-mise")
 
     await expect(
-      page.getByRole("heading", { name: "Getting Started with Next.js" }),
+      page.getByRole("heading", { name: "Getting Started with mise" }),
     ).toBeVisible()
-    // Dates are rendered with dot separators (2025.01.15 instead of
-    // 2025-01-15) to match the cyber-style typography. The bare date now
+    // Dates are rendered with dot separators (2026.09.10 instead of
+    // 2026-09-10) to match the cyber-style typography. The bare date now
     // appears twice in this row — posted and updated — so it is asserted
     // together with its label rather than on its own.
     await expect(page.locator("article header .pp-tick").nth(1)).toContainText(
-      "Posted on 2025.01.15",
+      `Posted on ${DATES.en.dotted}`,
     )
-    await expect(page.locator("a[href*='tag=nextjs']")).toBeVisible()
+    await expect(page.locator("a[href*='tag=mise']")).toBeVisible()
   })
 
   /**
@@ -133,7 +145,7 @@ test.describe("Blog post page", () => {
     test(`${locale} shows the revision date after the posted date`, async ({
       page,
     }) => {
-      await page.goto(`/${locale}/blog/getting-started-with-nextjs`)
+      await page.goto(`/${locale}/blog/getting-started-with-mise`)
 
       const meta = page.locator("article header .pp-tick").nth(1)
       // textContent, not innerText: the row is uppercased in CSS, and the
@@ -146,8 +158,9 @@ test.describe("Blog post page", () => {
         text.indexOf(updated),
         "the revision date is not after the posted date",
       ).toBeGreaterThan(text.indexOf(posted))
-      // Both dates read 2025.01.15 until the post is actually revised.
-      expect(text.match(/2025\.01\.15/g)).toHaveLength(2)
+      // Both dates read the same until the post is actually revised, so the
+      // row carries it twice — splitting on it leaves three pieces.
+      expect(text.split(DATES[locale].dotted)).toHaveLength(3)
     })
   }
 
@@ -173,7 +186,7 @@ test.describe("Blog post page", () => {
         page,
       }) => {
         await page.setViewportSize({ height: 800, width })
-        await page.goto(`/${locale}/blog/getting-started-with-nextjs`)
+        await page.goto(`/${locale}/blog/getting-started-with-mise`)
 
         const meta = page.locator("article header .pp-tick").nth(1)
         await expect(meta).toBeVisible()
@@ -231,12 +244,11 @@ test.describe("Blog post page", () => {
    * `aria-hidden` subtrees, keeping visually hidden ones — because the whole
    * point is a difference between what is seen and what is announced.
    */
-  for (const [locale, spoken] of [
-    ["en", "January 15, 2025"],
-    ["ja", "2025年1月15日"],
-  ] as const) {
+  for (const locale of ["en", "ja"] as const) {
+    const { dotted, spoken } = DATES[locale]
+
     test(`the ${locale} dates are announced as dates`, async ({ page }) => {
-      await page.goto(`/${locale}/blog/getting-started-with-nextjs`)
+      await page.goto(`/${locale}/blog/getting-started-with-mise`)
 
       const announced = await page.evaluate(() => {
         const walk = (node: Node): string => {
@@ -257,7 +269,7 @@ test.describe("Blog post page", () => {
       expect(
         announced,
         "the dotted date is still in the accessibility tree",
-      ).not.toContain("2025.01.15")
+      ).not.toContain(dotted)
     })
   }
 
@@ -265,16 +277,16 @@ test.describe("Blog post page", () => {
     // The hidden copy must not show up or take space; a broken `sr-only` would
     // print the long date next to the short one.
     await page.setViewportSize({ height: 900, width: 1280 })
-    await page.goto("/ja/blog/getting-started-with-nextjs")
+    await page.goto("/ja/blog/getting-started-with-mise")
 
     const hidden = page.locator("article header .sr-only").first()
-    await expect(hidden).toHaveText("2025年1月15日")
+    await expect(hidden).toHaveText(DATES.ja.spoken)
     const box = await hidden.boundingBox()
     expect(box?.width ?? 0).toBeLessThanOrEqual(1)
     expect(box?.height ?? 0).toBeLessThanOrEqual(1)
 
     await expect(page.locator("article header .pp-tick").nth(1)).toContainText(
-      "2025.01.15",
+      DATES.ja.dotted,
     )
   })
 
@@ -282,7 +294,7 @@ test.describe("Blog post page", () => {
     // The grouping must not change the wide layout: every gap is still the
     // row's own `gap-3`, so this stays one line at any normal width.
     await page.setViewportSize({ height: 900, width: 1280 })
-    await page.goto("/en/blog/getting-started-with-nextjs")
+    await page.goto("/en/blog/getting-started-with-mise")
 
     const meta = page.locator("article header .pp-tick").nth(1)
     const tops = await meta.evaluate((el) =>
@@ -296,7 +308,7 @@ test.describe("Blog post page", () => {
   test("shows translation link for posts with translations", async ({
     page,
   }) => {
-    await page.goto("/en/blog/getting-started-with-nextjs")
+    await page.goto("/en/blog/getting-started-with-mise")
 
     await expect(
       page.getByText("This post is also available in:"),
@@ -304,18 +316,18 @@ test.describe("Blog post page", () => {
     await expect(
       page
         .getByRole("article")
-        .locator("a[href='/ja/blog/getting-started-with-nextjs']"),
+        .locator("a[href='/ja/blog/getting-started-with-mise']"),
     ).toBeVisible()
   })
 
   test("navigating to translation works", async ({ page }) => {
-    await page.goto("/en/blog/getting-started-with-nextjs")
+    await page.goto("/en/blog/getting-started-with-mise")
 
     const translationLink = page
       .getByRole("article")
-      .locator("a[href='/ja/blog/getting-started-with-nextjs']")
+      .locator("a[href='/ja/blog/getting-started-with-mise']")
     await Promise.all([
-      page.waitForURL(/\/ja\/blog\/getting-started-with-nextjs/, {
+      page.waitForURL(/\/ja\/blog\/getting-started-with-mise/, {
         timeout: 15000,
       }),
       translationLink.click(),

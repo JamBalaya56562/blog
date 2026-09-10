@@ -9,8 +9,8 @@ import { expect, test } from "@playwright/test"
  */
 test.describe("Share card metadata", () => {
   for (const path of [
-    "/en/blog/getting-started-with-nextjs",
-    "/ja/blog/getting-started-with-nextjs",
+    "/en/blog/getting-started-with-mise",
+    "/ja/blog/getting-started-with-mise",
   ]) {
     test(`${path} resolves og:image against the deployed origin`, async ({
       page,

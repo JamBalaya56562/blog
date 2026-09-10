@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test"
 
-const POST = "/en/blog/getting-started-with-nextjs"
+const POST = "/en/blog/getting-started-with-mise"
 
 /**
  * Code blocks reached the reader as one flat colour: the MDX pipeline named

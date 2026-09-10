@@ -15,7 +15,19 @@ rumdl = "latest"
 "github:BtbN/FFmpeg-Builds" = { version = "autobuild-2026-09-08-23-15", exe = "ffmpeg" }
 
 [tasks.lint]
-run = ["bun lint:fix --unsafe", "mise lint:md", "mise lint:tf"]
+# The fixers run first and the check last: `lint:emphasis` reports rather than
+# repairs, and aborting the list early would leave the remaining fixes unapplied
+# in autofix.ci, which commits whatever the fixers produced even on failure.
+run = [
+  "bun lint:fix --unsafe",
+  "mise lint:md",
+  "mise lint:tf",
+  "mise lint:emphasis",
+]
+
+[tasks."lint:emphasis"]
+description = "Fail on emphasis markers that never became emphasis"
+run = "bun run scripts/lint-emphasis.ts"
 
 [tasks."lint:tf"]
 description = "Format the OpenTofu configuration"

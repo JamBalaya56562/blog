@@ -1,0 +1,157 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 560" width="1200" height="560" font-family="ui-monospace, 'JetBrains Mono', 'SFMono-Regular', Menlo, monospace" xmlns:c2pa="http://c2pa.org/manifest"><metadata><c2pa:manifest>AAAWgmp1bWIAAAAeanVtZGMycGEAEQAQgAAAqgA4m3EDYzJwYQAAABZcanVtYgAAAEdqdW1kYzJtYQARABCAAACqADibcQN1cm46YzJwYTpmMDBjNmZiZS0zODZjLTRiYjQtOGEyYS01MGVlMGY4MDc3MGEAAAADl2p1bWIAAAApanVtZGMyYXMAEQAQgAAAqgA4m3EDYzJwYS5hc3NlcnRpb25zAAAAALxqdW1iAAAARGp1bWRjYm9yABEAEIAAAKoAOJtxE2MycGEuaW5ncmVkaWVudC52MwAAAAAYYzJzaKjVhHOlugz0RRSpGyvJbRoAAABwY2JvcqNpZGM6Zm9ybWF0bWltYWdlL3N2Zyt4bWxqaW5zdGFuY2VJRHgseG1wOmlpZDoyNTFjNTkyOS0yYjkwLTRiOWItYTcyZi1iZjhhMWI0ZDczMTVscmVsYXRpb25zaGlwaHBhcmVudE9mAAAB4mp1bWIAAABBanVtZGNib3IAEQAQgAAAqgA4m3ETYzJwYS5hY3Rpb25zLnYyAAAAABhjMnNojOEDHD7lHLqTn1j77Ot44AAAAZljYm9yomdhY3Rpb25zgqJmYWN0aW9ua2MycGEub3BlbmVkanBhcmFtZXRlcnOha2luZ3JlZGllbnRzgaJjdXJseC1zZWxmI2p1bWJmPWMycGEuYXNzZXJ0aW9ucy9jMnBhLmluZ3JlZGllbnQudjNkaGFzaFggpbRaYj/nASAm1pSdmA3Oit3HQjKZA2aNnT/I78me4eqkZmFjdGlvbngdY29tLmFudGhyb3BpYy5jbGF1ZGUucHJvdmlkZWRqcGFyYW1ldGVyc6F4H2NvbS5hbnRocm9waWMub3JpZ2luLWNvbmZpZGVuY2VndW5rbm93bmtkZXNjcmlwdGlvbnhmQ2xhdWRlIHByb3ZpZGVkIHRoaXMgZmlsZSBhdCB0aGUgcmVxdWVzdCBvZiBhIHVzZXIgYW5kIG1heSBoYXZlIGNyZWF0ZWQgb3IgbW9kaWZpZWQgdGhlIGZpbGUgY29udGVudHMubXNvZnR3YXJlQWdlbnShZG5hbWVmQ2xhdWRlcmFsbEFjdGlvbnNJbmNsdWRlZPUAAADIanVtYgAAAEBqdW1kY2JvcgARABCAAACqADibcRNjMnBhLmhhc2guZGF0YQAAAAAYYzJzaB02L2Ohz5m9WlK2ZWKrVqEAAACAY2JvcqVjYWxnZnNoYTI1NmNwYWRNAAAAAAAAAAAAAAAAAGRoYXNoWCCBhTEtxnerqnE8AbTUw20R5fz1avBAXzUWL/bBnjbBxWRuYW1lbmp1bWJmIG1hbmlmZXN0amV4Y2x1c2lvbnOBomVzdGFydBjpZmxlbmd0aBkeBAAAAj5qdW1iAAAAJ2p1bWRjMmNsABEAEIAAAKoAOJtxA2MycGEuY2xhaW0udjIAAAACD2Nib3KlY2FsZ2ZzaGEyNTZpc2lnbmF0dXJleE1zZWxmI2p1bWJmPS9jMnBhL3VybjpjMnBhOmYwMGM2ZmJlLTM4NmMtNGJiNC04YTJhLTUwZWUwZjgwNzcwYS9jMnBhLnNpZ25hdHVyZWppbnN0YW5jZUlEeCx4bXA6aWlkOjY4NDVjMzA0LWNiNDYtNDViOC04MTA1LWRjMGFkZTIxNTNiZHJjcmVhdGVkX2Fzc2VydGlvbnODomN1cmx4LXNlbGYjanVtYmY9YzJwYS5hc3NlcnRpb25zL2MycGEuaW5ncmVkaWVudC52M2RoYXNoWCCltFpiP+cBICbWlJ2YDc6K3cdCMpkDZo2dP8jvyZ7h6qJjdXJseCpzZWxmI2p1bWJmPWMycGEuYXNzZXJ0aW9ucy9jMnBhLmFjdGlvbnMudjJkaGFzaFggD7m9JIp+4vSxQhhONh/ku4NwJGhC80XDTl/DA6mCfiKiY3VybHgpc2VsZiNqdW1iZj1jMnBhLmFzc2VydGlvbnMvYzJwYS5oYXNoLmRhdGFkaGFzaFggyseT3dwSg1Wkdo0iD/D2gNJNZNW/cyGM1SsOospw9wd0Y2xhaW1fZ2VuZXJhdG9yX2luZm+jZG5hbWVvQW50aHJvcGljIEZpbGVzZ3ZlcnNpb25lMS4wLjBrc3BlY1ZlcnNpb25lMi40LjAAABA4anVtYgAAAChqdW1kYzJjcwARABCAAACqADibcQNjMnBhLnNpZ25hdHVyZQAAABAIY2JvctKEWQISogEmGCFZAgowggIGMIIBjaADAgECAhRA5aAK7sI50L64g/oGQgU9Z1UTADAKBggqhkjOPQQDAzBJMRcwFQYDVQQKEw5BbnRocm9waWMsIFBCQzEuMCwGA1UEAxMlQW50aHJvcGljIENvbnRlbnQgQ3JlZGVudGlhbHMgUm9vdCBDQTAeFw0yNjA4MDcxODQzNTZaFw0yODA4MDYxOTQzNTZaMEQxFzAVBgNVBAoTDkFudGhyb3BpYywgUEJDMSkwJwYDVQQDEyBBbnRocm9waWMgQ2xhdWRlIENvbnRlbnQgU2lnbmluZzBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABJh6CmvLUBgFFNU0vUKlOVtE6djd17L5SuwX0LemFisBM3dkd/3cyjxFA3Qo5S46fX0/ihY0VZ7mfb9KF703t5OjWDBWMA4GA1UdDwEB/wQEAwIHgDAVBgNVHSUEDjAMBgorBgEEAYPoXgIBMAwGA1UdEwEB/wQCMAAwHwYDVR0jBBgwFoAUzlHiBIFOZFsj+OPEz5o+nMHXXMIwCgYIKoZIzj0EAwMDZwAwZAIwMXMdFJ4BetLLVY7ORuE9noqbbAZOZn/aArXyTwFAZfKrPzxF2vPoJNf1+UCdg1XGAjBwX1zd9WGqYkqmL5SFqw1QySjr1zJfpJM9+1rdDwSPLMOPOjKuiXjoU/pUUeG9RwmhY3BhZFkNngAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPZYQEZRxR+K8agTXZ3n4Qlge44/DnbFbPsvnkIfszjwbiZY1rLSb4Wp5Ym3+CXLjv7lbseLVbxJp82GNo6q8P5GOck=</c2pa:manifest></metadata>
+  <defs>
+    <radialGradient id="bl" cx="0.52" cy="1.1" r="0.8">
+      <stop offset="0" stop-color="#0e5f7a" stop-opacity="0.5"></stop>
+      <stop offset="0.55" stop-color="#0b2a3a" stop-opacity="0.32"></stop>
+      <stop offset="1" stop-color="#070A0F" stop-opacity="0"></stop>
+    </radialGradient>
+    <pattern id="sc" width="4" height="4" patternUnits="userSpaceOnUse">
+      <rect width="4" height="1" y="3" fill="rgba(0,0,0,0.32)"></rect>
+    </pattern>
+    <pattern id="hatch" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <rect width="8" height="8" fill="none"></rect>
+      <path d="M0 0V8" stroke="rgba(120,200,255,0.07)"></path>
+    </pattern>
+    <linearGradient id="dv" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="rgba(255,184,77,0.5)"></stop>
+      <stop offset="1" stop-color="rgba(123,228,255,0.06)"></stop>
+    </linearGradient>
+    <linearGradient id="hit" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="rgba(123,228,255,0.26)"></stop>
+      <stop offset="1" stop-color="rgba(123,228,255,0.03)"></stop>
+    </linearGradient>
+    <linearGradient id="hit2" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="rgba(123,228,255,0.15)"></stop>
+      <stop offset="1" stop-color="rgba(123,228,255,0.02)"></stop>
+    </linearGradient>
+    <linearGradient id="cmd" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="rgba(255,184,77,0.16)"></stop>
+      <stop offset="1" stop-color="rgba(255,184,77,0.02)"></stop>
+    </linearGradient>
+    <marker id="ma" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto">
+      <path d="M0 0L10 5L0 10z" fill="#ffb84d"></path>
+    </marker>
+    <marker id="mc" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto">
+      <path d="M0 0L10 5L0 10z" fill="#7be4ff"></path>
+    </marker>
+    <filter id="sf" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="11"></feGaussianBlur>
+    </filter>
+  </defs>
+
+  <rect width="1200" height="560" fill="#070A0F"></rect>
+  <rect width="1200" height="560" fill="url(#bl)"></rect>
+  <polygon points="120,286 1176,300 1176,536 120,536" fill="rgba(123,228,255,0.04)"></polygon>
+  <polygon points="120,24 1176,24 1176,286 120,286" fill="url(#hatch)" opacity="0.55"></polygon>
+  <rect width="1200" height="560" fill="url(#sc)" opacity="0.5"></rect>
+
+  <g stroke="rgba(123,228,255,0.4)" fill="none" stroke-width="1.5">
+    <path d="M24 46V24H46"></path>
+    <path d="M1154 24H1176V46"></path>
+    <path d="M24 514V536H46"></path>
+    <path d="M1176 514V536H1154"></path>
+  </g>
+
+  <g>
+    <rect x="24" y="24" width="9" height="9" fill="#ffb84d"></rect>
+    <text x="44" y="33" font-size="13" letter-spacing="5" fill="rgba(255,184,77,0.9)">mise</text>
+  </g>
+
+  <path d="M120 24V536" stroke="rgba(120,200,255,0.18)"></path>
+  <g stroke="rgba(120,200,255,0.3)">
+    <path d="M112 60H120M112 100H120M112 140H120M112 180H120M112 220H120M112 260H120M112 320H120M112 360H120M112 400H120M112 440H120M112 480H120M112 520H120"></path>
+  </g>
+  <text x="88" y="120" font-size="46" text-anchor="end" fill="rgba(255,184,77,0.45)">01</text>
+  <text x="88" y="410" font-size="46" text-anchor="end" fill="rgba(255,184,77,0.75)">02</text>
+
+  <g>
+    <text x="144" y="272" font-size="96" letter-spacing="-2" fill="none" stroke="rgba(230,244,255,0.2)" stroke-width="1.5">install</text>
+
+    <rect x="144" y="70" width="368" height="58" fill="url(#cmd)"></rect>
+    <rect x="144" y="70" width="4" height="58" fill="#ffb84d"></rect>
+    <text x="166" y="107" font-size="21" fill="#ffb84d">$ mise install node@22</text>
+
+    <path d="M524 99H570" stroke="#ffb84d" stroke-width="2" marker-end="url(#ma)"></path>
+    <rect x="516" y="95" width="8" height="8" fill="#ffb84d"></rect>
+
+    <g>
+      <rect x="586" y="54" width="344" height="124" fill="url(#hit2)"></rect>
+      <rect x="586" y="54" width="3" height="124" fill="#7be4ff"></rect>
+      <rect x="586" y="54" width="344" height="30" fill="rgba(123,228,255,0.1)"></rect>
+      <text x="606" y="74" font-size="13" letter-spacing="1" fill="#7be4ff">~/.local/share/mise</text>
+      <text x="606" y="112" font-size="18" fill="#7be4ff">node/22</text>
+      <path d="M606 126H910" stroke="rgba(120,200,255,0.14)"></path>
+      <text x="606" y="148" font-size="15" fill="rgba(230,244,255,0.35)">node/20</text>
+      <text x="606" y="170" font-size="15" fill="rgba(230,244,255,0.35)">bun/1.1</text>
+    </g>
+
+    <g opacity="0.34">
+      <rect x="586" y="196" width="344" height="72" fill="rgba(255,255,255,0.02)"></rect>
+      <path d="M586 196H930M586 268H930" stroke="rgba(120,200,255,0.45)" stroke-dasharray="4 5"></path>
+      <text x="606" y="226" font-size="15" fill="#e6f4ff">mise.toml</text>
+      <text x="606" y="252" font-size="14" fill="rgba(230,244,255,0.6)">[tools]</text>
+      <g transform="translate(886,232)" stroke="rgba(230,244,255,0.6)" fill="none" stroke-width="1.4">
+        <circle r="13"></circle>
+        <path d="M-9 9L9 -9"></path>
+      </g>
+    </g>
+
+    <g opacity="0.14" fill="none" stroke="#e6f4ff" stroke-width="1.6">
+      <g transform="translate(972,92)"><rect width="60" height="44" fill="rgba(255,255,255,0.03)"></rect><path d="M30 44V56M16 56H44"></path></g>
+      <g transform="translate(1044,92)"><rect width="60" height="44" fill="rgba(255,255,255,0.03)"></rect><path d="M30 44V56M16 56H44"></path></g>
+      <g transform="translate(1116,92)"><rect width="60" height="44" fill="rgba(255,255,255,0.03)"></rect><path d="M30 44V56M16 56H44"></path></g>
+    </g>
+    <path d="M972 196H1176" stroke="rgba(230,244,255,0.08)"></path>
+  </g>
+
+  <path d="M120 286L1176 300" stroke="url(#dv)" stroke-width="1.5"></path>
+
+  <g>
+    <text x="144" y="524" font-size="150" letter-spacing="-4" fill="rgba(123,228,255,0.16)">use</text>
+
+    <rect x="144" y="326" width="368" height="58" fill="url(#cmd)"></rect>
+    <rect x="144" y="326" width="4" height="58" fill="#ffb84d"></rect>
+    <text x="166" y="363" font-size="21" fill="#ffb84d">$ mise use node@22</text>
+
+    <path d="M524 355H552V330H570" fill="none" stroke="#ffb84d" stroke-width="2" stroke-linejoin="round" marker-end="url(#ma)"></path>
+    <path d="M524 355H552V446H570" fill="none" stroke="#ffb84d" stroke-width="2" stroke-linejoin="round" marker-end="url(#ma)"></path>
+    <rect x="516" y="351" width="8" height="8" fill="#ffb84d"></rect>
+    <circle cx="552" cy="355" r="4" fill="#ffb84d"></circle>
+
+    <g>
+      <rect x="586" y="306" width="344" height="48" fill="url(#hit2)"></rect>
+      <rect x="586" y="306" width="3" height="48" fill="#7be4ff"></rect>
+      <text x="606" y="336" font-size="16" fill="#7be4ff">~/.local/share/mise</text>
+    </g>
+
+    <g>
+      <rect x="586" y="396" width="344" height="124" fill="rgba(123,228,255,0.07)"></rect>
+      <rect x="586" y="396" width="344" height="30" fill="rgba(123,228,255,0.13)"></rect>
+      <rect x="586" y="396" width="3" height="124" fill="#7be4ff"></rect>
+      <text x="606" y="416" font-size="13" letter-spacing="1" fill="#7be4ff">mise.toml</text>
+      <text x="606" y="456" font-size="15" fill="rgba(230,244,255,0.45)">[tools]</text>
+      <text x="606" y="494" font-size="21" fill="#e6f4ff">node = <tspan font-size="25" fill="#ffb84d">&#34;22&#34;</tspan></text>
+    </g>
+
+    <circle cx="952" cy="458" r="32" fill="#7be4ff" opacity="0.16" filter="url(#sf)"></circle>
+    <path d="M930 458H976" stroke="#7be4ff" stroke-width="2" marker-end="url(#mc)"></path>
+
+    <g fill="none" stroke="#7be4ff" stroke-width="1.7">
+      <g transform="translate(996,408)"><rect width="52" height="42" fill="rgba(123,228,255,0.09)"></rect><path d="M26 42V54M13 54H39"></path></g>
+      <g transform="translate(1058,408)"><rect width="52" height="42" fill="rgba(123,228,255,0.09)"></rect><path d="M26 42V54M13 54H39"></path></g>
+      <g transform="translate(1120,408)"><rect width="52" height="42" fill="rgba(123,228,255,0.09)"></rect><path d="M26 42V54M13 54H39"></path></g>
+    </g>
+    <path d="M996 484H1172" stroke="rgba(123,228,255,0.22)"></path>
+    <g font-size="14" fill="#7be4ff">
+      <text x="1022" y="508" text-anchor="middle">22</text>
+      <text x="1084" y="508" text-anchor="middle">22</text>
+      <text x="1146" y="508" text-anchor="middle">22</text>
+    </g>
+  </g>
+
+  <g stroke="rgba(123,228,255,0.35)" stroke-width="1">
+    <path d="M956 250H968M962 244V256"></path>
+    <path d="M356 300H368M362 294V306"></path>
+    <path d="M1104 340H1116M1110 334V346"></path>
+  </g>
+</svg>

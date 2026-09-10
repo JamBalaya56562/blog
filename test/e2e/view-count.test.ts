@@ -1,7 +1,7 @@
 import type { Page } from "@playwright/test"
 import { expect, test } from "@playwright/test"
 
-const POST = "/en/blog/getting-started-with-nextjs"
+const POST = "/en/blog/getting-started-with-mise"
 
 function watchActions(page: Page): number[] {
   const statuses: number[] = []
