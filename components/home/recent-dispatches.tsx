@@ -49,7 +49,7 @@ export function RecentDispatches({
         {posts.map((post, i) => {
           const num = String(i + 1 + indexOffset).padStart(3, "0")
           const tag = post.frontmatter.tags[0]
-          const cat = tag ?? "DISPATCH"
+          const cat = tag ?? dictionary.blog.uncategorised
           return (
             <li key={post.slug} className="border-t border-cyber-line">
               <Link

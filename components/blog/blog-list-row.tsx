@@ -21,6 +21,9 @@ interface BlogListRowProps {
   readonly viewCount: number
   readonly viewMax: number
   readonly minReadLabel: string
+  readonly minLabel: string
+  readonly uncategorisedLabel: string
+  readonly viewsLabel: string
   readonly activeTag?: string
 }
 
@@ -33,6 +36,9 @@ export function BlogListRow({
   viewCount,
   viewMax,
   minReadLabel,
+  minLabel,
+  uncategorisedLabel,
+  viewsLabel,
   activeTag,
 }: Readonly<BlogListRowProps>) {
   const [isDesktop, setIsDesktop] = useState(false)
@@ -55,6 +61,7 @@ export function BlogListRow({
         index={index}
         viewCount={viewCount}
         viewMax={viewMax}
+        labels={{ min: minLabel, views: viewsLabel }}
       />
     )
   }
@@ -66,6 +73,8 @@ export function BlogListRow({
       index={index}
       viewCount={viewCount}
       minReadLabel={minReadLabel}
+      uncategorisedLabel={uncategorisedLabel}
+      viewsLabel={viewsLabel}
       activeTag={activeTag}
     />
   )
@@ -77,6 +86,8 @@ function DesktopRow({
   index,
   viewCount,
   minReadLabel,
+  uncategorisedLabel,
+  viewsLabel,
   activeTag,
 }: {
   readonly post: Post
@@ -84,10 +95,12 @@ function DesktopRow({
   readonly index: number
   readonly viewCount: number
   readonly minReadLabel: string
+  readonly uncategorisedLabel: string
+  readonly viewsLabel: string
   readonly activeTag?: string
 }) {
   const num = String(index + 1).padStart(3, "0")
-  const cat = post.frontmatter.tags[0] ?? "DISPATCH"
+  const cat = post.frontmatter.tags[0] ?? uncategorisedLabel
   const readMin = estimateReadingTime(post.content)
   return (
     <Link

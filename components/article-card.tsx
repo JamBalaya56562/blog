@@ -42,6 +42,7 @@ interface ArticleCardProps {
   readonly index?: number
   readonly viewMax?: number
   readonly morph?: boolean
+  readonly labels: { min: string; views: string }
 }
 
 export function ArticleCard({
@@ -52,11 +53,11 @@ export function ArticleCard({
   index,
   viewMax,
   morph = true,
+  labels,
 }: Readonly<ArticleCardProps>) {
   const readMin = estimateReadingTime(post.content)
   const numberLabel =
     typeof index === "number" ? String(index + 1).padStart(3, "0") : null
-  const category = post.frontmatter.tags[0]?.toUpperCase() ?? "DISPATCH"
 
   return (
     <Link
@@ -81,9 +82,6 @@ export function ArticleCard({
           />
         </Morph>
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-cyber-bg-0/85" />
-        <span className="pp-tick absolute left-3 top-3 border border-cyber-cyan/60 bg-cyber-bg-0/60 px-1.5 py-0.5 text-cyber-cyan">
-          {category}
-        </span>
         {numberLabel && (
           <span className="pp-tick pp-num absolute right-3 top-3 text-cyber-dim">
             NO.{numberLabel}
@@ -124,10 +122,12 @@ export function ArticleCard({
             </span>
             <span className="flex gap-3">
               <span>
-                <span className="pp-num text-cyber-cyan">{readMin}</span> MIN
+                <span className="pp-num text-cyber-cyan">{readMin}</span>{" "}
+                {labels.min}
               </span>
               <span>
-                <ViewStat slug={post.slug} fallback={viewCount} /> VIEWS
+                <ViewStat slug={post.slug} fallback={viewCount} />{" "}
+                {labels.views}
               </span>
             </span>
           </div>

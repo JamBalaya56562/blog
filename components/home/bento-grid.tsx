@@ -31,6 +31,11 @@ export function BentoGrid({
         ? "grid-cols-1 md:grid-cols-2"
         : "grid-cols-1 md:grid-cols-3"
 
+  const cardLabels = {
+    min: dictionary.blog.min,
+    views: dictionary.blog.views,
+  }
+
   return (
     <section className="mx-auto max-w-7xl px-7 py-12">
       <div className="mb-6 flex items-baseline justify-between gap-4 sm:justify-start">
@@ -47,7 +52,13 @@ export function BentoGrid({
         </span>
       </div>
       <div className={`grid gap-4 ${gridCols}`}>
-        <ArticleCard post={first} locale={locale} isLarge index={0} />
+        <ArticleCard
+          post={first}
+          locale={locale}
+          isLarge
+          index={0}
+          labels={cardLabels}
+        />
         {rest.map((post, i) => (
           <ArticleCard
             key={post.slug}
@@ -55,6 +66,7 @@ export function BentoGrid({
             locale={locale}
             isLarge={false}
             index={i + 1}
+            labels={cardLabels}
           />
         ))}
       </div>

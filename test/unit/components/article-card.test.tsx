@@ -64,9 +64,13 @@ const basePost = {
   slug: "test-post",
 }
 
+const labels = { min: "MIN", views: "VIEWS" }
+
 describe("ArticleCard rendering", () => {
   test("the card link navigates forward into the dispatch", () => {
-    const { container } = render(<ArticleCard post={basePost} locale="en" />)
+    const { container } = render(
+      <ArticleCard post={basePost} locale="en" labels={labels} />,
+    )
     expect(
       container.querySelector("a")?.getAttribute("data-transition-types"),
     ).toBe("nav-forward")
@@ -74,7 +78,9 @@ describe("ArticleCard rendering", () => {
 
   // Validates: Requirements 1.3
   test("description text is displayed with line-clamp-2 class", () => {
-    const { container } = render(<ArticleCard post={basePost} locale="en" />)
+    const { container } = render(
+      <ArticleCard post={basePost} locale="en" labels={labels} />,
+    )
     const desc = container.querySelector("p")
     expect(desc).not.toBeNull()
     expect(desc?.textContent).toBe(basePost.frontmatter.description)
@@ -83,7 +89,9 @@ describe("ArticleCard rendering", () => {
 
   // Validates: Requirements 2.3
   test("image wrapper has aspect-video class applied", () => {
-    const { container } = render(<ArticleCard post={basePost} locale="en" />)
+    const { container } = render(
+      <ArticleCard post={basePost} locale="en" labels={labels} />,
+    )
     const img = container.querySelector("img")
     expect(img).not.toBeNull()
     // In the cyber redesign the aspect ratio lives on the wrapper, not the img.
@@ -93,7 +101,9 @@ describe("ArticleCard rendering", () => {
 
   // Validates: Requirements 1.5, 6.4
   test("image alt attribute matches post title", () => {
-    const { container } = render(<ArticleCard post={basePost} locale="en" />)
+    const { container } = render(
+      <ArticleCard post={basePost} locale="en" labels={labels} />,
+    )
     const img = container.querySelector("img")
     expect(img).not.toBeNull()
     expect(img?.getAttribute("alt")).toBe(basePost.frontmatter.title)
@@ -106,7 +116,7 @@ describe("ArticleCard rendering", () => {
       frontmatter: { ...basePost.frontmatter, description: "" },
     }
     const { container } = render(
-      <ArticleCard post={postWithoutDesc} locale="en" />,
+      <ArticleCard post={postWithoutDesc} locale="en" labels={labels} />,
     )
     const paragraphs = container.querySelectorAll("p")
     const descParagraph = Array.from(paragraphs).find((p) =>
@@ -117,20 +127,27 @@ describe("ArticleCard rendering", () => {
 
   test("viewCount is displayed when provided", () => {
     const { container } = render(
-      <ArticleCard post={basePost} locale="en" viewCount={1234} />,
+      <ArticleCard
+        post={basePost}
+        locale="en"
+        viewCount={1234}
+        labels={labels}
+      />,
     )
     expect(container.textContent).toContain("1,234")
     expect(container.textContent).toContain("VIEWS")
   })
 
   test("viewCount defaults to 0 views when omitted", () => {
-    const { container } = render(<ArticleCard post={basePost} locale="en" />)
+    const { container } = render(
+      <ArticleCard post={basePost} locale="en" labels={labels} />,
+    )
     expect(container.textContent).toContain("0 VIEWS")
   })
 
   test("viewCount of zero is displayed", () => {
     const { container } = render(
-      <ArticleCard post={basePost} locale="en" viewCount={0} />,
+      <ArticleCard post={basePost} locale="en" viewCount={0} labels={labels} />,
     )
     expect(container.textContent).toContain("0")
     expect(container.textContent).toContain("VIEWS")

@@ -27,7 +27,8 @@ export function RelatedPosts({
     <section className="relative mt-16 border border-cyber-line bg-cyber-bg-1/40 p-6">
       <Brackets color="amber" />
       <div className="pp-tick mb-5 text-cyber-amber">
-        ◢ RELATED DISPATCHES — {dictionary.blog.continueExploring}
+        ◢ {dictionary.blog.relatedDispatches} —{" "}
+        {dictionary.blog.continueExploring}
       </div>
       <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
         {posts.map((post, i) => (
@@ -37,6 +38,10 @@ export function RelatedPosts({
             locale={locale}
             index={i}
             morph={false}
+            labels={{
+              min: dictionary.blog.min,
+              views: dictionary.blog.views,
+            }}
           />
         ))}
       </div>
