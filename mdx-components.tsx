@@ -50,7 +50,15 @@ const components: MDXComponents = {
       {...props}
     />
   ),
-  table: (props) => <table className="my-4 text-foreground" {...props} />,
+  // The scroller is the wrapper's job rather than the table's: `overflow-x` on
+  // a `table` element does nothing without also making it a block, which throws
+  // away the column sizing that makes a table a table. A table narrow enough to
+  // fit is unaffected.
+  table: (props) => (
+    <div className="my-4 overflow-x-auto">
+      <table className="text-foreground" {...props} />
+    </div>
+  ),
   th: (props) => <th className="font-semibold" {...props} />,
   ul: (props) => (
     <ul className="my-4 ml-6 list-disc text-foreground" {...props} />
