@@ -51,7 +51,9 @@ export function BlogPostSkeleton() {
             <Skeleton className="h-4 w-12" />
           </div>
         </header>
-        <div className="relative mb-12 aspect-[21/9] overflow-hidden border border-cyber-line">
+        {/* Matches the hero it stands in for; a different ratio here would
+            shift the article down the moment the image arrived. */}
+        <div className="relative mb-12 aspect-video overflow-hidden border border-cyber-line">
           <Brackets />
           <Skeleton className="h-full w-full border-0" />
         </div>

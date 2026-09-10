@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+# Turn a thumbnail PNG into the AVIF a post's frontmatter points at.
+#
+#   mise run thumbnail <png> <slug>
+#
+# The PNG comes from wherever the design was made; this only does the
+# encode, so nothing here needs to know how the picture was drawn.
+#
+# crf 32 was chosen by measuring: the source PNGs are 200-880KB and land at
+# 15-18KB with no visible banding in the gradients, which are the first thing
+# to break. Lower numbers are better quality; 44 halves the size again and
+# starts to show.
+set -euo pipefail
+
+png=${1:?usage: mise run thumbnail <png> <slug>}
+slug=${2:?usage: mise run thumbnail <png> <slug>}
+crf=${CRF:-32}
+
+out="public/thumbnails/${slug}.avif"
+mkdir -p public/thumbnails
+
+# `-pix_fmt yuv420p` is not a size tweak, it is the difference between an
+# image that displays and one that does not. Left alone, ffmpeg carries the
+# PNG's RGB straight through as `gbrp`, which is AV1 High profile: Chromium
+# decodes it and WebKit and Firefox return a zero-width image, so the picture
+# is simply absent for those readers with nothing in the markup to show why.
+ffmpeg -y -hide_banner -loglevel error \
+  -i "$png" \
+  -c:v libaom-av1 -still-picture 1 -pix_fmt yuv420p -crf "$crf" -cpu-used 4 \
+  "$out"
+
+printf '%s  %s KB\n' "$out" "$(( $(stat -c%s "$out") / 1024 ))"
+printf 'add to the post frontmatter:  image: /thumbnails/%s.avif\n' "$slug"

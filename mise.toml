@@ -4,6 +4,16 @@ opentofu = "latest"
 pitchfork = "latest"
 rumdl = "latest"
 
+# Not the registry's `ffmpeg`, which resolves to conda and spends nine minutes
+# unpacking a dependency tree that includes tzdata. This is BtbN's prebuilt
+# Windows binary: one archive, under two minutes, and it carries libwebp_anim,
+# which is the encoder the thumbnails need.
+#
+# Pinned rather than `latest` because these are dated master builds, not
+# releases — `latest` would mean a fresh multi-hundred-megabyte download
+# whenever BtbN publishes, which is most days.
+"github:BtbN/FFmpeg-Builds" = { version = "autobuild-2026-09-08-23-15", exe = "ffmpeg" }
+
 [tasks.lint]
 run = ["bun lint:fix --unsafe", "mise lint:md", "mise lint:tf"]
 
@@ -34,6 +44,10 @@ run = "bash scripts/db-health.sh"
 [tasks."db:stop"]
 description = "Stop DynamoDB Local container"
 run = "bash scripts/db-stop.sh"
+
+[tasks.thumbnail]
+description = "Encode a thumbnail PNG as AVIF: mise run thumbnail <png> <slug>"
+run = "bash scripts/thumbnail.sh"
 
 [tasks."db:push"]
 description = "Create the DynamoDB table if it does not exist"
