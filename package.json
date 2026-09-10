@@ -47,7 +47,7 @@
     "@shikijs/rehype": "^4.4.3",
     "@shikijs/themes": "^4.4.3",
     "@types/mdx": "^2.0.14",
-    "lucide-react": "^1.43.0",
+    "lucide-react": "^1.44.0",
     "next": "canary",
     "next-mdx-remote-client": "^2.1.12",
     "react": "^19.3.0",
@@ -57,7 +57,7 @@
     "yaml": "^2.9.0"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.5.12",
+    "@biomejs/biome": "^2.5.13",
     "@happy-dom/global-registrator": "^20.14.3",
     "@playwright/test": "next",
     "@tailwindcss/postcss": "^4.3.3",
@@ -70,9 +70,13 @@
     "@types/react-dom": "^19.3.0",
     "babel-plugin-react-compiler": "^1.0.0",
     "fast-check": "^4.9.0",
+    "mdast-util-from-markdown": "^2.0.3",
+    "mdast-util-gfm": "^3.1.0",
+    "micromark-extension-gfm": "^3.0.0",
     "postcss": "^8.5.28",
     "tailwindcss": "^4.3.3",
-    "typescript": "^7.0.2"
+    "typescript": "^7.0.2",
+    "unist-util-visit": "^5.1.0"
   },
   "trustedDependencies": [
     "sharp"

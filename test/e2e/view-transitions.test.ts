@@ -347,7 +347,7 @@ test.describe("Post-to-post navigation", () => {
   test("does not fly the next post's hero in from a related card", async ({
     page,
   }) => {
-    await page.goto("/en/blog/getting-started-with-nextjs")
+    await page.goto("/en/blog/getting-started-with-mise")
     test.skip(
       !(await page.evaluate(
         () => typeof document.startViewTransition === "function",
@@ -356,7 +356,7 @@ test.describe("Post-to-post navigation", () => {
     )
 
     await Promise.all([
-      page.waitForURL(/\/en\/blog\/(?!getting-started-with-nextjs)[^/]+$/),
+      page.waitForURL(/\/en\/blog\/(?!getting-started-with-mise)[^/]+$/),
       clickHydrated(page, "nav a[href^='/en/blog/']"),
     ])
 

@@ -144,7 +144,9 @@ test.describe("Security headers", () => {
     // cannot script, but opened directly it becomes a same-origin document,
     // where the site policy's 'unsafe-inline' would let a <script> inside the
     // file run with full origin privileges.
-    const response = await request.get("/api/images/next.svg")
+    // Any SVG under content/images serves; this one has to exist for the
+    // status assertion below to be about the policy rather than about a 404.
+    const response = await request.get("/api/images/mise-one-file.svg")
     expect(response.status()).toBe(200)
     expect(response.headers()["content-type"]).toBe("image/svg+xml")
     expect(response.headers()["x-content-type-options"]).toBe("nosniff")

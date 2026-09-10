@@ -2,10 +2,18 @@ import type React from "react"
 
 export type TocItem = { id: string; text: string; level: number }
 
+/**
+ * `\w` is ASCII-only without the `u` flag, so the previous character class
+ * deleted every kana and kanji it saw: a heading written only in Japanese
+ * slugified to the empty string, which reached the page as `id=""` and left the
+ * table of contents pointing at `#`, `#-1`, `#-2`. Matching Unicode letters and
+ * numbers instead keeps the heading legible in the anchor, and leaves ASCII
+ * headings exactly as they were.
+ */
 export function slugify(text: string): string {
   return text
     .toLowerCase()
-    .replace(/[^\w\s-]/g, "")
+    .replace(/[^\p{L}\p{N}_\s-]/gu, "")
     .replace(/\s+/g, "-")
 }
 

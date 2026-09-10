@@ -54,6 +54,13 @@ test.describe("Header ticker", () => {
     await expect
       .poll(async () => (await trackState(page)).playState)
       .toBe("paused")
+    // `playState` turning "paused" and the offset settling are not the same
+    // moment: the track animates on the compositor, and `getComputedStyle`
+    // reads it from the main thread, so the first sample after the poll can
+    // still carry a frame the compositor has already moved past. Waiting once
+    // here keeps the comparison below an exact one — a track that is genuinely
+    // still scrolling covers about 35px a second, so it has nowhere to hide.
+    await page.waitForTimeout(500)
     const paused = await trackState(page)
     await page.waitForTimeout(1000)
     expect((await trackState(page)).x).toBe(paused.x)

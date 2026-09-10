@@ -19,6 +19,10 @@ function loadHighlighter(): Promise<HighlighterCore> {
       import("@shikijs/langs/jsx"),
       import("@shikijs/langs/markdown"),
       import("@shikijs/langs/mdx"),
+      // Posts that give a Windows alternative next to a shell command land
+      // here; without it the block falls back to `text` and reads as one
+      // undifferentiated line while the tab beside it is fully coloured.
+      import("@shikijs/langs/powershell"),
       import("@shikijs/langs/toml"),
       import("@shikijs/langs/tsx"),
       import("@shikijs/langs/typescript"),

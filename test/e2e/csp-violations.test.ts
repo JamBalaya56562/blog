@@ -4,8 +4,8 @@ const PATHS = [
   "/en",
   "/ja",
   "/en/blog",
-  "/en/blog/getting-started-with-nextjs",
-  "/ja/blog/getting-started-with-nextjs",
+  "/en/blog/getting-started-with-mise",
+  "/ja/blog/getting-started-with-mise",
   "/en/portfolio",
   "/en/privacy-policy",
   "/en/nope",
@@ -64,7 +64,7 @@ test.describe("Content Security Policy", () => {
       })
     })
 
-    await page.goto("/en/blog/getting-started-with-nextjs")
+    await page.goto("/en/blog/getting-started-with-mise")
     // `mouse.wheel` is unsupported in mobile WebKit; scrolling the window
     // drives the same listeners on every project.
     await page.evaluate(() => window.scrollTo(0, 2000))
