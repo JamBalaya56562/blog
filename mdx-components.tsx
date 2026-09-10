@@ -44,12 +44,37 @@ const components: MDXComponents = {
     <ol className="my-4 ml-6 list-decimal text-foreground" {...props} />
   ),
   p: (props) => <p className="my-4 leading-7 text-foreground" {...props} />,
-  pre: ({ className, ...props }) => (
-    <pre
-      className={["rounded-lg", className].filter(Boolean).join(" ")}
-      {...props}
-    />
-  ),
+  /**
+   * `title` arrives from `parseMetaString` in `lib/highlight.ts`, which reads a
+   * `title="..."` written after the language on the fence. Taking it off here
+   * rather than leaving it on the `pre` is also what stops it from becoming a
+   * browser tooltip. When one is there the block gets a filename strip above
+   * it, and the frame moves to the wrapper so the two read as one panel — the
+   * same shape `.pp-tabs` uses.
+   */
+  pre: ({ className, title, ...props }) => {
+    // The corner radius belongs to whichever element draws the outer frame. A
+    // titled block is framed by its wrapper, and `rounded-lg` here would win
+    // over any stylesheet rule trying to undo it — Tailwind's utilities layer
+    // is ordered after the one those rules live in.
+    const block = (
+      <pre
+        className={[title ? null : "rounded-lg", className]
+          .filter(Boolean)
+          .join(" ")}
+        {...props}
+      />
+    )
+    if (!title) {
+      return block
+    }
+    return (
+      <div className="pp-code-titled">
+        <div className="pp-code-title">{title}</div>
+        {block}
+      </div>
+    )
+  },
   // The scroller is the wrapper's job rather than the table's: `overflow-x` on
   // a `table` element does nothing without also making it a block, which throws
   // away the column sizing that makes a table a table. A table narrow enough to

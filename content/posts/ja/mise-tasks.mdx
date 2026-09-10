@@ -1,0 +1,231 @@
+---
+title: mise でタスクを書く
+date: "2026-09-11"
+updated: "2026-09-11"
+description: プロジェクトのコマンドを mise.toml に集約する方法と、順序・依存・引数の扱い
+image: /thumbnails/mise-tasks.avif
+tags:
+  - mise
+  - cli
+  - devtools
+---
+
+## タスクとは
+
+mise の `[tasks]` は、**プロジェクトでよく打つコマンドに名前を付けて `mise.toml` に置いておく仕組み**です。[just](https://just.systems/) や [make](https://www.gnu.org/software/make/) と同じ、言語非依存のタスクランナーだと思ってください。`package.json` の `scripts` にも似ていますが、共通しているのは「コマンドに名前を付ける」という点までで、依存関係の宣言や一覧表示は `just` 側の特徴に近いです。
+
+[mise 入門ガイド](/ja/blog/getting-started-with-mise)で、コマンドの入り口がばらばらになる問題に触れました。開発サーバーは `bun dev`、マイグレーションは `./scripts/migrate.sh`、リリースは `make release`。どれも間違ってはいませんが、どこに何があるかを知るには 3 つのファイルを開く必要があります。タスクは、その入り口を 1 つにまとめます。
+
+## 書いてみる
+
+例として、コードを整形するコマンドを登録してみます。ここで使う [Biome](https://biomejs.dev/) は、JavaScript や TypeScript を対象にしたリンタ兼フォーマッタです。`biome check --write` と打つと、問題の検査と、直せるものの自動修正をまとめて実行します。
+
+毎回この文字列を打つ代わりに、名前を付けて `mise.toml` に置きます。
+
+```toml title="mise.toml"
+[tasks.lint]
+run = "biome check --write"
+```
+
+これで `mise run lint` が使えます。
+
+いくつか足してみます。`description` は書いても書かなくても動きます。
+
+```toml title="mise.toml"
+[tasks.dev]
+description = "開発サーバーを起動する"
+run = "bun dev"
+
+[tasks.build]
+description = "本番用にビルドする"
+run = "bun run build"
+
+[tasks.test]
+description = "ユニットテストを実行する"
+run = "bun test"
+
+[tasks.lint]
+run = "biome check --write"
+
+[tasks."db:env"]
+description = ".env を生成する"
+run = "bun run scripts/setup-env.ts"
+
+[tasks."db:start"]
+description = "ローカルのデータベースを起動する"
+run = "bash scripts/db-start.sh"
+```
+
+一覧は `mise tasks` で出ます。
+
+```text
+build     本番用にビルドする
+db:env    .env を生成する
+db:start  ローカルのデータベースを起動する
+dev       開発サーバーを起動する
+lint
+test      ユニットテストを実行する
+```
+
+書いた順ではなく、**名前のアルファベット順**に並びます。`description` を書いた行だけ説明が出ていて、`lint` は名前だけです。読む人のためというより、半年後の自分のために書く欄だと思ってください。
+
+`db:` のようにコロンで区切ると、関連するタスクが一覧で隣り合います。mise 側に名前空間の機能があるわけではなく、ただ名前順に並ぶだけですが、それで十分に効きます。
+
+## 複数のコマンドを順に実行する
+
+`run` に配列を書くと、上から順に実行されます。
+
+```toml title="mise.toml"
+[tasks.check]
+run = [
+  "biome check --write",
+  "mise run test",
+]
+```
+
+`mise run test` のように、タスクから別のタスクを呼べます。細かい単位で定義しておいて、まとめ役を 1 つ置く、という構成が取りやすくなります。
+
+## 途中で失敗したら、そこで止まる
+
+配列は、失敗した時点で打ち切られます。実際に確かめました。
+
+```toml title="mise.toml"
+[tasks.steps]
+run = ["echo step1", "false", "echo step3"]
+```
+
+```text
+[steps] $ echo step1
+step1
+[steps] ERROR task failed
+```
+
+`step3` は実行されていません。
+
+![run の配列が上から実行され、false で失敗した時点で打ち切られ、次の行が実行されない図](mise-tasks-fail-stop.svg)
+
+**これは並べる順序に効きます**。タスクには、ファイルを書き換えるもの（フォーマッタ、自動修正付きのリンタ）と、検査して報告するだけのもの（テスト、型チェック）があります。**書き換える方を先に並べてください。**
+
+```toml title="mise.toml"
+[tasks.check]
+run = [
+  "biome check --write",   # 書き換える
+  "mise run test",         # 報告するだけ
+]
+```
+
+逆にすると、テストが失敗した時点で打ち切られ、整形が実行されないまま終わります。手元で打つだけなら「直してもう一度」で済みますが、CI では話が変わります。
+
+[autofix.ci](https://autofix.ci/) のように、**lint が生成した修正を CI が自動でコミットする仕組み**を使っている場合、途中で失敗しても、そこまでに書き換えられたファイルはコミットされます。報告専用のタスクを途中に置くと、そこで打ち切られ、後ろの整形が当たらないまま中途半端な状態がコミットされることになります。
+
+順序を決めるときは、**そのタスクがファイルを書き換えるかどうか**で分けるのが分かりやすいと思います。
+
+## 依存を書く
+
+先に済ませておきたいものは `depends` に書きます。
+
+```toml title="mise.toml"
+[tasks."db:setup"]
+depends = ["db:env", "db:start"]
+run = ["mise run db:health", "mise run db:push"]
+```
+
+`mise run db:setup` を打つと、`.env` の生成とデータベースの起動が済んでから、ヘルスチェックとテーブル作成に進みます。
+
+![depends に並べた 2 つが先に終わり、そのあと run の 2 つが順に実行される図](mise-tasks-depends-run.svg)
+
+`depends` と `run` の配列は役割が違います。`depends` は「これが終わっていること」を宣言するもので、`run` は「このタスク自身が何をするか」です。前者は他のタスクから再利用できます。
+
+## 引数を渡す
+
+タスク名の後ろに書いたものは、そのままコマンドの末尾に付きます。
+
+```toml title="mise.toml"
+[tasks.greet]
+run = "echo hello"
+```
+
+```bash
+mise run greet world
+```
+
+```text
+[greet] $ echo hello world
+hello world
+```
+
+![mise run greet world の world が、run に書いた echo hello の末尾に付いて実行される図](mise-tasks-args.svg)
+
+引数を取るタスクを作ったら、**使い方は `description` に書いておいてください。**
+
+```toml title="mise.toml"
+[tasks.thumbnail]
+description = "サムネイルを AVIF に変換する: mise run thumbnail <png> <slug>"
+run = "bash scripts/thumbnail.sh"
+```
+
+引数の順番は、しばらく触らないと必ず忘れます。`mise tasks` を打てば思い出せる場所に書いておくのが、一番手間がかかりません。
+
+## Windows では cmd 経由で実行される
+
+Windows で書くときに、これを知らないと確実に詰まります。`run` の中身は **cmd に渡されます**。確かめてみます。
+
+```toml title="mise.toml"
+[tasks.probe]
+run = "echo cmd-style=%OS% bash-style=$OSTYPE"
+```
+
+```text
+cmd-style=Windows_NT bash-style=$OSTYPE
+```
+
+`%OS%` は展開され、`$OSTYPE` はそのまま残りました。Unix のシェル記法は効きません。`$VAR`、`&&` 以外の制御構文、パイプの細かい挙動、クォートの規則が変わります。
+
+## ファイルタスクなら shebang で指定できる
+
+`run` に書く代わりに、`mise-tasks/` にスクリプトを置く方法があります。[just](https://just.systems/) の shebang レシピに相当するものです。
+
+```bash title="mise-tasks/filetask"
+#!/usr/bin/env bash
+#MISE description="ファイルタスクの動作確認"
+echo "shell=$OSTYPE args=$*"
+```
+
+```bash
+mise run filetask hello
+```
+
+```text
+shell=cygwin args=hello
+```
+
+**cmd ではなく shebang で指定したインタープリタで実行され**、引数もそのまま届きます。`#MISE description=` と書けば、`mise tasks` の一覧にも説明付きで並びます。
+
+```text
+filetask  ファイルタスクの動作確認
+```
+
+タスクに 2 行以上のシェルを書きたくなったら、ファイルタスクに切り出す合図だと考えてよいと思います。中身は普通の bash として書けますし、macOS でも Linux でも Windows でも同じものが動きます。
+
+既に `run = "bash scripts/db-start.sh"` のような形で書いているなら、スクリプトを `mise-tasks/` に置き直すだけで移行できます。ディレクトリの階層が、そのままコロン区切りの名前になります。
+
+```text
+mise-tasks/db/start   →  mise run db:start
+mise-tasks/thumbnail  →  mise run thumbnail
+```
+
+`mise.toml` からラッパーのタスク定義が消え、`description` はスクリプトの中に移ります。説明が、それが説明している中身の隣に来るのも利点だと思います。
+
+**移行するときの注意点が 1 つあります。ファイルタスクの作業ディレクトリはプロジェクトルート**で、スクリプトが置かれた場所ではありません。`source "$(dirname "$0")/lib.sh"` のように自分の位置を基準にして別のファイルを読んでいると、移動先を探しに行って壊れます。プロジェクトルートからの相対パスに直してください。
+
+もう 1 つ、`mise-tasks/` に置いたファイルは**すべてタスクとして一覧に出ます**。複数のスクリプトから読み込む共有ライブラリは、`mise-tasks/` の外に置いてください。
+
+## まとめ
+
+- `[tasks]` はコマンドの入り口を 1 つにする。`mise tasks` が入り口の一覧になる
+- `run` の配列は上から順に実行され、**失敗した時点で止まる**。修正するタスクを先に、報告するタスクを後ろに置く
+- `depends` は「先に終わっていること」の宣言。`run` の配列とは役割が違う
+- 引数はコマンドの末尾に付く。使い方は `description` に書いておく
+- Windows では cmd に渡される。2 行以上書きたくなったら `mise-tasks/` のファイルタスクに切り出し、shebang でインタープリタを指定する
+
+タスクは、READMEに書いてあった手順をコードにするための場所です。書いておけば、次に触る人は `mise tasks` を打つだけで済みます。

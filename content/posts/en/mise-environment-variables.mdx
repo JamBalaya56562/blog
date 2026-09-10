@@ -1,0 +1,261 @@
+---
+title: Managing Environment Variables with mise
+date: "2026-09-11"
+updated: "2026-09-11"
+description: Writing environment variables that only apply inside a directory into mise.toml, and the traps in loading .env
+image: /thumbnails/mise-environment-variables.avif
+tags:
+  - mise
+  - cli
+  - devtools
+---
+
+## What it means to let mise hold your environment
+
+`[env]` in [mise](https://mise.jdx.dev/) defines **environment variables that are in effect only
+while you are inside that directory**.
+
+[Getting started with mise](/en/blog/getting-started-with-mise) put it this way for tool versions:
+the setting belongs to the directory rather than to the person who typed it. Environment variables
+are the same. An `export` only affects the shell it was typed in, never reaches whoever forgot to
+type it, and follows around whoever typed it and forgot.
+
+## Writing `[env]`
+
+It goes in `mise.toml`.
+
+```toml title="mise.toml"
+[env]
+NODE_ENV = "development"
+APP_NAME = "envdemo"
+```
+
+`mise env` shows what is currently set.
+
+```bash
+mise env
+```
+
+```text
+export APP_NAME=envdemo
+export NODE_ENV=development
+```
+
+This command works even without activating your shell, which makes it the place to start when
+something you thought you had set is not taking effect.
+
+## Leave the directory and it is gone
+
+This is where it differs from `export`.
+
+```bash
+cd ~/work/envdemo
+mise env | grep APP_NAME     # export APP_NAME=envdemo
+
+cd ~
+mise env | grep APP_NAME     # nothing
+```
+
+![Two variables listed by mise env inside the directory, and zero once cd leaves it](mise-env-directory-scope.svg)
+
+The moment you move to another project, the previous project's values are gone. Being guaranteed
+not to carry them out with you is the biggest advantage over `export`.
+
+## Loading a `.env`
+
+If you already use a `.env`, `_.file` reads it.
+
+```toml title="mise.toml"
+[env]
+_.file = ".env"
+```
+
+The contents become environment variables as they are.
+
+```text
+export API_KEY=from-dotenv
+export DATABASE_URL='postgres://localhost:5432/dev'
+```
+
+This lets you keep `.env` in `.gitignore` and commit only `mise.toml` — sharing where the values are
+read from rather than the values themselves.
+
+## When the same key appears twice, the later line wins
+
+If a key exists both as a direct entry in `[env]` and inside the file `_.file` names, **the order
+you wrote them in** decides. That is behaviour you cannot know without measuring it, so here it is
+in both orders.
+
+```toml title="mise.toml"
+[env]
+SHARED = "from-mise-toml"
+_.file = ".env"
+```
+
+```text
+export SHARED=from-dotenv
+```
+
+Swap the order and the result swaps with it.
+
+```toml title="mise.toml"
+[env]
+_.file = ".env"
+SHARED = "from-mise-toml"
+```
+
+```text
+export SHARED=from-mise-toml
+```
+
+![The same mise.toml with SHARED and _.file swapped, producing the opposite exported value](mise-env-later-wins.svg)
+
+So it is neither "`.env` always wins" nor "`mise.toml` always wins". Entries are applied top to
+bottom, and a later one overwrites what came before it. **If you want defaults in `mise.toml` that
+individuals can override in their `.env`**, put `_.file` last.
+
+## It will not read from a config file you have not trusted
+
+The first time you put a config in a directory, you get told this.
+
+```text
+mise ERROR Config files in .../envdemo/mise.toml are not trusted.
+mise ERROR Trust them with `mise trust`.
+```
+
+```bash
+mise trust
+```
+
+It looks like a chore, but it makes sense. `[env]` is a feature for **injecting arbitrary values
+into your shell**. It would be a problem if cloning a repository that contains a `mise.toml` and
+stepping into it were enough to rewrite your `PATH` or plant variables that look like credentials.
+Unlike a tool version, you cannot tell whether an environment variable is dangerous without reading
+what is in it. Hence the explicit approval.
+
+Reading the `[env]` section of a `mise.toml` before running `mise trust` in a repository you cloned
+is a good habit.
+
+## A trap I walked into — `.env` hiding the real credentials
+
+This happened in [the repository behind this blog](https://github.com/JamBalaya56562/blog).
+
+I moved AWS authentication off long-lived access keys and onto
+[IAM Identity Center](https://docs.aws.amazon.com/singlesignon/latest/userguide/what-is.html) (SSO).
+The `aws` command kept saying this.
+
+```text
+Profile 'default' is already configured with Access Key credentials.
+```
+
+The cause was an old pair of lines still sitting in `.env`.
+
+```bash title=".env"
+AWS_ACCESS_KEY_ID=...
+AWS_SECRET_ACCESS_KEY=...
+```
+
+**Environment variables take priority over config files.** Both the AWS CLI and the SDKs use keys
+from the environment when they are there. However correctly you set things up with
+`aws configure sso`, the old keys keep winning as long as you run inside that directory. And since
+those keys are no longer valid, the error does not come out as "authentication failed" but as
+"already configured" — a long way from the cause.
+
+![Keys left in .env shadowing the SSO settings in ~/.aws/config, so the aws command keeps reporting it is already configured](mise-env-dotenv-shadow.svg)
+
+The awkward part is the shape of it: **something you thought you had deleted is still in effect.**
+No amount of re-reading the AWS side turns it up.
+
+The fix was to have [the script that generates `.env`](https://github.com/JamBalaya56562/blog/blob/main/scripts/setup-env.ts)
+strip keys that are no longer used when it finds them.
+
+```ts title="scripts/setup-env.ts"
+const obsoleteKeys = [
+  "AWS_ACCESS_KEY_ID",
+  "AWS_SECRET_ACCESS_KEY",
+  "AWS_SESSION_TOKEN",
+  "DATABASE_URL",
+]
+```
+
+An old `DATABASE_URL` is in there for the same reason. A connection target nobody uses any more,
+left in `.env`, looks like a live setting.
+
+Do not leave values you have stopped using in `.env`. Commenting them out is the same thing.
+Whoever removes them one day will lose half an hour to an error with no visible cause.
+
+## Adding to PATH with `_.path`
+
+In the same place as your environment variables, you can add directories to `PATH`.
+
+```toml title="mise.toml"
+[env]
+_.path = ["./bin"]
+```
+
+That directory's `bin/` goes to the front of `PATH`, so project-specific scripts can be called by
+name instead of by full path.
+
+This too disappears when you leave the directory. Another project's `bin/` will not slip in.
+
+## Giving each task different values
+
+Everything so far is something `.env` can do as well. Being scoped to a directory is a real
+difference, but as a way of holding values it is not far apart.
+
+**Here is what `.env` cannot do.** You can hand a [task](/en/blog/mise-tasks) its own environment
+variables.
+
+```toml title="mise.toml"
+[env]
+NODE_ENV = "development"
+DATABASE_URL = "postgres://localhost:5432/dev"
+
+[tasks.dev]
+run = "bun dev"
+
+[tasks.test]
+env = { NODE_ENV = "test", DATABASE_URL = "postgres://localhost:5432/test" }
+run = "bun test"
+```
+
+`mise run dev` gets the values from `[env]` unchanged.
+
+```text
+NODE_ENV=development DATABASE_URL=postgres://localhost:5432/dev
+```
+
+Only `mise run test` runs with the test values.
+
+```text
+NODE_ENV=test DATABASE_URL=postgres://localhost:5432/test
+```
+
+**The override lives inside that task and does not leak into the shell.** After running
+`mise run test`, `NODE_ENV` in your shell is still `development`.
+
+Doing this with `.env` means preparing a `.env.test` and building your own way to pick between them
+in the command that starts the tests. Since every tool loads them differently, a test runner and a
+build tool can end up needing separate arrangements. With mise, **the values and the definition of
+the command sit next to each other in the same file**.
+
+A way to think about when to reach for which:
+
+- **`.env`** — values that differ per person and are not committed (API keys, local connection
+  targets)
+- **`[env]`** — defaults that are shared by the project and safe to commit
+- **A task's `env`** — values you want swapped for the duration of one command
+
+## In closing
+
+- `[env]` applies only inside the directory. Not being carried out with you is the difference from
+  `export`
+- `_.file` reads an existing `.env`. For a shared key, **the later line wins**
+- `mise env` tells you what is set right now
+- Do not leave retired credentials in `.env`. Environment variables outrank config files, so a value
+  you thought was gone keeps quietly winning
+- **Tasks can carry their own `env`.** That is the thing `.env` cannot do, and it puts values and
+  commands side by side in one file
+
+Environment variables are the kind of setting you only notice once something stops working. Tie them
+to a directory and at least "where is this in effect" is answered by reading a file.

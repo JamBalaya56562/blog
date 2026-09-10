@@ -142,8 +142,8 @@ test.describe("Open Graph images", () => {
     "/ja/portfolio",
     "/en/privacy-policy",
     "/ja/privacy-policy",
-    "/en/blog/tailwind-css-v4-guide",
-    "/ja/blog/tailwind-css-v4-guide",
+    "/en/blog/mise-tasks",
+    "/ja/blog/mise-tasks",
   ]
 
   for (const path of paths) {
@@ -220,10 +220,7 @@ test.describe("Open Graph completeness", () => {
     })
   }
 
-  for (const path of [
-    "/en/blog/tailwind-css-v4-guide",
-    "/ja/blog/tailwind-css-v4-guide",
-  ]) {
+  for (const path of ["/en/blog/mise-tasks", "/ja/blog/mise-tasks"]) {
     test(`${path} is an article with a date and an author`, async ({
       page,
     }) => {
@@ -268,7 +265,7 @@ test.describe("Open Graph completeness", () => {
     ["/en", "Jam's Blog"],
     ["/ja", "Jamのブログ"],
     ["/ja/blog", "Jamのブログ"],
-    ["/ja/blog/tailwind-css-v4-guide", "Jamのブログ"],
+    ["/ja/blog/mise-tasks", "Jamのブログ"],
   ] as const) {
     test(`${path} names the site consistently`, async ({ page }) => {
       await page.goto(path)
@@ -343,8 +340,8 @@ test.describe("Structured data", () => {
   })
 
   for (const [path, locale, headline] of [
-    ["/en/blog/tailwind-css-v4-guide", "en", "Tailwind CSS v4 Guide"],
-    ["/ja/blog/tailwind-css-v4-guide", "ja", "Tailwind CSS v4 ガイド"],
+    ["/en/blog/mise-tasks", "en", "Writing Tasks with mise"],
+    ["/ja/blog/mise-tasks", "ja", "mise でタスクを書く"],
   ] as const) {
     test(`${path} describes itself as an article`, async ({ page }) => {
       await page.goto(path)
@@ -372,7 +369,7 @@ test.describe("Structured data", () => {
   test("no block claims a page other than the one it is on", async ({
     page,
   }) => {
-    for (const path of ["/en", "/ja", "/ja/blog/tailwind-css-v4-guide"]) {
+    for (const path of ["/en", "/ja", "/ja/blog/mise-tasks"]) {
       await page.goto(path)
       const canonical = await page
         .locator('link[rel="canonical"]')
