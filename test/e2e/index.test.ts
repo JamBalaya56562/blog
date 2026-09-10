@@ -333,7 +333,7 @@ test.describe("Blog post page", () => {
       translationLink.click(),
     ])
     await expect(
-      page.getByRole("heading", { name: "Next.js入門ガイド" }),
+      page.getByRole("heading", { name: "mise 入門ガイド" }),
     ).toBeVisible()
   })
 })
