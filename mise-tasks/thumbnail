@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+#MISE description="Encode a thumbnail PNG as AVIF: mise run thumbnail <png> <slug>"
 # Turn a thumbnail PNG into the AVIF a post's frontmatter points at.
 #
 #   mise run thumbnail <png> <slug>

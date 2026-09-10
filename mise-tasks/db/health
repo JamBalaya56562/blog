@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
+#MISE description="Wait for DynamoDB Local to be healthy"
 set -euo pipefail
 
-# shellcheck source=./container-runtime.sh
-source "$(dirname "$0")/container-runtime.sh"
+# shellcheck source=../../scripts/container-runtime.sh
+source scripts/container-runtime.sh
 
 # amazon/dynamodb-local ships no HEALTHCHECK, so `inspect .State.Health.Status`
 # never reports anything. Poll the endpoint instead: DynamoDB Local answers a
