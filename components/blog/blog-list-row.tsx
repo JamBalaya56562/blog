@@ -74,12 +74,14 @@ export function BlogListRow({
       viewCount={viewCount}
       minReadLabel={minReadLabel}
       uncategorisedLabel={uncategorisedLabel}
-      viewsLabel={viewsLabel}
       activeTag={activeTag}
     />
   )
 }
 
+// No `viewsLabel` here, unlike the card below 640px: the row puts the count in
+// a column of its own, where the figure is read against the rows above and
+// below it rather than against a word beside it.
 function DesktopRow({
   post,
   locale,
@@ -87,7 +89,6 @@ function DesktopRow({
   viewCount,
   minReadLabel,
   uncategorisedLabel,
-  viewsLabel,
   activeTag,
 }: {
   readonly post: Post
@@ -96,7 +97,6 @@ function DesktopRow({
   readonly viewCount: number
   readonly minReadLabel: string
   readonly uncategorisedLabel: string
-  readonly viewsLabel: string
   readonly activeTag?: string
 }) {
   const num = String(index + 1).padStart(3, "0")
