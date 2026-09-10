@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+#MISE description="Stop DynamoDB Local container"
+set -euo pipefail
+
+# shellcheck source=../../scripts/container-runtime.sh
+source scripts/container-runtime.sh
+
+runtime="$(resolve_runtime)"
+"$runtime" stop "$CONTAINER_NAME"

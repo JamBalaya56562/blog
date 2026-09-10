@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
+#MISE description="Start DynamoDB Local container for local development"
 set -euo pipefail
 
-# shellcheck source=./container-runtime.sh
-source "$(dirname "$0")/container-runtime.sh"
+# shellcheck source=../../scripts/container-runtime.sh
+source scripts/container-runtime.sh
 
 runtime="$(resolve_runtime)"
 echo "Using container runtime: $runtime"

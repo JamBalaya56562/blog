@@ -45,22 +45,6 @@ run = ["bun update", "mise deps"]
 description = "Generate .env file with default development values"
 run = "bun run scripts/setup-env.ts"
 
-[tasks."db:start"]
-description = "Start DynamoDB Local container for local development"
-run = "bash scripts/db-start.sh"
-
-[tasks."db:health"]
-description = "Wait for DynamoDB Local to be healthy"
-run = "bash scripts/db-health.sh"
-
-[tasks."db:stop"]
-description = "Stop DynamoDB Local container"
-run = "bash scripts/db-stop.sh"
-
-[tasks.thumbnail]
-description = "Encode a thumbnail PNG as AVIF: mise run thumbnail <png> <slug>"
-run = "bash scripts/thumbnail.sh"
-
 [tasks."db:push"]
 description = "Create the DynamoDB table if it does not exist"
 run = "bun run scripts/db-push.ts"
