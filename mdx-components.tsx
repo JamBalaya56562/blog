@@ -1,6 +1,7 @@
 import type { MDXComponents } from "mdx/types"
 import type React from "react"
 import { resolveImagePath } from "@/app/api/images/[...path]/route"
+import { CodeTabs } from "@/components/code-tabs"
 import { createIdGenerator, extractText } from "@/lib/toc"
 
 let generateId = createIdGenerator()
@@ -11,6 +12,9 @@ function headingId(props: React.HTMLAttributes<HTMLHeadingElement>) {
 
 const components: MDXComponents = {
   blockquote: (props) => <blockquote className="my-4" {...props} />,
+  // Capitalised because it is written as a JSX tag in the MDX source, not
+  // produced by markdown syntax the way the lowercase entries here are.
+  CodeTabs,
   code: (props) => <code className="rounded" {...props} />,
   h1: (props) => <h1 className="text-4xl font-bold" {...props} />,
   h2: (props) => (

@@ -23,6 +23,14 @@
   --cyber-bg-0: #f4f7fa;
   --cyber-bg-1: #ebf0f5;
   --cyber-bg-2: #dde6ed;
+
+  /* Code surfaces. Separate from --cyber-bg-1 because the two themes need
+     different amounts of lift: against the light page this sits 2.5 points of
+     CIELAB lightness below the body and reads as a distinct panel, but the same
+     gap against the near-black dark page comes to 1.6 points, in the band where
+     display black crush and light reflected off the screen erase it. The dark
+     value is lifted to a 7.9 point gap instead. Light is unchanged. */
+  --cyber-code-bg: #ebf0f5;
   --cyber-line: rgba(6, 167, 212, 0.18);
   --cyber-line-hi: rgba(6, 167, 212, 0.45);
   --cyber-text: #0a1620;
@@ -65,6 +73,7 @@
   --cyber-bg-0: #04060a;
   --cyber-bg-1: #080c12;
   --cyber-bg-2: #0d141d;
+  --cyber-code-bg: #161b22;
   --cyber-line: rgba(120, 200, 255, 0.18);
   --cyber-line-hi: rgba(123, 228, 255, 0.5);
   --cyber-text: #e6f4ff;
@@ -618,12 +627,12 @@
     font-family: var(--blog-font-mono);
     font-size: 0.92em;
     padding: 0.1em 0.4em;
-    background: var(--cyber-bg-1);
+    background: var(--cyber-code-bg);
     border: 1px solid var(--cyber-line);
     color: var(--cyber-cyan);
   }
   .prose-cyber pre {
-    background: var(--cyber-bg-1);
+    background: var(--cyber-code-bg);
     border: 1px solid var(--cyber-line);
     padding: 16px;
     font-family: var(--blog-font-mono);
@@ -631,6 +640,46 @@
     overflow: auto;
     position: relative;
     margin: 1.4em 0;
+  }
+  /* Tabbed code blocks. The frame moves out to the wrapper so the tab strip and
+     the code read as one panel, which means the `pre` inside has to give up the
+     border, radius and vertical margin it carries on its own. */
+  .prose-cyber .pp-tabs {
+    margin: 1.4em 0;
+    border: 1px solid var(--cyber-line);
+    border-radius: 8px;
+    overflow: hidden;
+    background: var(--cyber-code-bg);
+  }
+  .prose-cyber .pp-tabs-list {
+    display: flex;
+    border-bottom: 1px solid var(--cyber-line);
+  }
+  .prose-cyber .pp-tabs-tab {
+    font-family: var(--blog-font-mono);
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    padding: 8px 14px;
+    color: var(--cyber-dim);
+    background: transparent;
+    border: 0;
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+    transition:
+      color 0.15s ease,
+      border-color 0.15s ease;
+  }
+  .prose-cyber .pp-tabs-tab:hover {
+    color: var(--cyber-text);
+  }
+  .prose-cyber .pp-tabs-tab[aria-selected="true"] {
+    color: var(--cyber-cyan);
+    border-bottom-color: var(--cyber-cyan);
+  }
+  .prose-cyber .pp-tabs pre {
+    margin: 0;
+    border: 0;
+    border-radius: 0;
   }
   .prose-cyber pre code {
     background: transparent;
