@@ -17,7 +17,15 @@ function markCounted(slug: string): void {
   } catch {}
 }
 
-export function ViewCounter({ slug, count }: { slug: string; count: number }) {
+export function ViewCounter({
+  slug,
+  count,
+  label,
+}: {
+  slug: string
+  count: number
+  label: string
+}) {
   const [liveCount, setLiveCount] = useState<number | null>(null)
 
   useEffect(() => {
@@ -42,7 +50,7 @@ export function ViewCounter({ slug, count }: { slug: string; count: number }) {
       <span className="pp-num text-cyber-cyan">
         {(liveCount ?? count).toLocaleString()}
       </span>{" "}
-      VIEWS
+      {label}
     </span>
   )
 }

@@ -187,6 +187,9 @@ async function BlogListContent({
                     viewCount={views}
                     viewMax={pageViewMax}
                     minReadLabel={dictionary.blog.minRead}
+                    minLabel={dictionary.blog.min}
+                    uncategorisedLabel={dictionary.blog.uncategorised}
+                    viewsLabel={dictionary.blog.views}
                     activeTag={tag}
                   />
                 </li>

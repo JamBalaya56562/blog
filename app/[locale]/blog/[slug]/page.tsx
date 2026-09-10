@@ -131,7 +131,8 @@ async function BlogPostContent({
   const adjacentPosts = findAdjacentPosts(allPosts, slug)
   const related = getRelatedPosts(allPosts, slug)
   const readMin = estimateReadingTime(post.content)
-  const category = post.frontmatter.tags[0]?.toUpperCase() ?? "DISPATCH"
+  const category =
+    post.frontmatter.tags[0]?.toUpperCase() ?? dictionary.blog.uncategorised
   const updatedOn = post.frontmatter.updated ?? post.frontmatter.date
 
   return (
@@ -152,7 +153,9 @@ async function BlogPostContent({
       <div className="mx-auto max-w-3xl px-4 py-10 sm:px-6">
         <article>
           <header className="mb-10">
-            <div className="pp-tick mb-3">◢ DISPATCH / {category}</div>
+            <div className="pp-tick mb-3">
+              ◢ {dictionary.blog.dispatchLabel} / {category}
+            </div>
             <ViewTransition name={`post-title-${slug}`} share="morph">
               <h1 className="pp-display text-[clamp(28px,5vw,52px)] leading-[1.1] text-foreground">
                 {post.frontmatter.title}
@@ -180,7 +183,11 @@ async function BlogPostContent({
                     {dictionary.blog.minRead}
                   </span>
                   <span className="text-cyber-line-hi">·</span>
-                  <ViewCounter slug={slug} count={viewCount} />
+                  <ViewCounter
+                    slug={slug}
+                    count={viewCount}
+                    label={dictionary.blog.views}
+                  />
                 </span>
               </div>
             </ViewTransition>

@@ -81,28 +81,28 @@ export function HeroSection({
 
       <div className="mt-14 grid grid-cols-2 gap-0 border-t border-cyber-line md:grid-cols-3">
         <HudCell
-          label="POSTS"
+          label={dictionary.home.hudPosts}
           value={
             <CountUp
               target={postCount}
               className="pp-display text-cyber-cyan"
             />
           }
-          sub="PUBLISHED"
+          sub={dictionary.home.hudPostsSub}
           dotColor="lime"
           wrapperClass="border-b border-r border-cyber-line md:border-b-0"
         />
         <HudCell
-          label="TAGS"
+          label={dictionary.home.hudTags}
           value={
             <CountUp target={tagCount} className="pp-display text-cyber-cyan" />
           }
-          sub="UNIQUE"
+          sub={dictionary.home.hudTagsSub}
           dotColor="amber"
           wrapperClass="border-b border-cyber-line md:border-b-0 md:border-r"
         />
         <HudCell
-          label="LATEST"
+          label={dictionary.home.hudLatest}
           value={
             <span className="pp-display text-cyber-cyan">
               {latestDate ? (
@@ -112,7 +112,7 @@ export function HeroSection({
               )}
             </span>
           }
-          sub="POST DATE"
+          sub={dictionary.home.hudLatestSub}
           dotColor="amber"
           wrapperClass="col-span-2 md:col-span-1"
         />

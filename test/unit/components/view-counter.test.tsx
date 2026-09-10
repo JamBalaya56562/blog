@@ -27,27 +27,33 @@ const { ViewCounter } = await import("@/components/view-counter")
 
 describe("ViewCounter", () => {
   test("renders view count immediately from prop", () => {
-    const { container } = render(<ViewCounter slug="test-post" count={42} />)
+    const { container } = render(
+      <ViewCounter slug="test-post" count={42} label="VIEWS" />,
+    )
     expect(container.textContent).toContain("42")
     expect(container.textContent).toContain("VIEWS")
   })
 
   test("calls incrementViewCountAction on mount", async () => {
-    render(<ViewCounter slug="my-slug" count={10} />)
+    render(<ViewCounter slug="my-slug" count={10} label="VIEWS" />)
 
     await waitFor(() => expect(incrementMock).toHaveBeenCalledTimes(1))
     expect(incrementMock).toHaveBeenCalledWith("my-slug")
   })
 
   test("formats large numbers with locale separators", () => {
-    const { container } = render(<ViewCounter slug="popular" count={1234567} />)
+    const { container } = render(
+      <ViewCounter slug="popular" count={1234567} label="VIEWS" />,
+    )
     expect(container.textContent).toContain("VIEWS")
     // toLocaleString() formats differently by locale, just check it's not raw digits
     expect(container.textContent).not.toContain("1234567")
   })
 
   test("renders 0 views when count is 0", () => {
-    const { container } = render(<ViewCounter slug="new-post" count={0} />)
+    const { container } = render(
+      <ViewCounter slug="new-post" count={0} label="VIEWS" />,
+    )
     expect(container.textContent).toContain("0")
     expect(container.textContent).toContain("VIEWS")
   })
@@ -57,7 +63,9 @@ describe("ViewCounter", () => {
   // write returns is the only live one.
   test("replaces the server-rendered figure with the recorded count", async () => {
     actionResult = 43
-    const { container } = render(<ViewCounter slug="test-post" count={42} />)
+    const { container } = render(
+      <ViewCounter slug="test-post" count={42} label="VIEWS" />,
+    )
     expect(container.textContent).toContain("42")
 
     await waitFor(() => expect(container.textContent).toContain("43"))
@@ -68,7 +76,9 @@ describe("ViewCounter", () => {
     // No database configured, or the write failed. Showing a zero here would
     // be worse than showing a stale number.
     actionResult = null
-    const { container } = render(<ViewCounter slug="test-post" count={42} />)
+    const { container } = render(
+      <ViewCounter slug="test-post" count={42} label="VIEWS" />,
+    )
 
     // Nothing to wait for here: the point is that the figure never changes.
     // Waiting on the call the effect makes is what proves the effect ran.
@@ -83,22 +93,24 @@ describe("ViewCounter", () => {
    */
   describe("counting once", () => {
     test("a second visit does not write again", async () => {
-      const { unmount } = render(<ViewCounter slug="repeat" count={7} />)
+      const { unmount } = render(
+        <ViewCounter slug="repeat" count={7} label="VIEWS" />,
+      )
       await waitFor(() => expect(incrementMock).toHaveBeenCalledTimes(1))
       unmount()
 
-      render(<ViewCounter slug="repeat" count={8} />)
+      render(<ViewCounter slug="repeat" count={8} label="VIEWS" />)
       await Promise.resolve()
 
       expect(incrementMock).toHaveBeenCalledTimes(1)
     })
 
     test("another post is still counted", async () => {
-      render(<ViewCounter slug="first" count={1} />)
+      render(<ViewCounter slug="first" count={1} label="VIEWS" />)
       await waitFor(() => expect(incrementMock).toHaveBeenCalledTimes(1))
       cleanup()
 
-      render(<ViewCounter slug="second" count={1} />)
+      render(<ViewCounter slug="second" count={1} label="VIEWS" />)
       await waitFor(() => expect(incrementMock).toHaveBeenCalledTimes(2))
       expect(incrementMock).toHaveBeenLastCalledWith("second")
     })
@@ -119,7 +131,7 @@ describe("ViewCounter", () => {
       })
 
       try {
-        render(<ViewCounter slug="private" count={3} />)
+        render(<ViewCounter slug="private" count={3} label="VIEWS" />)
         await waitFor(() => expect(incrementMock).toHaveBeenCalledTimes(1))
       } finally {
         if (original) {

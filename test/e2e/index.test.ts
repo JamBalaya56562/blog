@@ -178,9 +178,9 @@ test.describe("Blog post page", () => {
     // Both locales: the English labels are the longer pair, so English has to
     // break at a width where Japanese still fits, and each catches what the
     // other's line lengths happen to hide.
-    for (const [locale, label] of [
-      ["en", "Updated on"],
-      ["ja", "更新日"],
+    for (const [locale, label, readLabel, viewsLabel] of [
+      ["en", "Updated on", "MIN READ", "VIEWS"],
+      ["ja", "更新日", "分で読める", "回表示"],
     ] as const) {
       test(`the ${locale} meta row breaks between units at ${width}px`, async ({
         page,
@@ -216,10 +216,10 @@ test.describe("Blog post page", () => {
           )
         }
         // Reading time and view count are one thought and stay on one line.
-        const together = lines.find((line) => line.includes("MIN READ"))
-        expect(together, "MIN READ is on no line").toBeTruthy()
+        const together = lines.find((line) => line.includes(readLabel))
+        expect(together, `${readLabel} is on no line`).toBeTruthy()
         expect(together, `views split from read time: ${together}`).toContain(
-          "VIEWS",
+          viewsLabel,
         )
 
         const overflows = await page.evaluate(
