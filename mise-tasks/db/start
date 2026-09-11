@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
-#MISE description="Start DynamoDB Local container for local development"
+#MISE description="Run DynamoDB Local in the foreground"
 set -euo pipefail
+
+# The container runs in the foreground: its log is this task's output, and
+# whatever stops this task stops the database. Backgrounding is the supervisor's
+# job — `pitchfork start db` runs this same task as a daemon — so there is no
+# second, detached code path to keep in step with this one.
 
 # shellcheck source=../../scripts/container-runtime.sh
 source scripts/container-runtime.sh
@@ -8,22 +13,50 @@ source scripts/container-runtime.sh
 runtime="$(resolve_runtime)"
 echo "Using container runtime: $runtime"
 
-# `docker ps --format '{{.Names}}'` cannot be used here: wslc's --format only
+# A container left behind by an earlier run — a SIGKILL, a runtime that died
+# before --rm could fire — still owns the name and would fail the run below.
+# `docker ps --format '{{.Names}}'` cannot answer this: wslc's --format only
 # accepts json or table, not Go templates. `inspect` exists on both runtimes and
-# its exit code answers the same question.
+# its exit code asks the same question.
 if "$runtime" inspect "$CONTAINER_NAME" >/dev/null 2>&1; then
-  "$runtime" start "$CONTAINER_NAME"
-else
-  # -sharedDb is required: without it DynamoDB Local namespaces tables per
-  # access key and region, so a mismatch between .env and any other client makes
-  # the table look missing.
-  #
-  # -inMemory keeps the data in RAM. Counts reset when the container stops,
-  # which is fine for a view counter in development and avoids the volume
-  # ownership problems the image has with a mounted -dbPath.
-  "$runtime" run -d \
-    --name "$CONTAINER_NAME" \
-    -p "${DYNAMODB_PORT}:8000" \
-    amazon/dynamodb-local \
-    -jar DynamoDBLocal.jar -sharedDb -inMemory
+  echo "Removing the container an earlier run left behind..."
+  "$runtime" rm -f "$CONTAINER_NAME" >/dev/null
 fi
+
+stopped=0
+stop() {
+  trap - INT TERM
+  stopped=1
+  # The signal reaches the whole process group, so the client is usually already
+  # gone and the container with it. This is the belt to that pair of braces: it
+  # covers a signal sent to this script alone, and a runtime that does not
+  # forward signals to the container the way docker does.
+  "$runtime" stop "$CONTAINER_NAME" >/dev/null 2>&1 || true
+}
+trap stop INT TERM
+
+# -sharedDb is required: without it DynamoDB Local namespaces tables per access
+# key and region, so a mismatch between .env and any other client makes the
+# table look missing.
+#
+# -inMemory keeps the data in RAM. Counts reset when the container stops, which
+# is fine for a view counter in development and avoids the volume ownership
+# problems the image has with a mounted -dbPath.
+#
+# Run it as a background job and `wait` on it, so INT and TERM reach the handler
+# at once rather than after the container has exited of its own accord.
+"$runtime" run --rm \
+  --name "$CONTAINER_NAME" \
+  -p "${DYNAMODB_PORT}:8000" \
+  amazon/dynamodb-local \
+  -jar DynamoDBLocal.jar -sharedDb -inMemory &
+
+status=0
+wait $! || status=$?
+
+if [ "$stopped" -eq 1 ]; then
+  echo "DynamoDB Local stopped."
+  exit 0
+fi
+
+exit "$status"

@@ -38,21 +38,24 @@ cd blog && bun i
 This project uses DynamoDB for page view tracking. A container runtime is required — [wslc](https://learn.microsoft.com/windows/wsl/) is used when available, otherwise [Docker](https://www.docker.com/). Set `RUNTIME` to force one.
 
 ```bash
-# Full setup: generate .env, start DynamoDB Local, wait for health check, create the table
+# Start DynamoDB Local in the background and create the table
 mise run db:setup
 ```
 
-Or run each step individually:
+`db:setup` hands the container to [pitchfork](https://pitchfork.jdx.dev/) and
+returns once the table exists. To watch the database's own log instead, run it
+in the foreground and stop it with Ctrl-C:
+
+```bash
+# Run DynamoDB Local (amazon/dynamodb-local) in the foreground
+mise run db:start
+```
+
+The rest of the steps stand on their own:
 
 ```bash
 # Generate .env with default values
 mise run db:env
-
-# Start DynamoDB Local container (amazon/dynamodb-local)
-mise run db:start
-
-# Wait for DynamoDB Local to be healthy
-mise run db:health
 
 # Create the DynamoDB table if it does not exist
 mise run db:push
@@ -74,6 +77,23 @@ AWS the credentials come from the Lambda execution role.
 ```bash
 bun dev
 ```
+
+Or let [pitchfork](https://pitchfork.jdx.dev/) run the database alongside it:
+
+```bash
+# Start DynamoDB Local, then the dev server once the table is ready
+pitchfork start dev
+
+# Start DynamoDB Local on its own
+pitchfork start db
+
+# Watch the output, then stop both again
+pitchfork logs -f dev
+pitchfork stop dev db
+```
+
+The `dev` daemon depends on `db`, so it waits for the table rather than racing
+it. Stopping `db` stops the container.
 
 ### 5. Test the app
 

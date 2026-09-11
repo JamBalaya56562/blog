@@ -8,9 +8,16 @@ set -euo pipefail
 
 # Being on PATH is not enough. wslc ships with Windows whether or not its
 # backend is running, and an unavailable one fails every command with E_FAIL, so
-# each candidate is probed with a harmless `list` before it is chosen.
+# each candidate is probed with a harmless listing before it is chosen.
+#
+# The probe has to be asked in each runtime's own dialect: `list` is wslc's, and
+# `docker list` is not a docker command at all, so probing docker with it fails
+# on a working daemon and drops docker from the candidates entirely.
 runtime_works() {
-  "$1" list >/dev/null 2>&1
+  case "$1" in
+    *wslc*) "$1" list >/dev/null 2>&1 ;;
+    *) "$1" ps >/dev/null 2>&1 ;;
+  esac
 }
 
 resolve_runtime() {
