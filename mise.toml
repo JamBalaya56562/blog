@@ -54,9 +54,12 @@ description = "Dump every page view row as JSON"
 run = "bun run scripts/db-scan.ts"
 
 [tasks."db:setup"]
-description = "Full local DB setup: generate .env, start DynamoDB Local, health check, create table"
-depends = ["db:env", "db:start"]
-run = ["mise run db:health", "mise run db:push"]
+# db:start runs in the foreground and never returns, so it cannot be a step in a
+# list of them. Backgrounding belongs to the supervisor: `pitchfork start db`
+# runs that same task as a daemon and returns once its readiness check — which
+# is `db:push` — has created the table.
+description = "Start DynamoDB Local in the background and create the table"
+run = "pitchfork start db"
 
 [deps.bun]
 auto = true

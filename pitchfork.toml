@@ -1,2 +1,21 @@
-[daemons.web]
+[daemons.db]
+# db:start runs the container in the foreground, so the daemon's log is the
+# database's log and the daemon dies when the database does. db:env comes first
+# because the readiness check below reads the table name it writes.
+run = "mise run db:env && mise run db:start"
+# db:push is idempotent and fails while nothing is listening, so it doubles as
+# the readiness probe, and readiness then means what the dev server actually
+# needs: the table is there. A port check would not say that. The container
+# runs -inMemory, so the table is gone with every stop and has to be recreated
+# on every start. The timeout is generous because the first start on a machine
+# pulls the image.
+ready_cmd = { run = "mise run db:push", timeout = "300s" }
+# Stopping the container gives the JVM its own ten-second grace period. The
+# supervisor's 5s default would SIGKILL the handler halfway through and leave
+# the container running.
+stop_signal = { signal = "SIGTERM", timeout = "30s" }
+
+[daemons.dev]
 run = "bun dev"
+depends = ["db"]
+ready_port = { port = 3000, timeout = "60s" }
