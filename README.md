@@ -54,9 +54,6 @@ mise run db:start
 The rest of the steps stand on their own:
 
 ```bash
-# Generate .env with default values
-mise run db:env
-
 # Create the DynamoDB table if it does not exist
 mise run db:push
 
@@ -68,6 +65,10 @@ mise run db:stop
 ```
 
 The container runs `-inMemory`, so view counts reset when it stops.
+
+The endpoint, region and table name come from `[env]` in `mise.toml`, so there
+is nothing to generate and nothing to copy from an example file. Override them
+for one machine in `mise.local.toml`, which is not committed.
 
 No AWS access keys are needed. The local container accepts any signature, and on
 AWS the credentials come from the Lambda execution role.
@@ -126,6 +127,10 @@ bun start
 ```
 
 ## ⚙️ Environment Variables
+
+Development values live in `[env]` in `mise.toml` and are applied to anything
+run from this directory. On AWS they come from the Lambda function's own
+configuration instead — see [lambda.tf](infra/lambda.tf).
 
 | Variable | Description | Default |
 |----------|-------------|---------|

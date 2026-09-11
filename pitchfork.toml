@@ -1,8 +1,7 @@
 [daemons.db]
 # db:start runs the container in the foreground, so the daemon's log is the
-# database's log and the daemon dies when the database does. db:env comes first
-# because the readiness check below reads the table name it writes.
-run = "mise run db:env && mise run db:start"
+# database's log and the daemon dies when the database does.
+run = "mise run db:start"
 # db:push is idempotent and fails while nothing is listening, so it doubles as
 # the readiness probe, and readiness then means what the dev server actually
 # needs: the table is there. A port check would not say that. The container

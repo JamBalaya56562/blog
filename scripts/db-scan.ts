@@ -10,7 +10,9 @@ import { getTableName } from "@/lib/db/schema"
 
 const tableName = getTableName()
 if (!tableName) {
-  console.error("DYNAMODB_TABLE_NAME is not set. Run `mise run db:env` first.")
+  console.error(
+    "DYNAMODB_TABLE_NAME is not set. It comes from `[env]` in mise.toml, so run this through `mise run`.",
+  )
   process.exit(1)
 }
 

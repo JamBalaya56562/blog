@@ -143,7 +143,7 @@ AWS_SECRET_ACCESS_KEY=...
 
 厄介なのは、**消したはずのものが効いている**という構図です。AWS 側の設定を何度見直しても見つかりません。
 
-対処として、[`.env` を生成するスクリプト](https://github.com/JamBalaya56562/blog/blob/main/scripts/setup-env.ts)が、もう使っていないキーを見つけたら消すようにしました。
+対処として、[`.env` を生成するスクリプト](https://github.com/JamBalaya56562/blog/blob/074327c34f78f475f977c2bb8e980fa2b5270fbb/scripts/setup-env.ts)が、もう使っていないキーを見つけたら消すようにしました。
 
 ```ts title="scripts/setup-env.ts"
 const obsoleteKeys = [
