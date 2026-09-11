@@ -28,6 +28,9 @@ bun-debug.log*
 # env files (can opt-in for commiting if needed)
 .env*
 
+# per-machine mise overrides
+mise.local.toml
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

@@ -166,7 +166,7 @@ those keys are no longer valid, the error does not come out as "authentication f
 The awkward part is the shape of it: **something you thought you had deleted is still in effect.**
 No amount of re-reading the AWS side turns it up.
 
-The fix was to have [the script that generates `.env`](https://github.com/JamBalaya56562/blog/blob/main/scripts/setup-env.ts)
+The fix was to have [the script that generates `.env`](https://github.com/JamBalaya56562/blog/blob/074327c34f78f475f977c2bb8e980fa2b5270fbb/scripts/setup-env.ts)
 strip keys that are no longer used when it finds them.
 
 ```ts title="scripts/setup-env.ts"
