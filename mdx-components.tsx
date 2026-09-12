@@ -42,7 +42,7 @@ const components: MDXComponents = {
         className="pp-alert my-4"
         data-alert={alert}
       >
-        <div className="pp-alert-label">◢ {alert.toUpperCase()}</div>
+        <div className="pp-alert-label">{alert.toUpperCase()}</div>
         <div>{children}</div>
       </aside>
     )

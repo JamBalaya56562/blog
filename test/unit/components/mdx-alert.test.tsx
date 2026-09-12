@@ -35,9 +35,7 @@ describe("blockquote as an alert", () => {
     expect(aside).not.toBeNull()
     expect(aside?.getAttribute("role")).toBe("note")
     expect(aside?.getAttribute("data-alert")).toBe("warning")
-    expect(aside?.querySelector(".pp-alert-label")?.textContent).toBe(
-      "◢ WARNING",
-    )
+    expect(aside?.querySelector(".pp-alert-label")?.textContent).toBe("WARNING")
     expect(aside?.textContent).toContain("Body.")
     expect(container.querySelector("blockquote")).toBeNull()
   })
