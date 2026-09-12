@@ -56,7 +56,9 @@ test.describe("Post images", () => {
     }
 
     const hero = await ratioOf(POST, "main img")
-    const card = await ratioOf("/en", `img[src="${POST_HERO}"]`)
+    // Whichever post is on the home page: the home shows only the newest few,
+    // and the reference post above has already aged off it.
+    const card = await ratioOf("/en", 'img[src^="/thumbnails/"]')
 
     expect(hero).toBeCloseTo(16 / 9, 1)
     expect(card).toBeCloseTo(hero, 1)

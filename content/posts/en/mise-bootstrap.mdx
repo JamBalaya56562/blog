@@ -1,0 +1,495 @@
+---
+title: Setting Up a Machine with mise bootstrap
+date: "2026-09-12"
+updated: "2026-09-12"
+description: Declaring packages, dotfiles, tools and a finishing task in one config file, and bringing a new machine up to it with a single mise bootstrap
+image: /thumbnails/mise-bootstrap.avif
+tags:
+  - mise
+  - cli
+  - devtools
+---
+
+## What mise bootstrap is
+
+`mise bootstrap` is **a way to declare how a machine is set up in a config file, and bring the
+machine up to that state with one command**. OS packages, dotfiles, shell activation, development
+tools and a finishing task at the end: one `config.toml` covers all of it.
+
+[Getting started with mise](/en/blog/getting-started-with-mise) put it this way for tool versions:
+the setting belongs to the directory, not to the person who typed it. bootstrap takes that idea and
+applies it to **the whole machine**. A project with a `mise.toml` is brought up to date by
+`mise install`; a machine with a config is brought up to date by `mise bootstrap`.
+
+> [!NOTE]
+> The similarly named `mise generate bootstrap` is a different feature. It generates a script that
+> downloads and runs mise itself, and it was renamed to `mise generate install-script` to keep the
+> two apart.
+
+## What used to go wrong
+
+Every new machine went the same way.
+
+- Work out what to install from the package manager by remembering the last machine and reading
+  its `history`
+- Clone the dotfiles repository and run the script that links them into place
+- Add `mise activate` to the shell configuration
+- And only then `mise install`
+
+The steps are written down somewhere. But the notes do not know about anything added since the
+last setup, and the gaps only show up when something stops working.
+
+Ansible or Nix would solve this, but bringing either in for two or three personal machines always
+felt like too much. If mise is already there, writing it down in mise is the lightest option.
+
+## The smallest config
+
+It does not go in a project's `mise.toml` but in **the user's config file**: a machine's setup
+belongs to the person, not to a project, so it lives at `~/.config/mise/config.toml`.
+
+```toml title="~/.config/mise/config.toml"
+[bootstrap.packages]
+"winget:BurntSushi.ripgrep.MSVC" = { os = "windows" }
+"winget:Git.Git" = { os = "windows" }
+
+[tools]
+node = "22"
+
+[tasks.bootstrap]
+run = "node --version"
+```
+
+Three sections.
+
+- **`[bootstrap.packages]`** — what the OS package manager installs. Written as
+  `manager:package`, with `os` to narrow it down
+- **`[tools]`** — the usual mise tools. Nothing changes here
+- **`[tasks.bootstrap]`** — a task that runs after everything else. For checking the result, or for
+  finishing touches that cannot be declared
+
+As with any config that carries `[env]`, the first run wants `mise trust`.
+
+## Seeing what will happen before it happens
+
+There is no need to just run it. Three ways to look first.
+
+### `--dry-run`
+
+Shows everything in the order it would run, without running it.
+
+```bash
+mise bootstrap --dry-run
+```
+
+```text
+mise bootstrap: system packages
+mise winget: 1 package(s) already installed
+winget install --id BurntSushi.ripgrep.MSVC --exact --silent --accept-source-agreements --accept-package-agreements --disable-interactivity
+mise bootstrap: tools
+mise all tools are installed
+mise bootstrap: running `bootstrap` task
+[bootstrap] $ node --version
+```
+
+Git is judged to be present and only ripgrep is up for `winget install`. **The exact command that
+would be run is printed**, so flags like `--silent` and `--accept-*` are there to be checked.
+
+### `plan`
+
+Tabulates how each declared resource would change from its current state.
+
+```bash
+mise bootstrap plan
+```
+
+```text
+create     package:winget:BurntSushi.ripgrep.MSVC     missing               installed (any version)
+unchanged  package:winget:Git.Git                     installed (2.55.0.3)  installed (any version)
+Plan: 1 create, 0 update, 1 unchanged, 0 remove, 0 unknown
+```
+
+It reads the way `plan` does in [OpenTofu](https://opentofu.org/) or Terraform: operation,
+resource, current state, desired state, and a tally at the end.
+
+### `status`
+
+What things look like right now.
+
+```bash
+mise bootstrap status
+```
+
+```text
+packages  winget:BurntSushi.ripgrep.MSVC            missing
+packages  winget:Git.Git                  2.55.0.3  installed
+tools     node@22                         22.23.2   installed
+```
+
+## Running it
+
+```bash
+mise bootstrap
+```
+
+The ripgrep on this machine came from somewhere other than winget, so for this article the
+packages section was skipped; how to skip is in the next section.
+
+```bash
+mise bootstrap --skip packages
+```
+
+```text
+mise bootstrap: dotfiles
+mise files: all files are applied
+mise bootstrap: tools
+mise ⇢ node@22  71ms · already installed
+mise all tools are installed
+mise bootstrap: running `bootstrap` task
+[bootstrap] $ node --version
+v22.23.2
+```
+
+Run the same command again and everything that is already in place simply flows past.
+**Resources that have not changed are skipped.**
+
+> [!IMPORTANT]
+> `[tasks.bootstrap]` and the hooks run every time, unlike resources. Whatever you put there has
+> to be safe to repeat.
+
+Each run records the state before and after it as checkpoints.
+
+```bash
+mise bootstrap dotfiles history
+```
+
+```text
+12  2026-09-12 16:52  bootstrap           bootstrap
+11  2026-09-12 16:52  bootstrap-before    before bootstrap
+10  2026-09-12 16:52  bootstrap           bootstrap
+9   2026-09-12 16:52  bootstrap-before    before bootstrap
+8   2026-09-12 16:51  bootstrap (failed)  bootstrap
+7   2026-09-12 16:51  bootstrap-before    before bootstrap
+```
+
+A failed run stays in the list as `(failed)`. This list comes back in the dotfiles section.
+
+## The order is fixed
+
+`mise bootstrap` works through the declared sections in a set order. Roughly: **foundations
+first, and whatever is depended on before whatever depends on it**.
+
+1. Linux users and groups, package-manager plugins
+2. Packages (`[bootstrap.packages]`) and the files that go before and after them
+3. Services, the firewall, Docker Compose projects
+4. Git repositories, dotfiles
+5. Shell activation, macOS defaults and LaunchAgents, Linux user units, user settings
+6. The tools in `[tools]`
+7. Packages from package-manager plugins, services that need tools
+8. `[tasks.bootstrap]`, then the final hook
+
+![mise bootstrap working through its eight stages from the top, with --only and --skip picking a subset](mise-bootstrap-order.svg)
+
+Packages come before dotfiles, and `[tasks.bootstrap]` is last. The reading is that the editor
+and shell the dotfiles assume are already installed, and by the time the finishing task runs,
+everything declared is there to be used.
+
+To run only part of it there are `--only` and `--skip`. Both can be repeated; they cannot be
+combined.
+
+```bash
+mise bootstrap --skip packages    # everything except packages
+mise bootstrap --only tools       # tools only
+```
+
+The names are the section names above — `packages`, `dotfiles`, `shell`, `tools`, `task` and so
+on. Get one wrong and the error lists every valid one.
+
+## Packages
+
+Written as `manager:package`. The manager cannot be left out: the same ripgrep has a different name
+in apt, brew and winget.
+
+```toml title="~/.config/mise/config.toml"
+[bootstrap.packages]
+"apt:ripgrep" = { os = "linux" }
+"brew:ripgrep" = { os = "macos" }
+"winget:BurntSushi.ripgrep.MSVC" = { os = "windows" }
+"brew-cask:font-jetbrains-mono" = { os = ["linux", "macos"] }
+"pacman:libreoffice-fresh" = { state = "absent" }
+```
+
+Narrowing with `os` lets one config file serve machines running different systems.
+`state = "absent"` means "remove it if it is there".
+
+The supported managers are apt / apk / dnf / pacman / aur / brew / brew-cask / flatpak / nix / mas
+/ winget. On Windows, winget is used whenever it is on `PATH`.
+
+One behaviour worth knowing: **`"latest"` means "present is good enough"**. A package that is
+already installed is not upgraded to the newest version on every run. To upgrade, run
+`mise bootstrap packages upgrade` explicitly. A command whose job is to bring the machine to a
+declared state should not start updating things on its own, and I think that is the right design.
+
+## dotfiles
+
+This is the most interesting part. Beyond linking dotfiles into place, it **keeps a history of
+their changes**.
+
+First, put an existing file under tracking.
+
+```bash
+mise bootstrap dotfiles track ~/.bashrc
+```
+
+```text
+mise history: saved baseline checkpoint 1
+mise dotfiles: tracking ~/.bashrc (declared in ~/.config/mise/config.toml)
+mise WARN  history: automatic capture is inactive: declare `[bootstrap.services.mise-history] builtin = "history-watch"` and run `mise bootstrap`; until then edits are saved by `mise bootstrap dotfiles save` or `mise bootstrap dotfiles watch --once`
+```
+
+The file is left as it is, **its current contents are saved as checkpoint 1**, and this is added
+to the config.
+
+```toml title="~/.config/mise/config.toml"
+[dotfiles]
+"~/.bashrc" = { mode = "track" }
+```
+
+Edit the file and save.
+
+```bash
+echo 'alias gs="git status"' >> ~/.bashrc
+mise bootstrap dotfiles save ~/.bashrc
+```
+
+```text
+mise history: saved checkpoint 2: edited ~/.bashrc
+```
+
+The history and the diff are there to read.
+
+```bash
+mise bootstrap dotfiles history --path ~/.bashrc
+mise bootstrap dotfiles history diff 2 --path ~/.bashrc --patch
+```
+
+```text
+2  2026-09-12 16:50  save      edited ~/.bashrc
+1  2026-09-12 16:50  baseline  tracked ~/.bashrc
+```
+
+```diff
+@@ -1,2 +1,3 @@
+ export EDITOR=vim
+ alias ll="ls -la"
++alias gs="git status"
+```
+
+And it can be undone.
+
+```bash
+mise bootstrap dotfiles rollback ~/.bashrc
+```
+
+```text
+mise history: rolled back ~/.bashrc to checkpoint 1
+```
+
+`rollback` picks the newest saved version whose contents differ from the file as it is now. When
+a config file has been fiddled into a broken state, it feels like having `git stash` for it.
+
+![track takes checkpoint 1, an edit and save take checkpoint 2, history diff shows the change, rollback returns to 1](mise-bootstrap-dotfiles-history.svg)
+
+The `track` output carried a WARN saying `automatic capture is inactive`. It means that by
+default no checkpoint is taken unless `save` is run after each edit. As the same WARN says,
+declaring a service that picks up changes on its own removes that chore.
+
+```toml title="~/.config/mise/config.toml"
+[bootstrap.services.mise-history]
+builtin = "history-watch"
+```
+
+It registers as a systemd user service on Linux, a LaunchAgent on macOS, and a Task Scheduler task
+on Windows.
+
+### Links, copies and templates
+
+The other side: not tracking, but putting dotfiles from a repository into place.
+
+```toml title="~/.config/mise/config.toml"
+[settings]
+dotfiles.root = "~/.dotfiles"
+
+[dotfiles]
+"~/.config/nvim" = { source = "nvim", mode = "symlink" }
+"~/.gitconfig" = { source = "gitconfig.tera", mode = "template" }
+"~/.zshrc/activate" = { block = 'eval "$(mise activate zsh)"' }
+```
+
+- **`symlink`** (the default) — a link. Editing the target edits the repository copy
+- **`copy`** — a copy. Editing the target directly is overwritten on the next run
+- **`template`** — renders a template and writes the result. Per-machine values go in as
+  `{{ vars.email }}`
+- **`block` / `line`** — manages just one marker-fenced section, or one line, inside an existing
+  file
+
+Leave out `source` and the file is looked for under `dotfiles.root` at the same relative path as
+its target: `~/.zshrc` comes from `~/.dotfiles/.zshrc`.
+
+On Windows, symbolic links need Developer Mode. Without it, mise falls back to copying, and
+directory links become junctions.
+
+## Shell activation
+
+Adding the `mise activate` line to the shell's config file can be declared too.
+
+```toml title="~/.config/mise/config.toml"
+[bootstrap.mise_shell_activate]
+zprofile = "shims"
+zshrc = "activate"
+bashrc = "activate"
+fish = "activate"
+```
+
+Only a marker-fenced block is written.
+
+```bash
+# >>> mise:activate >>>
+eval "$(mise activate zsh)"
+# <<< mise:activate <<<
+```
+
+mise rewrites that range and nothing else, so the other lines are left alone.
+
+> [!WARNING]
+> **PowerShell is outside this mechanism.** On Windows, the `$PROFILE` addition described in the
+> [introduction](/en/blog/getting-started-with-mise) is yours to do, from `[tasks.bootstrap]` or a
+> dotfiles `block`.
+
+## The second machine
+
+With the config so far in a Git repository, the next machine is two lines. From here on, a
+fresh Debian container stood in for the second machine.
+
+```bash
+curl https://mise.run | sh
+mise bootstrap --adopt you/setup --yes
+```
+
+What `--adopt` does, `--dry-run` says in one line.
+
+```text
+Would run: git clone /setup ~/.config/mise
+```
+
+**The repository itself becomes `~/.config/mise`.** So the repository is shaped like the config
+directory.
+
+```text
+setup/
+  config.toml
+  dotfiles/
+    gitconfig
+```
+
+```toml title="config.toml"
+[bootstrap.packages]
+"apt:ripgrep" = { os = "linux" }
+
+[bootstrap.mise_shell_activate]
+bashrc = "activate"
+
+[dotfiles]
+"~/.gitconfig" = { source = "dotfiles/gitconfig", mode = "copy" }
+
+[tools]
+node = "22"
+
+[tasks.bootstrap]
+run = ["rg --version | head -1", "node --version"]
+```
+
+Run it, and it flows from the top.
+
+```text
+Cloning into '/root/.config/mise'...
+mise bootstrap: system packages
+mise $ apt-get install -y -- ripgrep
+mise apt: installed ripgrep
+mise bootstrap: dotfiles
+mise files: copied ~/.config/mise/dotfiles/gitconfig to ~/.gitconfig
+mise bootstrap: shell activation
+mise edits: applied ~/.bashrc (block:activate)
+mise bootstrap: tools
+mise ✓ node@22.23.2  48.7s  node-v22.23.2-linux-x64.tar.gz
+mise bootstrap: running `bootstrap` task
+[bootstrap] $ rg --version | head -1
+ripgrep 14.1.1
+[bootstrap] $ node --version
+v22.23.2
+```
+
+> [!WARNING]
+> The first attempt had `source = "gitconfig"` under `[dotfiles]`, and it went looking for
+> `~/.config/mise/gitconfig` and failed. **A relative `source` is relative to the directory the
+> config file is in.** `dotfiles.root` only applies when `source` is left out, which is why the
+> example above says `"dotfiles/gitconfig"`.
+
+### Running it over SSH from here
+
+If the machine is reachable over SSH, nothing has to be typed on it at all.
+
+```bash
+mise bootstrap remote --host devbox --adopt ~/src/setup --install-mise --yes
+```
+
+**mise does not need to be installed there.** Your own mise is sent over, unpacked into `/tmp` on
+the target and run. Given a local path, `--adopt` ships the repository along as a git bundle, so
+the target does not need to reach the repository either.
+
+```text
+mise bootstrap remote root@172.17.0.4 (root@172.17.0.4)
+2026.9.5 linux-x64 (2026-09-10)
+mise bootstrap: system packages
+mise apt: installed ripgrep
+...
+mise remote bootstrap completed on 1 target(s)
+```
+
+![The local mise and the ~/src/setup repository sent to devbox over SSH as a git bundle, landing in ~/.config/mise via --adopt and ~/.local/bin/mise via --install-mise](mise-bootstrap-remote.svg)
+
+Both flags are there for a reason, each one learned the hard way.
+
+- **`--install-mise`** — without it, the mise that was sent over is removed when the run ends. But
+  the `eval "$(mise activate bash)"` that `[bootstrap.mise_shell_activate]` wrote into `.bashrc`
+  stays, so from the next shell onward every prompt starts with `mise: command not found`. With
+  it, mise stays at `~/.local/bin/mise` (putting `~/.local/bin` on `PATH` is yours to do, just as
+  after `curl | sh`)
+- **`--adopt`** — there is also `--source`, which sends a directory as a *project*. That is for
+  reproducing a working directory with a `mise.toml` on the other side, and its `[tools]` apply
+  only inside that project. Tried it: `node` was installed, and then `No version is set for shim:
+  node`. To set up a machine, it is `--adopt`
+
+> [!NOTE]
+> Windows cannot be a target, but it can be the machine you run this from. On 2026.9.5 that
+> stopped at `required command 'ssh' not found` even with `ssh.exe` on `PATH`; the fix has
+> been merged and should be in the next release.
+
+## In closing
+
+- `mise bootstrap` declares a machine's setup in `~/.config/mise/config.toml` and brings the
+  machine up to it in one run. The idea behind a project's `mise.toml`, applied to the machine
+- `--dry-run` / `plan` / `status` show what would happen before it does. `plan` reads like
+  Terraform's
+- A second run skips what has not changed. Only `[tasks.bootstrap]` runs every time, so keep it
+  repeatable
+- A package's `"latest"` means "present is good enough". Upgrades are explicit, with
+  `packages upgrade`
+- dotfiles get a checkpoint the moment they are tracked, and `history` and `rollback` bring them
+  back
+- The second machine clones the repository as `~/.config/mise` with `--adopt`. Over SSH,
+  `remote --adopt --install-mise` does it without mise on the far side
+- On Windows, PowerShell activation is out of scope, and remote cannot target Windows
+
+Setting up a machine is the kind of work whose steps fade because it is done so rarely. Written
+into a config file that `--dry-run` can read back, the one thing that goes away for certain is
+having to remember what you did last time.
