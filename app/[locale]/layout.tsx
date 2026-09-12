@@ -9,6 +9,7 @@ import { Footer } from "@/components/footer"
 import { Header } from "@/components/header"
 import { ScrollToTop } from "@/components/scroll-to-top"
 import { ThemeInitScript } from "@/components/theme-init-script"
+import { TocProvider } from "@/components/toc-context"
 import { createContentLoader } from "@/lib/content/loader"
 import { fontVars } from "@/lib/fonts"
 import {
@@ -109,24 +110,26 @@ export default async function LocaleLayout({
       </head>
       <body className="relative min-h-screen bg-background text-foreground antialiased">
         <ThemeProvider>
-          <a
-            href="#main"
-            className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:border focus:border-cyber-cyan focus:bg-cyber-bg-0 focus:px-4 focus:py-2 focus:font-mono focus:text-sm focus:text-cyber-cyan"
-          >
-            {dictionary.nav.skipToContent}
-          </a>
-          <CyberBackground />
-          <Header
-            locale={locale}
-            dictionary={dictionary}
-            tickerItems={tickerItems}
-          />
-          <main id="main" tabIndex={-1} className="relative z-10">
-            {children}
-          </main>
-          <Footer locale={locale} dictionary={dictionary} />
-          <ScrollToTop dictionary={dictionary} />
-          <CursorRing />
+          <TocProvider>
+            <a
+              href="#main"
+              className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:border focus:border-cyber-cyan focus:bg-cyber-bg-0 focus:px-4 focus:py-2 focus:font-mono focus:text-sm focus:text-cyber-cyan"
+            >
+              {dictionary.nav.skipToContent}
+            </a>
+            <CyberBackground />
+            <Header
+              locale={locale}
+              dictionary={dictionary}
+              tickerItems={tickerItems}
+            />
+            <main id="main" tabIndex={-1} className="relative z-10">
+              {children}
+            </main>
+            <Footer locale={locale} dictionary={dictionary} />
+            <ScrollToTop dictionary={dictionary} />
+            <CursorRing />
+          </TocProvider>
         </ThemeProvider>
       </body>
     </html>

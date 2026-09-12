@@ -73,8 +73,10 @@
   },
   "nav": {
     "blog": "Blog",
+    "closeIndex": "Close index",
     "closeMenu": "Close menu",
     "home": "Home",
+    "openIndex": "Open index",
     "openMenu": "Open menu",
     "scrollToTop": "Scroll to top",
     "skipToContent": "Skip to content"

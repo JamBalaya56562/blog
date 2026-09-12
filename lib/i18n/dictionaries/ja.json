@@ -73,8 +73,10 @@
   },
   "nav": {
     "blog": "ブログ",
+    "closeIndex": "目次を閉じる",
     "closeMenu": "メニューを閉じる",
     "home": "ホーム",
+    "openIndex": "目次を開く",
     "openMenu": "メニューを開く",
     "scrollToTop": "トップへ戻る",
     "skipToContent": "本文へスキップ"

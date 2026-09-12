@@ -4,6 +4,7 @@ import Image from "next/image"
 import Link from "next/link"
 import { LocaleSwitchLink } from "@/components/locale-switch-link"
 import { MarqueeTicker } from "@/components/marquee-ticker"
+import { MobileIndex } from "@/components/mobile-index"
 import { MobileMenu } from "@/components/mobile-menu"
 import { ThemeToggle } from "@/components/theme-toggle"
 import type { Locale } from "@/lib/i18n/config"
@@ -57,34 +58,40 @@ export function Header({ locale, dictionary, tickerItems }: HeaderProps) {
           <ThemeToggle dictionary={dictionary} />
         </div>
 
-        <div className="flex items-center md:hidden">
-          <MobileMenu dictionary={dictionary}>
-            <Link
-              href={`/${locale}/blog` as Route}
-              className="flex items-center gap-3 rounded px-3 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-cyber-bg-1"
-            >
-              <BookOpen size={16} className="text-cyber-cyan" />
-              {dictionary.nav.blog}
-            </Link>
-            <Link
-              href={`/${locale}/portfolio` as Route}
-              className="flex items-center gap-3 rounded px-3 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-cyber-bg-1"
-            >
-              <User size={16} className="text-cyber-cyan" />
-              {dictionary.footer.portfolio}
-            </Link>
-            <LocaleSwitchLink
-              currentLocale={locale}
-              targetLocale={otherLocale}
-              className="flex items-center gap-3 rounded px-3 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-cyber-bg-1"
-            >
-              <Globe size={16} className="text-cyber-cyan" />
-              {dictionary.language.switchTo}
-            </LocaleSwitchLink>
-            <div className="border-t border-cyber-line pt-2">
-              <ThemeToggle dictionary={dictionary} />
-            </div>
-          </MobileMenu>
+        <div className="flex items-center gap-1">
+          {/* The index button sits beside the hamburger on phones and stands
+              alone between md and xl, where the tabs are back but the floating
+              index is not yet. It renders nothing off the post page. */}
+          <MobileIndex dictionary={dictionary} />
+          <div className="flex items-center md:hidden">
+            <MobileMenu dictionary={dictionary}>
+              <Link
+                href={`/${locale}/blog` as Route}
+                className="flex items-center gap-3 rounded px-3 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-cyber-bg-1"
+              >
+                <BookOpen size={16} className="text-cyber-cyan" />
+                {dictionary.nav.blog}
+              </Link>
+              <Link
+                href={`/${locale}/portfolio` as Route}
+                className="flex items-center gap-3 rounded px-3 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-cyber-bg-1"
+              >
+                <User size={16} className="text-cyber-cyan" />
+                {dictionary.footer.portfolio}
+              </Link>
+              <LocaleSwitchLink
+                currentLocale={locale}
+                targetLocale={otherLocale}
+                className="flex items-center gap-3 rounded px-3 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-cyber-bg-1"
+              >
+                <Globe size={16} className="text-cyber-cyan" />
+                {dictionary.language.switchTo}
+              </LocaleSwitchLink>
+              <div className="border-t border-cyber-line pt-2">
+                <ThemeToggle dictionary={dictionary} />
+              </div>
+            </MobileMenu>
+          </div>
         </div>
       </nav>
       {tickerItems && tickerItems.length > 0 && (
