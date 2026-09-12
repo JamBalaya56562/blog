@@ -77,8 +77,5 @@
     "tailwindcss": "^4.3.3",
     "typescript": "^7.0.2",
     "unist-util-visit": "^5.1.0"
-  },
-  "trustedDependencies": [
-    "sharp"
-  ]
+  }
 }
