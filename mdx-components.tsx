@@ -12,8 +12,6 @@ function headingId(props: React.HTMLAttributes<HTMLHeadingElement>) {
 
 const components: MDXComponents = {
   blockquote: (props) => <blockquote className="my-4" {...props} />,
-  // Capitalised because it is written as a JSX tag in the MDX source, not
-  // produced by markdown syntax the way the lowercase entries here are.
   CodeTabs,
   code: (props) => <code className="rounded" {...props} />,
   h1: (props) => <h1 className="text-4xl font-bold" {...props} />,
@@ -44,19 +42,7 @@ const components: MDXComponents = {
     <ol className="my-4 ml-6 list-decimal text-foreground" {...props} />
   ),
   p: (props) => <p className="my-4 leading-7 text-foreground" {...props} />,
-  /**
-   * `title` arrives from `parseMetaString` in `lib/highlight.ts`, which reads a
-   * `title="..."` written after the language on the fence. Taking it off here
-   * rather than leaving it on the `pre` is also what stops it from becoming a
-   * browser tooltip. When one is there the block gets a filename strip above
-   * it, and the frame moves to the wrapper so the two read as one panel — the
-   * same shape `.pp-tabs` uses.
-   */
   pre: ({ className, title, ...props }) => {
-    // The corner radius belongs to whichever element draws the outer frame. A
-    // titled block is framed by its wrapper, and `rounded-lg` here would win
-    // over any stylesheet rule trying to undo it — Tailwind's utilities layer
-    // is ordered after the one those rules live in.
     const block = (
       <pre
         className={[title ? null : "rounded-lg", className]
@@ -75,10 +61,6 @@ const components: MDXComponents = {
       </div>
     )
   },
-  // The scroller is the wrapper's job rather than the table's: `overflow-x` on
-  // a `table` element does nothing without also making it a block, which throws
-  // away the column sizing that makes a table a table. A table narrow enough to
-  // fit is unaffected.
   table: (props) => (
     <div className="my-4 overflow-x-auto">
       <table className="text-foreground" {...props} />
