@@ -75,11 +75,8 @@ AWS the credentials come from the Lambda execution role.
 
 ### 4. Develop the app
 
-```bash
-bun dev
-```
-
-Or let [pitchfork](https://pitchfork.jdx.dev/) run the database alongside it:
+[pitchfork](https://pitchfork.jdx.dev/) runs the database and the dev server
+together, in the background:
 
 ```bash
 # Start DynamoDB Local, then the dev server once the table is ready
@@ -94,7 +91,19 @@ pitchfork stop dev db
 ```
 
 The `dev` daemon depends on `db`, so it waits for the table rather than racing
-it. Stopping `db` stops the container.
+it. Stopping `db` stops the container. This is also the server the committed
+`.claude/launch.json` attaches the Claude Code browser preview to; it starts
+nothing of its own.
+
+To run the dev server in the foreground instead, start the database first and
+then:
+
+```bash
+bun dev
+```
+
+Every page waits on the database, so `bun dev` against a stopped container
+stalls rather than fails.
 
 ### 5. Test the app
 
