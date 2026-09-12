@@ -754,6 +754,31 @@
     font-family: var(--blog-font-mono);
     font-size: 0.95em;
   }
+  /* GitHub-style alerts (`> [!NOTE]` and friends), tagged by
+     lib/remark-alerts.ts. No vertical padding of its own: the paragraphs
+     inside keep the `my-4` the `p` component gives them, and that is the
+     panel's inner spacing, so nothing here fights a utility. */
+  .prose-cyber .pp-alert {
+    --pp-alert-accent: var(--cyber-cyan);
+    border: 1px solid var(--cyber-line);
+    border-left: 3px solid var(--pp-alert-accent);
+    background: color-mix(in srgb, var(--pp-alert-accent) 6%, transparent);
+    padding: 0 16px;
+  }
+  .prose-cyber .pp-alert[data-alert="important"],
+  .prose-cyber .pp-alert[data-alert="warning"] {
+    --pp-alert-accent: var(--cyber-amber);
+  }
+  .prose-cyber .pp-alert[data-alert="caution"] {
+    --pp-alert-accent: var(--cyber-red);
+  }
+  .prose-cyber .pp-alert-label {
+    padding-top: 12px;
+    font-family: var(--blog-font-mono);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    color: var(--pp-alert-accent);
+  }
   .prose-cyber ul,
   .prose-cyber ol {
     padding-left: 1.4em;

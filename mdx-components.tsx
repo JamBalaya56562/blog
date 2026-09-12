@@ -4,6 +4,10 @@ import { resolveImagePath } from "@/app/api/images/[...path]/route"
 import { CodeTabs } from "@/components/code-tabs"
 import { createIdGenerator, extractText } from "@/lib/toc"
 
+type BlockquoteProps = React.BlockquoteHTMLAttributes<HTMLQuoteElement> & {
+  "data-alert"?: string
+}
+
 let generateId = createIdGenerator()
 
 function headingId(props: React.HTMLAttributes<HTMLHeadingElement>) {
@@ -11,7 +15,38 @@ function headingId(props: React.HTMLAttributes<HTMLHeadingElement>) {
 }
 
 const components: MDXComponents = {
-  blockquote: (props) => <blockquote className="my-4" {...props} />,
+  blockquote: ({
+    "data-alert": alert,
+    children,
+    ...props
+  }: BlockquoteProps) => {
+    if (!alert) {
+      return (
+        <blockquote className="my-4" {...props}>
+          {children}
+        </blockquote>
+      )
+    }
+    // A GitHub-style alert, tagged by `lib/remark-alerts.ts`. An aside rather
+    // than a blockquote: the text is the author's own, set beside the flow,
+    // not something quoted from elsewhere.
+    return (
+      // The rest of the props go through — an `id` or `aria-*` set by another
+      // transform should survive — with the callout's own role, class and kind
+      // written last so they win. Cast because the props are typed for a
+      // quote element and the target is a plain one; the attributes are the
+      // same set.
+      <aside
+        {...(props as React.HTMLAttributes<HTMLElement>)}
+        role="note"
+        className="pp-alert my-4"
+        data-alert={alert}
+      >
+        <div className="pp-alert-label">◢ {alert.toUpperCase()}</div>
+        <div>{children}</div>
+      </aside>
+    )
+  },
   CodeTabs,
   code: (props) => <code className="rounded" {...props} />,
   h1: (props) => <h1 className="text-4xl font-bold" {...props} />,
