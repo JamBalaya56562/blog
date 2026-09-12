@@ -35,5 +35,5 @@ mise.local.toml
 *.tsbuildinfo
 next-env.d.ts
 
-# AI settings
-.claude
+# Claude Code keeps per-person permission grants here; launch.json is shared
+.claude/settings.local.json
