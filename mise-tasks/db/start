@@ -7,8 +7,8 @@ set -euo pipefail
 # job — `pitchfork start db` runs this same task as a daemon — so there is no
 # second, detached code path to keep in step with this one.
 
-# shellcheck source=../../scripts/container-runtime.sh
-source scripts/container-runtime.sh
+# shellcheck source=runtime.sh
+source mise-tasks/db/runtime.sh
 
 runtime="$(resolve_runtime)"
 echo "Using container runtime: $runtime"
