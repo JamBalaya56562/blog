@@ -755,10 +755,10 @@
     font-size: 0.95em;
   }
   /* GitHub-style alerts (`> [!NOTE]` and friends), tagged by
-     lib/remark-alerts.ts — the "terminal panel" design: a clipped corner,
-     a header band with a glyph per kind, and a light that runs down the
-     left rail. No vertical padding of its own: the paragraphs inside keep
-     the `my-4` the `p` component gives them, and that is the panel's inner
+     lib/remark-alerts.ts — the "terminal panel" design: a header band
+     with a glyph per kind, and a light that runs down the left rail. No
+     vertical padding of its own: the paragraphs inside keep the `my-4` the
+     `p` component gives them, and that is the panel's inner
      spacing, so nothing here fights a utility. Colours come from the
      --cyber-* tokens only, so both themes are covered. */
   .prose-cyber .pp-alert {
@@ -775,7 +775,6 @@
       color-mix(in srgb, var(--pp-alert-accent) 11%, transparent),
       color-mix(in srgb, var(--pp-alert-accent) 3%, transparent)
     );
-    clip-path: polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 0 100%);
     transition:
       box-shadow 0.3s ease,
       transform 0.3s ease;
