@@ -49,7 +49,10 @@ export function extractToc(markdown: string): TocItem[] {
   const items: TocItem[] = []
   const generateId = createIdGenerator()
   for (const match of markdown.matchAll(/^(#{2,3})\s+(.+)$/gm)) {
-    const text = match[2].trim()
+    // The index shows the heading as it renders, so inline code loses its
+    // backticks. The id is unaffected: `slugify` drops them either way, and
+    // the heading in the page is slugified from its rendered text.
+    const text = match[2].trim().replace(/`([^`]*)`/g, "$1")
     items.push({ id: generateId(text), level: match[1].length, text })
   }
   return items

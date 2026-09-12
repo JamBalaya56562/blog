@@ -42,6 +42,17 @@ describe("extractToc", () => {
     ] satisfies TocItem[])
   })
 
+  // A heading like "### `--dry-run`" renders without its backticks, and the
+  // index should read the same; the id matches the page either way because
+  // slugify drops the backticks itself.
+  test("inline code in a heading loses its backticks in the index", () => {
+    const md = "### `--dry-run`\n## `latest` を書くかどうか"
+    expect(extractToc(md)).toEqual([
+      { id: "--dry-run", level: 3, text: "--dry-run" },
+      { id: "latest-を書くかどうか", level: 2, text: "latest を書くかどうか" },
+    ])
+  })
+
   test("ignores h1 and h4+", () => {
     const md = "# Title\n## Included\n#### Ignored"
     expect(extractToc(md)).toEqual([
