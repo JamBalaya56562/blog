@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test"
-import { render } from "@testing-library/react"
+import { act, fireEvent, render } from "@testing-library/react"
 import type { TocItem } from "@/lib/toc"
 
 const { TableOfContents } = await import("@/components/table-of-contents")
@@ -36,14 +36,44 @@ describe("TableOfContents", () => {
     const { container } = render(<TableOfContents items={items} title="TOC" />)
     const nav = container.querySelector("nav")
     expect(nav?.className).toContain("hidden")
-    // Cyber redesign uses `xl:block` since the floating TOC needs more
-    // horizontal room around the centered article column.
-    expect(nav?.className).toContain("xl:block")
+    // The floating panel needs the horizontal room around the centred article
+    // column, so it appears from `xl` — as a flex column, since the list
+    // inside it is the part that scrolls.
+    expect(nav?.className).toContain("xl:flex")
   })
 
   test("renders the provided title", () => {
     const { container } = render(<TableOfContents items={items} title="目次" />)
     const heading = container.querySelector("p")
     expect(heading?.textContent).toBe("目次")
+  })
+})
+
+describe("TableOfContents scrollbar", () => {
+  // The list hides its scrollbar at rest and shows it only while moving:
+  // `data-scrolling` goes on with the first scroll event and off 700ms after
+  // the last one, and the stylesheet keys `scrollbar-width` off it.
+  test("the list is marked scrolling only briefly after a scroll", async () => {
+    const { container } = render(<TableOfContents items={items} title="TOC" />)
+    const list = container.querySelector("ul")
+    if (!list) {
+      throw new Error("no list rendered")
+    }
+    expect(list.dataset.scrolling).toBeUndefined()
+
+    fireEvent.scroll(list)
+    expect(list.dataset.scrolling).toBe("true")
+
+    await act(() => new Promise((resolve) => setTimeout(resolve, 750)))
+    expect(list.dataset.scrolling).toBeUndefined()
+  })
+
+  test("the list is the scroll container, capped by the panel", () => {
+    const { container } = render(<TableOfContents items={items} title="TOC" />)
+    const nav = container.querySelector("nav")
+    const list = container.querySelector("ul")
+    expect(nav?.className).toContain("max-h-[calc(100vh-10rem)]")
+    expect(list?.className).toContain("overflow-y-auto")
+    expect(list?.className).toContain("pp-toc-list")
   })
 })

@@ -375,6 +375,16 @@
   .pp-search-status[data-searching] {
     animation: hudPulse 1s ease-in-out infinite;
   }
+  /* table-of-contents list: the scrollbar is a hint that there is more,
+     shown only while the list moves; `data-scrolling` is set by the
+     component for 700ms after each scroll event */
+  .pp-toc-list {
+    scrollbar-width: none;
+  }
+  .pp-toc-list[data-scrolling] {
+    scrollbar-width: thin;
+    scrollbar-color: var(--cyber-line-hi) transparent;
+  }
 
   /* card hover lift */
   .pp-card-hover {
