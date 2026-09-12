@@ -1,3 +1,5 @@
+#!/usr/bin/env bun
+//MISE description="Dump every page view row as JSON"
 /**
  * Dumps every page view row as JSON. Replaces `drizzle-kit studio` as the way
  * to look at what is actually stored.

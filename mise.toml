@@ -21,10 +21,6 @@ run = [
   "mise lint:emphasis",
 ]
 
-[tasks."lint:emphasis"]
-description = "Fail on emphasis markers that never became emphasis"
-run = "bun run scripts/lint-emphasis.ts"
-
 [tasks."lint:tf"]
 description = "Format the OpenTofu configuration"
 run = "tofu fmt -recursive infra"
@@ -36,14 +32,6 @@ run = "rumdl check --fix ."
 [tasks.update]
 description = "Update bun dependencies and reinstall"
 run = ["bun update", "mise deps"]
-
-[tasks."db:push"]
-description = "Create the DynamoDB table if it does not exist"
-run = "bun run scripts/db-push.ts"
-
-[tasks."db:scan"]
-description = "Dump every page view row as JSON"
-run = "bun run scripts/db-scan.ts"
 
 [tasks."db:setup"]
 description = "Start DynamoDB Local in the background and create the table"

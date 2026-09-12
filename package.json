@@ -28,8 +28,6 @@
   "type": "module",
   "scripts": {
     "build": "next build",
-    "db:push": "bun run scripts/db-push.ts",
-    "db:scan": "bun run scripts/db-scan.ts",
     "dev": "next dev",
     "dev-win": "WATCHPACK_POLLING=true next dev",
     "format": "biome format --write",

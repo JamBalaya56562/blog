@@ -1,4 +1,5 @@
 #!/usr/bin/env bun
+//MISE description="Fail on emphasis markers that never became emphasis"
 /**
  * Fail on emphasis markers that never became emphasis.
  *
@@ -24,7 +25,7 @@ import { gfmFromMarkdown } from "mdast-util-gfm"
 import { gfm } from "micromark-extension-gfm"
 import { visit } from "unist-util-visit"
 
-const ROOT = join(import.meta.dir, "..")
+const ROOT = join(import.meta.dir, "..", "..")
 const CONTENT = join(ROOT, "content")
 
 type Finding = { file: string; line: number; text: string }
