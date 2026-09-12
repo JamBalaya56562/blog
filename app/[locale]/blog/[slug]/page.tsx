@@ -28,6 +28,7 @@ import type { Locale } from "@/lib/i18n/config"
 import { isValidLocale, locales } from "@/lib/i18n/config"
 import { getDictionary } from "@/lib/i18n/get-dictionary"
 import { openGraphSite } from "@/lib/metadata"
+import { remarkAlerts } from "@/lib/remark-alerts"
 import { getBlogPostPath } from "@/lib/routes"
 import { localeAlternates, SITE_AUTHOR } from "@/lib/site"
 import { blogPostingJsonLd, postBreadcrumb } from "@/lib/structured-data"
@@ -246,7 +247,7 @@ async function BlogPostContent({
               options={{
                 mdxOptions: {
                   rehypePlugins: [await rehypeHighlight()],
-                  remarkPlugins: [remarkGfm],
+                  remarkPlugins: [remarkGfm, remarkAlerts],
                 },
               }}
               components={useMDXComponents()}
