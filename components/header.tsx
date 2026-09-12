@@ -56,14 +56,18 @@ export function Header({ locale, dictionary, tickerItems }: HeaderProps) {
             {`JA / EN`}
           </LocaleSwitchLink>
           <ThemeToggle dictionary={dictionary} />
+          {/* Between md and xl the tabs are back but the floating index is
+              not yet, so the index button rides at the end of this cluster.
+              It renders nothing off the post page. */}
+          <MobileIndex dictionary={dictionary} />
         </div>
 
-        <div className="flex items-center gap-1">
-          {/* The index button sits beside the hamburger on phones and stands
-              alone between md and xl, where the tabs are back but the floating
-              index is not yet. It renders nothing off the post page. */}
+        {/* Below md: the index button beside the hamburger. This cluster is
+            hidden from md, so it never becomes a third flex item that would
+            push the tabs into the middle of the bar. */}
+        <div className="flex items-center gap-1 md:hidden">
           <MobileIndex dictionary={dictionary} />
-          <div className="flex items-center md:hidden">
+          <div className="flex items-center">
             <MobileMenu dictionary={dictionary}>
               <Link
                 href={`/${locale}/blog` as Route}
