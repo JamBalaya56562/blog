@@ -1,10 +1,14 @@
+#!/usr/bin/env bun
+//MISE description="Create the DynamoDB table if it does not exist"
 /**
  * Creates the page views table if it does not exist. Replaces `drizzle-kit push`.
  *
  * The same script provisions the local container and the real AWS table — only
  * the environment differs. With `DYNAMODB_ENDPOINT` set it talks to the local
  * container; without it, it uses the machine's normal AWS credential chain, so
- * `AWS_PROFILE=... bun run scripts/db-push.ts` creates the production table.
+ * `DYNAMODB_ENDPOINT= AWS_PROFILE=... mise run db:push` creates the production
+ * table: the empty override reaches the script as an empty string, which the
+ * client config treats as "no endpoint".
  */
 import {
   CreateTableCommand,
