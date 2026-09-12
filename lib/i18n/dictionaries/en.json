@@ -29,6 +29,10 @@
     "updatedOn": "Updated on",
     "views": "VIEWS"
   },
+  "code": {
+    "copied": "Copied",
+    "copy": "Copy code"
+  },
   "error": {
     "description": "AN UNEXPECTED FAULT OCCURRED WHILE RENDERING THIS DISPATCH. THE UPLINK MAY RECOVER ON RETRY.",
     "fault": "SYSTEM FAULT",

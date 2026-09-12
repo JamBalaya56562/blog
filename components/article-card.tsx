@@ -96,11 +96,11 @@ export function ArticleCard({
       <div className="p-4">
         <Morph enabled={morph} name={`post-title-${post.slug}`}>
           <h3
-            className={`card-title pp-display font-bold leading-tight text-foreground transition-colors ${
+            className={`card-title pp-display font-bold leading-tight text-foreground ${
               isLarge ? "text-xl md:text-2xl" : "text-base"
             }`}
           >
-            {post.frontmatter.title}
+            <span className="pp-card-title">{post.frontmatter.title}</span>
           </h3>
         </Morph>
         {post.frontmatter.description && (

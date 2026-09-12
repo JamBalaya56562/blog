@@ -2,6 +2,7 @@ import type { MDXComponents } from "mdx/types"
 import type React from "react"
 import { resolveImagePath } from "@/app/api/images/[...path]/route"
 import { CodeTabs } from "@/components/code-tabs"
+import { CopyButton } from "@/components/copy-button"
 import { createIdGenerator, extractText } from "@/lib/toc"
 
 type BlockquoteProps = React.BlockquoteHTMLAttributes<HTMLQuoteElement> & {
@@ -86,12 +87,21 @@ const components: MDXComponents = {
         {...props}
       />
     )
+    // The copy button reads the `<pre>` next to it, so both shapes wrap the
+    // block in something for it to sit in; the titled one already had a
+    // wrapper, and the button moves up into the title strip there.
     if (!title) {
-      return block
+      return (
+        <div className="pp-copy-wrap">
+          <CopyButton />
+          {block}
+        </div>
+      )
     }
     return (
-      <div className="pp-code-titled">
+      <div className="pp-code-titled pp-copy-wrap">
         <div className="pp-code-title">{title}</div>
+        <CopyButton />
         {block}
       </div>
     )
