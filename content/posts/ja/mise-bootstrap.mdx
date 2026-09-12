@@ -1,0 +1,430 @@
+---
+title: mise bootstrap でマシンをセットアップする
+date: "2026-09-12"
+updated: "2026-09-12"
+description: パッケージ・dotfiles・ツール・仕上げのタスクを 1 つの設定ファイルに宣言し、mise bootstrap 1 回で新しいマシンを揃える方法
+image: /thumbnails/mise-bootstrap.avif
+tags:
+  - mise
+  - cli
+  - devtools
+---
+
+## mise bootstrap とは
+
+`mise bootstrap` は、**マシン 1 台のセットアップ手順を設定ファイルに宣言しておき、コマンド 1 回でその状態に揃える機能**です。OS のパッケージ、dotfiles、シェルの有効化、開発ツール、最後に流す仕上げのタスクまでを、1 つの `config.toml` が受け持ちます。
+
+[mise 入門ガイド](/ja/blog/getting-started-with-mise)では、ツールのバージョンを「打った人ではなくディレクトリに結びつける」と書きました。bootstrap はその発想を**マシン全体**に広げたものです。プロジェクトに `mise.toml` があれば `mise install` で揃うように、マシンに設定があれば `mise bootstrap` で揃います。
+
+> [!NOTE]
+> 名前の似た `mise generate bootstrap` は別の機能です。mise 本体をダウンロードして実行するスクリプトを生成するもので、この機能との混同を避けるために `mise generate install-script` に改名されました。
+
+## 何が困っていたか
+
+新しいマシンを用意するたびに、同じことをしていました。
+
+- パッケージマネージャで入れるものを、前のマシンの記憶と `history` から拾い直す
+- dotfiles のリポジトリを clone して、リンクを張るスクリプトを走らせる
+- シェルの設定に `mise activate` を足す
+- そこでようやく `mise install`
+
+手順はどこかにメモしてあります。ただ、そのメモは前回のセットアップ以降に足したものを知りません。抜けに気付くのは、たいてい何かが動かなくなってからです。
+
+Ansible や Nix で解決できる問題ですが、個人の作業マシン 2〜3 台のために持ち込むには大きすぎると感じていました。すでに mise を使っているなら、そこに書けるのが一番軽いです。
+
+## 最小の設定
+
+書く場所は、プロジェクトの `mise.toml` ではなく**ユーザーの設定ファイル**です。マシンのセットアップはプロジェクトではなくその人のものなので、`~/.config/mise/config.toml` に置きます。
+
+```toml title="~/.config/mise/config.toml"
+[bootstrap.packages]
+"winget:BurntSushi.ripgrep.MSVC" = { os = "windows" }
+"winget:Git.Git" = { os = "windows" }
+
+[tools]
+node = "22"
+
+[tasks.bootstrap]
+run = "node --version"
+```
+
+3 つの節があります。
+
+- **`[bootstrap.packages]`** — OS のパッケージマネージャで入れるもの。`マネージャ名:パッケージ名` の形で書き、`os` で対象を絞れます
+- **`[tools]`** — いつもの mise のツール。ここは何も変わりません
+- **`[tasks.bootstrap]`** — 全部が終わったあとに走るタスク。動作確認や、宣言では書けない仕上げに使います
+
+`[env]` を含む設定と同じで、初回は `mise trust` で承認します。
+
+## 実行する前に、何が起きるかを見る
+
+いきなり走らせる必要はありません。3 つの見方があります。
+
+### `--dry-run`
+
+実際に流れる順番で、実行せずに表示します。
+
+```bash
+mise bootstrap --dry-run
+```
+
+```text
+mise bootstrap: system packages
+mise winget: 1 package(s) already installed
+winget install --id BurntSushi.ripgrep.MSVC --exact --silent --accept-source-agreements --accept-package-agreements --disable-interactivity
+mise bootstrap: tools
+mise all tools are installed
+mise bootstrap: running `bootstrap` task
+[bootstrap] $ node --version
+```
+
+Git は入っていると判定され、ripgrep だけが `winget install` の対象になっています。**実際に打たれるコマンドがそのまま出る**ので、`--silent` や `--accept-*` のようなフラグの扱いも確認できます。
+
+### `plan`
+
+宣言したリソースが、今の状態からどう変わるかを表にします。
+
+```bash
+mise bootstrap plan
+```
+
+```text
+create     package:winget:BurntSushi.ripgrep.MSVC     missing               installed (any version)
+unchanged  package:winget:Git.Git                     installed (2.55.0.3)  installed (any version)
+Plan: 1 create, 0 update, 1 unchanged, 0 remove, 0 unknown
+```
+
+[OpenTofu](https://opentofu.org/) や Terraform の `plan` と同じ読み方です。左から「操作」「リソース」「現在」「望む状態」で、最後に集計が出ます。
+
+### `status`
+
+いま何がどうなっているかの一覧です。
+
+```bash
+mise bootstrap status
+```
+
+```text
+packages  winget:BurntSushi.ripgrep.MSVC            missing
+packages  winget:Git.Git                  2.55.0.3  installed
+tools     node@22                         22.23.2   installed
+```
+
+## 実行する
+
+```bash
+mise bootstrap
+```
+
+手元の ripgrep は winget 以外で入れてあったので、この記事ではパッケージの節を飛ばして流しました。飛ばし方は次の節で説明します。
+
+```bash
+mise bootstrap --skip packages
+```
+
+```text
+mise bootstrap: dotfiles
+mise files: all files are applied
+mise bootstrap: tools
+mise ⇢ node@22  71ms · already installed
+mise all tools are installed
+mise bootstrap: running `bootstrap` task
+[bootstrap] $ node --version
+v22.23.2
+```
+
+同じコマンドをもう一度打つと、揃っているものは流れていくだけです。**変わっていないリソースは飛ばされます**。
+
+> [!IMPORTANT]
+> `[tasks.bootstrap]` と各種の hook は、リソースと違って毎回走ります。そこに書くコマンドは、繰り返しても安全なものにしてください。
+
+実行のたびに、前後の状態がチェックポイントとして記録されます。
+
+```bash
+mise bootstrap dotfiles history
+```
+
+```text
+12  2026-09-12 16:52  bootstrap           bootstrap
+11  2026-09-12 16:52  bootstrap-before    before bootstrap
+10  2026-09-12 16:52  bootstrap           bootstrap
+9   2026-09-12 16:52  bootstrap-before    before bootstrap
+8   2026-09-12 16:51  bootstrap (failed)  bootstrap
+7   2026-09-12 16:51  bootstrap-before    before bootstrap
+```
+
+失敗した回も `(failed)` として残ります。この一覧は dotfiles の節で戻ってきます。
+
+## 順番は決まっている
+
+`mise bootstrap` は、宣言した節を決まった順で処理します。ざっくり言うと、**土台から順に、依存されるものが先**です。
+
+1. Linux のユーザーとグループ、パッケージマネージャのプラグイン
+2. パッケージ（`[bootstrap.packages]`）とその前後のファイル
+3. サービス、ファイアウォール、Docker Compose のプロジェクト
+4. Git リポジトリ、dotfiles
+5. シェルの有効化、macOS の defaults と LaunchAgent、Linux の user unit、ユーザー設定
+6. `[tools]` のツール
+7. パッケージマネージャ経由のパッケージ、ツールを必要とするサービス
+8. `[tasks.bootstrap]`、最後の hook
+
+![mise bootstrap が 8 つの段階を上から順に処理し、--only と --skip で一部だけを選べる図](mise-bootstrap-order.svg)
+
+パッケージが dotfiles より先で、`[tasks.bootstrap]` がいちばん後ろです。dotfiles が前提にするエディタやシェルは先に入っていて、仕上げのタスクを書く時点では宣言したものが全部使える、という順番だと読めます。
+
+一部だけ流したいときは `--only` と `--skip` があります。どちらも繰り返し指定でき、同時には使えません。
+
+```bash
+mise bootstrap --skip packages    # パッケージ以外を流す
+mise bootstrap --only tools       # ツールだけ
+```
+
+指定できる名前は `packages` `dotfiles` `shell` `tools` `task` など、上の節の名前です。間違えるとエラーが候補を全部教えてくれます。
+
+## パッケージ
+
+`マネージャ名:パッケージ名` を書きます。マネージャ名は省略できません。同じ ripgrep でも、apt と brew と winget では名前が違うからです。
+
+```toml title="~/.config/mise/config.toml"
+[bootstrap.packages]
+"apt:ripgrep" = { os = "linux" }
+"brew:ripgrep" = { os = "macos" }
+"winget:BurntSushi.ripgrep.MSVC" = { os = "windows" }
+"brew-cask:font-jetbrains-mono" = { os = ["linux", "macos"] }
+"pacman:libreoffice-fresh" = { state = "absent" }
+```
+
+`os` で絞れば、1 つの設定ファイルを OS の違う複数のマシンで共有できます。`state = "absent"` は「入っていたら消す」です。
+
+対応しているマネージャは、apt / apk / dnf / pacman / aur / brew / brew-cask / flatpak / nix / mas / winget です。Windows の winget は `PATH` にあれば使われます。
+
+1 つ、挙動として知っておきたいのは **`"latest"` は「入っていればよい」という意味**だということです。すでに入っているパッケージを、実行のたびに最新へ上げることはしません。上げたいときは `mise bootstrap packages upgrade` を明示的に打ちます。マシンの状態を揃えるコマンドが、勝手に更新を始めないのは正しい設計だと思います。
+
+## dotfiles
+
+一番おもしろいのがここです。dotfiles をリンクするだけでなく、**変更の履歴を持ちます**。
+
+まず、今あるファイルを追跡対象にします。
+
+```bash
+mise bootstrap dotfiles track ~/.bashrc
+```
+
+```text
+mise history: saved baseline checkpoint 1
+mise dotfiles: tracking ~/.bashrc (declared in ~/.config/mise/config.toml)
+mise WARN  history: automatic capture is inactive: declare `[bootstrap.services.mise-history] builtin = "history-watch"` and run `mise bootstrap`; until then edits are saved by `mise bootstrap dotfiles save` or `mise bootstrap dotfiles watch --once`
+```
+
+ファイルはそのままで、**今の中身がチェックポイント 1 として保存され**、設定ファイルにこう足されます。
+
+```toml title="~/.config/mise/config.toml"
+[dotfiles]
+"~/.bashrc" = { mode = "track" }
+```
+
+ファイルを編集して、保存します。
+
+```bash
+echo 'alias gs="git status"' >> ~/.bashrc
+mise bootstrap dotfiles save ~/.bashrc
+```
+
+```text
+mise history: saved checkpoint 2: edited ~/.bashrc
+```
+
+履歴と差分が見られます。
+
+```bash
+mise bootstrap dotfiles history --path ~/.bashrc
+mise bootstrap dotfiles history diff 2 --path ~/.bashrc --patch
+```
+
+```text
+2  2026-09-12 16:50  save      edited ~/.bashrc
+1  2026-09-12 16:50  baseline  tracked ~/.bashrc
+```
+
+```diff
+@@ -1,2 +1,3 @@
+ export EDITOR=vim
+ alias ll="ls -la"
++alias gs="git status"
+```
+
+そして戻せます。
+
+```bash
+mise bootstrap dotfiles rollback ~/.bashrc
+```
+
+```text
+mise history: rolled back ~/.bashrc to checkpoint 1
+```
+
+`rollback` は「今のファイルと中身が違う、いちばん新しい保存」を選びます。設定ファイルをいじって壊したとき、`git stash` の代わりに使える感覚です。
+
+![track でチェックポイント 1、編集して save でチェックポイント 2 が取られ、history diff で差分を見て rollback で 1 に戻す図](mise-bootstrap-dotfiles-history.svg)
+
+`track` したときの出力に `automatic capture is inactive` という WARN が出ていました。既定では、編集のたびに `save` を打たないとチェックポイントが取られない、という意味です。同じ WARN が案内しているとおり、変更を自動で拾うサービスを宣言すれば、この手間は無くなります。
+
+```toml title="~/.config/mise/config.toml"
+[bootstrap.services.mise-history]
+builtin = "history-watch"
+```
+
+Linux では systemd の user service、macOS では LaunchAgent、Windows ではタスクスケジューラのタスクとして登録されます。
+
+### リンク・コピー・テンプレート
+
+追跡ではなく、リポジトリにある dotfiles を配置する側の書き方です。
+
+```toml title="~/.config/mise/config.toml"
+[settings]
+dotfiles.root = "~/.dotfiles"
+
+[dotfiles]
+"~/.config/nvim" = { source = "nvim", mode = "symlink" }
+"~/.gitconfig" = { source = "gitconfig.tera", mode = "template" }
+"~/.zshrc/activate" = { block = 'eval "$(mise activate zsh)"' }
+```
+
+- **`symlink`**（既定）— リンクを張る。配置先で編集すればリポジトリ側が変わる
+- **`copy`** — コピーする。配置先を直接編集しても、次の実行で上書きされる
+- **`template`** — テンプレートを描画して書き出す。`{{ vars.email }}` のように、マシンごとの値を埋め込める
+- **`block` / `line`** — 既存のファイルの中に、マーカーで囲んだ一部分だけを管理する
+
+`source` を省くと `dotfiles.root` の下から、配置先と同じ相対パスで探します。`~/.zshrc` なら `~/.dotfiles/.zshrc` です。
+
+Windows では、シンボリックリンクに開発者モードが必要です。無ければ mise はコピーに切り替えます。ディレクトリのリンクはジャンクションになります。
+
+## シェルの有効化
+
+`mise activate` の 1 行を、シェルの設定ファイルに書く作業も宣言にできます。
+
+```toml title="~/.config/mise/config.toml"
+[bootstrap.mise_shell_activate]
+zprofile = "shims"
+zshrc = "activate"
+bashrc = "activate"
+fish = "activate"
+```
+
+書き込まれるのはマーカーで囲まれたブロックだけです。
+
+```bash
+# >>> mise:activate >>>
+eval "$(mise activate zsh)"
+# <<< mise:activate <<<
+```
+
+mise はこの範囲だけを書き換えるので、他の行には触りません。
+
+> [!WARNING]
+> **PowerShell はこの仕組みの対象外です。** Windows で使うなら、[入門ガイド](/ja/blog/getting-started-with-mise)に書いた `$PROFILE` への追記を、`[tasks.bootstrap]` か dotfiles の `block` で自分でやることになります。
+
+## 2 台目
+
+ここまでの設定を Git のリポジトリに置いておけば、次のマシンは 2 行で揃います。ここからは、まっさらな Debian のコンテナを 2 台目に見立てて試しました。
+
+```bash
+curl https://mise.run | sh
+mise bootstrap --adopt you/setup --yes
+```
+
+`--adopt` が何をするかは `--dry-run` が 1 行で教えてくれます。
+
+```text
+Would run: git clone /setup ~/.config/mise
+```
+
+**リポジトリそのものが `~/.config/mise` になります。** なので、リポジトリの中身は設定ディレクトリの形にしておきます。
+
+```text
+setup/
+  config.toml
+  dotfiles/
+    gitconfig
+```
+
+```toml title="config.toml"
+[bootstrap.packages]
+"apt:ripgrep" = { os = "linux" }
+
+[bootstrap.mise_shell_activate]
+bashrc = "activate"
+
+[dotfiles]
+"~/.gitconfig" = { source = "dotfiles/gitconfig", mode = "copy" }
+
+[tools]
+node = "22"
+
+[tasks.bootstrap]
+run = ["rg --version | head -1", "node --version"]
+```
+
+実行すると、上から順に流れます。
+
+```text
+Cloning into '/root/.config/mise'...
+mise bootstrap: system packages
+mise $ apt-get install -y -- ripgrep
+mise apt: installed ripgrep
+mise bootstrap: dotfiles
+mise files: copied ~/.config/mise/dotfiles/gitconfig to ~/.gitconfig
+mise bootstrap: shell activation
+mise edits: applied ~/.bashrc (block:activate)
+mise bootstrap: tools
+mise ✓ node@22.23.2  48.7s  node-v22.23.2-linux-x64.tar.gz
+mise bootstrap: running `bootstrap` task
+[bootstrap] $ rg --version | head -1
+ripgrep 14.1.1
+[bootstrap] $ node --version
+v22.23.2
+```
+
+> [!WARNING]
+> 最初の試行では `[dotfiles]` の `source` に `"gitconfig"` と書いて、`~/.config/mise/gitconfig` を探しに行って失敗しました。**相対パスの `source` は、設定ファイルのあるディレクトリ基準**です。`dotfiles.root` が効くのは `source` を省いたときだけなので、上の例では `"dotfiles/gitconfig"` と書いています。
+
+### 手元から SSH で流す
+
+SSH で届く先なら、向こうで何も打たずに済みます。
+
+```bash
+mise bootstrap remote --host devbox --adopt ~/src/setup --install-mise --yes
+```
+
+**向こうに mise が入っている必要はありません。** 手元の mise を転送して、向こうの `/tmp` で展開して動かします。`--adopt` にローカルのパスを渡すと、リポジトリは git bundle にして一緒に送られるので、向こうからリポジトリに届く必要もありません。
+
+```text
+mise bootstrap remote root@172.17.0.4 (root@172.17.0.4)
+2026.9.5 linux-x64 (2026-09-10)
+mise bootstrap: system packages
+mise apt: installed ripgrep
+...
+mise remote bootstrap completed on 1 target(s)
+```
+
+![手元の mise と ~/src/setup のリポジトリが SSH と git bundle で devbox に送られ、--adopt で ~/.config/mise に、--install-mise で ~/.local/bin/mise に置かれる図](mise-bootstrap-remote.svg)
+
+フラグを 2 つ付けているのには、それぞれ踏んだ理由があります。
+
+- **`--install-mise`** — 付けないと、転送した mise は終了後に消えます。ところが `[bootstrap.mise_shell_activate]` が `.bashrc` に書いた `eval "$(mise activate bash)"` は残るので、次にシェルを開いた瞬間から `mise: command not found` が出続けます。付ければ `~/.local/bin/mise` に残ります（`~/.local/bin` を `PATH` に通す作業は、`curl | sh` で入れたときと同じく自分でやります）
+- **`--adopt`** — `--source` というフラグもあり、こちらはディレクトリを「プロジェクト」として送ります。`mise.toml` を置いた開発用のディレクトリを向こうに再現する用途で、`[tools]` はそのプロジェクトの中でしか効きません。試すと、`node` は入ったのに `No version is set for shim: node` になりました。マシンの設定を流したいなら `--adopt` です
+
+> [!NOTE]
+> Windows を対象にはできませんが、Windows から流すことはできます。ただし 2026.9.5 では `ssh.exe` が `PATH` にあっても `required command 'ssh' not found` で止まる不具合があり、修正は取り込み済みです。次のリリース以降で使えるようになる見込みです。
+
+## まとめ
+
+- `mise bootstrap` は、マシンのセットアップを `~/.config/mise/config.toml` に宣言して 1 回で揃える。プロジェクトの `mise.toml` と同じ発想をマシンに広げたもの
+- 走らせる前に `--dry-run` / `plan` / `status` で何が起きるかを見られる。`plan` は Terraform の `plan` と同じ読み方
+- 2 回目は変わっていないものを飛ばす。`[tasks.bootstrap]` だけは毎回走るので、繰り返せる内容にする
+- パッケージの `"latest"` は「入っていればよい」。更新は `packages upgrade` で明示的に
+- dotfiles は `track` するだけでチェックポイントが取れ、`history` と `rollback` で戻せる
+- 2 台目は `--adopt` でリポジトリを `~/.config/mise` として clone する。SSH 先には `remote --adopt --install-mise` で、向こうに mise が無くても流せる
+- Windows では PowerShell の有効化が対象外で、remote の対象にもなれない
+
+マシンのセットアップは、やり直す機会が少ないぶん手順が風化しやすい作業です。設定ファイルに書いて `--dry-run` で読めるようにしておけば、少なくとも「前回何をしたか」を思い出す作業は無くなります。

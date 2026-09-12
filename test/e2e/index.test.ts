@@ -84,7 +84,7 @@ test.describe("Blog list page", () => {
   test("lists all English posts", async ({ page }) => {
     await page.goto("/en/blog")
     await expect(page.getByRole("heading", { name: /^Blog/ })).toBeVisible()
-    await expect(page.locator("a[href*='/en/blog/']")).toHaveCount(3)
+    await expect(page.locator("a[href*='/en/blog/']")).toHaveCount(4)
   })
 
   test("filters posts by tag", async ({ page }) => {
@@ -96,7 +96,7 @@ test.describe("Blog list page", () => {
     await expect(page.locator("a[href*='/en/blog/']")).toHaveCount(0)
 
     await page.goto("/en/blog?tag=mise")
-    await expect(page.locator("a[href*='/en/blog/']")).toHaveCount(3)
+    await expect(page.locator("a[href*='/en/blog/']")).toHaveCount(4)
     // Each post row that has the "mise" tag also renders an active TagLink, so
     // multiple `[data-active="true"]` elements exist on the page — scope to the
     // first one (the top filter bar chip).
@@ -358,7 +358,7 @@ test.describe("Japanese locale", () => {
     await page.goto("/ja/blog")
     await expect(page.getByRole("heading", { name: /^ブログ/ })).toBeVisible()
     // Every post is translated, so this matches the English list above.
-    await expect(page.locator("a[href*='/ja/blog/']")).toHaveCount(3)
+    await expect(page.locator("a[href*='/ja/blog/']")).toHaveCount(4)
   })
 })
 
