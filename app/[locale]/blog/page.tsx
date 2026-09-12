@@ -110,6 +110,7 @@ async function BlogListContent({
             <SearchInput
               placeholder={dictionary.blog.searchPlaceholder}
               label={dictionary.blog.searchLabel}
+              searchingLabel={dictionary.blog.searching}
               basePath={`/${locale}/blog`}
             />
           </Suspense>

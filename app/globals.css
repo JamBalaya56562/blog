@@ -359,6 +359,22 @@
   .pp-input::placeholder {
     color: var(--cyber-dimmer);
   }
+  /* search-in-progress readout inside the input, over its right padding */
+  .pp-search-status {
+    position: absolute;
+    right: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+    font-family: var(--blog-font-mono);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--cyber-cyan);
+  }
+  .pp-search-status[data-searching] {
+    animation: hudPulse 1s ease-in-out infinite;
+  }
 
   /* card hover lift */
   .pp-card-hover {
@@ -866,6 +882,7 @@
   .pp-noise,
   .pp-scan-sweep,
   .pp-pulse,
+  .pp-search-status[data-searching],
   .pp-marquee-track,
   .pp-card-sweep,
   .animate-shimmer {
