@@ -3,32 +3,8 @@ bun = "latest"
 opentofu = "latest"
 pitchfork = "latest"
 rumdl = "latest"
-
-# Not the registry's `ffmpeg`, which resolves to conda and spends nine minutes
-# unpacking a dependency tree that includes tzdata. This is BtbN's prebuilt
-# Windows binary: one archive, under two minutes, and it carries libwebp_anim,
-# which is the encoder the thumbnails need.
-#
-# Pinned rather than `latest` because these are dated master builds, not
-# releases — `latest` would mean a fresh multi-hundred-megabyte download
-# whenever BtbN publishes, which is most days.
 "github:BtbN/FFmpeg-Builds" = { version = "autobuild-2026-09-08-23-15", exe = "ffmpeg" }
 
-# Development defaults for the local DynamoDB container, replacing the generated
-# `.env`. mise is activated in the shell, so these reach a bare `bun dev` and a
-# hand-run `mise run db:push` alike, and the values are dev-only defaults rather
-# than anything worth keeping out of the repository — no AWS credentials are
-# involved either locally or on Lambda.
-#
-# The endpoint is one value rather than a host and a port assembled here. A
-# derived value is only as good as the order it is derived in: `mise.local.toml`
-# is merged after this file, so a port overridden there would land after the
-# endpoint had already been rendered from the old one, pointing the clients at
-# 8000 while the container published 9000. `db:start` reads the port back out of
-# the endpoint instead, which cannot disagree with it.
-#
-# Each value keeps its own default, so `DYNAMODB_ENDPOINT=... bun dev` works for
-# one command and `mise.local.toml` overrides it for one machine.
 [env]
 AWS_REGION = "ap-northeast-1"
 DYNAMODB_ENDPOINT = "{{ env.DYNAMODB_ENDPOINT | default(value='http://localhost:8000') }}"
@@ -70,10 +46,6 @@ description = "Dump every page view row as JSON"
 run = "bun run scripts/db-scan.ts"
 
 [tasks."db:setup"]
-# db:start runs in the foreground and never returns, so it cannot be a step in a
-# list of them. Backgrounding belongs to the supervisor: `pitchfork start db`
-# runs that same task as a daemon and returns once its readiness check — which
-# is `db:push` — has created the table.
 description = "Start DynamoDB Local in the background and create the table"
 run = "pitchfork start db"
 

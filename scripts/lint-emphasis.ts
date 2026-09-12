@@ -2,25 +2,20 @@
 /**
  * Fail on emphasis markers that never became emphasis.
  *
- * CommonMark will not let a `**` close a run when the character before it is
- * punctuation and the character after it is neither whitespace nor punctuation.
- * English prose almost never hits this, because a sentence ends with a period
- * and then a space. Japanese does not put a space after 。 or 、, so writing
+ * CommonMark will not let `**` close a run when it follows punctuation and is
+ * followed by a letter, so this ships two literal asterisk pairs:
  *
- *     **9 分経っても終わりませんでした。**ログにはこう出ていました。
+ *     **It never finished.**The log said this.
  *
- * ships two literal asterisk pairs to the reader. It looks correct in an editor
- * and only shows up on the rendered page, which is how two of them reached this
- * blog unnoticed. The fix is to leave the punctuation outside the emphasis:
+ * English prose puts a space after a period and rarely hits it. Japanese puts
+ * nothing after 。 or 、, so it hits constantly, and the page is the only place
+ * it shows — two of these reached the blog unnoticed. The fix is to close the
+ * run before the punctuation: `**It never finished**.`
  *
- *     **9 分経っても終わりませんでした**。ログにはこう出ていました。
- *
- * Rather than reimplement the flanking rules, this parses each file with the
- * same markdown parser the site renders with and looks for asterisks left in
- * `text` nodes. A marker that became emphasis is a node type, not a character,
- * so anything still sitting in the text is a marker that did not close.
- *
- * An asterisk meant to be shown literally should be escaped: `\*`.
+ * Rather than reimplement the flanking rules, each file is parsed with the
+ * parser the site renders with. A marker that became emphasis is a node, not
+ * a character, so any asterisk still inside a `text` node is one that did not
+ * close. A literal asterisk should be escaped as `\*`.
  */
 import { readdirSync, readFileSync } from "node:fs"
 import { extname, join, relative } from "node:path"
@@ -44,10 +39,7 @@ function markdownFiles(dir: string): string[] {
   })
 }
 
-/**
- * Blank out the YAML frontmatter rather than removing it, so the line numbers
- * of everything below stay the ones the author sees in their editor.
- */
+// Blanked rather than removed so line numbers below it match the editor's.
 function blankFrontmatter(source: string): string {
   const lines = source.split("\n")
   if (lines[0]?.trim() !== "---") {
@@ -63,10 +55,9 @@ function blankFrontmatter(source: string): string {
 const findings: Finding[] = []
 
 for (const file of markdownFiles(CONTENT)) {
-  // An escaped asterisk is deliberate and parses to a text node holding a bare
-  // `*`, which is indistinguishable from a marker that failed to close. Dropping
-  // the escapes first leaves only the ones worth reporting; it removes two
-  // characters from within a line, so the line numbering is unaffected.
+  // An escaped asterisk parses to the same bare `*` as a failed marker, so the
+  // escapes are dropped first. Removing characters within a line keeps the
+  // line numbering intact.
   const source = blankFrontmatter(readFileSync(file, "utf8")).replace(
     /\\\*/g,
     "",
@@ -103,7 +94,7 @@ for (const { file, line, text } of findings) {
 }
 console.error(
   "\nCommonMark will not close emphasis when the marker follows punctuation " +
-    "and is followed by a letter.\nMove the punctuation outside — " +
-    "`**〜でした**。続き` — or escape a literal asterisk as \\*.",
+    "and is followed by a letter.\nClose the run before the punctuation — " +
+    "`**text**.` rather than `**text.**` — or escape a literal asterisk as \\*.",
 )
 process.exit(1)
