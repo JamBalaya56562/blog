@@ -253,8 +253,11 @@ where the script sits. If it reads another file relative to its own location, as
 `source "$(dirname "$0")/lib.sh"`, it will look in the wrong place and break. Make those paths
 relative to the project root.
 
-The other thing is that **every file under `mise-tasks/` shows up as a task**. A shared library that
-several scripts source belongs outside `mise-tasks/`.
+The other thing is that **every executable file under `mise-tasks/` registers as a task** — and on
+Windows, which has no executable bit, that means every file. A shared library that several scripts
+`source` is no exception, and left as it is it appears in the listing. To keep it next to the
+scripts that read it, put `#MISE hide=true` on its second line: it leaves the listing and shows up
+only under `mise tasks --hidden`.
 
 ## In closing
 

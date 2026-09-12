@@ -1,5 +1,10 @@
 #!/usr/bin/env bash
-# Resolves the container runtime to use, shared by the db:* scripts.
+#MISE hide=true
+# Sourced by the db:* tasks beside it, not run on its own. Everything under
+# mise-tasks/ registers as a task, so this one is hidden from the listing;
+# running it defines the functions below and exits.
+#
+# Resolves the container runtime to use.
 #
 # wslc is preferred because it is far lighter than Docker Desktop, and a single
 # DynamoDB Local container is simple enough to suit it. docker is the fallback.
