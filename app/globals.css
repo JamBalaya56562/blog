@@ -385,6 +385,263 @@
     scrollbar-width: thin;
     scrollbar-color: var(--cyber-line-hi) transparent;
   }
+  /* ---- header parts: hamburger, drop panel, menu items ------------------ */
+  .pp-burger {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    border: 1px solid transparent;
+    transition: border-color 0.25s ease;
+  }
+  .pp-burger:hover {
+    border-color: var(--cyber-line-hi);
+  }
+  .pp-burger span {
+    position: absolute;
+    width: 20px;
+    height: 2px;
+    background: var(--foreground);
+    transition:
+      transform 0.3s cubic-bezier(0.6, 0, 0.3, 1),
+      opacity 0.2s ease,
+      background 0.3s ease;
+  }
+  .pp-burger span:nth-child(1) {
+    transform: translateY(-6px);
+  }
+  .pp-burger span:nth-child(3) {
+    transform: translateY(6px);
+  }
+  .pp-burger[data-open="true"] span:nth-child(1) {
+    transform: rotate(45deg);
+    background: var(--cyber-cyan);
+  }
+  .pp-burger[data-open="true"] span:nth-child(2) {
+    opacity: 0;
+    transform: scaleX(0.2);
+  }
+  .pp-burger[data-open="true"] span:nth-child(3) {
+    transform: rotate(-45deg);
+    background: var(--cyber-cyan);
+  }
+  /* The panel spans the header, whose `sticky` makes it the containing block,
+     and opens by pulling its own clip-path down; closing runs it back up. */
+  .pp-mpanel {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 100%;
+    z-index: 50;
+    overflow: hidden;
+    background: var(--cyber-bg-1);
+    border-bottom: 1px solid var(--cyber-line);
+    box-shadow: 0 24px 60px -30px
+      color-mix(in srgb, var(--cyber-cyan) 50%, transparent);
+    animation: ppPanelIn 0.3s cubic-bezier(0.3, 0, 0.2, 1) both;
+  }
+  .pp-mpanel[data-closing="true"] {
+    animation: ppPanelOut 0.22s cubic-bezier(0.4, 0, 1, 1) both;
+  }
+  /* a scan line that runs down the panel once, as it opens */
+  .pp-mpanel-scan {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      var(--cyber-cyan),
+      transparent
+    );
+    animation: ppScanDown 0.7s ease-out both;
+  }
+  /* items arrive in sequence; the numbers are a counter, so they follow
+     however many items the header passes */
+  .pp-mitems {
+    counter-reset: pp-mi;
+  }
+  .pp-mi {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 13px 16px;
+    border-left: 2px solid transparent;
+    font-family: var(--blog-font-mono);
+    font-size: 13px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--foreground);
+    transition:
+      background 0.2s ease,
+      border-color 0.2s ease,
+      color 0.2s ease;
+  }
+  .pp-mi::before {
+    counter-increment: pp-mi;
+    content: counter(pp-mi, decimal-leading-zero);
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    color: var(--cyber-dimmer);
+    transition: color 0.2s ease;
+  }
+  .pp-mi:hover {
+    background: color-mix(in srgb, var(--cyber-cyan) 9%, transparent);
+    border-left-color: var(--cyber-cyan);
+    color: var(--cyber-cyan);
+  }
+  .pp-mi:hover::before {
+    color: var(--cyber-cyan);
+  }
+  .pp-mfoot {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 4px;
+    padding: 12px 16px 14px;
+    border-top: 1px solid color-mix(in srgb, var(--cyber-cyan) 14%, transparent);
+  }
+  .pp-mitems > .pp-mi,
+  .pp-mitems > .pp-mfoot {
+    animation: ppMiIn 0.34s cubic-bezier(0.2, 0.7, 0.3, 1) both;
+  }
+  .pp-mitems > .pp-mi:nth-child(1) {
+    animation-delay: 0.03s;
+  }
+  .pp-mitems > .pp-mi:nth-child(2) {
+    animation-delay: 0.07s;
+  }
+  .pp-mitems > .pp-mi:nth-child(3) {
+    animation-delay: 0.11s;
+  }
+  .pp-mitems > .pp-mi:nth-child(4) {
+    animation-delay: 0.15s;
+  }
+  .pp-mitems > .pp-mfoot {
+    animation-delay: 0.19s;
+  }
+
+  /* ---- pagination: scan line on the current cell, arrows that lean ------ */
+  .pp-cell {
+    position: relative;
+    overflow: hidden;
+  }
+  .pp-cell-cur::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 40%;
+    background: color-mix(in srgb, var(--cyber-bg-0) 22%, transparent);
+    animation: ppCellScan 2.2s linear infinite;
+  }
+  .pp-ar {
+    display: inline-block;
+    transition: transform 0.22s cubic-bezier(0.3, 0, 0.2, 1);
+  }
+  .pp-cell:hover .pp-ar-l {
+    transform: translateX(-4px);
+  }
+  .pp-cell:hover .pp-ar-r {
+    transform: translateX(4px);
+  }
+
+  /* ---- theme toggle: sun and moon turn over each other ------------------ */
+  .pp-tg {
+    position: relative;
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+  }
+  .pp-tg svg {
+    position: absolute;
+    transition:
+      transform 0.45s cubic-bezier(0.3, 0, 0.2, 1),
+      opacity 0.3s ease;
+  }
+  .pp-tg[data-theme="dark"] .pp-tg-sun {
+    transform: rotate(0) scale(1);
+    opacity: 1;
+  }
+  .pp-tg[data-theme="dark"] .pp-tg-moon {
+    transform: rotate(-90deg) scale(0.4);
+    opacity: 0;
+  }
+  .pp-tg[data-theme="light"] .pp-tg-sun {
+    transform: rotate(90deg) scale(0.4);
+    opacity: 0;
+  }
+  .pp-tg[data-theme="light"] .pp-tg-moon {
+    transform: rotate(0) scale(1);
+    opacity: 1;
+  }
+  .pp-tg-ripple {
+    position: absolute;
+    inset: 0;
+    border: 1px solid var(--cyber-cyan);
+    opacity: 0;
+  }
+  .pp-tg:active .pp-tg-ripple {
+    animation: ppRipple 0.5s ease-out;
+  }
+
+  /* ---- copy button on code blocks --------------------------------------- */
+  .pp-copy-wrap {
+    position: relative;
+  }
+  .pp-copy {
+    position: absolute;
+    right: 10px;
+    top: 10px;
+    z-index: 2;
+    display: grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    overflow: hidden;
+    border: 1px solid var(--cyber-line);
+    background: color-mix(in srgb, var(--cyber-bg-0) 80%, transparent);
+    color: var(--cyber-dim);
+    opacity: 0;
+    transition:
+      color 0.2s ease,
+      border-color 0.2s ease,
+      opacity 0.2s ease;
+  }
+  /* a titled block has a strip above the code; the button sits in it */
+  .pp-code-titled .pp-copy {
+    top: 6px;
+  }
+  /* quiet until the block is hovered or the button focused; always shown
+     where there is no hover to wait for */
+  .pp-copy-wrap:hover .pp-copy,
+  .pp-copy:focus-visible {
+    opacity: 1;
+  }
+  @media (hover: none) {
+    .pp-copy {
+      opacity: 1;
+    }
+  }
+  .pp-copy:hover {
+    color: var(--cyber-cyan);
+    border-color: var(--cyber-cyan);
+  }
+  .pp-copy[data-copied] {
+    opacity: 1;
+    color: var(--cyber-lime);
+    border-color: var(--cyber-lime);
+  }
+  .pp-copy[data-copied]::after {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    border: 1px solid var(--cyber-lime);
+    animation: ppRipple 0.6s ease-out;
+  }
 
   /* card hover lift */
   .pp-card-hover {
@@ -887,8 +1144,23 @@
     color: var(--cyber-cyan);
   }
 
-  /* Card title turns cyan on card hover, but reverts when a tag is hovered */
-  .card-title-hover:hover:not(:has(.tag-link:hover)) .card-title {
+  /* Card title turns cyan on card hover and an underline draws in from the
+     left; both revert when a tag inside the card is hovered instead. Both
+     live on an inline span inside the heading: the line is a background, so
+     it follows the text across wraps, and the colour has to be set here
+     rather than on the heading, whose `text-foreground` utility sits in a
+     later layer and would win over any rule in this one. */
+  .pp-card-title {
+    background-image: linear-gradient(var(--cyber-cyan), var(--cyber-cyan));
+    background-size: 0 1px;
+    background-repeat: no-repeat;
+    background-position: 0 100%;
+    transition:
+      background-size 0.38s cubic-bezier(0.3, 0, 0.2, 1),
+      color 0.25s ease;
+  }
+  .card-title-hover:hover:not(:has(.tag-link:hover)) .pp-card-title {
+    background-size: 100% 1px;
     color: var(--cyber-cyan);
   }
 }
@@ -913,6 +1185,69 @@
     transform: translateX(-50%);
   }
 }
+@keyframes ppPanelIn {
+  from {
+    clip-path: inset(0 0 100% 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+@keyframes ppPanelOut {
+  from {
+    clip-path: inset(0 0 0 0);
+  }
+  to {
+    clip-path: inset(0 0 100% 0);
+  }
+}
+
+@keyframes ppScanDown {
+  0% {
+    top: -2px;
+    opacity: 0;
+  }
+  12% {
+    opacity: 1;
+  }
+  100% {
+    top: 100%;
+    opacity: 0;
+  }
+}
+
+@keyframes ppMiIn {
+  from {
+    opacity: 0;
+    transform: translateX(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes ppCellScan {
+  0% {
+    top: -40%;
+  }
+  100% {
+    top: 100%;
+  }
+}
+
+@keyframes ppRipple {
+  from {
+    transform: scale(0.4);
+    opacity: 0.9;
+  }
+  to {
+    transform: scale(2.1);
+    opacity: 0;
+  }
+}
+
 @keyframes ppAlertRail {
   0% {
     top: -40%;
@@ -1000,8 +1335,22 @@
   .pp-marquee-track,
   .pp-card-sweep,
   .prose-cyber .pp-alert::after,
+  .pp-mpanel,
+  .pp-mpanel[data-closing="true"],
+  .pp-mpanel-scan,
+  .pp-mitems > .pp-mi,
+  .pp-mitems > .pp-mfoot,
+  .pp-cell-cur::after,
+  .pp-tg:active .pp-tg-ripple,
+  .pp-copy[data-copied]::after,
   .animate-shimmer {
     animation: none;
+  }
+  /* the scan line has no resting state worth showing; the transforms on
+     the arrows, the card edge and the toggle icons are already excluded
+     by the transition-property rule below */
+  .pp-mpanel-scan {
+    display: none;
   }
   /* the alert panel's hover lift is motion too */
   .prose-cyber .pp-alert:hover {

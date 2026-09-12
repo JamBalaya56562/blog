@@ -1,4 +1,3 @@
-import { BookOpen, Globe, User } from "lucide-react"
 import type { Route } from "next"
 import Image from "next/image"
 import Link from "next/link"
@@ -69,29 +68,20 @@ export function Header({ locale, dictionary, tickerItems }: HeaderProps) {
           <MobileIndex dictionary={dictionary} />
           <div className="flex items-center">
             <MobileMenu dictionary={dictionary}>
-              <Link
-                href={`/${locale}/blog` as Route}
-                className="flex items-center gap-3 rounded px-3 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-cyber-bg-1"
-              >
-                <BookOpen size={16} className="text-cyber-cyan" />
+              <Link href={`/${locale}/blog` as Route} className="pp-mi">
                 {dictionary.nav.blog}
               </Link>
-              <Link
-                href={`/${locale}/portfolio` as Route}
-                className="flex items-center gap-3 rounded px-3 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-cyber-bg-1"
-              >
-                <User size={16} className="text-cyber-cyan" />
+              <Link href={`/${locale}/portfolio` as Route} className="pp-mi">
                 {dictionary.footer.portfolio}
               </Link>
               <LocaleSwitchLink
                 currentLocale={locale}
                 targetLocale={otherLocale}
-                className="flex items-center gap-3 rounded px-3 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-cyber-bg-1"
+                className="pp-mi"
               >
-                <Globe size={16} className="text-cyber-cyan" />
                 {dictionary.language.switchTo}
               </LocaleSwitchLink>
-              <div className="border-t border-cyber-line pt-2">
+              <div className="pp-mfoot">
                 <ThemeToggle dictionary={dictionary} />
               </div>
             </MobileMenu>

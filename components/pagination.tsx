@@ -35,7 +35,7 @@ function buildHref(
 }
 
 const baseCell =
-  "flex h-9 min-w-9 items-center justify-center px-3 font-mono text-[11px] uppercase tracking-[0.18em] transition-colors"
+  "pp-cell flex h-9 min-w-9 items-center justify-center px-3 font-mono text-[11px] uppercase tracking-[0.18em] transition-colors"
 
 export function Pagination({
   currentPage,
@@ -62,14 +62,14 @@ export function Pagination({
           aria-disabled="true"
           className={`${baseCell} pointer-events-none border border-cyber-line text-cyber-dimmer`}
         >
-          ← {labels.previous}
+          <span className="pp-ar pp-ar-l">←</span>&nbsp;{labels.previous}
         </span>
       ) : (
         <Link
           href={buildHref(basePath, currentPage - 1, searchParams)}
           className={`${baseCell} border border-cyber-line text-cyber-dim hover:border-cyber-cyan hover:text-cyber-cyan`}
         >
-          ← {labels.previous}
+          <span className="pp-ar pp-ar-l">←</span>&nbsp;{labels.previous}
         </Link>
       )}
 
@@ -92,7 +92,7 @@ export function Pagination({
           <span
             key={item.page}
             aria-current="page"
-            className={`${baseCell} bg-cyber-cyan text-cyber-bg-0`}
+            className={`${baseCell} pp-cell-cur bg-cyber-cyan font-bold text-cyber-bg-0`}
           >
             {item.page}
           </span>
@@ -112,14 +112,14 @@ export function Pagination({
           aria-disabled="true"
           className={`${baseCell} pointer-events-none border border-cyber-line text-cyber-dimmer`}
         >
-          {labels.next} →
+          {labels.next}&nbsp;<span className="pp-ar pp-ar-r">→</span>
         </span>
       ) : (
         <Link
           href={buildHref(basePath, currentPage + 1, searchParams)}
           className={`${baseCell} border border-cyber-line text-cyber-dim hover:border-cyber-cyan hover:text-cyber-cyan`}
         >
-          {labels.next} →
+          {labels.next}&nbsp;<span className="pp-ar pp-ar-r">→</span>
         </Link>
       )}
     </nav>
