@@ -110,3 +110,34 @@ describe("code highlighting", () => {
     expect(styles(tree).some((s) => s.includes("--shiki-light:"))).toBe(true)
   })
 })
+
+describe("console fences", () => {
+  // The prompt characters are the ones the shellsession grammar accepts;
+  // a line that starts with one of them followed by a space is a command,
+  // and only those get the mark the terminal frame and copy button read.
+  test("mark the prompt lines as commands and leave the output unmarked", async () => {
+    const tree = await highlight(
+      "console",
+      "❯ jj status\nThe working copy has no changes.\n$ echo hi\nhi",
+    )
+    const lines = elements(tree).filter((el) =>
+      [el.properties?.class, el.properties?.className].flat().includes("line"),
+    )
+    expect(lines).toHaveLength(4)
+    expect(lines.map((el) => el.properties?.dataCmd)).toEqual([
+      "",
+      undefined,
+      "",
+      undefined,
+    ])
+    expect(classesOf(tree, "code")).toContain("language-console")
+  })
+
+  test("leave other languages alone", async () => {
+    const tree = await highlight("bash", "$ echo hi\nhi")
+    const marked = elements(tree).filter(
+      (el) => el.properties?.dataCmd !== undefined,
+    )
+    expect(marked).toHaveLength(0)
+  })
+})

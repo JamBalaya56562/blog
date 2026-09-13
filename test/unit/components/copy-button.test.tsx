@@ -70,6 +70,39 @@ describe("CopyButton", () => {
     expect(button.dataset.copied).toBeUndefined()
   })
 
+  // A terminal transcript copies the commands alone, prompt stripped, so the
+  // clipboard holds something a shell will take back; output lines stay out.
+  test("in a transcript, copies only the command lines without their prompts", async () => {
+    withClipboard(true)
+    const { container } = render(
+      <div className="pp-copy-wrap">
+        <CopyButton commands />
+        <pre>
+          <span className="line" data-cmd="">
+            ❯ jj status
+          </span>
+          {"\n"}
+          <span className="line">The working copy has no changes.</span>
+          {"\n"}
+          <span className="line" data-cmd="">
+            $ echo hi
+          </span>
+          {"\n"}
+          <span className="line">hi</span>
+        </pre>
+      </div>,
+    )
+    const button = container.querySelector("button")
+    if (!button) {
+      throw new Error("no button rendered")
+    }
+    await act(async () => {
+      fireEvent.click(button)
+      await Promise.resolve()
+    })
+    expect(written).toEqual(["jj status\necho hi"])
+  })
+
   // The MDX component map has no locale to hand down, so the label follows
   // the locale in the URL.
   test("the label follows the locale in the pathname", () => {

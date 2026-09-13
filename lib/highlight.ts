@@ -1,6 +1,8 @@
 import rehypeShikiFromHighlighter from "@shikijs/rehype/core"
+import type { ShikiTransformer } from "shiki"
 import { createHighlighterCore, type HighlighterCore } from "shiki/core"
 import { createJavaScriptRegexEngine } from "shiki/engine/javascript"
+import { PROMPT_LINE } from "@/lib/prompt-line"
 
 const THEMES = { dark: "night-owl", light: "github-light-default" } as const
 
@@ -23,6 +25,9 @@ function loadHighlighter(): Promise<HighlighterCore> {
       // here; without it the block falls back to `text` and reads as one
       // undifferentiated line while the tab beside it is fully coloured.
       import("@shikijs/langs/powershell"),
+      // A terminal transcript: prompt lines are commands, the rest is what
+      // they printed. `console` is the alias posts use on the fence.
+      import("@shikijs/langs/shellsession"),
       import("@shikijs/langs/toml"),
       import("@shikijs/langs/tsx"),
       import("@shikijs/langs/typescript"),
@@ -33,6 +38,28 @@ function loadHighlighter(): Promise<HighlighterCore> {
       import("@shikijs/themes/night-owl"),
     ],
   })
+}
+
+/**
+ * Marks the command lines of a `console` fence with `data-cmd`, so the
+ * terminal frame can tell them from the output around them and the copy
+ * button can pick out just the commands. The grammar already colours the
+ * prompt and the command, but leaves nothing on the line itself to say which
+ * kind it is; the raw source is checked here because the tokens are already
+ * split by then.
+ */
+const markCommandLines: ShikiTransformer = {
+  line(node, line) {
+    const lang = this.options.lang
+    if (lang !== "console" && lang !== "shellsession") {
+      return
+    }
+    const source = this.source.split("\n")[line - 1] ?? ""
+    if (PROMPT_LINE.test(source)) {
+      node.properties.dataCmd = ""
+    }
+  },
+  name: "mark-command-lines",
 }
 
 export async function rehypeHighlight() {
@@ -54,6 +81,7 @@ export async function rehypeHighlight() {
       return title ? { title } : null
     },
     themes: THEMES,
+    transformers: [markCommandLines],
   })
 
   return () => transform

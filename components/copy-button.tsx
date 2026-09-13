@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation"
 import { useEffect, useRef, useState, useSyncExternalStore } from "react"
 import { isValidLocale } from "@/lib/i18n/config"
 import { getDictionary } from "@/lib/i18n/get-dictionary"
+import { PROMPT_LINE } from "@/lib/prompt-line"
 
 /**
  * Copy button for a code block.
@@ -17,6 +18,11 @@ import { getDictionary } from "@/lib/i18n/get-dictionary"
  * The label comes from the dictionary for the locale in the URL: the MDX
  * component map has no locale to hand down, and the pathname does.
  *
+ * In a terminal transcript (`commands`), only the lines the highlighter
+ * marked as commands are copied, with their prompt taken off, so what lands
+ * in the clipboard can be pasted straight back into a shell. A transcript
+ * with no marked line falls back to the whole text.
+ *
  * Renders nothing where the Clipboard API is unavailable (a non-secure origin,
  * say), so there is no button that cannot do anything. That check goes through
  * `useSyncExternalStore` rather than an effect: a state update from an effect
@@ -28,7 +34,25 @@ const subscribe = () => () => {}
 const hasClipboard = () => Boolean(navigator.clipboard?.writeText)
 const noClipboard = () => false
 
-export function CopyButton() {
+/** The prompt and the space after it, as the grammar reads them. */
+const PROMPT_PREFIX = new RegExp(`${PROMPT_LINE.source}+`)
+
+function textToCopy(pre: HTMLElement, commands: boolean): string {
+  if (!commands) {
+    return pre.textContent ?? ""
+  }
+  const lines = Array.from(pre.querySelectorAll("[data-cmd]"))
+  if (lines.length === 0) {
+    return pre.textContent ?? ""
+  }
+  return lines
+    .map((line) => (line.textContent ?? "").replace(PROMPT_PREFIX, ""))
+    .join("\n")
+}
+
+export function CopyButton({
+  commands = false,
+}: Readonly<{ commands?: boolean }>) {
   const [copied, setCopied] = useState(false)
   const enabled = useSyncExternalStore(subscribe, hasClipboard, noClipboard)
   const ref = useRef<HTMLButtonElement>(null)
@@ -51,7 +75,7 @@ export function CopyButton() {
 
   const copy = async () => {
     const pre = ref.current?.parentElement?.querySelector("pre")
-    const text = pre?.textContent
+    const text = pre ? textToCopy(pre, commands) : ""
     if (!text) {
       return
     }

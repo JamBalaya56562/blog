@@ -33,6 +33,42 @@ function languageOf(children: React.ReactNode): string | undefined {
   return undefined
 }
 
+/**
+ * How many lines a highlighted fence has, and how many of them the
+ * highlighter marked as commands. Read off the `.line` spans Shiki emits, so
+ * the numbers in the terminal frame's foot always agree with what is shown.
+ */
+function countLines(children: React.ReactNode): {
+  commands: number
+  lines: number
+} {
+  let commands = 0
+  let lines = 0
+  const walk = (node: React.ReactNode) => {
+    for (const child of Children.toArray(node)) {
+      if (
+        !isValidElement<{
+          className?: string
+          "data-cmd"?: string
+          children?: React.ReactNode
+        }>(child)
+      ) {
+        continue
+      }
+      if (child.props.className === "line") {
+        lines += 1
+        if (child.props["data-cmd"] !== undefined) {
+          commands += 1
+        }
+        continue
+      }
+      walk(child.props.children)
+    }
+  }
+  walk(children)
+  return { commands, lines }
+}
+
 const components: MDXComponents = {
   blockquote: ({
     "data-alert": alert,
@@ -104,6 +140,38 @@ const components: MDXComponents = {
   // globals.css hides it.
   pre: ({ className, title, children, ...props }) => {
     const language = languageOf(children)
+    // A terminal transcript is a different object from a code block: the
+    // reader is looking at what was typed and what came back, not at a file.
+    // It gets a window instead of a file strip — signal lights and a name
+    // above, the counts below — and a copy button that takes the commands
+    // only. The prompt lines are marked by `lib/highlight.ts`.
+    if (language === "console" || language === "shellsession") {
+      const { commands, lines } = countLines(children)
+      return (
+        <div className="pp-term pp-copy-wrap">
+          <div className="pp-term-head">
+            <span aria-hidden className="pp-term-sig">
+              <span />
+              <span />
+              <span />
+            </span>
+            <span className="pp-term-name">{title ?? "terminal"}</span>
+          </div>
+          <CopyButton commands />
+          <pre className={className} {...props}>
+            {children}
+          </pre>
+          <div className="pp-term-foot">
+            <span>
+              <b>{commands}</b> commands
+            </span>
+            <span>
+              <b>{lines}</b> lines
+            </span>
+          </div>
+        </div>
+      )
+    }
     return (
       <div className="pp-code pp-copy-wrap">
         <div className="pp-code-title">
