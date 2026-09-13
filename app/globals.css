@@ -691,7 +691,8 @@
      inside its bottom border (8px padding either side of an 18px line);
      inside a tabbed group the strip is hidden, so it drops back to the top
      of the code */
-  .pp-code .pp-copy {
+  .pp-code .pp-copy,
+  .pp-term .pp-copy {
     top: 3px;
   }
   .pp-tabs .pp-code .pp-copy {
@@ -1080,6 +1081,70 @@
   .prose-cyber .pp-code pre {
     margin: 0;
     border: 0;
+  }
+  /* A terminal transcript: a window with signal lights and a name above the
+     text and the counts below it. Output lines step back so the commands,
+     which are what the reader came for, stand out; the highlighter marks
+     those with data-cmd. */
+  .prose-cyber .pp-term {
+    margin: 1.4em 0;
+    border: 1px solid var(--cyber-line);
+    background: var(--cyber-code-bg);
+  }
+  .prose-cyber .pp-term-head,
+  .prose-cyber .pp-term-foot {
+    display: flex;
+    align-items: center;
+    font-family: var(--blog-font-mono);
+    color: var(--cyber-dim);
+    background: color-mix(in srgb, var(--cyber-bg-0) 60%, transparent);
+  }
+  .prose-cyber .pp-term-head {
+    gap: 10px;
+    padding: 8px 48px 8px 12px;
+    font-size: 11px;
+    line-height: 1.5;
+    letter-spacing: 0.1em;
+    border-bottom: 1px solid var(--cyber-line);
+  }
+  .prose-cyber .pp-term-sig {
+    display: flex;
+    gap: 5px;
+  }
+  .prose-cyber .pp-term-sig > span {
+    width: 8px;
+    height: 8px;
+    background: var(--cyber-dimmer);
+    transition: background 0.25s ease;
+  }
+  .prose-cyber .pp-term:hover .pp-term-sig > span:nth-child(1) {
+    background: var(--cyber-magenta);
+  }
+  .prose-cyber .pp-term:hover .pp-term-sig > span:nth-child(2) {
+    background: var(--cyber-amber);
+  }
+  .prose-cyber .pp-term:hover .pp-term-sig > span:nth-child(3) {
+    background: var(--cyber-lime);
+  }
+  .prose-cyber .pp-term-foot {
+    gap: 14px;
+    padding: 6px 12px;
+    font-size: 9px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--cyber-dimmer);
+    border-top: 1px solid var(--cyber-line);
+  }
+  .prose-cyber .pp-term-foot b {
+    font-weight: 400;
+    color: var(--cyber-cyan);
+  }
+  .prose-cyber .pp-term pre {
+    margin: 0;
+    border: 0;
+  }
+  .prose-cyber .pp-term .line:not([data-cmd]) {
+    opacity: 0.72;
   }
   /* Inside a tabbed group the tab strip is the panel's strip, so the block
      inside each panel gives up its own frame and strip. */
