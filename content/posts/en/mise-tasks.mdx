@@ -36,7 +36,16 @@ Rather than typing that string every time, give it a name in `mise.toml`.
 run = "biome check --write"
 ```
 
-That makes `mise run lint` available.
+That makes `mise run lint` available. With one unformatted file in the directory, it runs like
+this.
+
+```console
+❯ mise run lint
+[lint] $ biome check --write
+Checked 1 file in 125ms. Fixed 1 file.
+```
+
+The first line is the command the task actually ran; below it is that command's own output.
 
 Here are a few more. `description` is optional — it changes nothing about how the task runs.
 

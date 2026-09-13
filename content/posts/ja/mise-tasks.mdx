@@ -27,7 +27,15 @@ mise の `[tasks]` は、**プロジェクトでよく打つコマンドに名�
 run = "biome check --write"
 ```
 
-これで `mise run lint` が使えます。
+これで `mise run lint` が使えます。整形されていないファイルを 1 つ置いて打つと、こうなります。
+
+```console
+❯ mise run lint
+[lint] $ biome check --write
+Checked 1 file in 125ms. Fixed 1 file.
+```
+
+1 行目はタスクが実際に実行したコマンドで、その下がコマンド自身の出力です。
 
 いくつか足してみます。`description` は書いても書かなくても動きます。
 
