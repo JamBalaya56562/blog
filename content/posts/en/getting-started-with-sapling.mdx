@@ -1,0 +1,598 @@
+---
+title: Getting Started with Sapling
+date: "2026-09-13"
+updated: "2026-09-13"
+description: Sapling (sl), Meta's Git-compatible VCS — installing it, stacks, one PR per commit with sl pr submit, ReviewStack, and the sl web GUI
+image: /thumbnails/getting-started-with-sapling.avif
+tags:
+  - sapling
+  - git
+  - cli
+  - devtools
+---
+
+## What Sapling is
+
+[Sapling](https://sapling-scm.com/) — the command is `sl` — is **the version control system Meta uses
+internally, made to work on Git repositories and GitHub**. Its feel comes from the Mercurial line: instead
+of Git's "commits on a branch", the unit you think in is a **stack of commits**.
+
+This blog used to be run with Sapling, and the four things I liked most were these.
+
+- **Stacks** — one piece of work as a column of small commits; fix one in the middle and the ones above it
+  move on their own
+- **`sl pr submit`** — the stack goes to GitHub as one pull request per commit. It sits on top of the `gh`
+  CLI and needs almost no setup of its own
+- **ReviewStack** — a review page that reads a stack of PRs one commit at a time
+- **`sl web`** — the same operations in a GUI: the Interactive Smartlog, opened in a browser
+
+Each of these shows up in the real output below.
+
+## Installing
+
+<CodeTabs labels={["macOS", "Linux", "Windows"]}>
+
+```bash
+brew install sapling
+```
+
+```bash
+ARCH=$(uname -m | sed 's/x86_64/x64/;s/aarch64/arm64/')
+mkdir -p ~/.local/share/sapling
+curl -L "https://github.com/facebook/sapling/releases/download/0.2.20260811-150444%2B8fb02b32/sapling-0.2.20260811-150444%2B8fb02b32-linux-${ARCH}.tar.xz" | tar xJf - -C ~/.local/share/sapling
+echo 'export PATH="$HOME/.local/share/sapling:$PATH"' >> ~/.bashrc
+```
+
+```powershell
+# In an administrator PowerShell; the zip comes from GitHub Releases
+Expand-Archive -Path .\sapling-0.2.20260811-150444+8fb02b32-windows-x64.zip -DestinationPath "C:\Program Files\Sapling"
+setx PATH "$env:PATH;C:\Program Files\Sapling" -m
+# PowerShell's sl is an alias of Set-Location; take it out of the way
+Remove-Item Alias:sl -Force
+```
+
+</CodeTabs>
+
+On Windows the zip has a `Sapling` directory inside it, so arrange the extraction so that its contents end up
+directly in the destination. Ask it for its version to see that it is there.
+
+```console
+❯ sl --version
+Sapling 0.2.20260811-150444+8fb02b32
+(see https://sapling-scm.com/ for more information)
+```
+
+> [!NOTE]
+> The Windows build of `0.2.20260811` stops with `abort: The system cannot find the file specified: journal`
+> on any operation that takes a lock — `clone`, `pull`, `rebase` (`commit` and `goto` work). A fix is up as
+> [facebook/sapling#1413](https://github.com/facebook/sapling/pull/1413), and the output in this article was
+> recorded with it applied.
+
+First, set the name and email that go on your commits. Git's `user.name` and `user.email` are a single
+`ui.username` in Sapling.
+
+```console
+❯ sl config --user ui.username "JamBalaya56562 <jambalaya.pyoncafe@outlook.jp>"
+updated config in C:\Users\Jam\AppData\Roaming\sapling\sapling.conf
+```
+
+One more thing: the GitHub features (`sl pr submit`, and the PR badges in `sl web`) use the
+[GitHub CLI](https://cli.github.com/)'s authentication as it is. If `gh auth login` is done, Sapling needs
+nothing of its own.
+
+```console
+❯ gh auth status
+github.com
+  ✓ Logged in to github.com account JamBalaya56562 (keyring)
+  - Active account: true
+  - Git operations protocol: ssh
+  - Token: gho_************************************
+  - Token scopes: 'admin:org', 'codespace', 'gist', 'repo'
+```
+
+## Trying it out
+
+From here on, everything is what actually came back in
+[sapling-demo](https://github.com/JamBalaya56562/sapling-demo), a repository made for this article.
+
+### Cloning a repository
+
+`sl clone` fetches a Git repository, with the same URL you would give Git. Once it is there, look inside
+with `ls -la`.
+
+```console
+❯ sl clone git@github.com:JamBalaya56562/sapling-demo.git
+From ssh://github.com/JamBalaya56562/sapling-demo
+ * [new ref]         9d729f9329bbb45bee8266cb94bf642107a8d13f -> remote/main
+1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+❯ cd sapling-demo
+❯ ls -la
+total 3589
+drwxr-xr-x 1 Jam 197611  0  9月 13 18:48 .
+drwxr-xr-x 1 Jam 197611  0  9月 13 18:48 ..
+drwxr-xr-x 1 Jam 197611  0  9月 13 18:48 .sl
+-rw-r--r-- 1 Jam 197611 86  9月 13 18:48 README.md
+```
+
+There is only `.sl`; there is no `.git`. The Git objects live inside `.sl`, and **`git` commands do not
+work in this directory**. Unlike Jujutsu's colocated layout, Sapling uses Git as the way to talk to the
+remote and does everything local through `sl`.
+
+![The local repo/ holds only .sl, with the Git objects inside it; git status does not work, sl status does. sl clone, sl pull and sl pr submit talk to GitHub over ssh or https](sapling-sl-dir.svg)
+
+### Reading the smartlog
+
+At the centre of Sapling is the **smartlog**, printed by `sl` on its own. Unlike `git log` it draws only the
+remote's `main` and your own commits — no one else's branches, no distant past.
+
+```console
+❯ sl
+@  9d729f9329  65 minutes ago  jambalaya.pyoncafe  remote/main
+   Initial commit
+```
+
+`@` is the commit you are on; `remote/main` at the right is the remote branch. Straight after a clone, that
+is all there is.
+
+### The first commit
+
+Create a file and look at the state. `sl status` does the job of `git status`.
+
+```console
+❯ echo Hello > hello.txt
+❯ sl status
+? hello.txt
+```
+
+`?` means "not tracked". Running `sl commit` now does nothing.
+
+```console
+❯ sl commit -m "Add hello.txt"
+nothing changed
+```
+
+A new file is put under tracking with `sl add`. It looks like `git add`, but its only job is to say "watch
+this file" — **it is not staging**, not a choice of what goes into this commit. Changes to files already
+tracked go into the next commit without any `add`.
+
+```console
+❯ sl add hello.txt
+❯ sl status
+A hello.txt
+❯ sl commit -m "Add hello.txt"
+❯ sl
+  @  a0a3d365a6  1 second ago  jambalaya.pyoncafe
+╭─╯  Add hello.txt
+│
+o  9d729f9329  65 minutes ago  jambalaya.pyoncafe  remote/main
+   Initial commit
+```
+
+One commit of yours now sits on top of `remote/main`. No branch was created: in Sapling, local commits do
+not need branch names.
+
+Edit the tracked file and add another commit, this time without `add`.
+
+```console
+❯ echo World >> hello.txt
+❯ sl status
+M hello.txt
+❯ sl commit -m "Greet the world"
+❯ sl
+  @  ff84d8b292  1 second ago  jambalaya.pyoncafe
+  │  Greet the world
+  │
+  o  a0a3d365a6  3 seconds ago  jambalaya.pyoncafe
+╭─╯  Add hello.txt
+│
+o  9d729f9329  65 minutes ago  jambalaya.pyoncafe  remote/main
+   Initial commit
+```
+
+### Fixing the current commit — `sl amend`
+
+`sl amend` changes the commit you are on. Change `World` in `hello.txt` to `World!` and run it, and the
+commit's content is replaced.
+
+```console
+❯ sl amend
+ff84d8b292aa -> a7a69177b95f "Greet the world"
+❯ sl
+  @  a7a69177b9  2 seconds ago  jambalaya.pyoncafe
+  │  Greet the world
+  │
+  o  a0a3d365a6  4 seconds ago  jambalaya.pyoncafe
+╭─╯  Add hello.txt
+│
+o  9d729f9329  65 minutes ago  jambalaya.pyoncafe  remote/main
+   Initial commit
+```
+
+`ff84d8b292aa -> a7a69177b95f` in the output means just that: the hash changed, the message did not. To
+change only the message, add `-m`.
+
+```console
+❯ sl amend -m "Greet the world with feeling"
+a7a69177b95f -> c5ae259a0ebd "Greet the world with feeling"
+❯ sl log -l 1
+commit:      c5ae259a0ebd
+user:        JamBalaya56562 <jambalaya.pyoncafe@outlook.jp>
+date:        Sun Sep 13 18:48:55 2026 +0900
+summary:     Greet the world with feeling
+```
+
+### When you get it wrong: `sl undo`
+
+`sl undo` takes back the last operation. Here it undoes the message change above.
+
+```console
+❯ sl undo
+undone to Sun Sep 13 18:48:57 2026 +0900, before amend -m Greet the world with feeling
+hint[undo-uncommit-unamend]: undoing amends discards their changes.
+to restore the changes to the working copy, run 'sl revert -r c5ae259a0ebd --all'
+in the future, you can use 'sl unamend' instead of 'sl undo' to keep changes
+hint[hint-ack]: use 'sl hint --ack undo-uncommit-unamend' to silence these hints
+❯ sl log -l 1
+commit:      a7a69177b95f
+user:        JamBalaya56562 <jambalaya.pyoncafe@outlook.jp>
+date:        Sun Sep 13 18:48:55 2026 +0900
+summary:     Greet the world
+```
+
+`undone to …, before amend -m …` says which operation it went back before. As the hint says, there is also
+`sl unamend`, made for undoing an amend.
+
+## Building a stack
+
+This is where Sapling starts to feel like itself. Add a third commit.
+
+```console
+❯ echo MIT > LICENSE
+❯ sl add LICENSE
+❯ sl commit -m "Add a licence"
+❯ sl
+  @  c448d1b12f  1 second ago  jambalaya.pyoncafe
+  │  Add a licence
+  │
+  o  a7a69177b9  8 seconds ago  jambalaya.pyoncafe
+  │  Greet the world
+  │
+  o  a0a3d365a6  10 seconds ago  jambalaya.pyoncafe
+╭─╯  Add hello.txt
+│
+o  9d729f9329  65 minutes ago  jambalaya.pyoncafe  remote/main
+   Initial commit
+```
+
+Three commits stand in a column on `remote/main`. That is a **stack**. In Git you would say "three commits
+on a branch"; in Sapling there is no branch name, and the column itself is what you work with.
+
+### Moving inside the stack — `sl prev` / `sl next`
+
+`sl prev` goes one commit down, `sl next` one up. Step down to "Greet the world" in the middle.
+
+```console
+❯ sl prev
+0 files updated, 0 files merged, 1 files removed, 0 files unresolved
+[a7a691] Greet the world
+❯ sl
+  o  c448d1b12f  3 seconds ago  jambalaya.pyoncafe
+  │  Add a licence
+  │
+  @  a7a69177b9  10 seconds ago  jambalaya.pyoncafe
+  │  Greet the world
+  │
+  o  a0a3d365a6  12 seconds ago  jambalaya.pyoncafe
+╭─╯  Add hello.txt
+│
+o  9d729f9329  65 minutes ago  jambalaya.pyoncafe  remote/main
+   Initial commit
+❯ ls -la
+total 3598
+drwxr-xr-x 1 Jam 197611  0  9月 13 22:30 .
+drwxr-xr-x 1 Jam 197611  0  9月 13 22:29 ..
+drwxr-xr-x 1 Jam 197611  0  9月 13 22:30 .sl
+-rw-r--r-- 1 Jam 197611 48  9月 13 18:53 hello.txt
+-rw-r--r-- 1 Jam 197611 86  9月 13 18:48 README.md
+```
+
+`@` has moved to the middle and, as `1 files removed` said, `LICENSE` — added by the commit above — is gone
+from the directory. Fix a file here and `sl amend`, and the middle commit is rewritten **and the commit that
+sat on top of it is rebased automatically**.
+
+```console
+❯ echo "Nice to meet you." >> hello.txt
+❯ sl amend
+a7a69177b95f -> a8fc4a1a6088 "Greet the world"
+restacking children automatically (unless they conflict)
+rebasing c448d1b12f4f "Add a licence"
+c448d1b12f4f -> feb42b2732f8 "Add a licence"
+❯ sl
+  o  feb42b2732  1 second ago  jambalaya.pyoncafe
+  │  Add a licence
+  │
+  @  a8fc4a1a60  12 seconds ago  jambalaya.pyoncafe
+  │  Greet the world
+  │
+  o  a0a3d365a6  14 seconds ago  jambalaya.pyoncafe
+╭─╯  Add hello.txt
+│
+o  9d729f9329  65 minutes ago  jambalaya.pyoncafe  remote/main
+   Initial commit
+```
+
+The three lines from `restacking children automatically` are that. In Git this is `rebase -i`, pick `edit`,
+fix, `--continue`; here it is one `amend`. It stops only when there is a conflict, and then `sl restack`
+finishes the job.
+
+![Before and after sl prev → sl amend: Greet the world in the middle is amended to a8fc4a1a60 and Add a licence above it is restacked to feb42b2732 on its own](sapling-restack.svg)
+
+`sl next` goes back up.
+
+```console
+❯ sl next
+1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+[feb42b] Add a licence
+❯ ls -la
+total 3599
+drwxr-xr-x 1 Jam 197611  0  9月 13 22:30 .
+drwxr-xr-x 1 Jam 197611  0  9月 13 22:29 ..
+drwxr-xr-x 1 Jam 197611  0  9月 13 22:30 .sl
+-rw-r--r-- 1 Jam 197611 48  9月 13 18:53 hello.txt
+-rw-r--r-- 1 Jam 197611 42  9月 13 22:30 LICENSE
+-rw-r--r-- 1 Jam 197611 86  9月 13 18:48 README.md
+❯ cat hello.txt
+Hello
+World!
+Nice to meet you.
+```
+
+`1 files updated` brought `LICENSE` back, and `hello.txt` has the line added in the middle.
+
+## `sl pr submit` — the stack becomes pull requests
+
+`sl pr submit` sends the stack to GitHub. **One commit becomes one pull request**, and there is no branch
+name to think up.
+
+```console
+❯ sl pr submit
+pushing 3 to ssh://git@github.com/JamBalaya56562/sapling-demo.git
+created new pull request: https://github.com/JamBalaya56562/sapling-demo/pull/14
+created new pull request: https://github.com/JamBalaya56562/sapling-demo/pull/15
+created new pull request: https://github.com/JamBalaya56562/sapling-demo/pull/16
+updated body for https://github.com/JamBalaya56562/sapling-demo/pull/14
+updated body for https://github.com/JamBalaya56562/sapling-demo/pull/15
+updated body for https://github.com/JamBalaya56562/sapling-demo/pull/16
+force-pushing ebaf0291140a3acbc3b2530dcc48998450dff5c4:refs/heads/sapling-pr-archive-JamBalaya56562 to ssh://git@github.com/JamBalaya56562/sapling-demo.git
+```
+
+Three commits are pushed, a PR is created for each, and at the end all three bodies are updated. The
+force-push to a branch called `sapling-pr-archive-JamBalaya56562` is Sapling recording which commit belongs
+to which PR on the GitHub side; it is not something anyone reviews.
+
+![The three-commit local stack mapped one to one by sl pr submit onto GitHub PRs #14, #15 and #16](sapling-stack-to-prs.svg)
+
+`sl ssl` is the smartlog with the PR number and review state beside each commit.
+
+```console
+❯ sl ssl
+  @  feb42b2732  91 seconds ago  jambalaya.pyoncafe  #16 Unreviewed ⋯
+  │  Add a licence
+  │
+  o  a8fc4a1a60  102 seconds ago  jambalaya.pyoncafe  #15 Unreviewed ⋯
+  │  Greet the world
+  │
+  o  a0a3d365a6  104 seconds ago  jambalaya.pyoncafe  #14 Unreviewed ⋯
+╭─╯  Add hello.txt
+│
+o  9d729f9329  67 minutes ago  jambalaya.pyoncafe  remote/main
+   Initial commit
+```
+
+To the right of each commit are the PR number, the review state, and the CI result (`✓` passed, `⋯` still
+running). Where a branch name would be, you can see **each commit tied to its own PR**.
+
+Sapling writes a list of the whole stack into every PR's body. Open #15, the middle one, on GitHub and the
+description looks like this.
+
+![The description of PR #15 on GitHub: under "Stack created with Sapling. Best reviewed with ReviewStack." a list of links — Add a licence #16, -> Greet the world #15, Add hello.txt #14](sapling-pr-body.avif)
+
+`->` marks "this PR is here"; the entries above and below are the rest of the stack. A reader can follow
+the links through the stack from the top. The list is rewritten on every `sl pr submit`, so adding to the
+stack or reordering it never means editing this by hand.
+
+### Fixing a PR in the middle
+
+Say a review comment lands on the middle PR. `sl prev` down to it, fix, `sl amend`, `sl pr submit`.
+
+```console
+❯ sl ssl
+  @  9181b8da46  4 minutes ago  jambalaya.pyoncafe  #16 Approved ✓
+  │  Add a licence
+  │
+  o  a8fc4a1a60  4 minutes ago  jambalaya.pyoncafe  #15 Unreviewed ✓
+  │  Greet the world
+  │
+  o  a0a3d365a6  4 minutes ago  jambalaya.pyoncafe  #14 Unreviewed ✓
+╭─╯  Add hello.txt
+│
+o  9d729f9329  69 minutes ago  jambalaya.pyoncafe  remote/main
+   Initial commit
+
+❯ sl prev
+0 files updated, 0 files merged, 1 files removed, 0 files unresolved
+[a8fc4a] Greet the world
+❯ echo "Have a good day." >> hello.txt
+❯ sl amend
+a8fc4a1a6088 -> 9cb3be1e599f "Greet the world"
+restacking children automatically (unless they conflict)
+rebasing 9181b8da4622 "Add a licence"
+9181b8da4622 -> f719fbb60f24 "Add a licence"
+❯ sl pr submit
+#14 is up-to-date
+pushing 1 to ssh://git@github.com/JamBalaya56562/sapling-demo.git
+updated body for https://github.com/JamBalaya56562/sapling-demo/pull/14
+updated body for https://github.com/JamBalaya56562/sapling-demo/pull/15
+force-pushing 6a45a531441e87e988e46bc715ad4131c02ee967:refs/heads/sapling-pr-archive-JamBalaya56562 to ssh://git@github.com/JamBalaya56562/sapling-demo.git
+❯ sl next
+1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+[f719fb] Add a licence
+❯ sl pr submit
+#14 is up-to-date
+#15 is up-to-date
+pushing 1 to ssh://git@github.com/JamBalaya56562/sapling-demo.git
+updated body for https://github.com/JamBalaya56562/sapling-demo/pull/14
+updated body for https://github.com/JamBalaya56562/sapling-demo/pull/16
+updated body for https://github.com/JamBalaya56562/sapling-demo/pull/15
+❯ sl ssl
+  @  f719fbb60f  31 seconds ago  jambalaya.pyoncafe  #16 Approved ⋯
+  │  Add a licence
+  │
+  o  9cb3be1e59  4 minutes ago  jambalaya.pyoncafe  #15 Approved ✓
+  │  Greet the world
+  │
+  o  a0a3d365a6  4 minutes ago  jambalaya.pyoncafe  #14 Unreviewed ✓
+╭─╯  Add hello.txt
+│
+o  9d729f9329  70 minutes ago  jambalaya.pyoncafe  remote/main
+   Initial commit
+```
+
+Three things to read here.
+
+- Right after `sl amend`, the commit above is rebased on its own (`rebasing 9181b8da4622`) and `#16`'s hash
+  changes with it
+- The first `sl pr submit` was run from the middle, so **only `#15`'s one commit was pushed** and `#16`
+  above was left alone. `sl pr submit` covers "the commit you are on and the ones below it"
+- `sl next` back to the top and run it again, and now `#16`'s commit is pushed and all three bodies line up
+
+![sl pr submit covers @ and below: run from the middle, #15 alone is pushed, #14 is up-to-date and #16 above is untouched; sl next to the top and run again pushes #16](sapling-submit-scope.svg)
+
+You may have noticed that the top commit's hash differs from the earlier smartlog (`feb42b2732`). In
+between, a line was added to `LICENSE` with `sl amend` → `sl pr submit`, and that run went the same way:
+only the changed commit was pushed. `Approved` comes from the automated reviewer (Sourcery) installed on this
+repository.
+
+### Going to a PR
+
+PR numbers work as revisions in the smartlog. `sl goto pr14` moves to that PR's commit.
+
+```console
+❯ sl goto pr14
+1 files updated, 0 files merged, 1 files removed, 0 files unresolved
+❯ cat hello.txt
+Hello
+❯ sl next
+1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+[a8fc4a] Greet the world
+❯ sl next
+1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+[9181b8] Add a licence
+```
+
+`hello.txt` is back to its first line. Go to the PR a review pointed at, fix it, `sl amend`, `sl next` to
+the top, `sl pr submit` — the whole loop is these commands.
+
+> [!NOTE]
+> GitHub's PR page assumes each PR is an independent branch, so a PR higher in the stack shows the diffs of
+> the PRs below it in "Files changed" as well. To read one commit at a time, use ReviewStack, next.
+
+## ReviewStack — reading a stack one commit at a time
+
+[ReviewStack](https://reviewstack.dev/) is a review page for GitHub PRs built by the Sapling team. The URL
+is the GitHub PR's with `github.com` replaced by `reviewstack.dev`, and the link `sl pr submit` writes into
+each body points there.
+
+![ReviewStack showing #15: Approved and the "Pull Request 2 of 3" switcher at the top, the Version 2 selector, Sourcery's comments on the right; the diff on the left is only the three lines this PR added to hello.txt](sapling-reviewstack.avif)
+
+"Pull Request 2 of 3" is the position in the stack, and the arrows move to the PRs above and below. The diff
+is **this PR's one commit only** — just the three lines added to `hello.txt`. The problem of the lower PRs'
+diffs bleeding into GitHub's page does not happen here. "Version 2" is a revision that increments on each
+`sl pr submit`, and versions can be diffed against each other.
+
+## `sl web` — the same thing in a GUI
+
+`sl web` starts a local server and opens the **Interactive Smartlog (ISL)** in a browser.
+
+```console
+❯ sl web --no-open
+started a new server
+
+access Sapling Web with this link:
+http://localhost:3011/?token=9a0df0277a89e85302c31d225eabcffa&cwd=C%3A%5CUsers%5CJam%5CAppData%5CLocal%5CTemp%5Csapling-demo
+```
+
+![ISL: on the left the three-commit stack on remote/main, each commit with its PR number and Open / Approved badges; on the right the selected commit's description and changed files](sapling-isl-stack.avif)
+
+Click a commit and its details appear on the right. Selecting "Greet the world" in the middle gives this.
+
+![ISL with the middle commit selected: the row is highlighted with a Goto button, and the right pane shows the changed file hello.txt with a View Changes button](sapling-isl-middle.avif)
+
+The left is the same stack as the terminal's smartlog; the right is the selected commit's description and
+changed files. What you can do here is what the terminal did.
+
+- Select a commit and **Amend** / **Commit** — write the description in the right pane and take the changes in
+- **Uncommit** / **Split** — unpick a commit, or divide it
+- **Edit stack** — reorder the whole stack
+- Drag a commit to **rebase** it somewhere else
+- **Pull**, and **Submit** at the bottom right, which is `sl pr submit`
+
+If you would rather get used to working with stacks before learning the commands, this is a fine place to
+start. ISL also ships as a VS Code extension, with the same view inside the editor.
+
+## How it differs from Git
+
+Here is what the output above showed, put in Git's terms.
+
+### No staging, only tracking
+
+`sl add` says "watch this file" and nothing more; it does not choose what goes into a commit. Changes to
+tracked files all go in with `sl commit`. To commit part of them, use `sl commit -i` (interactive), or
+commit and then `sl split`.
+
+![Git's three stages — working copy → git add -p → index → git commit → commit — against sl's working copy → sl commit → commit, where sl add only declares tracking and there is no index](sapling-add-vs-stage.svg)
+
+### Stacks, not branches
+
+Local commits carry no branch name. The column on top of `remote/main` is the stack; `sl prev` / `sl next`
+move inside it, and an `sl amend` in the middle restacks what is above. Sending it to GitHub, `sl pr submit`
+cuts a PR per commit, so a branch name never appears.
+
+### The last operation is `sl undo`
+
+`amend`, `rebase` and `commit` alike can be taken back one step with `sl undo`. It says `undone to …,
+before …`, so there is no `git reflog` to read through.
+
+### How it differs from Jujutsu
+
+The thinking is close to [Jujutsu](/en/blog/getting-started-with-jujutsu)'s, with two differences. In
+Sapling the working copy stays "changes not yet committed" until you run `sl commit` or `sl amend`. And the
+repository is `.sl` alone rather than colocated, so `git` commands do not work — in exchange, the GitHub
+integration (`sl pr submit`, `sl ssl`, the PR badges in ISL) is built in.
+
+## Git commands and their sl counterparts
+
+| To do this | Git | sl |
+|---|---|---|
+| See the state | `git status` | `sl status` |
+| See the history | `git log --graph` | `sl` |
+| Commit the changes | `git add -A && git commit -m` | `sl commit -m` (new files need `sl add`) |
+| Add to the last commit | `git commit --amend` | `sl amend` |
+| Fix an older commit | `git rebase -i` | `sl prev` → `sl amend` |
+| Park the work | `git stash` | `sl shelve` |
+| Create a branch | `git switch -c feat` | not needed (stacks) |
+| Bring in the remote | `git pull --rebase` | `sl pull` → `sl rebase -d remote/main` |
+| Open a PR | `git push` → `gh pr create` | `sl pr submit` |
+| Undo | `git reflog` → `git reset` | `sl undo` |
+
+## In closing
+
+- Sapling works on Git repositories and GitHub as they are. Locally there is only `.sl`, and `git` commands
+  are not used
+- There is no staging; `sl add` declares tracking, and all tracked changes go in with `sl commit`
+- Local commits have no branch names. The column on `remote/main` is the stack; `sl prev` / `sl next` move
+  inside it, and an `sl amend` in the middle restacks what is above
+- `sl pr submit` turns one commit into one PR and writes the stack list into each body; fix and run again,
+  and only the changed PRs are updated
+- Read a stack of PRs in ReviewStack; GitHub's page mixes in the lower diffs
+- `sl web`'s ISL does the same operations in a GUI
