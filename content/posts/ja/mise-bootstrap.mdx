@@ -415,7 +415,7 @@ mise remote bootstrap completed on 1 target(s)
 - **`--adopt`** — `--source` というフラグもあり、こちらはディレクトリを「プロジェクト」として送ります。`mise.toml` を置いた開発用のディレクトリを向こうに再現する用途で、`[tools]` はそのプロジェクトの中でしか効きません。試すと、`node` は入ったのに `No version is set for shim: node` になりました。マシンの設定を流したいなら `--adopt` です
 
 > [!NOTE]
-> Windows を対象にはできませんが、Windows から流すことはできます。ただし 2026.9.5 では `ssh.exe` が `PATH` にあっても `required command 'ssh' not found` で止まる不具合があり、修正は取り込み済みです。次のリリース以降で使えるようになる見込みです。
+> Windows を対象にはできませんが、Windows から流すことはできます。
 
 ## まとめ
 
