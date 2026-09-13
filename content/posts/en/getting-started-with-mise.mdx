@@ -126,18 +126,35 @@ the end, and try again in a fresh shell.
 
 The command for installing a tool is `mise install`. The version goes after the `@`.
 
-```bash
-mise install node@22
-mise install node@20   # several versions can sit side by side
+```console
+❯ mise install node@22
+...
+mise ✓ node@22.23.2  28.3s  node-v22.23.2-win-x64.zip
+mise ████████████████ 1/1 · installed 1 tool in 28.3s
+mise WARN  node installed but not activated — it is not in any config file.
+To install and activate, run:
+  mise use node
 ```
 
-`mise ls` lists what you have.
+Several versions can sit side by side. `mise ls` lists what you have.
 
-Installing alone is not enough to make `node` work, though, because mise does not put what it
-installs on your PATH. To run it, go through `mise exec`.
+```console
+❯ mise install node@20
+...
+❯ mise ls
+node  20.20.2
+node  22.23.2
+```
 
-```bash
-mise exec node@22 -- node --version
+Installing alone is not enough to make `node` work, though. That is what the `not activated`
+warning at the end of the install was about: mise does not put what it installs on your PATH.
+To run it, go through `mise exec`.
+
+```console
+❯ node --version
+bash: node: command not found
+❯ mise exec node@22 -- node --version
+v22.23.2
 ```
 
 Before the `--` is which tool; after it is what to run.
@@ -181,14 +198,16 @@ Add-Content -Path $PROFILE -Value '(&mise activate pwsh) | Out-String | Invoke-E
 > effect, check what `$PROFILE` points at inside the application you are using.
 
 Once this is in, you no longer need `mise exec`: entering a directory swaps your PATH to the
-versions used there.
+versions used there. With a `mise.toml` saying `node = "26"` in `blog` and `node = "22"` in
+`old-app`, walking between them in an activated shell looks like this.
 
-```bash
-cd ~/work/blog
-node --version    # v26.0.1
-
-cd ~/work/old-app
-node --version    # v22.11.0
+```console
+❯ cd blog
+❯ node --version
+v26.8.2
+❯ cd ../old-app
+❯ node --version
+v22.23.2
 ```
 
 ![Two directories with different mise.toml files, where cd swaps the first entry of PATH](mise-activate-path.svg)
@@ -200,13 +219,19 @@ The point is that **there is no longer a command to forget**, the way `nvm use` 
 So where is it written down which version that directory uses? In `mise.toml` — and the command
 that writes it is `mise use`.
 
-```bash
-mise use node@22
+```console
+❯ mise use node@22
+mise by @jdx – installing 1 tool
+mise ⇢ node@22.23.2  96ms · already installed
+mise ████████████████ 1/1 · installed 0 tools · 1 already installed in 130ms
+mise C:\Users\Jam\AppData\Local\Temp\misedemo\work\app\mise.toml tools: node@22.23.2
 ```
 
-This does two things at once. It **installs Node.js 22 and writes it into `mise.toml`**.
+This does two things at once. It **installs Node.js 22 and writes it into `mise.toml`**. Here it
+was already installed, so the install was skipped and only the write happened.
 
-```toml
+```console
+❯ cat mise.toml
 [tools]
 node = "22"
 ```

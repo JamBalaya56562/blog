@@ -45,13 +45,15 @@ something you thought you had set is not taking effect.
 
 This is where it differs from `export`.
 
-```bash
-cd ~/work/envdemo
-mise env | grep APP_NAME     # export APP_NAME=envdemo
-
-cd ~
-mise env | grep APP_NAME     # nothing
+```console
+❯ cd envdemo
+❯ mise env | grep APP_NAME
+export APP_NAME=envdemo
+❯ cd ..
+❯ mise env | grep APP_NAME
 ```
+
+Outside the directory, the same command returns nothing.
 
 ![Two variables listed by mise env inside the directory, and zero once cd leaves it](mise-env-directory-scope.svg)
 
@@ -118,13 +120,15 @@ individuals can override in their `.env`**, put `_.file` last.
 
 The first time you put a config in a directory, you get told this.
 
-```text
+```console
+❯ mise env
+mise ERROR error parsing config file: .../envdemo/mise.toml
 mise ERROR Config files in .../envdemo/mise.toml are not trusted.
-mise ERROR Trust them with `mise trust`.
-```
-
-```bash
-mise trust
+Trust them with `mise trust`. See https://mise.jdx.dev/cli/trust.html for more information.
+❯ mise trust
+mise trusted .../envdemo
+❯ mise env | grep APP_NAME
+export APP_NAME=envdemo
 ```
 
 It looks like a chore, but it makes sense. `[env]` is a feature for **injecting arbitrary values

@@ -64,7 +64,7 @@
     </g>
 
     <text x="72" y="486" font-size="13" fill="rgba(230,244,255,0.32)">$ node --version</text>
-    <text x="72" y="524" font-size="34" letter-spacing="-0.5" fill="rgba(230,244,255,0.55)">v22.11.0</text>
+    <text x="72" y="524" font-size="34" letter-spacing="-0.5" fill="rgba(230,244,255,0.55)">v22.23.2</text>
   </g>
 
   <g>
@@ -104,6 +104,6 @@
     </g>
 
     <text x="700" y="486" font-size="13" fill="rgba(230,244,255,0.4)">$ node --version</text>
-    <text x="700" y="524" font-size="34" letter-spacing="-0.5" fill="#7be4ff">v26.0.1</text>
+    <text x="700" y="524" font-size="34" letter-spacing="-0.5" fill="#7be4ff">v26.8.2</text>
   </g>
 </svg>
