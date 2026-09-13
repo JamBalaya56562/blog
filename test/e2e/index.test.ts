@@ -1,15 +1,19 @@
 import { expect, test } from "@playwright/test"
 
 /**
- * The posted date of `getting-started-with-mise`, per locale, in both the form
- * that is shown and the form that is spoken. Kept here rather than inline
- * because the assertions below are about how a date is rendered, not about
- * which date it is — rewriting a post should not mean hunting through this
- * file.
+ * The posted and revision dates of `getting-started-with-mise`, per locale,
+ * in both the form that is shown and the form that is spoken. Kept here rather
+ * than inline because the assertions below are about how a date is rendered,
+ * not about which date it is — revising the post means changing `updated`
+ * here, and nothing else in this file.
  */
 const DATES = {
-  en: { dotted: "2026.09.10", spoken: "September 10, 2026" },
-  ja: { dotted: "2026.09.10", spoken: "2026年9月10日" },
+  en: {
+    dotted: "2026.09.10",
+    spoken: "September 10, 2026",
+    updated: "2026.09.13",
+  },
+  ja: { dotted: "2026.09.10", spoken: "2026年9月10日", updated: "2026.09.13" },
 } as const
 
 /**
@@ -130,9 +134,9 @@ test.describe("Blog post page", () => {
       page.getByRole("heading", { name: "Getting Started with mise" }),
     ).toBeVisible()
     // Dates are rendered with dot separators (2026.09.10 instead of
-    // 2026-09-10) to match the cyber-style typography. The bare date now
-    // appears twice in this row — posted and updated — so it is asserted
-    // together with its label rather than on its own.
+    // 2026-09-10) to match the cyber-style typography. The row carries two
+    // dates — posted and updated — so the one meant is asserted together
+    // with its label rather than on its own.
     await expect(page.locator("article header .pp-tick").nth(1)).toContainText(
       `Posted on ${DATES.en.dotted}`,
     )
@@ -140,11 +144,11 @@ test.describe("Blog post page", () => {
   })
 
   /**
-   * The revision date is shown whether or not the post has been revised: a post
-   * with no `updated` really was last modified when it was published, so the
-   * fallback is the true date. Every post reads that way today, which is why
-   * these assert the order of the two rather than only that both exist — a
-   * pair of identical dates would satisfy "both visible" in either order.
+   * The revision date is shown after the posted date, each under its own
+   * label. The post has been revised, so the two dates differ and each can be
+   * asserted with its label; the order check stays, because it is what would
+   * still tell the two apart if the post were ever republished on the day it
+   * was last revised.
    */
   for (const [locale, posted, updated] of [
     ["en", "Posted on", "Updated on"],
@@ -160,15 +164,12 @@ test.describe("Blog post page", () => {
       // labels are only written in one case in the dictionary.
       const text = (await meta.textContent()) ?? ""
 
-      expect(text).toContain(posted)
-      expect(text).toContain(updated)
+      expect(text).toContain(`${posted} ${DATES[locale].dotted}`)
+      expect(text).toContain(`${updated} ${DATES[locale].updated}`)
       expect(
         text.indexOf(updated),
         "the revision date is not after the posted date",
       ).toBeGreaterThan(text.indexOf(posted))
-      // Both dates read the same until the post is actually revised, so the
-      // row carries it twice — splitting on it leaves three pieces.
-      expect(text.split(DATES[locale].dotted)).toHaveLength(3)
     })
   }
 
