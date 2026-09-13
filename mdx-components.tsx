@@ -1,5 +1,6 @@
 import type { MDXComponents } from "mdx/types"
 import type React from "react"
+import { Children, isValidElement } from "react"
 import { resolveImagePath } from "@/app/api/images/[...path]/route"
 import { CodeTabs } from "@/components/code-tabs"
 import { CopyButton } from "@/components/copy-button"
@@ -13,6 +14,23 @@ let generateId = createIdGenerator()
 
 function headingId(props: React.HTMLAttributes<HTMLHeadingElement>) {
   return generateId(extractText(props.children))
+}
+
+/**
+ * The language Shiki wrote onto the `<code>` inside a fence, as
+ * `language-toml`, or nothing when no child of the block carries one.
+ */
+function languageOf(children: React.ReactNode): string | undefined {
+  for (const child of Children.toArray(children)) {
+    if (!isValidElement<{ className?: string }>(child)) {
+      continue
+    }
+    const language = child.props.className?.match(/(?:^|\s)language-([\w-]+)/)
+    if (language) {
+      return language[1]
+    }
+  }
+  return undefined
 }
 
 const components: MDXComponents = {
@@ -78,31 +96,24 @@ const components: MDXComponents = {
     <ol className="my-4 ml-6 list-decimal text-foreground" {...props} />
   ),
   p: (props) => <p className="my-4 leading-7 text-foreground" {...props} />,
-  pre: ({ className, title, ...props }) => {
-    const block = (
-      <pre
-        className={[title ? null : "rounded-lg", className]
-          .filter(Boolean)
-          .join(" ")}
-        {...props}
-      />
-    )
-    // The copy button reads the `<pre>` next to it, so both shapes wrap the
-    // block in something for it to sit in; the titled one already had a
-    // wrapper, and the button moves up into the title strip there.
-    if (!title) {
-      return (
-        <div className="pp-copy-wrap">
-          <CopyButton />
-          {block}
-        </div>
-      )
-    }
+  // Every block is a panel: a strip above the code with a prompt glyph, the
+  // file name when the fence gave one, and the language at the right, over a
+  // faint grid that shows through the strip (the code face itself is opaque).
+  // The copy button reads the `<pre>` next to it, so the wrapper is also what
+  // it sits in; inside `CodeTabs` the tab strip stands in for this one and
+  // globals.css hides it.
+  pre: ({ className, title, children, ...props }) => {
+    const language = languageOf(children)
     return (
-      <div className="pp-code-titled pp-copy-wrap">
-        <div className="pp-code-title">{title}</div>
+      <div className="pp-code pp-copy-wrap">
+        <div className="pp-code-title">
+          <span className="pp-code-name">{title}</span>
+          {language && <span className="pp-code-lang">{language}</span>}
+        </div>
         <CopyButton />
-        {block}
+        <pre className={className} {...props}>
+          {children}
+        </pre>
       </div>
     )
   },
