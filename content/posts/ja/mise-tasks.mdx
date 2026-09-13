@@ -1,7 +1,7 @@
 ---
 title: mise でタスクを書く
 date: "2026-09-11"
-updated: "2026-09-11"
+updated: "2026-09-13"
 description: プロジェクトのコマンドを mise.toml に集約する方法と、順序・依存・引数の扱い
 image: /thumbnails/mise-tasks.avif
 tags:
@@ -47,9 +47,9 @@ run = "bun test"
 [tasks.lint]
 run = "biome check --write"
 
-[tasks."db:env"]
-description = ".env を生成する"
-run = "bun run scripts/setup-env.ts"
+[tasks."db:image"]
+description = "データベースのコンテナイメージを取得する"
+run = "docker pull amazon/dynamodb-local"
 
 [tasks."db:start"]
 description = "ローカルのデータベースを起動する"
@@ -60,7 +60,7 @@ run = "bash scripts/db-start.sh"
 
 ```text
 build     本番用にビルドする
-db:env    .env を生成する
+db:image  データベースのコンテナイメージを取得する
 db:start  ローカルのデータベースを起動する
 dev       開発サーバーを起動する
 lint
@@ -126,11 +126,11 @@ run = [
 
 ```toml title="mise.toml"
 [tasks."db:setup"]
-depends = ["db:env", "db:start"]
+depends = ["db:image", "db:start"]
 run = ["mise run db:health", "mise run db:push"]
 ```
 
-`mise run db:setup` を打つと、`.env` の生成とデータベースの起動が済んでから、ヘルスチェックとテーブル作成に進みます。
+`mise run db:setup` を打つと、イメージの取得とデータベースの起動が済んでから、ヘルスチェックとテーブル作成に進みます。
 
 ![depends に並べた 2 つが先に終わり、そのあと run の 2 つが順に実行される図](mise-tasks-depends-run.svg)
 
