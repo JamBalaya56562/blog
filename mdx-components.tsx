@@ -10,12 +10,6 @@ type BlockquoteProps = React.BlockquoteHTMLAttributes<HTMLQuoteElement> & {
   "data-alert"?: string
 }
 
-let generateId = createIdGenerator()
-
-function headingId(props: React.HTMLAttributes<HTMLHeadingElement>) {
-  return generateId(extractText(props.children))
-}
-
 /**
  * The language Shiki wrote onto the `<code>` inside a fence, as
  * `language-toml`, or nothing when no child of the block carries one.
@@ -69,7 +63,12 @@ function countLines(children: React.ReactNode): {
   return { commands, lines }
 }
 
-const components: MDXComponents = {
+/**
+ * The components that need nothing from the render they are used in. The
+ * headings are not here: their ids come from a duplicate counter that has to
+ * belong to one render, so they are built in `useMDXComponents`.
+ */
+const staticComponents: MDXComponents = {
   blockquote: ({
     "data-alert": alert,
     children,
@@ -105,12 +104,6 @@ const components: MDXComponents = {
   CodeTabs,
   code: (props) => <code className="rounded" {...props} />,
   h1: (props) => <h1 className="text-4xl font-bold" {...props} />,
-  h2: (props) => (
-    <h2 id={headingId(props)} className="font-semibold" {...props} />
-  ),
-  h3: (props) => (
-    <h3 id={headingId(props)} className="font-semibold" {...props} />
-  ),
   h4: (props) => <h4 className="text-xl font-medium" {...props} />,
   img: ({ src, alt, ...props }) => {
     const resolvedSrc =
@@ -196,7 +189,29 @@ const components: MDXComponents = {
   ),
 }
 
+/**
+ * The component map for one render of one post.
+ *
+ * The heading ids carry a duplicate counter (`setup`, `setup-1`) that must
+ * count within a single post. It used to live in a module variable, reset at
+ * the start of each render — but the server renders several posts at once
+ * (a page and the prefetches for the links on it, or two readers), and their
+ * renders interleave, so one post's "Installing" was counted against
+ * another's and came out as `installing-1` while the table of contents,
+ * which numbers its own ids, still pointed at `#installing`. The counter is
+ * a closure over this call now, and each render gets its own map.
+ */
 export function useMDXComponents(): MDXComponents {
-  generateId = createIdGenerator()
-  return components
+  const generateId = createIdGenerator()
+  const headingId = (props: React.HTMLAttributes<HTMLHeadingElement>) =>
+    generateId(extractText(props.children))
+  return {
+    ...staticComponents,
+    h2: (props) => (
+      <h2 id={headingId(props)} className="font-semibold" {...props} />
+    ),
+    h3: (props) => (
+      <h3 id={headingId(props)} className="font-semibold" {...props} />
+    ),
+  }
 }
