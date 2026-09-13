@@ -111,6 +111,31 @@ describe("BentoGrid", () => {
     expect(container.textContent).toContain("MIN")
   })
 
+  // The large first card spans two of the three desktop columns, so five
+  // posts fill both rows exactly; anything past that belongs to the feed.
+  test("renders at most 5 posts", () => {
+    const posts = Array.from({ length: 6 }, (_, i) =>
+      createMockPost({
+        frontmatter: {
+          date: `2024-01-0${i + 1}`,
+          description: `Desc ${i + 1}`,
+          tags: ["ts"],
+          title: `Post ${i + 1}`,
+        },
+        slug: `post-${i + 1}`,
+      }),
+    )
+    const { container } = render(
+      <BentoGrid locale="en" posts={posts} dictionary={dictionary} />,
+    )
+    const links = container.querySelectorAll("a[href^='/en/blog/']")
+    expect(links).toHaveLength(5)
+    expect(container.textContent).toContain("Post 5")
+    expect(container.textContent).not.toContain("Post 6")
+    const grid = container.querySelector(".grid")
+    expect(grid?.className).toContain("md:grid-cols-3")
+  })
+
   test("returns null when posts array is empty", () => {
     const { container } = render(
       <BentoGrid locale="en" posts={[]} dictionary={dictionary} />,

@@ -51,6 +51,8 @@ function BentoGridSkeleton() {
         <ArticleCardSkeleton isLarge />
         <ArticleCardSkeleton />
         <ArticleCardSkeleton />
+        <ArticleCardSkeleton />
+        <ArticleCardSkeleton />
       </div>
     </section>
   )

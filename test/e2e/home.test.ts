@@ -23,7 +23,7 @@ test.describe("Home page - Section visibility", () => {
 
   test("recent dispatches section shows article entries", async ({ page }) => {
     await page.goto("/en")
-    // Recent Dispatches only renders when there are posts beyond the first 3
+    // Recent Dispatches only renders when there are posts beyond the bento grid
     const recentSection = page.getByText("Recent Dispatches")
     const isVisible = await recentSection.isVisible().catch(() => false)
     if (isVisible) {

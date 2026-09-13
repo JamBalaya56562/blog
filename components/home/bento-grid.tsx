@@ -9,6 +9,10 @@ interface BentoGridProps {
   readonly dictionary: Dictionary
 }
 
+// On the desktop grid the first card spans two of the three columns, so the
+// first row holds two posts and the second row holds three.
+export const BENTO_GRID_POST_COUNT = 5
+
 export function BentoGrid({
   locale,
   posts,
@@ -18,7 +22,7 @@ export function BentoGrid({
     return null
   }
 
-  const gridPosts = posts.slice(0, 3)
+  const gridPosts = posts.slice(0, BENTO_GRID_POST_COUNT)
   const [first, ...rest] = gridPosts
   if (!first) {
     return null
