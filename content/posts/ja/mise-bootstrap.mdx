@@ -64,11 +64,8 @@ run = "node --version"
 
 実際に流れる順番で、実行せずに表示します。
 
-```bash
-mise bootstrap --dry-run
-```
-
-```text
+```console
+❯ mise bootstrap --dry-run
 mise bootstrap: system packages
 mise winget: 1 package(s) already installed
 winget install --id BurntSushi.ripgrep.MSVC --exact --silent --accept-source-agreements --accept-package-agreements --disable-interactivity
@@ -84,11 +81,8 @@ Git は入っていると判定され、ripgrep だけが `winget install` の�
 
 宣言したリソースが、今の状態からどう変わるかを表にします。
 
-```bash
-mise bootstrap plan
-```
-
-```text
+```console
+❯ mise bootstrap plan
 create     package:winget:BurntSushi.ripgrep.MSVC     missing               installed (any version)
 unchanged  package:winget:Git.Git                     installed (2.55.0.3)  installed (any version)
 Plan: 1 create, 0 update, 1 unchanged, 0 remove, 0 unknown
@@ -100,11 +94,8 @@ Plan: 1 create, 0 update, 1 unchanged, 0 remove, 0 unknown
 
 いま何がどうなっているかの一覧です。
 
-```bash
-mise bootstrap status
-```
-
-```text
+```console
+❯ mise bootstrap status
 packages  winget:BurntSushi.ripgrep.MSVC            missing
 packages  winget:Git.Git                  2.55.0.3  installed
 tools     node@22                         22.23.2   installed
@@ -118,11 +109,8 @@ mise bootstrap
 
 手元の ripgrep は winget 以外で入れてあったので、この記事ではパッケージの節を飛ばして流しました。飛ばし方は次の節で説明します。
 
-```bash
-mise bootstrap --skip packages
-```
-
-```text
+```console
+❯ mise bootstrap --skip packages
 mise bootstrap: dotfiles
 mise files: all files are applied
 mise bootstrap: tools
@@ -140,11 +128,8 @@ v22.23.2
 
 実行のたびに、前後の状態がチェックポイントとして記録されます。
 
-```bash
-mise bootstrap dotfiles history
-```
-
-```text
+```console
+❯ mise bootstrap dotfiles history
 12  2026-09-12 16:52  bootstrap           bootstrap
 11  2026-09-12 16:52  bootstrap-before    before bootstrap
 10  2026-09-12 16:52  bootstrap           bootstrap
@@ -206,11 +191,8 @@ mise bootstrap --only tools       # ツールだけ
 
 まず、今あるファイルを追跡対象にします。
 
-```bash
-mise bootstrap dotfiles track ~/.bashrc
-```
-
-```text
+```console
+❯ mise bootstrap dotfiles track ~/.bashrc
 mise history: saved baseline checkpoint 1
 mise dotfiles: tracking ~/.bashrc (declared in ~/.config/mise/config.toml)
 mise WARN  history: automatic capture is inactive: declare `[bootstrap.services.mise-history] builtin = "history-watch"` and run `mise bootstrap`; until then edits are saved by `mise bootstrap dotfiles save` or `mise bootstrap dotfiles watch --once`
@@ -225,25 +207,22 @@ mise WARN  history: automatic capture is inactive: declare `[bootstrap.services.
 
 ファイルを編集して、保存します。
 
-```bash
-echo 'alias gs="git status"' >> ~/.bashrc
-mise bootstrap dotfiles save ~/.bashrc
-```
-
-```text
+```console
+❯ echo 'alias gs="git status"' >> ~/.bashrc
+❯ mise bootstrap dotfiles save ~/.bashrc
 mise history: saved checkpoint 2: edited ~/.bashrc
 ```
 
 履歴と差分が見られます。
 
-```bash
-mise bootstrap dotfiles history --path ~/.bashrc
-mise bootstrap dotfiles history diff 2 --path ~/.bashrc --patch
-```
-
-```text
+```console
+❯ mise bootstrap dotfiles history --path ~/.bashrc
 2  2026-09-12 16:50  save      edited ~/.bashrc
 1  2026-09-12 16:50  baseline  tracked ~/.bashrc
+```
+
+```console
+❯ mise bootstrap dotfiles history diff 2 --path ~/.bashrc --patch
 ```
 
 ```diff
@@ -255,11 +234,8 @@ mise bootstrap dotfiles history diff 2 --path ~/.bashrc --patch
 
 そして戻せます。
 
-```bash
-mise bootstrap dotfiles rollback ~/.bashrc
-```
-
-```text
+```console
+❯ mise bootstrap dotfiles rollback ~/.bashrc
 mise history: rolled back ~/.bashrc to checkpoint 1
 ```
 

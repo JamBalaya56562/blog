@@ -58,7 +58,8 @@ run = "bash scripts/db-start.sh"
 
 一覧は `mise tasks` で出ます。
 
-```text
+```console
+❯ mise tasks
 build     本番用にビルドする
 db:image  データベースのコンテナイメージを取得する
 db:start  ローカルのデータベースを起動する
@@ -94,7 +95,8 @@ run = [
 run = ["echo step1", "false", "echo step3"]
 ```
 
-```text
+```console
+❯ mise run steps
 [steps] $ echo step1
 step1
 [steps] ERROR task failed
@@ -146,11 +148,8 @@ run = ["mise run db:health", "mise run db:push"]
 run = "echo hello"
 ```
 
-```bash
-mise run greet world
-```
-
-```text
+```console
+❯ mise run greet world
 [greet] $ echo hello world
 hello world
 ```
@@ -177,7 +176,8 @@ Windows で書くときに、これを知らないと確実に詰まります。
 run = "echo cmd-style=%OS% bash-style=$OSTYPE"
 ```
 
-```text
+```console
+❯ mise run probe
 cmd-style=Windows_NT bash-style=$OSTYPE
 ```
 
@@ -193,11 +193,8 @@ cmd-style=Windows_NT bash-style=$OSTYPE
 echo "shell=$OSTYPE args=$*"
 ```
 
-```bash
-mise run filetask hello
-```
-
-```text
+```console
+❯ mise run filetask hello
 shell=cygwin args=hello
 ```
 

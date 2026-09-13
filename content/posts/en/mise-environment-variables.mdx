@@ -32,11 +32,8 @@ APP_NAME = "envdemo"
 
 `mise env` shows what is currently set.
 
-```bash
-mise env
-```
-
-```text
+```console
+❯ mise env
 export APP_NAME=envdemo
 export NODE_ENV=development
 ```
@@ -72,7 +69,8 @@ _.file = ".env"
 
 The contents become environment variables as they are.
 
-```text
+```console
+❯ mise env
 export API_KEY=from-dotenv
 export DATABASE_URL='postgres://localhost:5432/dev'
 ```
@@ -92,7 +90,8 @@ SHARED = "from-mise-toml"
 _.file = ".env"
 ```
 
-```text
+```console
+❯ mise env
 export SHARED=from-dotenv
 ```
 
@@ -104,7 +103,8 @@ _.file = ".env"
 SHARED = "from-mise-toml"
 ```
 
-```text
+```console
+❯ mise env
 export SHARED=from-mise-toml
 ```
 
