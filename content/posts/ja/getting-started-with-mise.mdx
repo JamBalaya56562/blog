@@ -95,11 +95,8 @@ macOS で Homebrew を使っているなら `brew install mise` でも入りま�
 
 入ったかどうかは、バージョンを聞いてみるのが手っ取り早いです。
 
-```bash
-mise --version
-```
-
-```text
+```console
+❯ mise --version
 2026.9.4 windows-x64 (2026-09-09)
 ```
 
@@ -212,21 +209,15 @@ mise は 1 つの方法でツールを取ってくるわけではありません
 
 `node` や `ffmpeg` のような短い名前を書いたとき、どの経路になるかは mise のレジストリが決めています。調べるコマンドがあります。
 
-```bash
-mise registry node
-```
-
-```text
+```console
+❯ mise registry node
 core:node
 ```
 
 複数の候補を持つツールもあります。
 
-```bash
-mise registry ripgrep
-```
-
-```text
+```console
+❯ mise registry ripgrep
 aqua:BurntSushi/ripgrep cargo:ripgrep
 ```
 
@@ -248,11 +239,8 @@ ffmpeg@9.0.1  installing tzdata  525.0s
 
 タイムゾーンのデータベースは、動画のエンコードとは何の関係もありません。理由はレジストリを見れば分かります。
 
-```bash
-mise registry ffmpeg
-```
-
-```text
+```console
+❯ mise registry ffmpeg
 conda:ffmpeg
 ```
 

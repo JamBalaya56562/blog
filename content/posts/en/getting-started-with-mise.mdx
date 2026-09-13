@@ -113,11 +113,8 @@ saves trouble later.
 
 The quickest way to check it landed is to ask it for its version.
 
-```bash
-mise --version
-```
-
-```text
+```console
+❯ mise --version
 2026.9.4 windows-x64 (2026-09-09)
 ```
 
@@ -244,21 +241,15 @@ between them per tool.
 When you write a short name like `node` or `ffmpeg`, mise's registry decides which route it takes.
 There is a command for looking it up.
 
-```bash
-mise registry node
-```
-
-```text
+```console
+❯ mise registry node
 core:node
 ```
 
 Some tools have more than one candidate.
 
-```bash
-mise registry ripgrep
-```
-
-```text
+```console
+❯ mise registry ripgrep
 aqua:BurntSushi/ripgrep cargo:ripgrep
 ```
 
@@ -281,11 +272,8 @@ ffmpeg@9.0.1  installing tzdata  525.0s
 
 A timezone database has nothing to do with encoding video. The registry explains why.
 
-```bash
-mise registry ffmpeg
-```
-
-```text
+```console
+❯ mise registry ffmpeg
 conda:ffmpeg
 ```
 

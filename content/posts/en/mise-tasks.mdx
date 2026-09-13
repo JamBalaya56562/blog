@@ -67,7 +67,8 @@ run = "bash scripts/db-start.sh"
 
 `mise tasks` lists them.
 
-```text
+```console
+❯ mise tasks
 build     Build for production
 db:image  Pull the database container image
 db:start  Start the local database
@@ -108,7 +109,8 @@ An array is abandoned at the point something fails. Here is that being checked.
 run = ["echo step1", "false", "echo step3"]
 ```
 
-```text
+```console
+❯ mise run steps
 [steps] $ echo step1
 step1
 [steps] ERROR task failed
@@ -168,11 +170,8 @@ Anything after the task name is appended to the end of the command.
 run = "echo hello"
 ```
 
-```bash
-mise run greet world
-```
-
-```text
+```console
+❯ mise run greet world
 [greet] $ echo hello world
 hello world
 ```
@@ -201,7 +200,8 @@ cmd**. Here is that being checked.
 run = "echo cmd-style=%OS% bash-style=$OSTYPE"
 ```
 
-```text
+```console
+❯ mise run probe
 cmd-style=Windows_NT bash-style=$OSTYPE
 ```
 
@@ -220,11 +220,8 @@ recipe in [just](https://just.systems/).
 echo "shell=$OSTYPE args=$*"
 ```
 
-```bash
-mise run filetask hello
-```
-
-```text
+```console
+❯ mise run filetask hello
 shell=cygwin args=hello
 ```
 

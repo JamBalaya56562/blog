@@ -28,11 +28,8 @@ APP_NAME = "envdemo"
 
 いま何が設定されているかは `mise env` で確認できます。
 
-```bash
-mise env
-```
-
-```text
+```console
+❯ mise env
 export APP_NAME=envdemo
 export NODE_ENV=development
 ```
@@ -66,7 +63,8 @@ _.file = ".env"
 
 `.env` の中身がそのまま環境変数になります。
 
-```text
+```console
+❯ mise env
 export API_KEY=from-dotenv
 export DATABASE_URL='postgres://localhost:5432/dev'
 ```
@@ -83,7 +81,8 @@ SHARED = "from-mise-toml"
 _.file = ".env"
 ```
 
-```text
+```console
+❯ mise env
 export SHARED=from-dotenv
 ```
 
@@ -95,7 +94,8 @@ _.file = ".env"
 SHARED = "from-mise-toml"
 ```
 
-```text
+```console
+❯ mise env
 export SHARED=from-mise-toml
 ```
 
