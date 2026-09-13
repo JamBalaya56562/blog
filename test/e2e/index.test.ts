@@ -1,20 +1,17 @@
 import { expect, test } from "@playwright/test"
+import { listedPostCount, postDates } from "./posts"
 
 /**
  * The posted and revision dates of `getting-started-with-mise`, per locale,
- * in both the form that is shown and the form that is spoken. Kept here rather
- * than inline because the assertions below are about how a date is rendered,
- * not about which date it is — revising the post means changing `updated`
- * here, and nothing else in this file.
+ * in both the form that is shown and the form that is spoken. The assertions
+ * below are about how a date is rendered, not about which date it is, so the
+ * dates are read from the post's frontmatter: revising the post changes
+ * nothing here.
  */
 const DATES = {
-  en: {
-    dotted: "2026.09.10",
-    spoken: "September 10, 2026",
-    updated: "2026.09.13",
-  },
-  ja: { dotted: "2026.09.10", spoken: "2026年9月10日", updated: "2026.09.13" },
-} as const
+  en: postDates("en", "getting-started-with-mise"),
+  ja: postDates("ja", "getting-started-with-mise"),
+}
 
 /**
  * The redirect used to ignore `Accept-Language` and send everyone to `/en`, so
@@ -88,18 +85,23 @@ test.describe("Blog list page", () => {
   test("lists all English posts", async ({ page }) => {
     await page.goto("/en/blog")
     await expect(page.getByRole("heading", { name: /^Blog/ })).toBeVisible()
-    await expect(page.locator("a[href*='/en/blog/']")).toHaveCount(6)
+    await expect(page.locator("a[href*='/en/blog/']")).toHaveCount(
+      listedPostCount("en"),
+    )
   })
 
   test("filters posts by tag", async ({ page }) => {
-    // Four of the six posts carry `mise`; the Jujutsu and Sapling ones do not, so the
-    // filtered list is two shorter than the full one. An unknown tag renders
-    // neither an active chip nor any post, which is the failure this catches.
+    // The expected count is the number of posts whose frontmatter carries the
+    // tag, so what is asserted is that the page shows exactly those. An
+    // unknown tag renders neither an active chip nor any post, which is the
+    // failure this catches.
     await page.goto("/en/blog?tag=nothing-carries-this")
     await expect(page.locator("a[href*='/en/blog/']")).toHaveCount(0)
 
     await page.goto("/en/blog?tag=mise")
-    await expect(page.locator("a[href*='/en/blog/']")).toHaveCount(4)
+    await expect(page.locator("a[href*='/en/blog/']")).toHaveCount(
+      listedPostCount("en", "mise"),
+    )
     // Each post row that has the "mise" tag also renders an active TagLink, so
     // multiple `[data-active="true"]` elements exist on the page — scope to the
     // first one (the top filter bar chip).
@@ -357,8 +359,9 @@ test.describe("Japanese locale", () => {
   test("blog list page shows Japanese heading", async ({ page }) => {
     await page.goto("/ja/blog")
     await expect(page.getByRole("heading", { name: /^ブログ/ })).toBeVisible()
-    // Every post is translated, so this matches the English list above.
-    await expect(page.locator("a[href*='/ja/blog/']")).toHaveCount(6)
+    await expect(page.locator("a[href*='/ja/blog/']")).toHaveCount(
+      listedPostCount("ja"),
+    )
   })
 })
 
