@@ -1306,6 +1306,80 @@
   .prose-cyber img {
     border: 1px solid var(--cyber-line);
   }
+  /* Every picture in a post is a button that opens it at full size. The
+     button is unstyled apart from the cursor; the frame lights up on hover
+     and on keyboard focus so the affordance is visible either way. */
+  .prose-cyber .pp-zoom {
+    cursor: zoom-in;
+    text-align: left;
+  }
+  .prose-cyber .pp-zoom img {
+    transition: border-color 0.2s ease;
+  }
+  .prose-cyber .pp-zoom:hover img,
+  .prose-cyber .pp-zoom:focus-visible img {
+    border-color: var(--cyber-cyan);
+  }
+  /* The dialog covers the viewport so a click on the empty part of it is a
+     click on the backdrop; the picture sits centred at up to the viewport's
+     size and keeps its own frame. */
+  .pp-lightbox {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    max-width: none;
+    max-height: none;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    place-items: center;
+    cursor: zoom-out;
+  }
+  .pp-lightbox[open] {
+    display: grid;
+    animation: ppLightboxIn 0.2s ease-out;
+  }
+  .pp-lightbox[open]::backdrop {
+    background: color-mix(in srgb, var(--cyber-bg-0) 88%, transparent);
+    animation: ppBackdropIn 0.2s ease-out;
+  }
+  .pp-lightbox-img {
+    max-width: 96vw;
+    max-height: 92vh;
+    object-fit: contain;
+    border: 1px solid var(--cyber-line-hi);
+    background: var(--cyber-bg-1);
+    box-shadow: 0 30px 80px -30px
+      color-mix(in srgb, var(--cyber-cyan) 50%, transparent);
+    cursor: default;
+  }
+  .pp-lightbox-close {
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    border: 1px solid var(--cyber-line-hi);
+    background: color-mix(in srgb, var(--cyber-bg-0) 80%, transparent);
+    color: var(--cyber-dim);
+    cursor: pointer;
+    transition:
+      color 0.2s ease,
+      border-color 0.2s ease;
+  }
+  .pp-lightbox-close:hover,
+  .pp-lightbox-close:focus-visible {
+    color: var(--cyber-cyan);
+    border-color: var(--cyber-cyan);
+  }
+  /* the page behind the dialog stays where it was */
+  body:has(.pp-lightbox[open]) {
+    overflow: hidden;
+  }
   .prose-cyber hr {
     border: 0;
     height: 1px;
@@ -1438,6 +1512,26 @@
   }
 }
 
+@keyframes ppLightboxIn {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes ppBackdropIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
 @keyframes ppRailRun {
   0% {
     background-position: 0 -60%;
@@ -1550,6 +1644,8 @@
   .pp-mitems > .pp-mfoot,
   .pp-cell-cur::after,
   .pp-nv:hover::after,
+  .pp-lightbox[open],
+  .pp-lightbox[open]::backdrop,
   .prose-cyber .pp-code-title::after,
   .prose-cyber .pp-tabs-list::after,
   .pp-tg:active .pp-tg-ripple,

@@ -71,6 +71,10 @@
     "titleAccent": "もっと身近に。",
     "viewAll": "すべて表示"
   },
+  "image": {
+    "close": "閉じる",
+    "zoom": "拡大して表示"
+  },
   "language": {
     "current": "日本語",
     "switchTo": "English"

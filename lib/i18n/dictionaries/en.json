@@ -71,6 +71,10 @@
     "titleAccent": "more accessible.",
     "viewAll": "View all"
   },
+  "image": {
+    "close": "Close",
+    "zoom": "Open at full size"
+  },
   "language": {
     "current": "English",
     "switchTo": "日本語"

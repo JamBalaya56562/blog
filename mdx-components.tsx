@@ -4,6 +4,7 @@ import { Children, isValidElement } from "react"
 import { resolveImagePath } from "@/app/api/images/[...path]/route"
 import { CodeTabs } from "@/components/code-tabs"
 import { CopyButton } from "@/components/copy-button"
+import { ZoomableImage } from "@/components/zoomable-image"
 import { createIdGenerator, extractText } from "@/lib/toc"
 
 type BlockquoteProps = React.BlockquoteHTMLAttributes<HTMLQuoteElement> & {
@@ -105,17 +106,17 @@ const staticComponents: MDXComponents = {
   code: (props) => <code className="rounded" {...props} />,
   h1: (props) => <h1 className="text-4xl font-bold" {...props} />,
   h4: (props) => <h4 className="text-xl font-medium" {...props} />,
+  // Every picture in a post opens at full size on click; the screenshots and
+  // diagrams are drawn wider than the article and their text is only legible
+  // that way. `ZoomableImage` owns the img attributes and the dialog.
   img: ({ src, alt, ...props }) => {
     const resolvedSrc =
       src && !src.startsWith("http") ? resolveImagePath(src) : src
     return (
-      // biome-ignore lint/performance/noImgElement: MDX images have unknown intrinsic dimensions and `images.unoptimized` is enabled, so next/image adds no benefit here
-      <img
-        src={resolvedSrc}
+      <ZoomableImage
+        src={resolvedSrc ?? ""}
         alt={alt ?? ""}
-        className="my-4 max-w-full rounded-lg"
-        loading="lazy"
-        decoding="async"
+        className="max-w-full rounded-lg"
         {...props}
       />
     )
