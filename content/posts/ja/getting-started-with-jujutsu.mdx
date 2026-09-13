@@ -1,0 +1,539 @@
+---
+title: Jujutsu 入門ガイド
+date: "2026-09-13"
+updated: "2026-09-13"
+description: Git 互換のバージョン管理システム Jujutsu (jj) を、インストールから Git との違い、毎日打つコマンドまで
+image: /thumbnails/getting-started-with-jujutsu.avif
+tags:
+  - jujutsu
+  - git
+  - cli
+  - devtools
+---
+
+## Jujutsu とは
+
+[Jujutsu](https://jj-vcs.github.io/jj/latest/)（コマンド名は `jj`）は、**Git のリポジトリをそのまま扱える、新しいバージョン管理システム**です。リポジトリの実体は Git のままなので、GitHub にも push できますし、同僚が Git を使い続けていても何も変わりません。変わるのは、自分の手元の操作だけです。
+
+このブログのリポジトリも jj で管理しています。毎日 PR を作ってマージする普通の使い方をひととおり通したので、その範囲で「Git と何が違うのか」「最初に覚えるコマンドは何か」をまとめます。
+
+Git と比べたときの違いは、突き詰めると 3 つです。
+
+- **作業コピーがコミット** — 編集中のファイルは、常に「今のコミット」の中身。`git add` も `git stash` もありません
+- **変更には 2 つの ID がある** — 中身が変わってもついて回る「変更 ID」と、Git のコミットハッシュ。履歴を書き換えても、話している相手を見失いません
+- **すべての操作がやり直せる** — `jj undo` で直前の操作を取り消せます。コミットだけでなく、rebase も bookmark の移動も
+
+順番に、実際の出力で見ていきます。
+
+## インストール
+
+[mise](/ja/blog/getting-started-with-mise) を使っているなら 1 行です。
+
+```bash
+mise use -g jj
+```
+
+mise を使っていなければ、OS のパッケージマネージャから入ります。
+
+<CodeTabs labels={["macOS / Linux", "Windows"]}>
+
+```bash
+brew install jj
+```
+
+```powershell
+winget install jj-vcs.jj
+```
+
+</CodeTabs>
+
+入ったかどうかは、バージョンを表示して確かめます。
+
+```console
+❯ jj --version
+jj 0.45.1-7c41cdeb16b6b321c64e789a966b6adf723816a5
+```
+
+最初に、コミットに記録される名前とメールアドレスを設定しておきます。Git の `user.name` と `user.email` と同じ意味です。
+
+```bash
+jj config set --user user.name "JamBalaya56562"
+jj config set --user user.email "jambalaya.pyoncafe@outlook.jp"
+```
+
+書き込まれる先は `jj config path --user` で分かります。Windows では `%APPDATA%\jj\config.toml`、macOS と Linux では `~/.config/jj/config.toml` です。
+
+## 使ってみる
+
+ここからは、空のディレクトリで実際に打った結果です。
+
+### リポジトリを作る
+
+最初のリポジトリを作る操作は `jj git init` です。見た目どおり `git init` の jj 版で、Git を扱うコマンドは `jj git` の下にまとまっています。空のディレクトリを作って、その中で打ちます。
+
+```console
+❯ mkdir jjdemo && cd jjdemo
+❯ jj git init
+Initialized repo in "."
+❯ ls -la
+total 3332
+drwxr-xr-x 1 Jam 197611 0  9月 13 15:18 .
+drwxr-xr-x 1 Jam 197611 0  9月 13 15:18 ..
+drwxr-xr-x 1 Jam 197611 0  9月 13 15:18 .git
+drwxr-xr-x 1 Jam 197611 0  9月 13 15:18 .jj
+```
+
+`.jj` と `.git` の両方ができました。Git のリポジトリとしても完全に有効で、`git` コマンドがそのまま動きます。
+
+```console
+❯ git status
+On branch main
+
+No commits yet
+
+nothing to commit (create/copy files and use "git add" to track)
+```
+
+jj はこの形を colocated と呼びます。以前はオプションでしたが、いまは既定です。
+
+既存の Git リポジトリで使い始めるときも、同じコマンドをそのディレクトリで打つだけです。
+
+```console
+❯ cd existing-repo
+❯ jj git init
+Done importing changes from the underlying Git repo.
+Setting the revset alias `trunk()` to `main@origin`.
+Initialized repo in "."
+```
+
+clone するなら `jj git clone` です。URL は Git と同じものを渡します。試しに、このブログのリポジトリを clone してみます。
+
+```console
+❯ jj git clone https://github.com/JamBalaya56562/blog.git
+Fetching into new repo in "C:\Users\Jam\AppData\Local\Temp\blog"
+bookmark: jujutsu-article@origin [new] untracked
+bookmark: main@origin            [new] tracked
+tag: v0.1.0@origin [new] tracked
+tag: v0.2.0@origin [new] tracked
+tag: v0.3.0@origin [new] tracked
+tag: v0.4.0@origin [new] tracked
+tag: v0.5.0@origin [new] tracked
+tag: v0.5.1@origin [new] tracked
+tag: v0.6.0@origin [new] tracked
+tag: v0.7.0@origin [new] tracked
+tag: v0.8.0@origin [new] tracked
+tag: v0.9.0@origin [new] tracked
+Setting the revset alias `trunk()` to `main@origin`.
+Working copy  (@) now at: xqluqkll 226c6559 (empty) (no description set)
+Parent commit (@-)      : wyykwmnq 61b72c08 main | docs(blog): show the mise articles' transcripts as terminal windows (#1232)
+Added 301 files, modified 0 files, removed 0 files
+❯ cd blog
+❯ ls -la | head -12
+total 3569
+drwxr-xr-x 1 Jam 197611     0  9月 13 15:50 .
+drwxr-xr-x 1 Jam 197611     0  9月 13 15:50 ..
+drwxr-xr-x 1 Jam 197611     0  9月 13 15:50 .claude
+drwxr-xr-x 1 Jam 197611     0  9月 13 15:50 .devcontainer
+-rw-r--r-- 1 Jam 197611   290  9月 13 15:50 .dockerignore
+-rw-r--r-- 1 Jam 197611   294  9月 13 15:50 .editorconfig
+drwxr-xr-x 1 Jam 197611     0  9月 13 15:50 .git
+-rw-r--r-- 1 Jam 197611  1865  9月 13 15:50 .gitattributes
+drwxr-xr-x 1 Jam 197611     0  9月 13 15:50 .github
+-rw-r--r-- 1 Jam 197611   567  9月 13 15:50 .gitignore
+drwxr-xr-x 1 Jam 197611     0  9月 13 15:50 .jj
+```
+
+リモートの bookmark とタグが取り込まれ、ファイルが展開され、`.git` と `.jj` が並んでいます。最後の 3 行は、clone した時点ですでに **空の変更が `main` の上に作られて、そこに立っている**ことを言っています。この「常に自分の変更の中にいる」状態が、次の節の話です。
+
+### 最初の変更
+
+作った直後の状態を見てみます。`jj status` は `git status` に当たるコマンドで、いまいる変更と、その中のファイルの変更を表示します。
+
+```console
+❯ jj status
+The working copy has no changes.
+Working copy  (@) : tturtmot 5c4a5295 (empty) (no description set)
+Parent commit (@-): zzzzzzzz 00000000 (empty) (no description set)
+```
+
+まだ何もしていないのに、`tturtmot` という変更がもうあります。これが「作業コピーはコミット」の意味です。`@` は今いる変更を指す記号で、Git の `HEAD` に近いものです。
+
+ファイルを作って、もう一度 `jj status` を打ちます。
+
+```console
+❯ echo Hello > README.md
+❯ jj status
+Working copy changes:
+A README.md
+Working copy  (@) : tturtmot 378e52a9 (no description set)
+Parent commit (@-): zzzzzzzz 00000000 (empty) (no description set)
+```
+
+`git add` は打っていません。それでも `README.md` は変更 `tturtmot` の中身になっていて、コミット ID が `5c4a5295` から `378e52a9` に変わっています。変更 ID の方は `tturtmot` のままです。
+
+この変更に説明を付けます。コミットメッセージを書き込むコマンドは `jj describe` で、`-m` で本文を渡します。
+
+```console
+❯ jj describe -m "Add README"
+Working copy  (@) now at: tturtmot 4bb47a91 Add README
+Parent commit (@-)      : zzzzzzzz 00000000 (empty) (no description set)
+```
+
+Git の `git commit -m` に一番近いのはこれですが、意味は違います。`describe` は説明を書き込むだけで、「確定」はしていません。このあとファイルを編集すれば、その編集も `tturtmot` に入り続けます。
+
+次の作業に移るときに、新しい変更を作ります。それが `jj new` で、いまの変更を親にした空の変更を作って、そこに移動します。
+
+```console
+❯ jj new
+Working copy  (@) now at: oklvxylu a2376dfd (empty) (no description set)
+Parent commit (@-)      : tturtmot 4bb47a91 Add README
+```
+
+これで `tturtmot` は親になり、空の変更 `oklvxylu` が今いる場所になりました。ここから先の編集は `oklvxylu` に入ります。
+
+> [!TIP]
+> `jj describe` と `jj new` を続けて打つ場面は多いので、両方をまとめた `jj commit -m "..."` があります。「今の変更に説明を付けて、次の空の変更に移る」という意味で、Git の `git commit` と手触りが一番近いのはこちらです。
+
+### `jj log` の読み方
+
+履歴は `jj log` で見ます。Git の `git log --graph --oneline` に近い出力が、オプション無しで出ます。
+
+```console
+❯ jj log
+@  oklvxylu jambalaya.pyoncafe@outlook.jp 2026-09-13 13:20:42 a2376dfd
+│  (empty) (no description set)
+○  tturtmot jambalaya.pyoncafe@outlook.jp 2026-09-13 13:20:42 4bb47a91
+│  Add README
+◆  zzzzzzzz root() 00000000
+```
+
+- `@` — 今いる変更
+- `○` — 普通の変更
+- `◆` — 変更できない（immutable）コミット。一番下の `zzzzzzzz` はリポジトリの根で、リモートの `main` に push 済みのコミットもこれになります
+- 左が変更 ID、右端がコミット ID。どちらも先頭の数文字だけで指定できます
+
+Git 側からも同じコミットが見えます。
+
+```console
+❯ git log --oneline
+4bb47a9 Add README
+❯ git status
+Not currently on any branch.
+nothing to commit, working tree clean
+```
+
+`git log` に出るのは `tturtmot` のコミット ID `4bb47a91` で、`@` の空の変更は出ていません。jj は Git の `HEAD` を「今いる変更の親」に向けるので、Git から見ると detached HEAD で作業ツリーがきれいな状態に見えます。`@` の中身は、Git にとってはまだコミットされていない編集です。
+
+先頭の何文字かに色が付いて表示されるのは、その文字数だけ打てば一意に指せる、という印です。この記事の出力は色が無いので分かりませんが、手元では `jj new t` のように 1 文字で通ることがよくあります。
+
+### 入れ忘れを、前の変更に足す
+
+`README.md` にもう 1 行足して、説明を付けます。`jj new -m` は、説明付きの新しい変更を一度に作る書き方です。
+
+```console
+❯ echo World >> README.md
+❯ jj describe -m "Greet the world"
+❯ jj new -m "Add a licence note"
+❯ echo MIT > LICENSE
+```
+
+ここで、`README.md` の `Hello` を `Hello!` に直したくなったとします。この修正は、いま作業中の「Add a licence note」ではなく、前の「Greet the world」に入るべきものです。
+
+Git なら stash して checkout して amend して戻ってくるところですが、jj では**そのまま直して、直したファイルだけを親に送ります**。それをするのが `jj squash` で、「今の変更の中身を親に混ぜる」コマンドです。エディタで `README.md` の `Hello` を `Hello!` にしてから、こう打ちます。
+
+```console
+❯ jj squash README.md
+Rebased 1 descendant commits.
+Working copy  (@) now at: ovvvnnor 5e6ce646 Add a licence note
+Parent commit (@-)      : oklvxylu 901a7c31 Greet the world
+```
+
+ファイルを指定したので、動いたのは `README.md` の分だけです。`LICENSE` はいまの変更に残ったままです。
+
+```console
+❯ jj log
+@  ovvvnnor jambalaya.pyoncafe@outlook.jp 2026-09-13 13:21:06 5e6ce646
+│  Add a licence note
+○  oklvxylu jambalaya.pyoncafe@outlook.jp 2026-09-13 13:21:06 901a7c31
+│  Greet the world
+○  tturtmot jambalaya.pyoncafe@outlook.jp 2026-09-13 13:20:42 4bb47a91
+│  Add README
+◆  zzzzzzzz root() 00000000
+```
+
+「Greet the world」のコミット ID が `bf873b9b` から `901a7c31` に変わり、変更 ID `oklvxylu` は変わっていません。その上に乗っていた「Add a licence note」も自動で載せ替えられています（`Rebased 1 descendant commits.`）。Git でいえば amend と rebase を一度にやったことになりますが、打ったのは 1 コマンドです。
+
+![jj squash README.md の前後で、README.md だけが Greet the world に移り、変更 ID は同じままコミット ID が新しくなり、上の Add a licence note が載せ替えられる図](jujutsu-squash.svg)
+
+### もっと前の変更を直す
+
+親ではなく、2 つ前の「Add README」に `.gitignore` を足したくなったとします。`jj edit` で、その変更に直接移動できます。
+
+```console
+❯ jj edit tturtmot
+❯ echo node_modules/ > .gitignore
+❯ jj status
+Rebased 2 descendant commits onto updated working copy.
+Working copy changes:
+A .gitignore
+A README.md
+Working copy  (@) : tturtmot 2610b68f Add README
+Parent commit (@-): zzzzzzzz 00000000 (empty) (no description set)
+```
+
+ファイルを置いた時点で `tturtmot` の中身が変わり、その子孫 2 つがまた自動で載せ替えられました。
+
+![jj edit tturtmot の前後で、作業ディレクトリが Add README の中身に入れ替わって .gitignore が足され、上の 2 つの変更が載せ替えられる図](jujutsu-edit.svg)
+
+終わったら先頭に戻ります。
+
+```console
+❯ jj edit ovvvnnor
+```
+
+> [!NOTE]
+> 変更を移動すると、**ディレクトリの中のファイルはその変更の中身に置き換わります**。`jj edit tturtmot` の直後は `LICENSE` が消えていて、`jj edit ovvvnnor` で戻ってきます。消えたのではなく、その変更にはまだ無かった、という状態を見ているだけです。
+
+### 間違えたら `jj undo`
+
+上の `squash` を、間違えて 2 つ前の変更に送ってしまったとします。`--into` で送り先を指定できるので、そこを間違えた形です。
+
+```console
+❯ jj squash README.md --into tturtmot
+Rebased 2 descendant commits.
+Working copy  (@) now at: ovvvnnor 7d39ffbe Add a licence note
+Parent commit (@-)      : oklvxylu c01a916f Greet the world
+New conflicts appeared in 1 commits:
+  tturtmot 2c598158 (conflict) Add README
+```
+
+コンフリクトが出ました。あとで触れますが、jj ではコンフリクトが出ても作業は止まりません。ここでは間違いに気づいたので、取り消します。
+
+```console
+❯ jj undo
+Undid operation: 4f4da9c67ec4 (2026-09-13 13:20:54) squash commits into 4bb47a91b947ce2ef51167be9cc712df0afddd9a
+Restored to operation: 3160922e4231 (2026-09-13 13:20:54) snapshot working copy
+Working copy  (@) now at: ovvvnnor 61975902 Add a licence note
+Parent commit (@-)      : oklvxylu bf873b9b Greet the world
+Existing conflicts were resolved or abandoned from 1 commits.
+```
+
+squash も、それに伴う rebase も、コンフリクトも、まとめて無かったことになりました。何を取り消したのかは `jj op log` に残っています。
+
+```console
+❯ jj op log
+4f4da9c67ec4 Jam@DESKTOP-U30T4EP default@ now, lasted 402 milliseconds
+squash commits into 4bb47a91b947ce2ef51167be9cc712df0afddd9a
+args: jj squash README.md --into tturtmot
+3160922e4231 Jam@DESKTOP-U30T4EP default@ 1 second ago, lasted 103 milliseconds
+snapshot working copy
+args: jj diff --stat
+```
+
+`jj status` や `jj diff` のような読むだけのコマンドでも `snapshot working copy` という操作が記録されているのが見えます。これが「コマンドを打った時点で自動的にコミットに取り込まれる」の正体です。
+
+> [!TIP]
+> `jj undo` を繰り返すと、操作を 1 つずつさかのぼれます。特定の時点に一気に戻したいときは `jj op log` で ID を見て `jj op restore <ID>` です。
+
+### 要らない変更を捨てる
+
+試しに作った変更が不要になったら、`jj abandon` です。
+
+```console
+❯ jj new -m "An experiment that did not work out"
+❯ echo x > scratch.txt
+❯ jj abandon
+Abandoned 1 commits:
+  nknpsvyu c1adb267 An experiment that did not work out
+Working copy  (@) now at: lrksrpsq 95f579b1 (empty) (no description set)
+Parent commit (@-)      : ovvvnnor ab228dc9 Add a licence note
+Added 0 files, modified 0 files, removed 1 files
+```
+
+`scratch.txt` はディレクトリからも消えます。変更の中身だったものは、変更と一緒に無くなるからです（これも `jj undo` で戻ります）。
+
+## リモートと GitHub
+
+ここまでは手元だけの話でした。push するには、Git のブランチに相当するものが要ります。
+
+### bookmark はブランチ
+
+jj には Git のブランチに相当する **bookmark** があります。違いは、**bookmark は自動では動かない**ことです。Git では `main` にいる状態でコミットすれば `main` が進みますが、jj の bookmark は、置いたコミットにそのまま留まります。進めたければ、明示的に動かします。
+
+push したいコミットに bookmark を置いて、push します。bookmark を作るのが `jj bookmark create`、リモートへ送るのが `jj git push` で、`--bookmark` でどれを送るかを指定します。
+
+```console
+❯ jj bookmark create main -r @
+❯ jj git push --bookmark main
+Changes to push to origin:
+  bookmark: main [add to ab228dc9c9ac]
+Warning: The working-copy commit became immutable; a new commit has been created on top of it.
+Working copy  (@) now at: upwouywx 309ce578 (empty) (no description set)
+Parent commit (@-)      : ovvvnnor ab228dc9 main | Add a licence note
+```
+
+push した瞬間に、今いた変更が immutable（`◆`）になり、新しい空の変更が上に作られました。リモートの `main` に載ったコミットは、もう手元で直すものではない、という jj の判断です。「あとから直せる」のは、まだ push していない範囲だけだと覚えておくと安全です。
+
+### リモートの変更を取り込む
+
+同僚が `main` に push したあと、手元で取り込むには `jj git fetch` です。取ってきたあとの様子を `jj log` で見ます。
+
+```console
+❯ jj git fetch
+❯ jj log
+@  upwouywx jambalaya.pyoncafe@outlook.jp 2026-09-13 13:22:13 0be7156b
+│  Add contributing guide
+│ ◆  zumzptvl teammate@example.com 2026-09-13 13:22:11 main eccc91c7
+├─╯  Add the copyright line
+◆  ovvvnnor jambalaya.pyoncafe@outlook.jp 2026-09-13 13:21:46 ab228dc9
+│  Add a licence note
+~
+```
+
+`git pull` と違って、fetch は手元の変更を動かしません。`main` が進み、自分の変更は古い `main` の上に残っています。載せ替えは `jj rebase` です。
+
+```console
+❯ jj rebase -d main
+Rebased 1 commits to destination.
+Working copy  (@) now at: upwouywx 56f5616c Add contributing guide
+Parent commit (@-)      : zumzptvl eccc91c7 main | Add the copyright line
+```
+
+`-d` は destination（載せ替え先）です。指定しなければ今いる変更とその子孫が対象になるので、日常ではこの 1 行で足ります。
+
+![jj git fetch で main だけが進んで @ は動かず、jj rebase -d main で自分の変更が新しい main の上に移る図](jujutsu-fetch-rebase.svg)
+
+### PR を作る
+
+作業用の bookmark を置いて push すれば、GitHub 側にはブランチとして見えます。
+
+```console
+❯ jj bookmark create contributing -r @
+❯ jj git push --bookmark contributing
+❯ gh pr create --head contributing
+```
+
+PR がマージされたら、`jj git fetch` で `main` が進み、マージ済みのコミットは自動的に abandon されます。手元でブランチを消す作業はありません。
+
+> [!WARNING]
+> マージ後の `jj git fetch` は、abandon されたコミットの上にあった作業コピーを、**マージ前の親に**載せ替えます。新しい `main` の上には来ません。fetch のあとは、毎回 `jj rebase -d main` を打つ習慣にしておくと迷いません。
+
+### コンフリクトは作業を止めない
+
+同僚と自分が `README.md` の同じ行を直した状態で rebase してみます。
+
+```console
+❯ jj git fetch
+❯ jj rebase -d main
+Rebased 1 commits to destination.
+Working copy  (@) now at: znwtpvsx 224cb834 (conflict) Greet everyone
+Parent commit (@-)      : xsxqypzo 29608896 main | Add an exclamation mark
+Warning: There are unresolved conflicts at these paths:
+README.md    2-sided conflict
+```
+
+Git の rebase なら、ここで止まって `--continue` か `--abort` を迫られます。jj は**コンフリクトを含んだまま rebase を完了**し、変更に `(conflict)` の印を付けて、そのまま先に進めます。`jj log` を打っても、他の変更に移っても構いません。
+
+![git rebase はコンフリクトで止まって --continue か --abort を待つが、jj rebase はコンフリクトをコミットの中に記録して作業を続けられ、ファイルを直せば解消される図](jujutsu-conflict.svg)
+
+解消するには、ファイルを開いて直すだけです。中を見てみます。
+
+```console
+❯ cat -n README.md
+     1	Hello!
+     2	<<<<<<< conflict 1 of 1
+     3	%%%%%%% diff from: zumzptvl eccc91c7 "Add the copyright line" (parents of rebased revision)
+     4	\\\\\\\        to: xsxqypzo 29608896 "Add an exclamation mark" (rebase destination)
+     5	-World
+     6	+World!
+     7	+++++++ znwtpvsx 8046350f "Greet everyone" (rebased revision)
+     8	Everyone
+     9	>>>>>>> conflict 1 of 1 ends
+```
+
+マーカーの形が Git と違います。上半分は「相手側がどう変えたか」の差分、下半分は「自分の変更後の内容」です。両方を見て、`Everyone!` に書き換えて保存します。
+
+```console
+❯ jj status
+Working copy changes:
+M README.md
+Working copy  (@) : znwtpvsx 93afbae1 Greet everyone
+Parent commit (@-): xsxqypzo 29608896 main | Add an exclamation mark
+```
+
+`(conflict)` が消えました。「解消した」と宣言するコマンドはありません。マーカーの無いファイルを保存した時点で、次のスナップショットが解消済みとして取り込みます。
+
+## Git と何が違うのか
+
+ここまでの出力に出てきたことを、Git の言葉で整理します。頭の中の模型を差し替える箇所は 3 つです。
+
+### 作業コピーがコミットになっている
+
+Git には「作業ツリー」「ステージング」「コミット」の 3 段があります。編集して、`git add` で選んで、`git commit` で確定する。この 3 段のうち、jj には**コミットしかありません**。
+
+ディレクトリの中のファイルは、常に「今のコミット」の中身そのものです。`README.md` を置いただけで `jj status` のコミット ID が変わったのは、そのためでした。ファイルを編集すれば、jj のコマンドを何か打った時点でその変更は自動的にコミットに取り込まれます（`jj op log` に並んでいた `snapshot working copy` がそれです）。`git add` に相当する操作はありませんし、途中の作業を退避する `git stash` もありません。退避したければ、`jj new` で別の変更に移るだけです。`jj edit` で移動したときにファイルが入れ替わったのも、同じ理由です。
+
+![Git の作業ツリー・index・コミットの 3 段に対して、jj は作業コピーがそのままコミットの 1 段で、git add も git stash も無い図](jujutsu-working-copy.svg)
+
+「常にコミットされている」と聞くと、汚い履歴が量産されそうに思えます。そうならないのは、次の性質があるからです。
+
+### コミットは、あとから自由に直せる
+
+jj では、コミットの説明を書くのも、中身を足すのも、順番を入れ替えるのも、**すでにあるコミットに対して**行います。`jj describe` は説明を書き込むだけで確定ではなく、`jj squash` は親に中身を足し、`jj edit` は 2 つ前の変更に直接入りました。Git で「`--amend` や `rebase -i` を使うのは上級者」という感覚があるとすれば、jj ではそれが日常の操作です。
+
+そのために、1 つのコミットが 2 つの ID を持っています。
+
+- **変更 ID（change ID）** — `tturtmot` のような英字。中身を直しても、rebase しても変わらない
+- **コミット ID（commit ID）** — `4bb47a91` のような 16 進数。Git のコミットハッシュそのもので、中身を直すたびに変わる
+
+「さっきの変更に 1 行足したい」と思ったとき、指すのは変更 ID です。`jj squash` のあと「Greet the world」のコミット ID は `bf873b9b` から `901a7c31` に変わりましたが、変更 ID は `oklvxylu` のままでした。だから、続けて同じ名前で扱えます。
+
+ただし、push してリモートの `main` に載ったコミットは immutable（`◆`）になり、直す対象から外れます。「あとから直せる」のは、まだ共有していない範囲です。
+
+### やり直しは操作単位
+
+jj は、リポジトリに対して行った操作（コミットの作成、rebase、bookmark の移動、リモートからの取得）を**すべて記録**しています。`jj op log` で一覧でき、`jj undo` で直前の操作を取り消せます。
+
+Git の `reflog` に似ていますが、対象がコミットではなく操作です。間違えた `squash` を戻したときは、squash も、それに伴う rebase も、コンフリクトも一度に消えました。「rebase したら壊れた」「間違えて abandon した」のどちらも、同じ `jj undo` 一発で戻ります。
+
+### コンフリクトは状態であって、割り込みではない
+
+Git では、rebase や merge の途中でコンフリクトが出ると、そこで作業が止まります。解消して `--continue` するか、`--abort` で諦めるまで、他のことはできません。
+
+jj では、コンフリクトは**コミットの中に記録される状態**です。rebase は最後まで完了し、当該の変更に `(conflict)` が付くだけで、他の変更に移ることも、あとで戻ってくることもできます。解消は、ファイルを直して次のスナップショットに任せるだけでした。
+
+## 実際に踏んだ罠
+
+colocated なリポジトリでは `git` コマンドもそのまま動きます。動くのですが、**書き込む操作を Git 側から行うのはやめた方がいい**、というのが使ってみての結論です。
+
+一度、癖で `git stash` を打ちました。jj には stash が無いので、Git 側で退避して戻すと、ファイルは Git の `autocrlf` を通って戻ってきます。Windows だったので、触っていないファイルまで改行が CRLF に変わり、`jj status` が全ファイルを変更扱いにしました。jj のコマンドだけを使っていれば通らない経路です。
+
+> [!NOTE]
+> `git log` や `git blame` のように読むだけのコマンドは問題ありません。困るのは `git stash`、`git checkout`、`git commit`、`git rebase` のような、作業ツリーや履歴を書き換えるものです。同じことは jj のコマンドで全部できます。
+
+## Git のコマンドとの対応
+
+| やりたいこと | Git | jj |
+|---|---|---|
+| 状態を見る | `git status` | `jj status` |
+| 履歴を見る | `git log --graph` | `jj log` |
+| 差分を見る | `git diff` | `jj diff` |
+| 変更をコミットする | `git add -A && git commit -m` | `jj commit -m`（または `jj describe -m` → `jj new`） |
+| 直前のコミットに足す | `git commit --amend` | `jj squash` |
+| 古いコミットを直す | `git rebase -i` | `jj edit <変更 ID>` |
+| 作業を退避する | `git stash` | 不要（`jj new` で別の変更に移る） |
+| ブランチを作る | `git switch -c feat` | `jj bookmark create feat -r @` |
+| 取り込む | `git pull --rebase` | `jj git fetch` → `jj rebase -d main` |
+| push する | `git push -u origin feat` | `jj git push --bookmark feat` |
+| コミットを捨てる | `git reset --hard HEAD~` | `jj abandon` |
+| やり直す | `git reflog` → `git reset` | `jj undo` |
+
+## まとめ
+
+- Jujutsu は Git のリポジトリをそのまま扱う。`jj git init` を打てば、既存のリポジトリでも今日から使える
+- 作業コピーはコミット。`git add` と `git stash` は無くなり、`jj describe` で説明を付けて `jj new` で次に進む
+- コミットには変更 ID とコミット ID がある。中身を直してもついて回る変更 ID で、**あとから直す**のが日常の操作になる
+- 間違えたら `jj undo`。rebase もコンフリクトも操作単位で戻る
+- bookmark は自動で動かないブランチ。push すると、そのコミットは immutable になる
+- fetch のあとは `jj rebase -d main`。コンフリクトが出ても作業は止まらず、ファイルを直せば解消される
+- colocated でも、Git 側から書き込む操作はしない

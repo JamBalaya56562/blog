@@ -88,14 +88,13 @@ test.describe("Blog list page", () => {
   test("lists all English posts", async ({ page }) => {
     await page.goto("/en/blog")
     await expect(page.getByRole("heading", { name: /^Blog/ })).toBeVisible()
-    await expect(page.locator("a[href*='/en/blog/']")).toHaveCount(4)
+    await expect(page.locator("a[href*='/en/blog/']")).toHaveCount(5)
   })
 
   test("filters posts by tag", async ({ page }) => {
-    // Every post carries `mise` at the moment, so this cannot assert that the
-    // list got shorter. What it does cover is that a tag in the query string
-    // reaches the chips and the rows: an unknown tag renders neither an active
-    // chip nor any post, which is the failure this catches.
+    // Four of the five posts carry `mise`; the Jujutsu one does not, so the
+    // filtered list is one shorter than the full one. An unknown tag renders
+    // neither an active chip nor any post, which is the failure this catches.
     await page.goto("/en/blog?tag=nothing-carries-this")
     await expect(page.locator("a[href*='/en/blog/']")).toHaveCount(0)
 
@@ -359,7 +358,7 @@ test.describe("Japanese locale", () => {
     await page.goto("/ja/blog")
     await expect(page.getByRole("heading", { name: /^ブログ/ })).toBeVisible()
     // Every post is translated, so this matches the English list above.
-    await expect(page.locator("a[href*='/ja/blog/']")).toHaveCount(4)
+    await expect(page.locator("a[href*='/ja/blog/']")).toHaveCount(5)
   })
 })
 
