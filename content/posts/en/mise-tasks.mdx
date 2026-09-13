@@ -1,7 +1,7 @@
 ---
 title: Writing Tasks with mise
 date: "2026-09-11"
-updated: "2026-09-11"
+updated: "2026-09-13"
 description: Collecting a project's commands into mise.toml, and how order, dependencies and arguments behave
 image: /thumbnails/mise-tasks.avif
 tags:
@@ -56,9 +56,9 @@ run = "bun test"
 [tasks.lint]
 run = "biome check --write"
 
-[tasks."db:env"]
-description = "Generate .env"
-run = "bun run scripts/setup-env.ts"
+[tasks."db:image"]
+description = "Pull the database container image"
+run = "docker pull amazon/dynamodb-local"
 
 [tasks."db:start"]
 description = "Start the local database"
@@ -69,7 +69,7 @@ run = "bash scripts/db-start.sh"
 
 ```text
 build     Build for production
-db:env    Generate .env
+db:image  Pull the database container image
 db:start  Start the local database
 dev       Start the dev server
 lint
@@ -146,11 +146,11 @@ Things that must happen first go in `depends`.
 
 ```toml title="mise.toml"
 [tasks."db:setup"]
-depends = ["db:env", "db:start"]
+depends = ["db:image", "db:start"]
 run = ["mise run db:health", "mise run db:push"]
 ```
 
-`mise run db:setup` generates `.env` and starts the database, and only then moves on to the health
+`mise run db:setup` pulls the image and starts the database, and only then moves on to the health
 check and creating the tables.
 
 ![The two entries in depends finishing first, followed by the two entries in run executing in order](mise-tasks-depends-run.svg)
