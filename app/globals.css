@@ -549,6 +549,82 @@
     transform: translateX(4px);
   }
 
+  /* ---- post navigation: a rail on the outer edge, chevrons that light --- */
+  /* The rail sits on the edge the card points to; on hover a band of light
+     runs down it and the chevrons come on from the outside in. The border,
+     background, card lift and the extra padding on the rail side all stay
+     with the utilities on the link: a padding set here would lose to them. */
+  .pp-nv {
+    overflow: hidden;
+  }
+  .pp-nv::before,
+  .pp-nv::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+  }
+  .pp-nv::before {
+    background: color-mix(in srgb, var(--foreground) 14%, transparent);
+  }
+  .pp-nv::after {
+    background-image: linear-gradient(
+      180deg,
+      transparent,
+      var(--cyber-cyan),
+      transparent
+    );
+    background-size: 100% 60%;
+    background-repeat: no-repeat;
+    opacity: 0;
+    transition: opacity 0.25s ease;
+  }
+  .pp-nv-l::before,
+  .pp-nv-l::after {
+    left: 0;
+  }
+  .pp-nv-r::before,
+  .pp-nv-r::after {
+    right: 0;
+  }
+  .pp-nv-r::after {
+    background-image: linear-gradient(
+      180deg,
+      transparent,
+      var(--cyber-amber),
+      transparent
+    );
+  }
+  .pp-nv:hover::after {
+    opacity: 1;
+    animation: ppRailRun 1.2s linear infinite;
+  }
+  .pp-nv-chv {
+    display: inline-flex;
+    gap: 1px;
+    font-family: var(--blog-font-mono);
+  }
+  .pp-nv-chv > i {
+    font-style: normal;
+    opacity: 0.22;
+    transition:
+      opacity 0.2s ease,
+      transform 0.2s ease;
+  }
+  .pp-nv:hover .pp-nv-chv > i {
+    opacity: 1;
+    transform: scaleX(1.1);
+  }
+  /* the outermost chevron waits longest, so they come on from the outside */
+  .pp-nv-l .pp-nv-chv > i:nth-child(1),
+  .pp-nv-r .pp-nv-chv > i:nth-child(3) {
+    transition-delay: 0.14s;
+  }
+  .pp-nv-chv > i:nth-child(2) {
+    transition-delay: 0.07s;
+  }
+
   /* ---- theme toggle: sun and moon turn over each other ------------------ */
   .pp-tg {
     position: relative;
@@ -611,9 +687,15 @@
       border-color 0.2s ease,
       opacity 0.2s ease;
   }
-  /* a titled block has a strip above the code; the button sits in it */
-  .pp-code-titled .pp-copy {
-    top: 6px;
+  /* the button sits centred in the strip above the code, which is 34px tall
+     inside its bottom border (8px padding either side of an 18px line);
+     inside a tabbed group the strip is hidden, so it drops back to the top
+     of the code */
+  .pp-code .pp-copy {
+    top: 3px;
+  }
+  .pp-tabs .pp-code .pp-copy {
+    top: 10px;
   }
   /* quiet until the block is hovered or the button focused; always shown
      where there is no hover to wait for */
@@ -924,42 +1006,90 @@
     position: relative;
     margin: 1.4em 0;
   }
-  /* A code block that names the file it came from. Same construction as the
-     tabbed blocks below: the frame belongs to the wrapper so the strip and the
-     code read as one panel. */
-  .prose-cyber .pp-code-titled {
-    margin: 1.4em 0;
-    border: 1px solid var(--cyber-line);
-    border-radius: 8px;
-    overflow: hidden;
-    background: var(--cyber-code-bg);
-  }
-  .prose-cyber .pp-code-title {
-    font-family: var(--blog-font-mono);
-    font-size: 12px;
-    letter-spacing: 0.06em;
-    padding: 8px 14px;
-    color: var(--cyber-dim);
-    border-bottom: 1px solid var(--cyber-line);
-  }
-  .prose-cyber .pp-code-titled pre {
-    margin: 0;
-    border: 0;
-    border-radius: 0;
-  }
-  /* Tabbed code blocks. The frame moves out to the wrapper so the tab strip and
-     the code read as one panel, which means the `pre` inside has to give up the
-     border, radius and vertical margin it carries on its own. */
+  /* Every fenced block is a panel: the frame belongs to the wrapper, which
+     carries a faint grid under the strip; the code face keeps its own opaque
+     background, so no line ever runs behind the text. The strip holds a
+     prompt glyph, the file name if the fence named one, the language at the
+     right, and a band of light that crosses it slowly. */
+  .prose-cyber .pp-code,
   .prose-cyber .pp-tabs {
     margin: 1.4em 0;
     border: 1px solid var(--cyber-line);
-    border-radius: 8px;
     overflow: hidden;
-    background: var(--cyber-code-bg);
+    background-color: var(--cyber-code-bg);
+    background-image:
+      linear-gradient(
+        color-mix(in srgb, var(--cyber-cyan) 5%, transparent) 1px,
+        transparent 1px
+      ),
+      linear-gradient(
+        90deg,
+        color-mix(in srgb, var(--cyber-cyan) 5%, transparent) 1px,
+        transparent 1px
+      );
+    background-size: 22px 22px;
   }
+  .prose-cyber .pp-code-title,
   .prose-cyber .pp-tabs-list {
+    position: relative;
     display: flex;
+    align-items: center;
+    gap: 10px;
+    overflow: hidden;
+    font-family: var(--blog-font-mono);
+    font-size: 12px;
+    line-height: 1.5;
+    letter-spacing: 0.06em;
+    color: var(--cyber-dim);
     border-bottom: 1px solid var(--cyber-line);
+    background: color-mix(in srgb, var(--cyber-bg-0) 55%, transparent);
+  }
+  .prose-cyber .pp-code-title {
+    padding: 8px 14px;
+    /* leaves room for the copy button, which sits at the strip's right */
+    padding-right: 48px;
+  }
+  .prose-cyber .pp-code-title::after,
+  .prose-cyber .pp-tabs-list::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 34%;
+    pointer-events: none;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      color-mix(in srgb, var(--cyber-cyan) 22%, transparent),
+      transparent
+    );
+    animation: ppHeadScan 3.4s linear infinite;
+  }
+  .prose-cyber .pp-code-name::before {
+    content: "❯ ";
+    color: var(--cyber-cyan);
+  }
+  .prose-cyber .pp-code-lang {
+    margin-left: auto;
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--cyber-dimmer);
+  }
+  .prose-cyber .pp-code pre {
+    margin: 0;
+    border: 0;
+  }
+  /* Inside a tabbed group the tab strip is the panel's strip, so the block
+     inside each panel gives up its own frame and strip. */
+  .prose-cyber .pp-tabs .pp-code {
+    margin: 0;
+    border: 0;
+    background: none;
+  }
+  .prose-cyber .pp-tabs .pp-code-title {
+    display: none;
   }
   .prose-cyber .pp-tabs-tab {
     font-family: var(--blog-font-mono);
@@ -981,11 +1111,6 @@
   .prose-cyber .pp-tabs-tab[aria-selected="true"] {
     color: var(--cyber-cyan);
     border-bottom-color: var(--cyber-cyan);
-  }
-  .prose-cyber .pp-tabs pre {
-    margin: 0;
-    border: 0;
-    border-radius: 0;
   }
   .prose-cyber pre code {
     background: transparent;
@@ -1248,6 +1373,24 @@
   }
 }
 
+@keyframes ppRailRun {
+  0% {
+    background-position: 0 -60%;
+  }
+  100% {
+    background-position: 0 160%;
+  }
+}
+
+@keyframes ppHeadScan {
+  0% {
+    transform: translateX(-120%);
+  }
+  100% {
+    transform: translateX(420%);
+  }
+}
+
 @keyframes ppAlertRail {
   0% {
     top: -40%;
@@ -1341,6 +1484,9 @@
   .pp-mitems > .pp-mi,
   .pp-mitems > .pp-mfoot,
   .pp-cell-cur::after,
+  .pp-nv:hover::after,
+  .prose-cyber .pp-code-title::after,
+  .prose-cyber .pp-tabs-list::after,
   .pp-tg:active .pp-tg-ripple,
   .pp-copy[data-copied]::after,
   .animate-shimmer {
