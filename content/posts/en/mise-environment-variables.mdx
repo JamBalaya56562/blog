@@ -1,7 +1,7 @@
 ---
 title: Managing Environment Variables with mise
 date: "2026-09-11"
-updated: "2026-09-11"
+updated: "2026-09-13"
 description: Writing environment variables that only apply inside a directory into mise.toml, and the traps in loading .env
 image: /thumbnails/mise-environment-variables.avif
 tags:
@@ -166,23 +166,26 @@ those keys are no longer valid, the error does not come out as "authentication f
 The awkward part is the shape of it: **something you thought you had deleted is still in effect.**
 No amount of re-reading the AWS side turns it up.
 
-The fix was to have [the script that generates `.env`](https://github.com/JamBalaya56562/blog/blob/074327c34f78f475f977c2bb8e980fa2b5270fbb/scripts/setup-env.ts)
-strip keys that are no longer used when it finds them.
+The fix, in this repository, was to stop having a `.env` at all. What the generated file was
+meant to hold was three values for the local DynamoDB container — a region, an endpoint and a
+table name — development defaults, none of them a secret; the AWS keys were lines that had
+outlived their use and stayed behind in it. The three values live in `[env]` in `mise.toml` now.
 
-```ts title="scripts/setup-env.ts"
-const obsoleteKeys = [
-  "AWS_ACCESS_KEY_ID",
-  "AWS_SECRET_ACCESS_KEY",
-  "AWS_SESSION_TOKEN",
-  "DATABASE_URL",
-]
+```toml title="mise.toml"
+[env]
+AWS_REGION = "ap-northeast-1"
+DYNAMODB_ENDPOINT = "{{ env.DYNAMODB_ENDPOINT | default(value='http://127.0.0.1:8000') }}"
+DYNAMODB_TABLE_NAME = "blog-page-views"
 ```
 
-An old `DATABASE_URL` is in there for the same reason. A connection target nobody uses any more,
-left in `.env`, looks like a live setting.
+With nothing to generate, a fresh clone has the values from the start, and there is no file for a
+stale line to survive in. Anything that differs per machine goes in `mise.local.toml`, which is not
+committed. AWS credentials sit in neither a variable nor a file: SSO locally, the execution role on
+Lambda.
 
-Do not leave values you have stopped using in `.env`. Commenting them out is the same thing.
-Whoever removes them one day will lose half an hour to an error with no visible cause.
+If you do keep a `.env`, do not leave values you have stopped using in it. Commenting them out is
+the same thing. Whoever removes them one day will lose half an hour to an error with no visible
+cause.
 
 ## Adding to PATH with `_.path`
 

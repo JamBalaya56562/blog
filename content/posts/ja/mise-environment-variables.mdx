@@ -1,7 +1,7 @@
 ---
 title: mise で環境変数を管理する
 date: "2026-09-11"
-updated: "2026-09-11"
+updated: "2026-09-13"
 description: ディレクトリに入ったときだけ効く環境変数を mise.toml に書く方法と、.env を読み込むときの落とし穴
 image: /thumbnails/mise-environment-variables.avif
 tags:
@@ -143,20 +143,18 @@ AWS_SECRET_ACCESS_KEY=...
 
 厄介なのは、**消したはずのものが効いている**という構図です。AWS 側の設定を何度見直しても見つかりません。
 
-対処として、[`.env` を生成するスクリプト](https://github.com/JamBalaya56562/blog/blob/074327c34f78f475f977c2bb8e980fa2b5270fbb/scripts/setup-env.ts)が、もう使っていないキーを見つけたら消すようにしました。
+対処として、このリポジトリでは `.env` そのものをやめました。生成していた `.env` に本来書くつもりだったのは、ローカルの DynamoDB コンテナ用のリージョン・エンドポイント・テーブル名の 3 つで、どれも開発用の既定値であって秘密ではありません。AWS のキーは、役目を終えたあともそこに残っていた行でした。この 3 つは、いまは `mise.toml` の `[env]` に直接書いてあります。
 
-```ts title="scripts/setup-env.ts"
-const obsoleteKeys = [
-  "AWS_ACCESS_KEY_ID",
-  "AWS_SECRET_ACCESS_KEY",
-  "AWS_SESSION_TOKEN",
-  "DATABASE_URL",
-]
+```toml title="mise.toml"
+[env]
+AWS_REGION = "ap-northeast-1"
+DYNAMODB_ENDPOINT = "{{ env.DYNAMODB_ENDPOINT | default(value='http://127.0.0.1:8000') }}"
+DYNAMODB_TABLE_NAME = "blog-page-views"
 ```
 
-古い `DATABASE_URL` も同じ理由で入れてあります。使われていない接続先が `.env` に残っていると、生きている設定に見えてしまうためです。
+生成するファイルが無いので、clone した直後から値が揃い、古い行が残る場所もありません。マシンごとに変えたい値は、コミットしない `mise.local.toml` で上書きします。AWS の認証情報は環境変数にもファイルにも置かず、ローカルでは SSO、Lambda では実行ロールから取ります。
 
-`.env` に「使わなくなった値」を残さないでください。コメントアウトでも同じです。いつか外した人が、原因不明のエラーに数十分溶かします。
+それでも `.env` を使うなら、「使わなくなった値」を残さないでください。コメントアウトでも同じです。いつか外した人が、原因不明のエラーに数十分溶かします。
 
 ## `_.path` で PATH に足す
 
