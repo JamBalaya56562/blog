@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation"
 import { Suspense } from "react"
-import { BentoGrid } from "@/components/home/bento-grid"
+import { BENTO_GRID_POST_COUNT, BentoGrid } from "@/components/home/bento-grid"
 import { HeroSection } from "@/components/home/hero-section"
 import { RecentDispatches } from "@/components/home/recent-dispatches"
 import { JsonLd } from "@/components/json-ld"
@@ -20,8 +20,11 @@ async function HomeBody({ locale }: { locale: Locale }) {
   const loader = createContentLoader()
   const posts = await loader.getAllPosts(locale)
 
-  const bentoGridPosts = posts.slice(0, 3)
-  const recentPosts = posts.slice(3, 8)
+  const bentoGridPosts = posts.slice(0, BENTO_GRID_POST_COUNT)
+  const recentPosts = posts.slice(
+    BENTO_GRID_POST_COUNT,
+    BENTO_GRID_POST_COUNT + 5,
+  )
 
   const tagSet = new Set<string>()
   for (const p of posts) {
