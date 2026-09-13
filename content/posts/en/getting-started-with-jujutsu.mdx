@@ -1,0 +1,630 @@
+---
+title: Getting Started with Jujutsu
+date: "2026-09-13"
+updated: "2026-09-13"
+description: Jujutsu (jj), the Git-compatible version control system — installing it, how it differs from Git, and the commands you type every day
+image: /thumbnails/getting-started-with-jujutsu.avif
+tags:
+  - jujutsu
+  - git
+  - cli
+  - devtools
+---
+
+## What Jujutsu is
+
+[Jujutsu](https://jj-vcs.github.io/jj/latest/) — the command is `jj` — is **a new version control system
+that works on a Git repository as it is**. The repository underneath stays a Git repository, so it pushes
+to GitHub, and a colleague who keeps using Git notices nothing. What changes is what you do at your own
+keyboard.
+
+This blog's repository is managed with jj. Having taken it through the ordinary routine — open a PR,
+merge it, repeat, every day — this is what that routine taught me about how it differs from Git and
+which commands to learn first.
+
+Boiled down, the differences from Git are three.
+
+- **The working copy is a commit.** Whatever you are editing is always the content of "the current
+  commit". There is no `git add` and no `git stash`.
+- **A change has two IDs.** A "change ID" that follows the change around no matter how its content is
+  rewritten, and the Git commit hash. Rewrite history all you like; you never lose track of what you
+  were talking about.
+- **Every operation can be undone.** `jj undo` takes back the last operation — not just a commit, but a
+  rebase or a bookmark move too.
+
+Each of these shows up in the real output below.
+
+## Installing
+
+With [mise](/en/blog/getting-started-with-mise), it is one line.
+
+```bash
+mise use -g jj
+```
+
+Without mise, use the package manager for your OS.
+
+<CodeTabs labels={["macOS / Linux", "Windows"]}>
+
+```bash
+brew install jj
+```
+
+```powershell
+winget install jj-vcs.jj
+```
+
+</CodeTabs>
+
+Ask it for its version to see that it is there.
+
+```console
+❯ jj --version
+jj 0.45.1-7c41cdeb16b6b321c64e789a966b6adf723816a5
+```
+
+First, set the name and email that go on your commits. They mean the same as Git's `user.name` and
+`user.email`.
+
+```bash
+jj config set --user user.name "JamBalaya56562"
+jj config set --user user.email "jambalaya.pyoncafe@outlook.jp"
+```
+
+`jj config path --user` tells you where that was written: `%APPDATA%\jj\config.toml` on Windows,
+`~/.config/jj/config.toml` on macOS and Linux.
+
+## Trying it out
+
+From here on, everything is what actually came back in an empty directory.
+
+### Creating a repository
+
+The first thing to do is `jj git init`. It is what it looks like, the jj version of `git init`; the
+commands that deal with Git sit under `jj git`. Make an empty directory and run it inside.
+
+```console
+❯ mkdir jjdemo && cd jjdemo
+❯ jj git init
+Initialized repo in "."
+❯ ls -la
+total 3332
+drwxr-xr-x 1 Jam 197611 0  9月 13 15:18 .
+drwxr-xr-x 1 Jam 197611 0  9月 13 15:18 ..
+drwxr-xr-x 1 Jam 197611 0  9月 13 15:18 .git
+drwxr-xr-x 1 Jam 197611 0  9月 13 15:18 .jj
+```
+
+Both `.jj` and `.git` are there. It is a fully valid Git repository too, and `git` commands work in it as
+they are.
+
+```console
+❯ git status
+On branch main
+
+No commits yet
+
+nothing to commit (create/copy files and use "git add" to track)
+```
+
+jj calls this layout *colocated*. It used to be an option; it is now the default.
+
+Starting in an existing Git repository is the same command, run in that directory.
+
+```console
+❯ cd existing-repo
+❯ jj git init
+Done importing changes from the underlying Git repo.
+Setting the revset alias `trunk()` to `main@origin`.
+Initialized repo in "."
+```
+
+To clone, use `jj git clone` with the same URL you would give Git. Here it is cloning this blog's
+repository.
+
+```console
+❯ jj git clone https://github.com/JamBalaya56562/blog.git
+Fetching into new repo in "C:\Users\Jam\AppData\Local\Temp\blog"
+bookmark: jujutsu-article@origin [new] untracked
+bookmark: main@origin            [new] tracked
+tag: v0.1.0@origin [new] tracked
+tag: v0.2.0@origin [new] tracked
+tag: v0.3.0@origin [new] tracked
+tag: v0.4.0@origin [new] tracked
+tag: v0.5.0@origin [new] tracked
+tag: v0.5.1@origin [new] tracked
+tag: v0.6.0@origin [new] tracked
+tag: v0.7.0@origin [new] tracked
+tag: v0.8.0@origin [new] tracked
+tag: v0.9.0@origin [new] tracked
+Setting the revset alias `trunk()` to `main@origin`.
+Working copy  (@) now at: xqluqkll 226c6559 (empty) (no description set)
+Parent commit (@-)      : wyykwmnq 61b72c08 main | docs(blog): show the mise articles' transcripts as terminal windows (#1232)
+Added 301 files, modified 0 files, removed 0 files
+❯ cd blog
+❯ ls -la | head -12
+total 3569
+drwxr-xr-x 1 Jam 197611     0  9月 13 15:50 .
+drwxr-xr-x 1 Jam 197611     0  9月 13 15:50 ..
+drwxr-xr-x 1 Jam 197611     0  9月 13 15:50 .claude
+drwxr-xr-x 1 Jam 197611     0  9月 13 15:50 .devcontainer
+-rw-r--r-- 1 Jam 197611   290  9月 13 15:50 .dockerignore
+-rw-r--r-- 1 Jam 197611   294  9月 13 15:50 .editorconfig
+drwxr-xr-x 1 Jam 197611     0  9月 13 15:50 .git
+-rw-r--r-- 1 Jam 197611  1865  9月 13 15:50 .gitattributes
+drwxr-xr-x 1 Jam 197611     0  9月 13 15:50 .github
+-rw-r--r-- 1 Jam 197611   567  9月 13 15:50 .gitignore
+drwxr-xr-x 1 Jam 197611     0  9月 13 15:50 .jj
+```
+
+The remote's bookmarks and tags come in, the files are checked out, and `.git` sits next to `.jj`. The
+last three lines say that, at the moment of cloning, **an empty change was already created on top of
+`main` and you are standing in it**. That state — always being inside a change of your own — is what the
+next section is about.
+
+### The first change
+
+Look at the state right after creating the repository. `jj status` is the counterpart of `git status`:
+it shows the change you are in and the file changes inside it.
+
+```console
+❯ jj status
+The working copy has no changes.
+Working copy  (@) : tturtmot 5c4a5295 (empty) (no description set)
+Parent commit (@-): zzzzzzzz 00000000 (empty) (no description set)
+```
+
+Nothing has been done, and there is already a change called `tturtmot`. That is what "the working copy
+is a commit" means. `@` is the symbol for the change you are in, close to Git's `HEAD`.
+
+Create a file and run `jj status` again.
+
+```console
+❯ echo Hello > README.md
+❯ jj status
+Working copy changes:
+A README.md
+Working copy  (@) : tturtmot 378e52a9 (no description set)
+Parent commit (@-): zzzzzzzz 00000000 (empty) (no description set)
+```
+
+No `git add` was typed. Even so, `README.md` is now the content of change `tturtmot`, and the commit ID
+has moved from `5c4a5295` to `378e52a9`. The change ID is still `tturtmot`.
+
+Give the change a description. The command that writes the commit message is `jj describe`, and `-m`
+passes the text.
+
+```console
+❯ jj describe -m "Add README"
+Working copy  (@) now at: tturtmot 4bb47a91 Add README
+Parent commit (@-)      : zzzzzzzz 00000000 (empty) (no description set)
+```
+
+This is the closest thing to `git commit -m`, but it means something different. `describe` only writes
+the description; nothing is "finalised". Edit a file after this and that edit keeps going into
+`tturtmot` too.
+
+When you move on to the next piece of work, create a new change. That is `jj new`: it creates an empty
+change whose parent is the current one, and moves you into it.
+
+```console
+❯ jj new
+Working copy  (@) now at: oklvxylu a2376dfd (empty) (no description set)
+Parent commit (@-)      : tturtmot 4bb47a91 Add README
+```
+
+`tturtmot` is now the parent and the empty change `oklvxylu` is where you are. Edits from here on go
+into `oklvxylu`.
+
+> [!TIP]
+> `jj describe` followed by `jj new` comes up often enough that there is `jj commit -m "..."` for the
+> pair. It means "describe the current change and move on to the next empty one", and of all the
+> commands it is the one that feels most like `git commit`.
+
+### Reading `jj log`
+
+History is `jj log`. With no options it prints something close to `git log --graph --oneline`.
+
+```console
+❯ jj log
+@  oklvxylu jambalaya.pyoncafe@outlook.jp 2026-09-13 13:20:42 a2376dfd
+│  (empty) (no description set)
+○  tturtmot jambalaya.pyoncafe@outlook.jp 2026-09-13 13:20:42 4bb47a91
+│  Add README
+◆  zzzzzzzz root() 00000000
+```
+
+- `@` — the change you are in
+- `○` — an ordinary change
+- `◆` — an immutable commit, one you cannot rewrite. `zzzzzzzz` at the bottom is the root of the
+  repository; commits already pushed to the remote's `main` show the same way
+- the change ID is on the left, the commit ID at the right end; either can be given by its first few
+  characters
+
+Git sees the same commits.
+
+```console
+❯ git log --oneline
+4bb47a9 Add README
+❯ git status
+Not currently on any branch.
+nothing to commit, working tree clean
+```
+
+What `git log` shows is `tturtmot`'s commit ID `4bb47a91`; the empty change at `@` is not there. jj
+points Git's `HEAD` at the parent of the current change, so from Git's side this looks like a detached
+`HEAD` with a clean working tree. Whatever is in `@` is, to Git, an edit that has not been committed
+yet.
+
+The leading characters of each ID are shown in colour in a real terminal: that is how many you need to
+type for the ID to be unique. The output in this article has no colour, but at home `jj new t` — one
+letter — usually goes through.
+
+### Adding something you forgot to an earlier change
+
+Add a line to `README.md` and describe the change. `jj new -m` creates the next change with its
+description in one go.
+
+```console
+❯ echo World >> README.md
+❯ jj describe -m "Greet the world"
+❯ jj new -m "Add a licence note"
+❯ echo MIT > LICENSE
+```
+
+Now suppose you want `Hello` in `README.md` to read `Hello!`. That fix belongs in the earlier "Greet the
+world", not in "Add a licence note", which is where you are.
+
+In Git this is stash, checkout, amend, and come back. In jj **you make the fix where you are and send
+just that file to the parent**. The command is `jj squash`, which folds the content of the current
+change into its parent. Change `Hello` to `Hello!` in an editor, then:
+
+```console
+❯ jj squash README.md
+Rebased 1 descendant commits.
+Working copy  (@) now at: ovvvnnor 5e6ce646 Add a licence note
+Parent commit (@-)      : oklvxylu 901a7c31 Greet the world
+```
+
+Because a file was named, only `README.md` moved. `LICENSE` is still in the current change.
+
+```console
+❯ jj log
+@  ovvvnnor jambalaya.pyoncafe@outlook.jp 2026-09-13 13:21:06 5e6ce646
+│  Add a licence note
+○  oklvxylu jambalaya.pyoncafe@outlook.jp 2026-09-13 13:21:06 901a7c31
+│  Greet the world
+○  tturtmot jambalaya.pyoncafe@outlook.jp 2026-09-13 13:20:42 4bb47a91
+│  Add README
+◆  zzzzzzzz root() 00000000
+```
+
+The commit ID of "Greet the world" went from `bf873b9b` to `901a7c31`; its change ID `oklvxylu` did not
+move. "Add a licence note", which sat on top of it, was rebased automatically (`Rebased 1 descendant
+commits.`). In Git terms that is an amend and a rebase at once, from one command.
+
+![Before and after jj squash README.md: only README.md moves into Greet the world, whose change ID stays and commit ID is new, and Add a licence note above it is rebased](jujutsu-squash.svg)
+
+### Fixing a change further back
+
+Not the parent this time: suppose `.gitignore` should have been in "Add README", two changes back.
+`jj edit` moves you straight into that change.
+
+```console
+❯ jj edit tturtmot
+❯ echo node_modules/ > .gitignore
+❯ jj status
+Rebased 2 descendant commits onto updated working copy.
+Working copy changes:
+A .gitignore
+A README.md
+Working copy  (@) : tturtmot 2610b68f Add README
+Parent commit (@-): zzzzzzzz 00000000 (empty) (no description set)
+```
+
+The moment the file was placed, the content of `tturtmot` changed and its two descendants were rebased
+again.
+
+![Before and after jj edit tturtmot: the working directory swaps to the content of Add README, .gitignore is added there, and the two changes above are rebased](jujutsu-edit.svg)
+
+Go back to the tip when done.
+
+```console
+❯ jj edit ovvvnnor
+```
+
+> [!NOTE]
+> Moving between changes **replaces the files in the directory with that change's content**. Right after
+> `jj edit tturtmot`, `LICENSE` is gone; after `jj edit ovvvnnor` it is back. It was not deleted — you
+> were looking at a state in which it did not exist yet.
+
+### When you get it wrong: `jj undo`
+
+Suppose the `squash` above went to the wrong place, two changes back. `--into` names the destination,
+and that is where the mistake is.
+
+```console
+❯ jj squash README.md --into tturtmot
+Rebased 2 descendant commits.
+Working copy  (@) now at: ovvvnnor 7d39ffbe Add a licence note
+Parent commit (@-)      : oklvxylu c01a916f Greet the world
+New conflicts appeared in 1 commits:
+  tturtmot 2c598158 (conflict) Add README
+```
+
+A conflict. More on those later; in jj a conflict does not stop you working. Here the mistake has been
+noticed, so take it back.
+
+```console
+❯ jj undo
+Undid operation: 4f4da9c67ec4 (2026-09-13 13:20:54) squash commits into 4bb47a91b947ce2ef51167be9cc712df0afddd9a
+Restored to operation: 3160922e4231 (2026-09-13 13:20:54) snapshot working copy
+Working copy  (@) now at: ovvvnnor 61975902 Add a licence note
+Parent commit (@-)      : oklvxylu bf873b9b Greet the world
+Existing conflicts were resolved or abandoned from 1 commits.
+```
+
+The squash, the rebase that came with it, and the conflict are gone together. What was undone is
+recorded in `jj op log`.
+
+```console
+❯ jj op log
+4f4da9c67ec4 Jam@DESKTOP-U30T4EP default@ now, lasted 402 milliseconds
+squash commits into 4bb47a91b947ce2ef51167be9cc712df0afddd9a
+args: jj squash README.md --into tturtmot
+3160922e4231 Jam@DESKTOP-U30T4EP default@ 1 second ago, lasted 103 milliseconds
+snapshot working copy
+args: jj diff --stat
+```
+
+Even read-only commands like `jj status` and `jj diff` leave a `snapshot working copy` operation. That is
+what "your edits go into the commit the moment you run a command" actually is.
+
+> [!TIP]
+> Repeated `jj undo` walks back one operation at a time. To jump to a particular point, read its ID off
+> `jj op log` and run `jj op restore <ID>`.
+
+### Throwing a change away
+
+When an experiment is no longer wanted, `jj abandon`.
+
+```console
+❯ jj new -m "An experiment that did not work out"
+❯ echo x > scratch.txt
+❯ jj abandon
+Abandoned 1 commits:
+  nknpsvyu c1adb267 An experiment that did not work out
+Working copy  (@) now at: lrksrpsq 95f579b1 (empty) (no description set)
+Parent commit (@-)      : ovvvnnor ab228dc9 Add a licence note
+Added 0 files, modified 0 files, removed 1 files
+```
+
+`scratch.txt` disappears from the directory too: what was the content of the change goes with the
+change (and `jj undo` brings this back as well).
+
+## Remotes and GitHub
+
+So far everything stayed on this machine. To push, you need the counterpart of a Git branch.
+
+### Bookmarks are branches
+
+jj's equivalent of a Git branch is the **bookmark**. The difference is that **a bookmark does not move
+on its own**. In Git, committing while on `main` advances `main`; a jj bookmark stays on the commit it
+was put on, and you move it explicitly when you want it moved.
+
+Put a bookmark on the commit you want to push, then push. `jj bookmark create` makes one, `jj git push`
+sends it, and `--bookmark` says which.
+
+```console
+❯ jj bookmark create main -r @
+❯ jj git push --bookmark main
+Changes to push to origin:
+  bookmark: main [add to ab228dc9c9ac]
+Warning: The working-copy commit became immutable; a new commit has been created on top of it.
+Working copy  (@) now at: upwouywx 309ce578 (empty) (no description set)
+Parent commit (@-)      : ovvvnnor ab228dc9 main | Add a licence note
+```
+
+The instant it was pushed, the change you were in became immutable (`◆`) and a new empty change was
+created on top. A commit that has landed on the remote's `main` is no longer something to rewrite at
+home — that is jj's judgement. It is safest to remember "rewritable" as meaning "not pushed yet".
+
+### Bringing in the remote's changes
+
+After a colleague pushes to `main`, `jj git fetch` brings it in. Then `jj log` shows what that did.
+
+```console
+❯ jj git fetch
+❯ jj log
+@  upwouywx jambalaya.pyoncafe@outlook.jp 2026-09-13 13:22:13 0be7156b
+│  Add contributing guide
+│ ◆  zumzptvl teammate@example.com 2026-09-13 13:22:11 main eccc91c7
+├─╯  Add the copyright line
+◆  ovvvnnor jambalaya.pyoncafe@outlook.jp 2026-09-13 13:21:46 ab228dc9
+│  Add a licence note
+~
+```
+
+Unlike `git pull`, fetch moves nothing of yours. `main` has advanced and your change is still on the old
+`main`. Moving it is `jj rebase`.
+
+```console
+❯ jj rebase -d main
+Rebased 1 commits to destination.
+Working copy  (@) now at: upwouywx 56f5616c Add contributing guide
+Parent commit (@-)      : zumzptvl eccc91c7 main | Add the copyright line
+```
+
+`-d` is the destination. With nothing else given, the current change and its descendants are what
+moves, so day to day this one line is enough.
+
+![jj git fetch advances main while @ stays put, then jj rebase -d main moves your change onto the new main](jujutsu-fetch-rebase.svg)
+
+### Opening a PR
+
+Put a bookmark on your work and push it, and GitHub sees a branch.
+
+```console
+❯ jj bookmark create contributing -r @
+❯ jj git push --bookmark contributing
+❯ gh pr create --head contributing
+```
+
+Once the PR is merged, `jj git fetch` advances `main` and the merged commits are abandoned automatically.
+There is no local branch to delete.
+
+> [!WARNING]
+> After a merge, `jj git fetch` moves a working copy that sat on an abandoned commit onto **the parent
+> that commit had before the merge**, not onto the new `main`. Make `jj rebase -d main` a habit after
+> every fetch and there is nothing to think about.
+
+### A conflict does not stop you
+
+Here a colleague and I have changed the same line of `README.md`, and I rebase.
+
+```console
+❯ jj git fetch
+❯ jj rebase -d main
+Rebased 1 commits to destination.
+Working copy  (@) now at: znwtpvsx 224cb834 (conflict) Greet everyone
+Parent commit (@-)      : xsxqypzo 29608896 main | Add an exclamation mark
+Warning: There are unresolved conflicts at these paths:
+README.md    2-sided conflict
+```
+
+A Git rebase would stop here and demand `--continue` or `--abort`. jj **completes the rebase with the
+conflict inside it**, marks the change `(conflict)`, and lets you carry on. You can run `jj log` or move to
+another change; nothing is blocked.
+
+![git rebase halts on a conflict and waits for --continue or --abort; jj rebase records the conflict inside the commit, lets you keep working, and editing the file resolves it](jujutsu-conflict.svg)
+
+Resolving it means opening the file and fixing it. Here is what is inside.
+
+```console
+❯ cat -n README.md
+     1	Hello!
+     2	<<<<<<< conflict 1 of 1
+     3	%%%%%%% diff from: zumzptvl eccc91c7 "Add the copyright line" (parents of rebased revision)
+     4	\\\\\\\        to: xsxqypzo 29608896 "Add an exclamation mark" (rebase destination)
+     5	-World
+     6	+World!
+     7	+++++++ znwtpvsx 8046350f "Greet everyone" (rebased revision)
+     8	Everyone
+     9	>>>>>>> conflict 1 of 1 ends
+```
+
+The markers are shaped differently from Git's. The top half is a diff of what the other side changed; the
+bottom half is your side's content after your change. Read both, replace it all with `Everyone!`, and
+save.
+
+```console
+❯ jj status
+Working copy changes:
+M README.md
+Working copy  (@) : znwtpvsx 93afbae1 Greet everyone
+Parent commit (@-): xsxqypzo 29608896 main | Add an exclamation mark
+```
+
+`(conflict)` is gone. There is no command that declares a conflict resolved: saving a file without
+markers is enough, and the next snapshot takes it as resolved.
+
+## How it differs from Git
+
+Here is what the output above showed, put in Git's terms. Three parts of the mental model get replaced.
+
+### The working copy is a commit
+
+Git has three stages: the working tree, the staging area, the commit. Edit, pick with `git add`, seal
+with `git commit`. Of the three, jj has **only the commit**.
+
+The files in the directory are always the content of the current commit as it is. That is why placing
+`README.md` was enough to change the commit ID in `jj status`. Edit a file and, the moment you run any
+jj command, the edit is taken into the commit — that is the `snapshot working copy` line in `jj op log`.
+There is nothing corresponding to `git add`, and no `git stash` to park work in; to park something, you
+move to another change with `jj new`. It is also why the files swapped when `jj edit` moved you.
+
+![Git's three stages of working tree, index and commit against jj's single stage, where the working copy is the commit and there is no git add or git stash](jujutsu-working-copy.svg)
+
+"Always committed" sounds like a recipe for a messy history. It is not, because of the next property.
+
+### Commits can be fixed afterwards, freely
+
+In jj, writing a commit's description, adding to its content, and reordering all happen **to commits
+that already exist**. `jj describe` wrote a description without sealing anything, `jj squash` added to a
+parent, `jj edit` went straight into a change two back. If in Git `--amend` and `rebase -i` feel like
+expert tools, in jj they are the everyday operation.
+
+To make that work, a commit carries two IDs.
+
+- **The change ID** — letters, like `tturtmot`. Rewriting the content or rebasing does not change it.
+- **The commit ID** — hex, like `4bb47a91`. This is the Git commit hash itself, and it changes with every
+  rewrite.
+
+When you think "add one line to that change from earlier", the change ID is what you name. After
+`jj squash`, the commit ID of "Greet the world" went from `bf873b9b` to `901a7c31` and its change ID
+stayed `oklvxylu`, so the same name kept working.
+
+The exception: a commit that has been pushed to the remote's `main` becomes immutable (`◆`) and leaves
+the set of things you fix. "Fixable afterwards" applies to what has not been shared yet.
+
+### Undo works on operations
+
+jj records **every operation** performed on the repository — creating a commit, a rebase, moving a
+bookmark, fetching from a remote. `jj op log` lists them and `jj undo` takes back the last one.
+
+It resembles Git's `reflog`, but the unit is the operation, not the commit. Undoing the mistaken
+`squash` removed the squash, the rebase that came with it, and the conflict, in one step. "The rebase
+broke things" and "I abandoned the wrong change" are both the same `jj undo`.
+
+### A conflict is a state, not an interruption
+
+In Git, a conflict during a rebase or merge stops the work. Until you resolve and `--continue`, or give
+up with `--abort`, you can do nothing else.
+
+In jj a conflict is **a state recorded inside a commit**. The rebase runs to the end, the affected change
+is marked `(conflict)`, and you can move to another change and come back later. Resolving it was just
+fixing the file and leaving the rest to the next snapshot.
+
+## A trap I walked into
+
+In a colocated repository, `git` commands work too. They do — and the conclusion from using it is that
+**write operations should not be done from the Git side**.
+
+Once, out of habit, I typed `git stash`. jj has no stash, so parking and restoring on the Git side sent
+the files back through Git's `autocrlf`. On Windows, that turned the line endings of files I had not
+touched into CRLF, and `jj status` reported every file as modified. Using only jj's commands, that path
+is never taken.
+
+> [!NOTE]
+> Read-only commands like `git log` and `git blame` are fine. The trouble is with the ones that rewrite
+> the working tree or the history — `git stash`, `git checkout`, `git commit`, `git rebase`. Everything
+> they do, jj's own commands can do.
+
+## Git commands and their jj counterparts
+
+| To do this | Git | jj |
+|---|---|---|
+| See the state | `git status` | `jj status` |
+| See the history | `git log --graph` | `jj log` |
+| See the diff | `git diff` | `jj diff` |
+| Commit the changes | `git add -A && git commit -m` | `jj commit -m` (or `jj describe -m` → `jj new`) |
+| Add to the last commit | `git commit --amend` | `jj squash` |
+| Fix an older commit | `git rebase -i` | `jj edit <change ID>` |
+| Park the work | `git stash` | not needed (`jj new` moves to another change) |
+| Create a branch | `git switch -c feat` | `jj bookmark create feat -r @` |
+| Bring in the remote | `git pull --rebase` | `jj git fetch` → `jj rebase -d main` |
+| Push | `git push -u origin feat` | `jj git push --bookmark feat` |
+| Drop a commit | `git reset --hard HEAD~` | `jj abandon` |
+| Undo | `git reflog` → `git reset` | `jj undo` |
+
+## In closing
+
+- Jujutsu works on a Git repository as it is. Run `jj git init` in an existing one and start today.
+- The working copy is a commit. `git add` and `git stash` are gone; `jj describe` names the change and
+  `jj new` moves on.
+- A commit has a change ID and a commit ID. The change ID survives rewrites, and **fixing things
+  afterwards** becomes the everyday operation.
+- When it goes wrong, `jj undo`. Rebases and conflicts come back operation by operation.
+- A bookmark is a branch that does not move by itself. Pushing makes the commit immutable.
+- After a fetch, `jj rebase -d main`. A conflict does not stop the work; fix the file and it is resolved.
+- Even colocated, do not write from the Git side.
