@@ -1,0 +1,538 @@
+---
+title: Sapling 入門ガイド
+date: "2026-09-13"
+updated: "2026-09-13"
+description: Meta 製の Git 互換 VCS「Sapling (sl)」を、インストールからスタック、sl pr submit での PR 作成、ReviewStack、GUI の sl web まで
+image: /thumbnails/getting-started-with-sapling.avif
+tags:
+  - sapling
+  - git
+  - cli
+  - devtools
+---
+
+## Sapling とは
+
+[Sapling](https://sapling-scm.com/)（コマンド名は `sl`）は、**Meta が社内で使っているバージョン管理システムを、Git のリポジトリと GitHub でそのまま使えるようにしたもの**です。操作感は Mercurial の流れを汲んでいて、Git と同じ「ブランチにコミットを積む」ではなく、**コミットのスタック**を単位に考えます。
+
+このブログは以前 Sapling で運用していて、いちばん気に入っていたのは次の 4 つです。
+
+- **スタック** — 1 つの作業を小さなコミットの列として積み、途中のコミットを直しても上が自動で載せ替わる
+- **`sl pr submit`** — 積んだスタックを、コミット 1 つにつき PR 1 本として GitHub に出す。`gh` CLI と直結していて、追加の設定はほぼ無い
+- **ReviewStack** — スタックになった PR を、コミット単位で読めるレビュー画面
+- **`sl web`** — 同じ操作を GUI でやる。ブラウザで開く Interactive Smartlog
+
+順番に、実際の出力で見ていきます。
+
+## インストール
+
+<CodeTabs labels={["macOS", "Linux", "Windows"]}>
+
+```bash
+brew install sapling
+```
+
+```bash
+ARCH=$(uname -m | sed 's/x86_64/x64/;s/aarch64/arm64/')
+mkdir -p ~/.local/share/sapling
+curl -L "https://github.com/facebook/sapling/releases/download/0.2.20260811-150444%2B8fb02b32/sapling-0.2.20260811-150444%2B8fb02b32-linux-${ARCH}.tar.xz" | tar xJf - -C ~/.local/share/sapling
+echo 'export PATH="$HOME/.local/share/sapling:$PATH"' >> ~/.bashrc
+```
+
+```powershell
+# 管理者の PowerShell で。zip は GitHub Releases から取る
+Expand-Archive -Path .\sapling-0.2.20260811-150444+8fb02b32-windows-x64.zip -DestinationPath "C:\Program Files\Sapling"
+setx PATH "$env:PATH;C:\Program Files\Sapling" -m
+# PowerShell の sl は Set-Location の別名なので、外しておく
+Remove-Item Alias:sl -Force
+```
+
+</CodeTabs>
+
+Windows は zip の中に `Sapling` というディレクトリが 1 段あるので、展開先はその中身が直下に来るように調整してください。入ったかどうかは、バージョンを表示して確かめます。
+
+```console
+❯ sl --version
+Sapling 0.2.20260811-150444+8fb02b32
+(see https://sapling-scm.com/ for more information)
+```
+
+> [!NOTE]
+> Windows 版の `0.2.20260811` は、`clone` / `pull` / `rebase` のようにロックを取る操作が `abort: 指定されたファイルが見つかりません。: journal` で止まる不具合があります（`commit` や `goto` は動きます）。修正は [facebook/sapling#1413](https://github.com/facebook/sapling/pull/1413) として出してあり、この記事の出力はそれを当てた状態で採っています。
+
+最初に、コミットに記録される名前とメールアドレスを設定します。Git の `user.name` / `user.email` に当たるものが、Sapling では 1 つの `ui.username` です。
+
+```console
+❯ sl config --user ui.username "JamBalaya56562 <jambalaya.pyoncafe@outlook.jp>"
+updated config in C:\Users\Jam\AppData\Roaming\sapling\sapling.conf
+```
+
+もう 1 つ、GitHub と連携する機能（`sl pr submit` と `sl web` の PR 表示）は [GitHub CLI](https://cli.github.com/) の認証をそのまま使います。`gh auth login` が済んでいれば、Sapling 側の設定は要りません。
+
+```console
+❯ gh auth status
+github.com
+  ✓ Logged in to github.com account JamBalaya56562 (keyring)
+  - Active account: true
+  - Git operations protocol: ssh
+  - Token: gho_************************************
+  - Token scopes: 'admin:org', 'codespace', 'gist', 'repo'
+```
+
+## 使ってみる
+
+ここからは、この記事のために作った [sapling-demo](https://github.com/JamBalaya56562/sapling-demo) というリポジトリで実際に打った結果です。
+
+### リポジトリを clone する
+
+Git のリポジトリを取ってくるのは `sl clone` です。URL は Git と同じものを渡します。取ってきたら、中を `ls -la` で見てみます。
+
+```console
+❯ sl clone git@github.com:JamBalaya56562/sapling-demo.git
+From ssh://github.com/JamBalaya56562/sapling-demo
+ * [new ref]         9d729f9329bbb45bee8266cb94bf642107a8d13f -> remote/main
+1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+❯ cd sapling-demo
+❯ ls -la
+total 3589
+drwxr-xr-x 1 Jam 197611  0  9月 13 18:48 .
+drwxr-xr-x 1 Jam 197611  0  9月 13 18:48 ..
+drwxr-xr-x 1 Jam 197611  0  9月 13 18:48 .sl
+-rw-r--r-- 1 Jam 197611 86  9月 13 18:48 README.md
+```
+
+あるのは `.sl` だけで、`.git` はありません。Git のオブジェクトは `.sl` の中に置かれていて、**このディレクトリで `git` コマンドは使えません**。Jujutsu の colocated とは違い、Sapling は Git を「リモートとの通信手段」として使い、手元の操作は全部 `sl` で行います。
+
+![手元の repo/ には .sl だけがあり Git のオブジェクトはその中にある。git status は使えず sl status を使う。リモートの GitHub とは sl clone / sl pull / sl pr submit が ssh か https で通信する図](sapling-sl-dir.svg)
+
+### smartlog を見る
+
+Sapling の中心にあるのが **smartlog** で、`sl` とだけ打つと出ます。`git log` と違って、リモートの `main` と自分のコミットだけを描き、他人のブランチや遠い過去は出しません。
+
+```console
+❯ sl
+@  9d729f9329  65 minutes ago  jambalaya.pyoncafe  remote/main
+   Initial commit
+```
+
+`@` が今いるコミット、右端の `remote/main` がリモートのブランチです。clone 直後なので、その 1 つしかありません。
+
+### 最初のコミット
+
+ファイルを作って、状態を見ます。`sl status` は `git status` と同じ役目です。
+
+```console
+❯ echo Hello > hello.txt
+❯ sl status
+? hello.txt
+```
+
+`?` は「追跡していないファイル」です。このまま `sl commit` を打っても、何も起きません。
+
+```console
+❯ sl commit -m "Add hello.txt"
+nothing changed
+```
+
+新しいファイルは `sl add` で追跡対象にします。Git の `git add` に似ていますが、役目は「このファイルを見張ってほしい」と伝えることだけで、**ステージング（今回のコミットに入れる中身を選ぶ）ではありません**。追跡済みのファイルの変更は、`add` 無しで次のコミットに入ります。
+
+```console
+❯ sl add hello.txt
+❯ sl status
+A hello.txt
+❯ sl commit -m "Add hello.txt"
+❯ sl
+  @  a0a3d365a6  1 second ago  jambalaya.pyoncafe
+╭─╯  Add hello.txt
+│
+o  9d729f9329  65 minutes ago  jambalaya.pyoncafe  remote/main
+   Initial commit
+```
+
+`remote/main` の上に、自分のコミットが 1 つ乗りました。ブランチは作っていません。Sapling では、ローカルのコミットにブランチ名は要りません。
+
+追跡済みのファイルを編集して、もう 1 つ積みます。今度は `add` を打ちません。
+
+```console
+❯ echo World >> hello.txt
+❯ sl status
+M hello.txt
+❯ sl commit -m "Greet the world"
+❯ sl
+  @  ff84d8b292  1 second ago  jambalaya.pyoncafe
+  │  Greet the world
+  │
+  o  a0a3d365a6  3 seconds ago  jambalaya.pyoncafe
+╭─╯  Add hello.txt
+│
+o  9d729f9329  65 minutes ago  jambalaya.pyoncafe  remote/main
+   Initial commit
+```
+
+### 今のコミットを直す — `sl amend`
+
+直前のコミットに手を加えるのは `sl amend` です。`hello.txt` の `World` を `World!` に直してから打つと、今いるコミットの中身が置き換わります。
+
+```console
+❯ sl amend
+ff84d8b292aa -> a7a69177b95f "Greet the world"
+❯ sl
+  @  a7a69177b9  2 seconds ago  jambalaya.pyoncafe
+  │  Greet the world
+  │
+  o  a0a3d365a6  4 seconds ago  jambalaya.pyoncafe
+╭─╯  Add hello.txt
+│
+o  9d729f9329  65 minutes ago  jambalaya.pyoncafe  remote/main
+   Initial commit
+```
+
+出力の `ff84d8b292aa -> a7a69177b95f` が、そのままの意味です。コミットのハッシュが変わり、説明は同じです。メッセージだけ直すなら `-m` を付けます。
+
+```console
+❯ sl amend -m "Greet the world with feeling"
+a7a69177b95f -> c5ae259a0ebd "Greet the world with feeling"
+❯ sl log -l 1
+commit:      c5ae259a0ebd
+user:        JamBalaya56562 <jambalaya.pyoncafe@outlook.jp>
+date:        Sun Sep 13 18:48:55 2026 +0900
+summary:     Greet the world with feeling
+```
+
+### 間違えたら `sl undo`
+
+直前の操作を取り消すのは `sl undo` です。上のメッセージ変更を戻してみます。
+
+```console
+❯ sl undo
+undone to Sun Sep 13 18:48:57 2026 +0900, before amend -m Greet the world with feeling
+hint[undo-uncommit-unamend]: undoing amends discards their changes.
+to restore the changes to the working copy, run 'sl revert -r c5ae259a0ebd --all'
+in the future, you can use 'sl unamend' instead of 'sl undo' to keep changes
+hint[hint-ack]: use 'sl hint --ack undo-uncommit-unamend' to silence these hints
+❯ sl log -l 1
+commit:      a7a69177b95f
+user:        JamBalaya56562 <jambalaya.pyoncafe@outlook.jp>
+date:        Sun Sep 13 18:48:55 2026 +0900
+summary:     Greet the world
+```
+
+`undone to …, before amend -m …` と、どの操作の前に戻ったかを言ってくれます。ヒントにあるとおり、amend の取り消し専用の `sl unamend` もあります。
+
+## スタックを積む
+
+ここからが Sapling らしいところです。3 つ目のコミットを積みます。
+
+```console
+❯ echo MIT > LICENSE
+❯ sl add LICENSE
+❯ sl commit -m "Add a licence"
+❯ sl
+  @  c448d1b12f  1 second ago  jambalaya.pyoncafe
+  │  Add a licence
+  │
+  o  a7a69177b9  8 seconds ago  jambalaya.pyoncafe
+  │  Greet the world
+  │
+  o  a0a3d365a6  10 seconds ago  jambalaya.pyoncafe
+╭─╯  Add hello.txt
+│
+o  9d729f9329  65 minutes ago  jambalaya.pyoncafe  remote/main
+   Initial commit
+```
+
+`remote/main` の上に 3 つ縦に並びました。これが**スタック**です。Git なら 1 つのブランチに 3 コミット、と言うところですが、Sapling ではブランチ名が無く、コミットの列そのものを扱います。
+
+### スタックの中を移動する — `sl prev` / `sl next`
+
+スタックの中は `sl prev`（1 つ下へ）と `sl next`（1 つ上へ）で行き来します。真ん中の「Greet the world」に降りてみます。
+
+```console
+❯ sl prev
+0 files updated, 0 files merged, 1 files removed, 0 files unresolved
+[a7a691] Greet the world
+❯ sl
+  o  c448d1b12f  3 seconds ago  jambalaya.pyoncafe
+  │  Add a licence
+  │
+  @  a7a69177b9  10 seconds ago  jambalaya.pyoncafe
+  │  Greet the world
+  │
+  o  a0a3d365a6  12 seconds ago  jambalaya.pyoncafe
+╭─╯  Add hello.txt
+│
+o  9d729f9329  65 minutes ago  jambalaya.pyoncafe  remote/main
+   Initial commit
+❯ ls -la
+total 3598
+drwxr-xr-x 1 Jam 197611  0  9月 13 22:30 .
+drwxr-xr-x 1 Jam 197611  0  9月 13 22:29 ..
+drwxr-xr-x 1 Jam 197611  0  9月 13 22:30 .sl
+-rw-r--r-- 1 Jam 197611 48  9月 13 18:53 hello.txt
+-rw-r--r-- 1 Jam 197611 86  9月 13 18:48 README.md
+```
+
+`@` が真ん中に移り、`1 files removed` のとおり、上のコミットで足した `LICENSE` がディレクトリから消えています。この場所でファイルを直して `sl amend` すると、真ん中のコミットが書き換わり、**その上に乗っていたコミットも自動で載せ替えられます**。
+
+```console
+❯ echo "Nice to meet you." >> hello.txt
+❯ sl amend
+a7a69177b95f -> a8fc4a1a6088 "Greet the world"
+restacking children automatically (unless they conflict)
+rebasing c448d1b12f4f "Add a licence"
+c448d1b12f4f -> feb42b2732f8 "Add a licence"
+❯ sl
+  o  feb42b2732  1 second ago  jambalaya.pyoncafe
+  │  Add a licence
+  │
+  @  a8fc4a1a60  12 seconds ago  jambalaya.pyoncafe
+  │  Greet the world
+  │
+  o  a0a3d365a6  14 seconds ago  jambalaya.pyoncafe
+╭─╯  Add hello.txt
+│
+o  9d729f9329  65 minutes ago  jambalaya.pyoncafe  remote/main
+   Initial commit
+```
+
+`restacking children automatically` の 3 行がそれです。Git で同じことをすると `rebase -i` で `edit` を選び、直して `--continue`、という手順になりますが、ここでは `amend` 1 回で済んでいます。コンフリクトする場合だけ止まり、そのときは `sl restack` で続きをやります。
+
+![sl prev → sl amend の前後。真ん中の Greet the world が amend されて a8fc4a1a60 になり、上の Add a licence が自動で restack されて feb42b2732 になる図](sapling-restack.svg)
+
+上に戻るのは `sl next` です。
+
+```console
+❯ sl next
+1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+[feb42b] Add a licence
+❯ ls -la
+total 3599
+drwxr-xr-x 1 Jam 197611  0  9月 13 22:30 .
+drwxr-xr-x 1 Jam 197611  0  9月 13 22:29 ..
+drwxr-xr-x 1 Jam 197611  0  9月 13 22:30 .sl
+-rw-r--r-- 1 Jam 197611 48  9月 13 18:53 hello.txt
+-rw-r--r-- 1 Jam 197611 42  9月 13 22:30 LICENSE
+-rw-r--r-- 1 Jam 197611 86  9月 13 18:48 README.md
+❯ cat hello.txt
+Hello
+World!
+Nice to meet you.
+```
+
+`1 files updated` で `LICENSE` が戻り、`hello.txt` には真ん中で足した行が入っています。
+
+## `sl pr submit` — スタックがそのまま PR になる
+
+積んだスタックを GitHub に出すのが `sl pr submit` です。**コミット 1 つにつき PR 1 本**が作られ、ブランチ名を考える必要はありません。
+
+```console
+❯ sl pr submit
+pushing 3 to ssh://git@github.com/JamBalaya56562/sapling-demo.git
+created new pull request: https://github.com/JamBalaya56562/sapling-demo/pull/14
+created new pull request: https://github.com/JamBalaya56562/sapling-demo/pull/15
+created new pull request: https://github.com/JamBalaya56562/sapling-demo/pull/16
+updated body for https://github.com/JamBalaya56562/sapling-demo/pull/14
+updated body for https://github.com/JamBalaya56562/sapling-demo/pull/15
+updated body for https://github.com/JamBalaya56562/sapling-demo/pull/16
+force-pushing ebaf0291140a3acbc3b2530dcc48998450dff5c4:refs/heads/sapling-pr-archive-JamBalaya56562 to ssh://git@github.com/JamBalaya56562/sapling-demo.git
+```
+
+3 コミットが push され、PR が 1 本ずつ作られ、最後に 3 本の本文が更新されています。`sapling-pr-archive-JamBalaya56562` というブランチへの force-push は、Sapling が PR とコミットの対応を GitHub 側に記録しておくためのもので、レビューの対象にはなりません。
+
+![ローカルのスタック 3 コミットが、sl pr submit で GitHub の #14、#15、#16 の 3 本の PR に 1 対 1 で対応する図](sapling-stack-to-prs.svg)
+
+`sl ssl` は、smartlog に PR の番号とレビュー状態を添えて出すコマンドです。
+
+```console
+❯ sl ssl
+  @  feb42b2732  91 seconds ago  jambalaya.pyoncafe  #16 Unreviewed ⋯
+  │  Add a licence
+  │
+  o  a8fc4a1a60  102 seconds ago  jambalaya.pyoncafe  #15 Unreviewed ⋯
+  │  Greet the world
+  │
+  o  a0a3d365a6  104 seconds ago  jambalaya.pyoncafe  #14 Unreviewed ⋯
+╭─╯  Add hello.txt
+│
+o  9d729f9329  67 minutes ago  jambalaya.pyoncafe  remote/main
+   Initial commit
+```
+
+各コミットの右に PR 番号とレビュー状態、CI の結果（`✓` は通過、`⋯` は実行中）が並びます。ブランチ名の代わりに、**コミットと PR が 1 対 1 で結び付いている**のがここで見えます。
+
+各 PR の本文には、Sapling がスタック全体の一覧を書き込みます。GitHub で真ん中の #15 を開くと、説明欄はこう見えます。
+
+![GitHub の PR #15 の説明欄。Stack created with Sapling. Best reviewed with ReviewStack. の下に、Add a licence #16、-> Greet the world #15、Add hello.txt #14 のリンクが並ぶ](sapling-pr-body.avif)
+
+`->` が「この PR はここ」、その上下がスタックの前後です。読む人は、リンクをたどってスタックを上から順に見られます。この一覧は `sl pr submit` のたびに書き直されるので、スタックに積み足したり並べ替えたりしても、手で直す必要はありません。
+
+### 途中の PR を直す
+
+レビューで真ん中の PR に指摘が来た、という状況です。`sl prev` で降りて直し、`sl amend` して、`sl pr submit` を打ちます。
+
+```console
+❯ sl ssl
+  @  9181b8da46  4 minutes ago  jambalaya.pyoncafe  #16 Approved ✓
+  │  Add a licence
+  │
+  o  a8fc4a1a60  4 minutes ago  jambalaya.pyoncafe  #15 Unreviewed ✓
+  │  Greet the world
+  │
+  o  a0a3d365a6  4 minutes ago  jambalaya.pyoncafe  #14 Unreviewed ✓
+╭─╯  Add hello.txt
+│
+o  9d729f9329  69 minutes ago  jambalaya.pyoncafe  remote/main
+   Initial commit
+
+❯ sl prev
+0 files updated, 0 files merged, 1 files removed, 0 files unresolved
+[a8fc4a] Greet the world
+❯ echo "Have a good day." >> hello.txt
+❯ sl amend
+a8fc4a1a6088 -> 9cb3be1e599f "Greet the world"
+restacking children automatically (unless they conflict)
+rebasing 9181b8da4622 "Add a licence"
+9181b8da4622 -> f719fbb60f24 "Add a licence"
+❯ sl pr submit
+#14 is up-to-date
+pushing 1 to ssh://git@github.com/JamBalaya56562/sapling-demo.git
+updated body for https://github.com/JamBalaya56562/sapling-demo/pull/14
+updated body for https://github.com/JamBalaya56562/sapling-demo/pull/15
+force-pushing 6a45a531441e87e988e46bc715ad4131c02ee967:refs/heads/sapling-pr-archive-JamBalaya56562 to ssh://git@github.com/JamBalaya56562/sapling-demo.git
+❯ sl next
+1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+[f719fb] Add a licence
+❯ sl pr submit
+#14 is up-to-date
+#15 is up-to-date
+pushing 1 to ssh://git@github.com/JamBalaya56562/sapling-demo.git
+updated body for https://github.com/JamBalaya56562/sapling-demo/pull/14
+updated body for https://github.com/JamBalaya56562/sapling-demo/pull/16
+updated body for https://github.com/JamBalaya56562/sapling-demo/pull/15
+❯ sl ssl
+  @  f719fbb60f  31 seconds ago  jambalaya.pyoncafe  #16 Approved ⋯
+  │  Add a licence
+  │
+  o  9cb3be1e59  4 minutes ago  jambalaya.pyoncafe  #15 Approved ✓
+  │  Greet the world
+  │
+  o  a0a3d365a6  4 minutes ago  jambalaya.pyoncafe  #14 Unreviewed ✓
+╭─╯  Add hello.txt
+│
+o  9d729f9329  70 minutes ago  jambalaya.pyoncafe  remote/main
+   Initial commit
+```
+
+読みどころが 3 つあります。
+
+- `sl amend` の直後に上のコミットが自動で載せ替えられ（`rebasing 9181b8da4622`）、`#16` のハッシュも変わっている
+- 1 回目の `sl pr submit` は真ん中から打ったので、**push されたのは `#15` の 1 コミットだけ**で、上の `#16` は触られていない。`sl pr submit` が扱うのは「今いるコミットとその下」だからです
+- `sl next` で上に戻って打ち直すと、今度は `#16` の分が push され、3 本の本文が揃う
+
+![sl pr submit の対象は @ とその下。真ん中の #15 から打つと #15 だけが push され、#14 は up-to-date、上の #16 は触られない。sl next で上に戻って打つと #16 が push される図](sapling-submit-scope.svg)
+
+一番上のコミットのハッシュが、前の smartlog（`feb42b2732`）と違うことに気づいた人がいるかもしれません。この間に `LICENSE` に 1 行足して `sl amend` → `sl pr submit` をしていて、そのときの流れも同じ「直したコミットだけ push される」でした。`Approved` は、このリポジトリに入れてある自動レビュー（Sourcery）が付けたものです。
+
+### PR の場所に移動する
+
+PR 番号は smartlog の中でリビジョンとして使えます。`sl goto pr14` で、その PR のコミットに移動できます。
+
+```console
+❯ sl goto pr14
+1 files updated, 0 files merged, 1 files removed, 0 files unresolved
+❯ cat hello.txt
+Hello
+❯ sl next
+1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+[a8fc4a] Greet the world
+❯ sl next
+1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+[9181b8] Add a licence
+```
+
+`hello.txt` が最初の 1 行だけの状態に戻っています。レビューで指摘を受けた PR に移動して直し、`sl amend` して `sl next` で上まで戻り、`sl pr submit`、という流れがそのまま組めます。
+
+> [!NOTE]
+> GitHub の PR 画面は 1 本ずつ独立したブランチを前提にしているので、スタックの上の方の PR を開くと、下の PR の差分も「Files changed」に含まれて見えます。コミット単位で読むには、次の ReviewStack を使います。
+
+## ReviewStack — スタックをコミット単位で読む
+
+[ReviewStack](https://reviewstack.dev/) は、Sapling のチームが作った GitHub PR のレビュー画面です。URL は GitHub の PR の `github.com` を `reviewstack.dev` に置き換えるだけで、`sl pr submit` が本文に書き込むリンクもここを指しています。
+
+![ReviewStack で #15 を開いた画面。上に Approved と「Pull Request 2 of 3」の切り替え、Version 2 の選択、右に Sourcery のコメント。左の差分は hello.txt にこの PR で足した 3 行だけ](sapling-reviewstack.avif)
+
+「Pull Request 2 of 3」が、スタックの中の位置です。矢印で上下の PR に移れます。差分は **その PR のコミット 1 つ分だけ**で、`hello.txt` に足した 3 行しか出ていません。GitHub の画面で下の PR の差分が混ざる問題が、ここでは起きません。「Version 2」は、`sl pr submit` で更新するたびに増える版で、版どうしの差分も見られます。
+
+## `sl web` — 同じことを GUI でやる
+
+`sl web` を打つと、ローカルにサーバーが立ち、ブラウザで **Interactive Smartlog（ISL）** が開きます。
+
+```console
+❯ sl web --no-open
+started a new server
+
+access Sapling Web with this link:
+http://localhost:3011/?token=9a0df0277a89e85302c31d225eabcffa&cwd=C%3A%5CUsers%5CJam%5CAppData%5CLocal%5CTemp%5Csapling-demo
+```
+
+![ISL の画面。左に remote/main の上に 3 つ積まれたスタックが縦に並び、各コミットに PR 番号と Open / Approved のバッジが付いている。右に選択中のコミットの説明と変更ファイル](sapling-isl-stack.avif)
+
+コミットをクリックすると、右にそのコミットの詳細が出ます。真ん中の「Greet the world」を選ぶと、こうなります。
+
+![ISL で真ん中のコミットを選んだ画面。行が強調され Goto ボタンが出て、右に変更ファイル hello.txt と View Changes のボタンが出ている](sapling-isl-middle.avif)
+
+左がターミナルの smartlog と同じスタックで、右に選んだコミットの詳細（説明・変更ファイル）が出ます。ここでできることは、ターミナルでやってきたことと同じです。
+
+- コミットを選んで **Amend** / **Commit** — 右の欄に説明を書き、変更を取り込む
+- **Uncommit** / **Split** — コミットをほどく、分ける
+- **Edit stack** — スタック全体の並べ替え
+- コミットをドラッグして別の場所に **rebase**
+- **Pull**、そして右下の **Submit** が `sl pr submit`
+
+コマンドを覚える前にスタックの操作に慣れたいなら、こちらから入るのも手です。ISL は VS Code の拡張としても提供されていて、エディタの中で同じ画面が使えます。
+
+## Git と何が違うのか
+
+ここまでの出力を、Git の言葉で整理します。
+
+### ステージングは無い、追跡だけがある
+
+`sl add` は「このファイルを見張る」と伝えるだけで、コミットの中身を選ぶ操作ではありません。追跡済みのファイルの変更は、`sl commit` で全部入ります。部分的に入れたいときは `sl commit -i`（対話式）か、コミットしてから `sl split` で分けます。
+
+![Git は working copy → git add -p → index → git commit → commit の 3 段。sl は working copy → sl commit → commit で、sl add は追跡の宣言に過ぎず index が無い図](sapling-add-vs-stage.svg)
+
+### ブランチではなくスタック
+
+ローカルのコミットにブランチ名を付けません。`remote/main` の上に積んだ列がスタックで、`sl prev` / `sl next` で中を移動し、途中を `sl amend` すれば上が自動で載せ替わります。GitHub に出すときも、`sl pr submit` がコミットごとに PR を切るので、ブランチ名は最後まで出てきません。
+
+### 直前の操作は `sl undo`
+
+`amend` も `rebase` も `commit` も、`sl undo` で 1 つ戻せます。`undone to …, before …` と何の前に戻ったかを言ってくれるので、`git reflog` を読んで探す手間がありません。
+
+### Jujutsu との違い
+
+[Jujutsu](/ja/blog/getting-started-with-jujutsu) と考え方は近いのですが、2 つ違います。作業コピーは Sapling では「まだコミットしていない変更」のままで、`sl commit` か `sl amend` を打つまでコミットにはなりません。それから、リポジトリは colocated ではなく `.sl` だけなので、`git` コマンドは使えません。代わりに GitHub との連携（`sl pr submit`、`sl ssl`、ISL の PR 表示）が組み込まれています。
+
+## Git のコマンドとの対応
+
+| やりたいこと | Git | sl |
+|---|---|---|
+| 状態を見る | `git status` | `sl status` |
+| 履歴を見る | `git log --graph` | `sl` |
+| 変更をコミットする | `git add -A && git commit -m` | `sl commit -m`（新規ファイルは `sl add`） |
+| 直前のコミットに足す | `git commit --amend` | `sl amend` |
+| 古いコミットを直す | `git rebase -i` | `sl prev` → `sl amend` |
+| 作業を退避する | `git stash` | `sl shelve` |
+| ブランチを作る | `git switch -c feat` | 不要（スタック） |
+| 取り込む | `git pull --rebase` | `sl pull` → `sl rebase -d remote/main` |
+| PR を作る | `git push` → `gh pr create` | `sl pr submit` |
+| やり直す | `git reflog` → `git reset` | `sl undo` |
+
+## まとめ
+
+- Sapling は Git のリポジトリと GitHub をそのまま使う。手元は `.sl` だけで、`git` コマンドは使わない
+- ステージングは無く、`sl add` は追跡の宣言。追跡済みの変更は `sl commit` で全部入る
+- ローカルのコミットにブランチ名は無い。`remote/main` の上の列がスタックで、`sl prev` / `sl next` で移動し、途中を `sl amend` すれば上が自動で載せ替わる
+- `sl pr submit` でコミット 1 つが PR 1 本になり、本文にスタックの一覧が入る。直して打ち直せば、変わった PR だけ更新される
+- スタックの PR は ReviewStack で読む。GitHub の画面では下の差分が混ざる
+- `sl web` の ISL で、同じ操作を GUI でできる
