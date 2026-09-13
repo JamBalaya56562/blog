@@ -118,9 +118,10 @@ step1
 
 ![An array in run executing from the top, cut short at the failing false, with the next line never reached](mise-tasks-fail-stop.svg)
 
-**That matters for the order you put them in.** Tasks split into ones that rewrite files
-(formatters, linters with autofix) and ones that only inspect and report (tests, type checks).
-**Put the rewriting ones first.**
+> [!IMPORTANT]
+> That matters for the order you put them in. Tasks split into ones that rewrite files
+> (formatters, linters with autofix) and ones that only inspect and report (tests, type checks).
+> **Put the rewriting ones first.**
 
 ```toml title="mise.toml"
 [tasks.check]
@@ -178,7 +179,8 @@ hello world
 
 ![mise run greet world appending world to the echo hello written in run](mise-tasks-args.svg)
 
-Once a task takes arguments, **write the usage into its `description`.**
+> [!TIP]
+> Once a task takes arguments, **write the usage into its `description`.**
 
 ```toml title="mise.toml"
 [tasks.thumbnail]
@@ -248,16 +250,17 @@ mise-tasks/thumbnail  →  mise run thumbnail
 The wrapper task definitions disappear from `mise.toml`, and `description` moves into the script.
 Having the explanation next to the thing it explains is worth something too.
 
-**One thing to watch when migrating: the working directory of a file task is the project root**, not
-where the script sits. If it reads another file relative to its own location, as in
-`source "$(dirname "$0")/lib.sh"`, it will look in the wrong place and break. Make those paths
-relative to the project root.
+> [!WARNING]
+> **The working directory of a file task is the project root**, not where the script sits. If it
+> reads another file relative to its own location, as in `source "$(dirname "$0")/lib.sh"`, it
+> will look in the wrong place and break. Make those paths relative to the project root.
 
-The other thing is that **every executable file under `mise-tasks/` registers as a task** — and on
-Windows, which has no executable bit, that means every file. A shared library that several scripts
-`source` is no exception, and left as it is it appears in the listing. To keep it next to the
-scripts that read it, put `#MISE hide=true` on its second line: it leaves the listing and shows up
-only under `mise tasks --hidden`.
+> [!NOTE]
+> **Every executable file under `mise-tasks/` registers as a task** — and on Windows, which has
+> no executable bit, that means every file. A shared library that several scripts `source` is no
+> exception, and left as it is it appears in the listing. To keep it next to the scripts that read
+> it, put `#MISE hide=true` on its second line: it leaves the listing and shows up only under
+> `mise tasks --hidden`.
 
 ## In closing
 

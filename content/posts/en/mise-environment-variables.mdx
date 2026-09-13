@@ -133,8 +133,9 @@ stepping into it were enough to rewrite your `PATH` or plant variables that look
 Unlike a tool version, you cannot tell whether an environment variable is dangerous without reading
 what is in it. Hence the explicit approval.
 
-Reading the `[env]` section of a `mise.toml` before running `mise trust` in a repository you cloned
-is a good habit.
+> [!TIP]
+> Reading the `[env]` section of a `mise.toml` before running `mise trust` in a repository you
+> cloned is a good habit.
 
 ## A trap I walked into — `.env` hiding the real credentials
 
@@ -183,9 +184,10 @@ stale line to survive in. Anything that differs per machine goes in `mise.local.
 committed. AWS credentials sit in neither a variable nor a file: SSO locally, the execution role on
 Lambda.
 
-If you do keep a `.env`, do not leave values you have stopped using in it. Commenting them out is
-the same thing. Whoever removes them one day will lose half an hour to an error with no visible
-cause.
+> [!WARNING]
+> If you do keep a `.env`, do not leave values you have stopped using in it. Commenting them out
+> is the same thing. Whoever removes them one day will lose half an hour to an error with no
+> visible cause.
 
 ## Adding to PATH with `_.path`
 
@@ -234,8 +236,9 @@ Only `mise run test` runs with the test values.
 NODE_ENV=test DATABASE_URL=postgres://localhost:5432/test
 ```
 
-**The override lives inside that task and does not leak into the shell.** After running
-`mise run test`, `NODE_ENV` in your shell is still `development`.
+> [!NOTE]
+> **The override lives inside that task and does not leak into the shell.** After running
+> `mise run test`, `NODE_ENV` in your shell is still `development`.
 
 Doing this with `.env` means preparing a `.env.test` and building your own way to pick between them
 in the command that starts the tests. Since every tool loads them differently, a test runner and a

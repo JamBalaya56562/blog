@@ -1,7 +1,7 @@
 ---
 title: mise 入門ガイド
 date: "2026-09-10"
-updated: "2026-09-10"
+updated: "2026-09-13"
 description: mise のインストールから、ツールの入れ方・使い方・入手経路の選び方まで
 image: /thumbnails/getting-started-with-mise.avif
 tags:
@@ -124,6 +124,7 @@ mise exec node@22 -- node --version
 
 `--` の前が「どのツールで」、後ろが「何を実行するか」です。
 
+> [!TIP]
 > 「そんなツールは入っていない」と結論づける前に、`mise ls` を確認してください。入っているのに PATH から見えていないだけ、というのがよくあります。
 
 ここまでは、正直なところ Homebrew や apt でツールを入れて使うのと大きく変わりません。バージョンを並べて持てるのは便利ですが、それだけなら nvm や pyenv でもできます。
@@ -154,7 +155,8 @@ Add-Content -Path $PROFILE -Value '(&mise activate pwsh) | Out-String | Invoke-E
 
 </CodeTabs>
 
-PowerShell のプロファイルはターミナルやエディタごとに別のものが読まれることがあります。反映されないときは、そのアプリで `$PROFILE` が何を指しているかを確認してください。
+> [!NOTE]
+> PowerShell のプロファイルはターミナルやエディタごとに別のものが読まれることがあります。反映されないときは、そのアプリで `$PROFILE` が何を指しているかを確認してください。
 
 これを入れると、`mise exec` が要らなくなります。ディレクトリに入った時点で、そこで使うバージョンに PATH が差し替わるからです。
 

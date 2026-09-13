@@ -1,7 +1,7 @@
 ---
 title: Getting Started with mise
 date: "2026-09-10"
-updated: "2026-09-10"
+updated: "2026-09-13"
 description: Installing mise, then installing and running tools with it, and choosing where they come from
 image: /thumbnails/getting-started-with-mise.avif
 tags:
@@ -145,6 +145,7 @@ mise exec node@22 -- node --version
 
 Before the `--` is which tool; after it is what to run.
 
+> [!TIP]
 > Before concluding that a tool is not installed, run `mise ls`. Very often it is installed and
 > simply not visible on your PATH.
 
@@ -178,8 +179,9 @@ Add-Content -Path $PROFILE -Value '(&mise activate pwsh) | Out-String | Invoke-E
 
 </CodeTabs>
 
-PowerShell can read a different profile per terminal and per editor. If nothing seems to take
-effect, check what `$PROFILE` points at inside the application you are using.
+> [!NOTE]
+> PowerShell can read a different profile per terminal and per editor. If nothing seems to take
+> effect, check what `$PROFILE` points at inside the application you are using.
 
 Once this is in, you no longer need `mise exec`: entering a directory swaps your PATH to the
 versions used there.
