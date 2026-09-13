@@ -1,7 +1,7 @@
 ---
 title: Managing Environment Variables with mise
 date: "2026-09-11"
-updated: "2026-09-13"
+updated: "2026-09-14"
 description: Writing environment variables that only apply inside a directory into mise.toml, and the traps in loading .env
 image: /thumbnails/mise-environment-variables.avif
 tags:
@@ -212,8 +212,9 @@ This too disappears when you leave the directory. Another project's `bin/` will 
 Everything so far is something `.env` can do as well. Being scoped to a directory is a real
 difference, but as a way of holding values it is not far apart.
 
-**Here is what `.env` cannot do.** You can hand a [task](/en/blog/mise-tasks) its own environment
-variables.
+There is one more thing, and it comes from mise being a task runner: you can hand a
+[task](/en/blog/mise-tasks) its own environment variables. A make target or a just recipe can do the
+same, so if you have used a task runner before this will look familiar.
 
 ```toml title="mise.toml"
 [env]
@@ -244,10 +245,9 @@ NODE_ENV=test DATABASE_URL=postgres://localhost:5432/test
 > **The override lives inside that task and does not leak into the shell.** After running
 > `mise run test`, `NODE_ENV` in your shell is still `development`.
 
-Doing this with `.env` means preparing a `.env.test` and building your own way to pick between them
-in the command that starts the tests. Since every tool loads them differently, a test runner and a
-build tool can end up needing separate arrangements. With mise, **the values and the definition of
-the command sit next to each other in the same file**.
+A `.env` file holds one set of values, so doing this with `.env` alone means preparing a `.env.test`
+and picking between the two in the command that starts the tests. A task's `env` is a place to write
+that swap next to the task's definition.
 
 A way to think about when to reach for which:
 
@@ -264,8 +264,8 @@ A way to think about when to reach for which:
 - `mise env` tells you what is set right now
 - Do not leave retired credentials in `.env`. Environment variables outrank config files, so a value
   you thought was gone keeps quietly winning
-- **Tasks can carry their own `env`.** That is the thing `.env` cannot do, and it puts values and
-  commands side by side in one file
+- Tasks can carry their own `env`. Other task runners have this too; it swaps values for the
+  duration of one command
 
 Environment variables are the kind of setting you only notice once something stops working. Tie them
 to a directory and at least "where is this in effect" is answered by reading a file.
