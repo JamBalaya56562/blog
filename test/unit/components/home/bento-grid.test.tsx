@@ -117,12 +117,12 @@ describe("BentoGrid", () => {
     const posts = Array.from({ length: 6 }, (_, i) =>
       createMockPost({
         frontmatter: {
-          date: "2024-01-0" + (i + 1),
-          description: "Desc " + (i + 1),
+          date: `2024-01-0${i + 1}`,
+          description: `Desc ${i + 1}`,
           tags: ["ts"],
-          title: "Post " + (i + 1),
+          title: `Post ${i + 1}`,
         },
-        slug: "post-" + (i + 1),
+        slug: `post-${i + 1}`,
       }),
     )
     const { container } = render(
