@@ -41,16 +41,22 @@ export NODE_ENV=development
 This command works even without activating your shell, which makes it the place to start when
 something you thought you had set is not taking effect.
 
+> [!NOTE]
+> The first time you drop a `mise.toml` into a directory, `mise env` stops right here with `not
+> trusted`. Why `mise trust` has to come first is covered in [its own section
+> below](#it-will-not-read-from-a-config-file-you-have-not-trusted).
+
 ## Leave the directory and it is gone
 
 This is where it differs from `export`.
 
 ```console
 ❯ cd envdemo
-❯ mise env | grep APP_NAME
+❯ mise env
 export APP_NAME=envdemo
+export NODE_ENV=development
 ❯ cd ..
-❯ mise env | grep APP_NAME
+❯ mise env
 ```
 
 Outside the directory, the same command returns nothing.
@@ -252,7 +258,8 @@ that swap next to the task's definition.
 A way to think about when to reach for which:
 
 - **`.env`** — values that differ per person and are not committed (API keys, local connection
-  targets)
+  targets), paired with the discipline from the trap above: never leave a line you have stopped
+  using
 - **`[env]`** — defaults that are shared by the project and safe to commit
 - **A task's `env`** — values you want swapped for the duration of one command
 

@@ -36,16 +36,20 @@ export NODE_ENV=development
 
 このコマンドは、シェルを有効化していなくても使えます。「設定したつもりが効いていない」を切り分けるときの入り口です。
 
+> [!NOTE]
+> 初めて `mise.toml` を置いたディレクトリでは、この時点で `mise env` が `not trusted` で止まります。先に `mise trust` が要る、という話は[後の節](#信頼していない設定ファイルからは読み込まない)でまとめて扱います。
+
 ## ディレクトリを出れば消える
 
 `export` との違いはここです。
 
 ```console
 ❯ cd envdemo
-❯ mise env | grep APP_NAME
+❯ mise env
 export APP_NAME=envdemo
+export NODE_ENV=development
 ❯ cd ..
-❯ mise env | grep APP_NAME
+❯ mise env
 ```
 
 外に出ると、同じコマンドが何も返しません。
@@ -213,7 +217,7 @@ NODE_ENV=test DATABASE_URL=postgres://localhost:5432/test
 
 `.env` との使い分けは、こう考えると整理しやすいと思います。
 
-- **`.env`** — 個人ごとに違い、コミットしない値（API キー、ローカルの接続先）
+- **`.env`** — 個人ごとに違い、コミットしない値（API キー、ローカルの接続先）。上の罠のとおり、使わなくなった行を残さない運用とセットで
 - **`[env]`** — プロジェクト共通で、コミットしてよい既定値
 - **タスクの `env`** — その 1 コマンドの間だけ差し替えたい値
 

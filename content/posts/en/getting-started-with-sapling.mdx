@@ -1,7 +1,7 @@
 ---
 title: Getting Started with Sapling
 date: "2026-09-13"
-updated: "2026-09-13"
+updated: "2026-09-14"
 description: Sapling (sl), Meta's Git-compatible VCS — installing it, stacks, one PR per commit with sl pr submit, ReviewStack, and the sl web GUI
 image: /thumbnails/getting-started-with-sapling.avif
 tags:
@@ -45,7 +45,8 @@ echo 'export PATH="$HOME/.local/share/sapling:$PATH"' >> ~/.bashrc
 
 ```powershell
 # In an administrator PowerShell; the zip comes from GitHub Releases
-Expand-Archive -Path .\sapling-0.2.20260811-150444+8fb02b32-windows-x64.zip -DestinationPath "C:\Program Files\Sapling"
+# The zip has a Sapling directory inside it, so extract one level above
+Expand-Archive -Path .\sapling-0.2.20260811-150444+8fb02b32-windows-x64.zip -DestinationPath "C:\Program Files"
 setx PATH "$env:PATH;C:\Program Files\Sapling" -m
 # PowerShell's sl is an alias of Set-Location; take it out of the way
 Remove-Item Alias:sl -Force
@@ -53,8 +54,9 @@ Remove-Item Alias:sl -Force
 
 </CodeTabs>
 
-On Windows the zip has a `Sapling` directory inside it, so arrange the extraction so that its contents end up
-directly in the destination. Ask it for its version to see that it is there.
+On Windows the zip has a `Sapling` directory inside it. That is why the example extracts one level
+above, into `C:\Program Files`: the binaries then land directly in the `C:\Program Files\Sapling`
+that went on `PATH`. Ask it for its version to see that it is there.
 
 ```console
 ❯ sl --version
