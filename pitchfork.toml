@@ -1,9 +1,0 @@
-[daemons.db]
-run = "mise run db:start"
-ready_cmd = { run = "mise run db:push", timeout = "300s" }
-stop_signal = { signal = "SIGTERM", timeout = "30s" }
-
-[daemons.dev]
-run = "bun dev"
-depends = ["db"]
-ready_port = { port = 3000, timeout = "60s" }
