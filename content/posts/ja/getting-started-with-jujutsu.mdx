@@ -76,11 +76,11 @@ jj config set --user user.email "jambalaya.pyoncafe@outlook.jp"
 ❯ jj git init
 Initialized repo in "."
 ❯ ls -la
-total 3332
-drwxr-xr-x 1 Jam 197611 0  9月 13 15:18 .
-drwxr-xr-x 1 Jam 197611 0  9月 13 15:18 ..
-drwxr-xr-x 1 Jam 197611 0  9月 13 15:18 .git
-drwxr-xr-x 1 Jam 197611 0  9月 13 15:18 .jj
+total 0
+drwxr-xr-x. 4 ec2-user ec2-user  80 Sep 14 01:32 .
+drwxr-xr-x. 4 ec2-user ec2-user  80 Sep 14 01:32 ..
+drwxr-xr-x. 6 ec2-user ec2-user 180 Sep 14 01:32 .git
+drwxr-xr-x. 4 ec2-user ec2-user 100 Sep 14 01:32 .jj
 ```
 
 `.jj` と `.git` の両方ができました。Git のリポジトリとしても完全に有効で、`git` コマンドがそのまま動きます。
@@ -110,9 +110,8 @@ clone するなら `jj git clone` です。URL は Git と同じものを渡し�
 
 ```console
 ❯ jj git clone https://github.com/JamBalaya56562/blog.git
-Fetching into new repo in "C:\Users\Jam\AppData\Local\Temp\blog"
-bookmark: jujutsu-article@origin [new] untracked
-bookmark: main@origin            [new] tracked
+Fetching into new repo in "/home/ec2-user/jjrec/blog"
+bookmark: main@origin [new] tracked
 tag: v0.1.0@origin [new] tracked
 tag: v0.2.0@origin [new] tracked
 tag: v0.3.0@origin [new] tracked
@@ -124,23 +123,23 @@ tag: v0.7.0@origin [new] tracked
 tag: v0.8.0@origin [new] tracked
 tag: v0.9.0@origin [new] tracked
 Setting the revset alias `trunk()` to `main@origin`.
-Working copy  (@) now at: xqluqkll 226c6559 (empty) (no description set)
-Parent commit (@-)      : wyykwmnq 61b72c08 main | docs(blog): show the mise articles' transcripts as terminal windows (#1232)
-Added 301 files, modified 0 files, removed 0 files
+Working copy  (@) now at: rsnkkrkn 27c16670 (empty) (no description set)
+Parent commit (@-)      : nqlyzvzk 8ee3e4ae main | docs(blog): repair the details that made the posts contradict themselves (#1241)
+Added 326 files, modified 0 files, removed 0 files
 ❯ cd blog
 ❯ ls -la | head -12
-total 3569
-drwxr-xr-x 1 Jam 197611     0  9月 13 15:50 .
-drwxr-xr-x 1 Jam 197611     0  9月 13 15:50 ..
-drwxr-xr-x 1 Jam 197611     0  9月 13 15:50 .claude
-drwxr-xr-x 1 Jam 197611     0  9月 13 15:50 .devcontainer
--rw-r--r-- 1 Jam 197611   290  9月 13 15:50 .dockerignore
--rw-r--r-- 1 Jam 197611   294  9月 13 15:50 .editorconfig
-drwxr-xr-x 1 Jam 197611     0  9月 13 15:50 .git
--rw-r--r-- 1 Jam 197611  1865  9月 13 15:50 .gitattributes
-drwxr-xr-x 1 Jam 197611     0  9月 13 15:50 .github
--rw-r--r-- 1 Jam 197611   567  9月 13 15:50 .gitignore
-drwxr-xr-x 1 Jam 197611     0  9月 13 15:50 .jj
+total 296
+drwxr-xr-x. 16 ec2-user ec2-user 16384 Sep 14 01:35 .
+drwxr-xr-x.  3 ec2-user ec2-user    18 Sep 14 01:35 ..
+drwxr-xr-x.  2 ec2-user ec2-user    25 Sep 14 01:35 .claude
+drwxr-xr-x.  2 ec2-user ec2-user    31 Sep 14 01:35 .devcontainer
+-rw-r--r--.  1 ec2-user ec2-user   290 Sep 14 01:35 .dockerignore
+-rw-r--r--.  1 ec2-user ec2-user   294 Sep 14 01:35 .editorconfig
+drwxr-xr-x.  7 ec2-user ec2-user   128 Sep 14 01:35 .git
+-rw-r--r--.  1 ec2-user ec2-user  1865 Sep 14 01:35 .gitattributes
+drwxr-xr-x.  4 ec2-user ec2-user   155 Sep 14 01:35 .github
+-rw-r--r--.  1 ec2-user ec2-user   567 Sep 14 01:35 .gitignore
+drwxr-xr-x.  4 ec2-user ec2-user    56 Sep 14 01:35 .jj
 ```
 
 リモートの bookmark とタグが取り込まれ、ファイルが展開され、`.git` と `.jj` が並んでいます。最後の 2 行は、clone した時点ですでに **空の変更が `main` の上に作られて、そこに立っている**ことを言っています。この「常に自分の変更の中にいる」状態が、次の節の話です。
@@ -152,11 +151,11 @@ drwxr-xr-x 1 Jam 197611     0  9月 13 15:50 .jj
 ```console
 ❯ jj status
 The working copy has no changes.
-Working copy  (@) : tturtmot 5c4a5295 (empty) (no description set)
+Working copy  (@) : sqyulwvq 4ed222f0 (empty) (no description set)
 Parent commit (@-): zzzzzzzz 00000000 (empty) (no description set)
 ```
 
-まだ何もしていないのに、`tturtmot` という変更がもうあります。これが「作業コピーはコミット」の意味です。`@` は今いる変更を指す記号で、Git の `HEAD` に近いものです。
+まだ何もしていないのに、`sqyulwvq` という変更がもうあります。これが「作業コピーはコミット」の意味です。`@` は今いる変更を指す記号で、Git の `HEAD` に近いものです。
 
 ファイルを作って、もう一度 `jj status` を打ちます。
 
@@ -165,31 +164,31 @@ Parent commit (@-): zzzzzzzz 00000000 (empty) (no description set)
 ❯ jj status
 Working copy changes:
 A README.md
-Working copy  (@) : tturtmot 378e52a9 (no description set)
+Working copy  (@) : sqyulwvq a2ac21d8 (no description set)
 Parent commit (@-): zzzzzzzz 00000000 (empty) (no description set)
 ```
 
-`git add` は打っていません。それでも `README.md` は変更 `tturtmot` の中身になっていて、コミット ID が `5c4a5295` から `378e52a9` に変わっています。変更 ID の方は `tturtmot` のままです。
+`git add` は打っていません。それでも `README.md` は変更 `sqyulwvq` の中身になっていて、コミット ID が `4ed222f0` から `a2ac21d8` に変わっています。変更 ID の方は `sqyulwvq` のままです。
 
 この変更に説明を付けます。コミットメッセージを書き込むコマンドは `jj describe` で、`-m` で本文を渡します。
 
 ```console
 ❯ jj describe -m "Add README"
-Working copy  (@) now at: tturtmot 4bb47a91 Add README
+Working copy  (@) now at: sqyulwvq 3b5d2b0f Add README
 Parent commit (@-)      : zzzzzzzz 00000000 (empty) (no description set)
 ```
 
-Git の `git commit -m` に一番近いのはこれですが、意味は違います。`describe` は説明を書き込むだけで、「確定」はしていません。このあとファイルを編集すれば、その編集も `tturtmot` に入り続けます。
+Git の `git commit -m` に一番近いのはこれですが、意味は違います。`describe` は説明を書き込むだけで、「確定」はしていません。このあとファイルを編集すれば、その編集も `sqyulwvq` に入り続けます。
 
 次の作業に移るときに、新しい変更を作ります。それが `jj new` で、いまの変更を親にした空の変更を作って、そこに移動します。
 
 ```console
 ❯ jj new
-Working copy  (@) now at: oklvxylu a2376dfd (empty) (no description set)
-Parent commit (@-)      : tturtmot 4bb47a91 Add README
+Working copy  (@) now at: qztnnlsk 5e1aee2c (empty) (no description set)
+Parent commit (@-)      : sqyulwvq 3b5d2b0f Add README
 ```
 
-これで `tturtmot` は親になり、空の変更 `oklvxylu` が今いる場所になりました。ここから先の編集は `oklvxylu` に入ります。
+これで `sqyulwvq` は親になり、空の変更 `qztnnlsk` が今いる場所になりました。ここから先の編集は `qztnnlsk` に入ります。
 
 > [!TIP]
 > `jj describe` と `jj new` を続けて打つ場面は多いので、両方をまとめた `jj commit -m "..."` があります。「今の変更に説明を付けて、次の空の変更に移る」という意味で、Git の `git commit` と手触りが一番近いのはこちらです。
@@ -200,9 +199,9 @@ Parent commit (@-)      : tturtmot 4bb47a91 Add README
 
 ```console
 ❯ jj log
-@  oklvxylu jambalaya.pyoncafe@outlook.jp 2026-09-13 13:20:42 a2376dfd
+@  qztnnlsk jambalaya.pyoncafe@outlook.jp 2026-09-14 01:32:13 5e1aee2c
 │  (empty) (no description set)
-○  tturtmot jambalaya.pyoncafe@outlook.jp 2026-09-13 13:20:42 4bb47a91
+○  sqyulwvq jambalaya.pyoncafe@outlook.jp 2026-09-14 01:32:13 3b5d2b0f
 │  Add README
 ◆  zzzzzzzz root() 00000000
 ```
@@ -216,15 +215,15 @@ Git 側からも同じコミットが見えます。
 
 ```console
 ❯ git log --oneline
-4bb47a9 Add README
+3b5d2b0 Add README
 ❯ git status
 Not currently on any branch.
 nothing to commit, working tree clean
 ```
 
-`git log` に出るのは `tturtmot` のコミット ID `4bb47a91` で、`@` の空の変更は出ていません。jj は Git の `HEAD` を「今いる変更の親」に向けるので、Git から見ると detached HEAD で作業ツリーがきれいな状態に見えます。`@` の中身は、Git にとってはまだコミットされていない編集です。
+`git log` に出るのは `sqyulwvq` のコミット ID `3b5d2b0f` で、`@` の空の変更は出ていません。jj は Git の `HEAD` を「今いる変更の親」に向けるので、Git から見ると detached HEAD で作業ツリーがきれいな状態に見えます。`@` の中身は、Git にとってはまだコミットされていない編集です。
 
-先頭の何文字かに色が付いて表示されるのは、その文字数だけ打てば一意に指せる、という印です。この記事の出力は色が無いので分かりませんが、手元では `jj new t` のように 1 文字で通ることがよくあります。
+先頭の何文字かに色が付いて表示されるのは、その文字数だけ打てば一意に指せる、という印です。この記事の出力は色が無いので分かりませんが、手元では `jj new s` のように 1 文字で通ることがよくあります。
 
 ### 入れ忘れを、前の変更に足す
 
@@ -233,7 +232,11 @@ nothing to commit, working tree clean
 ```console
 ❯ echo World >> README.md
 ❯ jj describe -m "Greet the world"
+Working copy  (@) now at: qztnnlsk 4649fbd2 Greet the world
+Parent commit (@-)      : sqyulwvq 3b5d2b0f Add README
 ❯ jj new -m "Add a licence note"
+Working copy  (@) now at: kmkwxkzl e9ef17f6 (empty) Add a licence note
+Parent commit (@-)      : qztnnlsk 4649fbd2 Greet the world
 ❯ echo MIT > LICENSE
 ```
 
@@ -244,24 +247,24 @@ Git なら stash して checkout して amend して戻ってくるところで�
 ```console
 ❯ jj squash README.md
 Rebased 1 descendant commits.
-Working copy  (@) now at: ovvvnnor 5e6ce646 Add a licence note
-Parent commit (@-)      : oklvxylu 901a7c31 Greet the world
+Working copy  (@) now at: kmkwxkzl e8cdfe7b Add a licence note
+Parent commit (@-)      : qztnnlsk 3a836b86 Greet the world
 ```
 
 ファイルを指定したので、動いたのは `README.md` の分だけです。`LICENSE` はいまの変更に残ったままです。
 
 ```console
 ❯ jj log
-@  ovvvnnor jambalaya.pyoncafe@outlook.jp 2026-09-13 13:21:06 5e6ce646
+@  kmkwxkzl jambalaya.pyoncafe@outlook.jp 2026-09-14 01:32:13 e8cdfe7b
 │  Add a licence note
-○  oklvxylu jambalaya.pyoncafe@outlook.jp 2026-09-13 13:21:06 901a7c31
+○  qztnnlsk jambalaya.pyoncafe@outlook.jp 2026-09-14 01:32:13 3a836b86
 │  Greet the world
-○  tturtmot jambalaya.pyoncafe@outlook.jp 2026-09-13 13:20:42 4bb47a91
+○  sqyulwvq jambalaya.pyoncafe@outlook.jp 2026-09-14 01:32:13 3b5d2b0f
 │  Add README
 ◆  zzzzzzzz root() 00000000
 ```
 
-「Greet the world」のコミット ID が `bf873b9b` から `901a7c31` に変わり、変更 ID `oklvxylu` は変わっていません。その上に乗っていた「Add a licence note」も自動で載せ替えられています（`Rebased 1 descendant commits.`）。Git でいえば amend と rebase を一度にやったことになりますが、打ったのは 1 コマンドです。
+「Greet the world」のコミット ID が `4649fbd2` から `3a836b86` に変わり、変更 ID `qztnnlsk` は変わっていません。その上に乗っていた「Add a licence note」も自動で載せ替えられています（`Rebased 1 descendant commits.`）。Git でいえば amend と rebase を一度にやったことになりますが、打ったのは 1 コマンドです。
 
 ![jj squash README.md の前後で、README.md だけが Greet the world に移り、変更 ID は同じままコミット ID が新しくなり、上の Add a licence note が載せ替えられる図](jujutsu-squash.svg)
 
@@ -270,67 +273,100 @@ Parent commit (@-)      : oklvxylu 901a7c31 Greet the world
 親ではなく、2 つ前の「Add README」に `.gitignore` を足したくなったとします。`jj edit` で、その変更に直接移動できます。
 
 ```console
-❯ jj edit tturtmot
+❯ jj edit sqyulwvq
+Working copy  (@) now at: sqyulwvq 3b5d2b0f Add README
+Parent commit (@-)      : zzzzzzzz 00000000 (empty) (no description set)
+Added 0 files, modified 1 files, removed 1 files
 ❯ echo node_modules/ > .gitignore
 ❯ jj status
 Rebased 2 descendant commits onto updated working copy.
 Working copy changes:
 A .gitignore
 A README.md
-Working copy  (@) : tturtmot 2610b68f Add README
+Working copy  (@) : sqyulwvq 1f10f6c1 Add README
 Parent commit (@-): zzzzzzzz 00000000 (empty) (no description set)
 ```
 
-ファイルを置いた時点で `tturtmot` の中身が変わり、その子孫 2 つがまた自動で載せ替えられました。
+ファイルを置いた時点で `sqyulwvq` の中身が変わり、その子孫 2 つがまた自動で載せ替えられました。
 
-![jj edit tturtmot の前後で、作業ディレクトリが Add README の中身に入れ替わって .gitignore が足され、上の 2 つの変更が載せ替えられる図](jujutsu-edit.svg)
+![jj edit sqyulwvq の前後で、作業ディレクトリが Add README の中身に入れ替わって .gitignore が足され、上の 2 つの変更が載せ替えられる図](jujutsu-edit.svg)
 
-終わったら先頭に戻ります。
+終わったら先頭に戻ります。ディレクトリの中身が入れ替わるのは、`ls` を挟むと分かりやすいです。
 
 ```console
-❯ jj edit ovvvnnor
+❯ ls
+README.md
+❯ jj edit kmkwxkzl
+Working copy  (@) now at: kmkwxkzl 58604973 Add a licence note
+Parent commit (@-)      : qztnnlsk e9d23257 Greet the world
+Added 1 files, modified 1 files, removed 0 files
+❯ ls
+LICENSE
+README.md
 ```
 
 > [!NOTE]
-> 変更を移動すると、**ディレクトリの中のファイルはその変更の中身に置き換わります**。`jj edit tturtmot` の直後は `LICENSE` が消えていて、`jj edit ovvvnnor` で戻ってきます。消えたのではなく、その変更にはまだ無かった、という状態を見ているだけです。
+> 変更を移動すると、**ディレクトリの中のファイルはその変更の中身に置き換わります**。`jj edit sqyulwvq` の直後は `LICENSE` が消えていて、`jj edit kmkwxkzl` で戻ってきます。消えたのではなく、その変更にはまだ無かった、という状態を見ているだけです。
 
 ### 間違えたら `jj undo`
 
-上の `squash` を、間違えて 2 つ前の変更に送ってしまったとします。`--into` で送り先を指定できるので、そこを間違えた形です。
+`README.md` にもう 1 行足して、これも前の「Greet the world」に送るつもりが、送り先を 2 つ前と間違えた、という場面です。`--into` で送り先を指定できるので、そこを間違えた形です。
 
 ```console
-❯ jj squash README.md --into tturtmot
+❯ echo "Thanks for reading." >> README.md
+❯ jj squash README.md --into sqyulwvq
 Rebased 2 descendant commits.
-Working copy  (@) now at: ovvvnnor 7d39ffbe Add a licence note
-Parent commit (@-)      : oklvxylu c01a916f Greet the world
+Working copy  (@) now at: kmkwxkzl 6aeee89a Add a licence note
+Parent commit (@-)      : qztnnlsk 30ddd3a7 Greet the world
 New conflicts appeared in 1 commits:
-  tturtmot 2c598158 (conflict) Add README
+  sqyulwvq 170097fc (conflict) Add README
+Hint: To resolve the conflicts, start by creating a commit on top of
+the conflicted commit:
+  jj new sqyulwvq
+Then use `jj resolve`, or edit the conflict markers in the file directly.
+Once the conflicts are resolved, you can inspect the result with `jj diff`.
+Then run `jj squash` to move the resolution into the conflicted commit.
 ```
 
-コンフリクトが出ました。あとで触れますが、jj ではコンフリクトが出ても作業は止まりません。ここでは間違いに気づいたので、取り消します。
+「Add README」には `World` の行がまだ無いので、そこへ `World` の下に足す差分を送り込もうとしてコンフリクトになりました。あとで触れますが、jj ではコンフリクトが出ても作業は止まりません。ここでは間違いに気づいたので、取り消します。
 
 ```console
 ❯ jj undo
-Undid operation: 4f4da9c67ec4 (2026-09-13 13:20:54) squash commits into 4bb47a91b947ce2ef51167be9cc712df0afddd9a
-Restored to operation: 3160922e4231 (2026-09-13 13:20:54) snapshot working copy
-Working copy  (@) now at: ovvvnnor 61975902 Add a licence note
-Parent commit (@-)      : oklvxylu bf873b9b Greet the world
+Undid operation: 420af8ee66c9 (2026-09-14 01:32:13) squash commits into 1f10f6c153ac8b666099bf444456fbb719e90f48
+Restored to operation: b2dc48bc8a00 (2026-09-14 01:32:13) snapshot working copy
+Working copy  (@) now at: kmkwxkzl 6fb6906d Add a licence note
+Parent commit (@-)      : qztnnlsk e9d23257 Greet the world
 Existing conflicts were resolved or abandoned from 1 commits.
 ```
 
-squash も、それに伴う rebase も、コンフリクトも、まとめて無かったことになりました。何を取り消したのかは `jj op log` に残っています。
+squash も、それに伴う rebase も、コンフリクトも、まとめて無かったことになりました。
+
+> [!NOTE]
+> 戻るのは**リポジトリへの操作**だけで、手元の編集は戻りません。足した `Thanks for reading.` の行は作業コピーに残ったままです。送り先を決め直して squash すれば、そのまま目的の変更に入ります。
+
+何を取り消したのかは `jj op log` に残っています。
 
 ```console
 ❯ jj op log
-4f4da9c67ec4 Jam@DESKTOP-U30T4EP default@ now, lasted 402 milliseconds
-squash commits into 4bb47a91b947ce2ef51167be9cc712df0afddd9a
-args: jj squash README.md --into tturtmot
-3160922e4231 Jam@DESKTOP-U30T4EP default@ 1 second ago, lasted 103 milliseconds
-snapshot working copy
-args: jj diff --stat
+@  3fab8cdbfd56 ec2-user@ip-192-168-12-67.ap-northeast-1.compute.internal default@ now, lasted 2 milliseconds
+│  undo: restore to operation b2dc48bc8a006b75eaf951e73805fe8863535b9aa415316f8396ff4e3e81a7301546fcb1aed6d29f6382a2f0b5f0d6472a4c86af9e7963b97b170534086d3188
+│  args: jj undo
+○  420af8ee66c9 ec2-user@ip-192-168-12-67.ap-northeast-1.compute.internal default@ now, lasted 30 milliseconds
+│  squash commits into 1f10f6c153ac8b666099bf444456fbb719e90f48
+│  args: jj squash README.md --into sqyulwvq
+○  b2dc48bc8a00 ec2-user@ip-192-168-12-67.ap-northeast-1.compute.internal default@ now, lasted 9 milliseconds
+│  snapshot working copy
+│  args: jj squash README.md --into sqyulwvq
+○  76a9ee270eed ec2-user@ip-192-168-12-67.ap-northeast-1.compute.internal default@ now, lasted 1 millisecond
+│  edit commit 58604973bec86c1d9936afefb39c67b06d65f3d2
+│  args: jj edit kmkwxkzl
+○  c1834f1120b4 ec2-user@ip-192-168-12-67.ap-northeast-1.compute.internal default@ now, lasted 19 milliseconds
+│  snapshot working copy
+│  args: jj status
+...
 ```
 
-`jj status` や `jj diff` のような読むだけのコマンドでも `snapshot working copy` という操作が記録されているのが見えます。これが「コマンドを打った時点で自動的にコミットに取り込まれる」の正体です。
+`jj status` のような読むだけのコマンドでも `snapshot working copy` という操作が記録されているのが見えます。これが「コマンドを打った時点で自動的にコミットに取り込まれる」の正体です。
 
 > [!TIP]
 > `jj undo` を繰り返すと、操作を 1 つずつさかのぼれます。特定の時点に一気に戻したいときは `jj op log` で ID を見て `jj op restore <ID>` です。
@@ -341,12 +377,14 @@ args: jj diff --stat
 
 ```console
 ❯ jj new -m "An experiment that did not work out"
+Working copy  (@) now at: qylvzpun c7eca646 (empty) An experiment that did not work out
+Parent commit (@-)      : kmkwxkzl 6fb6906d Add a licence note
 ❯ echo x > scratch.txt
 ❯ jj abandon
 Abandoned 1 commits:
-  nknpsvyu c1adb267 An experiment that did not work out
-Working copy  (@) now at: lrksrpsq 95f579b1 (empty) (no description set)
-Parent commit (@-)      : ovvvnnor ab228dc9 Add a licence note
+  qylvzpun 8f82ebbd An experiment that did not work out
+Working copy  (@) now at: xszrwutz a5de0af0 (empty) (no description set)
+Parent commit (@-)      : kmkwxkzl 6fb6906d Add a licence note
 Added 0 files, modified 0 files, removed 1 files
 ```
 
@@ -354,38 +392,78 @@ Added 0 files, modified 0 files, removed 1 files
 
 ## リモートと GitHub
 
-ここまでは手元だけの話でした。push するには、Git のブランチに相当するものが要ります。
+ここまでは手元だけの話でした。push するには、送り先のリモートと、Git のブランチに相当するものが要ります。
 
 ### bookmark はブランチ
+
+リモートの登録は Git と同じ考え方で、`jj git remote add` です。
+
+```console
+❯ jj git remote add origin ../origin.git
+```
 
 jj には Git のブランチに相当する **bookmark** があります。違いは、**bookmark は自動では動かない**ことです。Git では `main` にいる状態でコミットすれば `main` が進みますが、jj の bookmark は、置いたコミットにそのまま留まります。進めたければ、明示的に動かします。
 
 push したいコミットに bookmark を置いて、push します。bookmark を作るのが `jj bookmark create`、リモートへ送るのが `jj git push` で、`--bookmark` でどれを送るかを指定します。
 
+素直に「今いる変更」を指すと、こうなります。
+
 ```console
 ❯ jj bookmark create main -r @
+Warning: Target revision is empty.
+Created 1 bookmarks pointing to xszrwutz a5de0af0 main* | (empty) (no description set)
 ❯ jj git push --bookmark main
-Changes to push to origin:
-  bookmark: main [add to ab228dc9c9ac]
-Warning: The working-copy commit became immutable; a new commit has been created on top of it.
-Working copy  (@) now at: upwouywx 309ce578 (empty) (no description set)
-Parent commit (@-)      : ovvvnnor ab228dc9 main | Add a licence note
+Error: Won't push commit a5de0af08b29 since it has no description
+Hint: Rejected commit: xszrwutz a5de0af0 main* | (empty) (no description set)
 ```
 
-push した瞬間に、今いた変更が immutable（`◆`）になり、新しい空の変更が上に作られました。リモートの `main` に載ったコミットは、もう手元で直すものではない、という jj の判断です。「あとから直せる」のは、まだ push していない範囲だけだと覚えておくと安全です。
+直前の `jj abandon` で作られた `@` は、説明の無い空の変更です。jj はそれを push しません。置き先を 1 つ下にずらします。
+
+```console
+❯ jj bookmark delete main
+Deleted 1 bookmarks.
+❯ jj bookmark create main -r @-
+Created 1 bookmarks pointing to kmkwxkzl 6fb6906d main* | Add a licence note
+❯ jj git push --bookmark main
+Changes to push to origin:
+  bookmark: main [add to 6fb6906d0cbd]
+```
+
+`@-` は「今いる変更の親」で、ここでは push したかった「Add a licence note」です。push すると、そのコミットは immutable（`◆`）になります。
+
+```console
+❯ jj log
+@  xszrwutz jambalaya.pyoncafe@outlook.jp 2026-09-14 01:32:14 a5de0af0
+│  (empty) (no description set)
+◆  kmkwxkzl jambalaya.pyoncafe@outlook.jp 2026-09-14 01:32:13 main 6fb6906d
+│  Add a licence note
+~
+```
+
+さっきまで `○` だった「Add a licence note」が `◆` になりました。リモートの `main` に載ったコミットは、もう手元で直すものではない、という jj の判断です。「あとから直せる」のは、まだ push していない範囲だけだと覚えておくと安全です。
 
 ### リモートの変更を取り込む
 
-同僚が `main` に push したあと、手元で取り込むには `jj git fetch` です。取ってきたあとの様子を `jj log` で見ます。
+いま立っている空の変更に、作業を 1 つ入れておきます。
+
+```console
+❯ echo "Send patches as pull requests." > CONTRIBUTING.md
+❯ jj describe -m "Add contributing guide"
+Working copy  (@) now at: xszrwutz 122ef8b9 Add contributing guide
+Parent commit (@-)      : kmkwxkzl 6fb6906d main | Add a licence note
+```
+
+ここで同僚が `main` に push したとします。手元で取り込むには `jj git fetch` です。取ってきたあとの様子を `jj log` で見ます。
 
 ```console
 ❯ jj git fetch
+bookmark: main@origin [updated] tracked
 ❯ jj log
-@  upwouywx jambalaya.pyoncafe@outlook.jp 2026-09-13 13:22:13 0be7156b
+@  xszrwutz jambalaya.pyoncafe@outlook.jp 2026-09-14 01:32:14 122ef8b9
 │  Add contributing guide
-│ ◆  zumzptvl teammate@example.com 2026-09-13 13:22:11 main eccc91c7
+│ ◆  ktzwvlxw teammate@example.com 2026-09-14 01:32:14 main d5598eef
 ├─╯  Add the copyright line
-◆  ovvvnnor jambalaya.pyoncafe@outlook.jp 2026-09-13 13:21:46 ab228dc9
+◆  kmkwxkzl jambalaya.pyoncafe@outlook.jp 2026-09-14 01:32:13 6fb6906d
 │  Add a licence note
 ~
 ```
@@ -395,8 +473,9 @@ push した瞬間に、今いた変更が immutable（`◆`）になり、新し
 ```console
 ❯ jj rebase -d main
 Rebased 1 commits to destination.
-Working copy  (@) now at: upwouywx 56f5616c Add contributing guide
-Parent commit (@-)      : zumzptvl eccc91c7 main | Add the copyright line
+Working copy  (@) now at: xszrwutz 7fee7ee2 Add contributing guide
+Parent commit (@-)      : ktzwvlxw d5598eef main | Add the copyright line
+Added 0 files, modified 1 files, removed 0 files
 ```
 
 `-d` は destination（載せ替え先）です。指定しなければ今いる変更とその子孫が対象になるので、日常ではこの 1 行で足ります。
@@ -405,31 +484,50 @@ Parent commit (@-)      : zumzptvl eccc91c7 main | Add the copyright line
 
 ### PR を作る
 
-作業用の bookmark を置いて push すれば、GitHub 側にはブランチとして見えます。
+作業用の bookmark を置いて push すれば、GitHub 側にはブランチとして見えます。ここは説明付きの `@` を指すので `-r @` で構いません。
 
 ```console
 ❯ jj bookmark create contributing -r @
+Created 1 bookmarks pointing to xszrwutz 7fee7ee2 contributing* | Add contributing guide
 ❯ jj git push --bookmark contributing
-❯ gh pr create --head contributing
+Changes to push to origin:
+  bookmark: contributing [add to 7fee7ee258c3]
 ```
 
-PR がマージされたら、`jj git fetch` で `main` が進み、マージ済みのコミットは自動的に abandon されます。手元でブランチを消す作業はありません。
+あとは `gh pr create --head contributing` で PR になります。PR がマージされたら、`jj git fetch` で `main` が進み、マージ済みのコミットは自動的に abandon されます。手元でブランチを消す作業はありません。
 
 > [!WARNING]
 > マージ後の `jj git fetch` は、abandon されたコミットの上にあった作業コピーを、**マージ前の親に**載せ替えます。新しい `main` の上には来ません。fetch のあとは、毎回 `jj rebase -d main` を打つ習慣にしておくと迷いません。
 
 ### コンフリクトは作業を止めない
 
-同僚と自分が `README.md` の同じ行を直した状態で rebase してみます。
+自分が `README.md` の `World` の行を `Everyone` に直します。
+
+```console
+❯ jj new -m "Greet everyone"
+Working copy  (@) now at: mkqlmvpy 110cd2a7 (empty) Greet everyone
+Parent commit (@-)      : xszrwutz 7fee7ee2 contributing | Add contributing guide
+❯ jj status
+Working copy changes:
+M README.md
+Working copy  (@) : mkqlmvpy 5dc0f98f Greet everyone
+Parent commit (@-): xszrwutz 7fee7ee2 contributing | Add contributing guide
+```
+
+その間に同僚が、同じ行を `World!` に直して `main` に push しました。取り込んで rebase してみます。
 
 ```console
 ❯ jj git fetch
+bookmark: main@origin [updated] tracked
 ❯ jj rebase -d main
-Rebased 1 commits to destination.
-Working copy  (@) now at: znwtpvsx 224cb834 (conflict) Greet everyone
-Parent commit (@-)      : xsxqypzo 29608896 main | Add an exclamation mark
+Rebased 2 commits to destination.
+Working copy  (@) now at: mkqlmvpy e555650d (conflict) Greet everyone
+Parent commit (@-)      : xszrwutz f5ea44f4 contributing* | Add contributing guide
+Added 0 files, modified 1 files, removed 0 files
 Warning: There are unresolved conflicts at these paths:
 README.md    2-sided conflict
+New conflicts appeared in 1 commits:
+  mkqlmvpy e555650d (conflict) Greet everyone
 ```
 
 Git の rebase なら、ここで止まって `--continue` か `--abort` を迫られます。jj は**コンフリクトを含んだまま rebase を完了**し、変更に `(conflict)` の印を付けて、そのまま先に進めます。`jj log` を打っても、他の変更に移っても構いません。
@@ -442,13 +540,14 @@ Git の rebase なら、ここで止まって `--continue` か `--abort` を迫�
 ❯ cat -n README.md
      1	Hello!
      2	<<<<<<< conflict 1 of 1
-     3	%%%%%%% diff from: zumzptvl eccc91c7 "Add the copyright line" (parents of rebased revision)
-     4	\\\\\\\        to: xsxqypzo 29608896 "Add an exclamation mark" (rebase destination)
+     3	%%%%%%% diff from: xszrwutz 7fee7ee2 "Add contributing guide" (parents of rebased revision)
+     4	\\\\\\\        to: xszrwutz f5ea44f4 "Add contributing guide" (rebase destination)
      5	-World
      6	+World!
-     7	+++++++ znwtpvsx 8046350f "Greet everyone" (rebased revision)
+     7	+++++++ mkqlmvpy 5dc0f98f "Greet everyone" (rebased revision)
      8	Everyone
      9	>>>>>>> conflict 1 of 1 ends
+    10	Thanks for reading.
 ```
 
 マーカーの形が Git と違います。上半分は「相手側がどう変えたか」の差分、下半分は「自分の変更後の内容」です。両方を見て、`Everyone!` に書き換えて保存します。
@@ -457,8 +556,8 @@ Git の rebase なら、ここで止まって `--continue` か `--abort` を迫�
 ❯ jj status
 Working copy changes:
 M README.md
-Working copy  (@) : znwtpvsx 93afbae1 Greet everyone
-Parent commit (@-): xsxqypzo 29608896 main | Add an exclamation mark
+Working copy  (@) : mkqlmvpy 78622d5f Greet everyone
+Parent commit (@-): xszrwutz f5ea44f4 contributing* | Add contributing guide
 ```
 
 `(conflict)` が消えました。「解消した」と宣言するコマンドはありません。マーカーの無いファイルを保存した時点で、次のスナップショットが解消済みとして取り込みます。
@@ -483,10 +582,10 @@ jj では、コミットの説明を書くのも、中身を足すのも、順�
 
 そのために、1 つのコミットが 2 つの ID を持っています。
 
-- **変更 ID（change ID）** — `tturtmot` のような英字。中身を直しても、rebase しても変わらない
-- **コミット ID（commit ID）** — `4bb47a91` のような 16 進数。Git のコミットハッシュそのもので、中身を直すたびに変わる
+- **変更 ID（change ID）** — `sqyulwvq` のような英字。中身を直しても、rebase しても変わらない
+- **コミット ID（commit ID）** — `3b5d2b0f` のような 16 進数。Git のコミットハッシュそのもので、中身を直すたびに変わる
 
-「さっきの変更に 1 行足したい」と思ったとき、指すのは変更 ID です。`jj squash` のあと「Greet the world」のコミット ID は `bf873b9b` から `901a7c31` に変わりましたが、変更 ID は `oklvxylu` のままでした。だから、続けて同じ名前で扱えます。
+「さっきの変更に 1 行足したい」と思ったとき、指すのは変更 ID です。`jj squash` のあと「Greet the world」のコミット ID は `4649fbd2` から `3a836b86` に変わりましたが、変更 ID は `qztnnlsk` のままでした。だから、続けて同じ名前で扱えます。
 
 ただし、push してリモートの `main` に載ったコミットは immutable（`◆`）になり、直す対象から外れます。「あとから直せる」のは、まだ共有していない範囲です。
 

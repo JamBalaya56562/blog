@@ -88,11 +88,11 @@ commands that deal with Git sit under `jj git`. Make an empty directory and run 
 ❯ jj git init
 Initialized repo in "."
 ❯ ls -la
-total 3332
-drwxr-xr-x 1 Jam 197611 0  9月 13 15:18 .
-drwxr-xr-x 1 Jam 197611 0  9月 13 15:18 ..
-drwxr-xr-x 1 Jam 197611 0  9月 13 15:18 .git
-drwxr-xr-x 1 Jam 197611 0  9月 13 15:18 .jj
+total 0
+drwxr-xr-x. 4 ec2-user ec2-user  80 Sep 14 01:32 .
+drwxr-xr-x. 4 ec2-user ec2-user  80 Sep 14 01:32 ..
+drwxr-xr-x. 6 ec2-user ec2-user 180 Sep 14 01:32 .git
+drwxr-xr-x. 4 ec2-user ec2-user 100 Sep 14 01:32 .jj
 ```
 
 Both `.jj` and `.git` are there. It is a fully valid Git repository too, and `git` commands work in it as
@@ -124,9 +124,8 @@ repository.
 
 ```console
 ❯ jj git clone https://github.com/JamBalaya56562/blog.git
-Fetching into new repo in "C:\Users\Jam\AppData\Local\Temp\blog"
-bookmark: jujutsu-article@origin [new] untracked
-bookmark: main@origin            [new] tracked
+Fetching into new repo in "/home/ec2-user/jjrec/blog"
+bookmark: main@origin [new] tracked
 tag: v0.1.0@origin [new] tracked
 tag: v0.2.0@origin [new] tracked
 tag: v0.3.0@origin [new] tracked
@@ -138,23 +137,23 @@ tag: v0.7.0@origin [new] tracked
 tag: v0.8.0@origin [new] tracked
 tag: v0.9.0@origin [new] tracked
 Setting the revset alias `trunk()` to `main@origin`.
-Working copy  (@) now at: xqluqkll 226c6559 (empty) (no description set)
-Parent commit (@-)      : wyykwmnq 61b72c08 main | docs(blog): show the mise articles' transcripts as terminal windows (#1232)
-Added 301 files, modified 0 files, removed 0 files
+Working copy  (@) now at: rsnkkrkn 27c16670 (empty) (no description set)
+Parent commit (@-)      : nqlyzvzk 8ee3e4ae main | docs(blog): repair the details that made the posts contradict themselves (#1241)
+Added 326 files, modified 0 files, removed 0 files
 ❯ cd blog
 ❯ ls -la | head -12
-total 3569
-drwxr-xr-x 1 Jam 197611     0  9月 13 15:50 .
-drwxr-xr-x 1 Jam 197611     0  9月 13 15:50 ..
-drwxr-xr-x 1 Jam 197611     0  9月 13 15:50 .claude
-drwxr-xr-x 1 Jam 197611     0  9月 13 15:50 .devcontainer
--rw-r--r-- 1 Jam 197611   290  9月 13 15:50 .dockerignore
--rw-r--r-- 1 Jam 197611   294  9月 13 15:50 .editorconfig
-drwxr-xr-x 1 Jam 197611     0  9月 13 15:50 .git
--rw-r--r-- 1 Jam 197611  1865  9月 13 15:50 .gitattributes
-drwxr-xr-x 1 Jam 197611     0  9月 13 15:50 .github
--rw-r--r-- 1 Jam 197611   567  9月 13 15:50 .gitignore
-drwxr-xr-x 1 Jam 197611     0  9月 13 15:50 .jj
+total 296
+drwxr-xr-x. 16 ec2-user ec2-user 16384 Sep 14 01:35 .
+drwxr-xr-x.  3 ec2-user ec2-user    18 Sep 14 01:35 ..
+drwxr-xr-x.  2 ec2-user ec2-user    25 Sep 14 01:35 .claude
+drwxr-xr-x.  2 ec2-user ec2-user    31 Sep 14 01:35 .devcontainer
+-rw-r--r--.  1 ec2-user ec2-user   290 Sep 14 01:35 .dockerignore
+-rw-r--r--.  1 ec2-user ec2-user   294 Sep 14 01:35 .editorconfig
+drwxr-xr-x.  7 ec2-user ec2-user   128 Sep 14 01:35 .git
+-rw-r--r--.  1 ec2-user ec2-user  1865 Sep 14 01:35 .gitattributes
+drwxr-xr-x.  4 ec2-user ec2-user   155 Sep 14 01:35 .github
+-rw-r--r--.  1 ec2-user ec2-user   567 Sep 14 01:35 .gitignore
+drwxr-xr-x.  4 ec2-user ec2-user    56 Sep 14 01:35 .jj
 ```
 
 The remote's bookmarks and tags come in, the files are checked out, and `.git` sits next to `.jj`. The
@@ -170,11 +169,11 @@ it shows the change you are in and the file changes inside it.
 ```console
 ❯ jj status
 The working copy has no changes.
-Working copy  (@) : tturtmot 5c4a5295 (empty) (no description set)
+Working copy  (@) : sqyulwvq 4ed222f0 (empty) (no description set)
 Parent commit (@-): zzzzzzzz 00000000 (empty) (no description set)
 ```
 
-Nothing has been done, and there is already a change called `tturtmot`. That is what "the working copy
+Nothing has been done, and there is already a change called `sqyulwvq`. That is what "the working copy
 is a commit" means. `@` is the symbol for the change you are in, close to Git's `HEAD`.
 
 Create a file and run `jj status` again.
@@ -184,37 +183,37 @@ Create a file and run `jj status` again.
 ❯ jj status
 Working copy changes:
 A README.md
-Working copy  (@) : tturtmot 378e52a9 (no description set)
+Working copy  (@) : sqyulwvq a2ac21d8 (no description set)
 Parent commit (@-): zzzzzzzz 00000000 (empty) (no description set)
 ```
 
-No `git add` was typed. Even so, `README.md` is now the content of change `tturtmot`, and the commit ID
-has moved from `5c4a5295` to `378e52a9`. The change ID is still `tturtmot`.
+No `git add` was typed. Even so, `README.md` is now the content of change `sqyulwvq`, and the commit ID
+has moved from `4ed222f0` to `a2ac21d8`. The change ID is still `sqyulwvq`.
 
 Give the change a description. The command that writes the commit message is `jj describe`, and `-m`
 passes the text.
 
 ```console
 ❯ jj describe -m "Add README"
-Working copy  (@) now at: tturtmot 4bb47a91 Add README
+Working copy  (@) now at: sqyulwvq 3b5d2b0f Add README
 Parent commit (@-)      : zzzzzzzz 00000000 (empty) (no description set)
 ```
 
 This is the closest thing to `git commit -m`, but it means something different. `describe` only writes
 the description; nothing is "finalised". Edit a file after this and that edit keeps going into
-`tturtmot` too.
+`sqyulwvq` too.
 
 When you move on to the next piece of work, create a new change. That is `jj new`: it creates an empty
 change whose parent is the current one, and moves you into it.
 
 ```console
 ❯ jj new
-Working copy  (@) now at: oklvxylu a2376dfd (empty) (no description set)
-Parent commit (@-)      : tturtmot 4bb47a91 Add README
+Working copy  (@) now at: qztnnlsk 5e1aee2c (empty) (no description set)
+Parent commit (@-)      : sqyulwvq 3b5d2b0f Add README
 ```
 
-`tturtmot` is now the parent and the empty change `oklvxylu` is where you are. Edits from here on go
-into `oklvxylu`.
+`sqyulwvq` is now the parent and the empty change `qztnnlsk` is where you are. Edits from here on go
+into `qztnnlsk`.
 
 > [!TIP]
 > `jj describe` followed by `jj new` comes up often enough that there is `jj commit -m "..."` for the
@@ -227,9 +226,9 @@ History is `jj log`. With no options it prints something close to `git log --gra
 
 ```console
 ❯ jj log
-@  oklvxylu jambalaya.pyoncafe@outlook.jp 2026-09-13 13:20:42 a2376dfd
+@  qztnnlsk jambalaya.pyoncafe@outlook.jp 2026-09-14 01:32:13 5e1aee2c
 │  (empty) (no description set)
-○  tturtmot jambalaya.pyoncafe@outlook.jp 2026-09-13 13:20:42 4bb47a91
+○  sqyulwvq jambalaya.pyoncafe@outlook.jp 2026-09-14 01:32:13 3b5d2b0f
 │  Add README
 ◆  zzzzzzzz root() 00000000
 ```
@@ -245,19 +244,19 @@ Git sees the same commits.
 
 ```console
 ❯ git log --oneline
-4bb47a9 Add README
+3b5d2b0 Add README
 ❯ git status
 Not currently on any branch.
 nothing to commit, working tree clean
 ```
 
-What `git log` shows is `tturtmot`'s commit ID `4bb47a91`; the empty change at `@` is not there. jj
+What `git log` shows is `sqyulwvq`'s commit ID `3b5d2b0f`; the empty change at `@` is not there. jj
 points Git's `HEAD` at the parent of the current change, so from Git's side this looks like a detached
 `HEAD` with a clean working tree. Whatever is in `@` is, to Git, an edit that has not been committed
 yet.
 
 The leading characters of each ID are shown in colour in a real terminal: that is how many you need to
-type for the ID to be unique. The output in this article has no colour, but at home `jj new t` — one
+type for the ID to be unique. The output in this article has no colour, but at home `jj new s` — one
 letter — usually goes through.
 
 ### Adding something you forgot to an earlier change
@@ -268,7 +267,11 @@ description in one go.
 ```console
 ❯ echo World >> README.md
 ❯ jj describe -m "Greet the world"
+Working copy  (@) now at: qztnnlsk 4649fbd2 Greet the world
+Parent commit (@-)      : sqyulwvq 3b5d2b0f Add README
 ❯ jj new -m "Add a licence note"
+Working copy  (@) now at: kmkwxkzl e9ef17f6 (empty) Add a licence note
+Parent commit (@-)      : qztnnlsk 4649fbd2 Greet the world
 ❯ echo MIT > LICENSE
 ```
 
@@ -282,24 +285,24 @@ change into its parent. Change `Hello` to `Hello!` in an editor, then:
 ```console
 ❯ jj squash README.md
 Rebased 1 descendant commits.
-Working copy  (@) now at: ovvvnnor 5e6ce646 Add a licence note
-Parent commit (@-)      : oklvxylu 901a7c31 Greet the world
+Working copy  (@) now at: kmkwxkzl e8cdfe7b Add a licence note
+Parent commit (@-)      : qztnnlsk 3a836b86 Greet the world
 ```
 
 Because a file was named, only `README.md` moved. `LICENSE` is still in the current change.
 
 ```console
 ❯ jj log
-@  ovvvnnor jambalaya.pyoncafe@outlook.jp 2026-09-13 13:21:06 5e6ce646
+@  kmkwxkzl jambalaya.pyoncafe@outlook.jp 2026-09-14 01:32:13 e8cdfe7b
 │  Add a licence note
-○  oklvxylu jambalaya.pyoncafe@outlook.jp 2026-09-13 13:21:06 901a7c31
+○  qztnnlsk jambalaya.pyoncafe@outlook.jp 2026-09-14 01:32:13 3a836b86
 │  Greet the world
-○  tturtmot jambalaya.pyoncafe@outlook.jp 2026-09-13 13:20:42 4bb47a91
+○  sqyulwvq jambalaya.pyoncafe@outlook.jp 2026-09-14 01:32:13 3b5d2b0f
 │  Add README
 ◆  zzzzzzzz root() 00000000
 ```
 
-The commit ID of "Greet the world" went from `bf873b9b` to `901a7c31`; its change ID `oklvxylu` did not
+The commit ID of "Greet the world" went from `4649fbd2` to `3a836b86`; its change ID `qztnnlsk` did not
 move. "Add a licence note", which sat on top of it, was rebased automatically (`Rebased 1 descendant
 commits.`). In Git terms that is an amend and a rebase at once, from one command.
 
@@ -311,73 +314,107 @@ Not the parent this time: suppose `.gitignore` should have been in "Add README",
 `jj edit` moves you straight into that change.
 
 ```console
-❯ jj edit tturtmot
+❯ jj edit sqyulwvq
+Working copy  (@) now at: sqyulwvq 3b5d2b0f Add README
+Parent commit (@-)      : zzzzzzzz 00000000 (empty) (no description set)
+Added 0 files, modified 1 files, removed 1 files
 ❯ echo node_modules/ > .gitignore
 ❯ jj status
 Rebased 2 descendant commits onto updated working copy.
 Working copy changes:
 A .gitignore
 A README.md
-Working copy  (@) : tturtmot 2610b68f Add README
+Working copy  (@) : sqyulwvq 1f10f6c1 Add README
 Parent commit (@-): zzzzzzzz 00000000 (empty) (no description set)
 ```
 
-The moment the file was placed, the content of `tturtmot` changed and its two descendants were rebased
+The moment the file was placed, the content of `sqyulwvq` changed and its two descendants were rebased
 again.
 
-![Before and after jj edit tturtmot: the working directory swaps to the content of Add README, .gitignore is added there, and the two changes above are rebased](jujutsu-edit.svg)
+![Before and after jj edit sqyulwvq: the working directory swaps to the content of Add README, .gitignore is added there, and the two changes above are rebased](jujutsu-edit.svg)
 
-Go back to the tip when done.
+Go back to the tip when done. An `ls` on either side makes the swap easy to see.
 
 ```console
-❯ jj edit ovvvnnor
+❯ ls
+README.md
+❯ jj edit kmkwxkzl
+Working copy  (@) now at: kmkwxkzl 58604973 Add a licence note
+Parent commit (@-)      : qztnnlsk e9d23257 Greet the world
+Added 1 files, modified 1 files, removed 0 files
+❯ ls
+LICENSE
+README.md
 ```
 
 > [!NOTE]
 > Moving between changes **replaces the files in the directory with that change's content**. Right after
-> `jj edit tturtmot`, `LICENSE` is gone; after `jj edit ovvvnnor` it is back. It was not deleted — you
+> `jj edit sqyulwvq`, `LICENSE` is gone; after `jj edit kmkwxkzl` it is back. It was not deleted — you
 > were looking at a state in which it did not exist yet.
 
 ### When you get it wrong: `jj undo`
 
-Suppose the `squash` above went to the wrong place, two changes back. `--into` names the destination,
-and that is where the mistake is.
+Add one more line to `README.md`, meaning to send it to "Greet the world" as before — but name a
+destination two changes back by mistake. `--into` is what names it, and that is where the mistake is.
 
 ```console
-❯ jj squash README.md --into tturtmot
+❯ echo "Thanks for reading." >> README.md
+❯ jj squash README.md --into sqyulwvq
 Rebased 2 descendant commits.
-Working copy  (@) now at: ovvvnnor 7d39ffbe Add a licence note
-Parent commit (@-)      : oklvxylu c01a916f Greet the world
+Working copy  (@) now at: kmkwxkzl 6aeee89a Add a licence note
+Parent commit (@-)      : qztnnlsk 30ddd3a7 Greet the world
 New conflicts appeared in 1 commits:
-  tturtmot 2c598158 (conflict) Add README
+  sqyulwvq 170097fc (conflict) Add README
+Hint: To resolve the conflicts, start by creating a commit on top of
+the conflicted commit:
+  jj new sqyulwvq
+Then use `jj resolve`, or edit the conflict markers in the file directly.
+Once the conflicts are resolved, you can inspect the result with `jj diff`.
+Then run `jj squash` to move the resolution into the conflicted commit.
 ```
 
-A conflict. More on those later; in jj a conflict does not stop you working. Here the mistake has been
-noticed, so take it back.
+"Add README" has no `World` line yet, so a diff that adds a line below `World` cannot apply, and the
+result is a conflict. More on those later; in jj a conflict does not stop you working. Here the mistake
+has been noticed, so take it back.
 
 ```console
 ❯ jj undo
-Undid operation: 4f4da9c67ec4 (2026-09-13 13:20:54) squash commits into 4bb47a91b947ce2ef51167be9cc712df0afddd9a
-Restored to operation: 3160922e4231 (2026-09-13 13:20:54) snapshot working copy
-Working copy  (@) now at: ovvvnnor 61975902 Add a licence note
-Parent commit (@-)      : oklvxylu bf873b9b Greet the world
+Undid operation: 420af8ee66c9 (2026-09-14 01:32:13) squash commits into 1f10f6c153ac8b666099bf444456fbb719e90f48
+Restored to operation: b2dc48bc8a00 (2026-09-14 01:32:13) snapshot working copy
+Working copy  (@) now at: kmkwxkzl 6fb6906d Add a licence note
+Parent commit (@-)      : qztnnlsk e9d23257 Greet the world
 Existing conflicts were resolved or abandoned from 1 commits.
 ```
 
-The squash, the rebase that came with it, and the conflict are gone together. What was undone is
-recorded in `jj op log`.
+The squash, the rebase that came with it, and the conflict are gone together.
+
+> [!NOTE]
+> What comes back is the **operation on the repository**, not your edit. The `Thanks for reading.` line
+> is still in the working copy. Pick the destination again and squash, and it goes where it was meant to.
+
+What was undone is recorded in `jj op log`.
 
 ```console
 ❯ jj op log
-4f4da9c67ec4 Jam@DESKTOP-U30T4EP default@ now, lasted 402 milliseconds
-squash commits into 4bb47a91b947ce2ef51167be9cc712df0afddd9a
-args: jj squash README.md --into tturtmot
-3160922e4231 Jam@DESKTOP-U30T4EP default@ 1 second ago, lasted 103 milliseconds
-snapshot working copy
-args: jj diff --stat
+@  3fab8cdbfd56 ec2-user@ip-192-168-12-67.ap-northeast-1.compute.internal default@ now, lasted 2 milliseconds
+│  undo: restore to operation b2dc48bc8a006b75eaf951e73805fe8863535b9aa415316f8396ff4e3e81a7301546fcb1aed6d29f6382a2f0b5f0d6472a4c86af9e7963b97b170534086d3188
+│  args: jj undo
+○  420af8ee66c9 ec2-user@ip-192-168-12-67.ap-northeast-1.compute.internal default@ now, lasted 30 milliseconds
+│  squash commits into 1f10f6c153ac8b666099bf444456fbb719e90f48
+│  args: jj squash README.md --into sqyulwvq
+○  b2dc48bc8a00 ec2-user@ip-192-168-12-67.ap-northeast-1.compute.internal default@ now, lasted 9 milliseconds
+│  snapshot working copy
+│  args: jj squash README.md --into sqyulwvq
+○  76a9ee270eed ec2-user@ip-192-168-12-67.ap-northeast-1.compute.internal default@ now, lasted 1 millisecond
+│  edit commit 58604973bec86c1d9936afefb39c67b06d65f3d2
+│  args: jj edit kmkwxkzl
+○  c1834f1120b4 ec2-user@ip-192-168-12-67.ap-northeast-1.compute.internal default@ now, lasted 19 milliseconds
+│  snapshot working copy
+│  args: jj status
+...
 ```
 
-Even read-only commands like `jj status` and `jj diff` leave a `snapshot working copy` operation. That is
+Even a read-only command like `jj status` leaves a `snapshot working copy` operation. That is
 what "your edits go into the commit the moment you run a command" actually is.
 
 > [!TIP]
@@ -390,12 +427,14 @@ When an experiment is no longer wanted, `jj abandon`.
 
 ```console
 ❯ jj new -m "An experiment that did not work out"
+Working copy  (@) now at: qylvzpun c7eca646 (empty) An experiment that did not work out
+Parent commit (@-)      : kmkwxkzl 6fb6906d Add a licence note
 ❯ echo x > scratch.txt
 ❯ jj abandon
 Abandoned 1 commits:
-  nknpsvyu c1adb267 An experiment that did not work out
-Working copy  (@) now at: lrksrpsq 95f579b1 (empty) (no description set)
-Parent commit (@-)      : ovvvnnor ab228dc9 Add a licence note
+  qylvzpun 8f82ebbd An experiment that did not work out
+Working copy  (@) now at: xszrwutz a5de0af0 (empty) (no description set)
+Parent commit (@-)      : kmkwxkzl 6fb6906d Add a licence note
 Added 0 files, modified 0 files, removed 1 files
 ```
 
@@ -404,9 +443,16 @@ change (and `jj undo` brings this back as well).
 
 ## Remotes and GitHub
 
-So far everything stayed on this machine. To push, you need the counterpart of a Git branch.
+So far everything stayed on this machine. To push, you need a remote to push to and the counterpart of
+a Git branch.
 
 ### Bookmarks are branches
+
+Registering a remote works the way it does in Git, with `jj git remote add`.
+
+```console
+❯ jj git remote add origin ../origin.git
+```
 
 jj's equivalent of a Git branch is the **bookmark**. The difference is that **a bookmark does not move
 on its own**. In Git, committing while on `main` advances `main`; a jj bookmark stays on the commit it
@@ -415,32 +461,68 @@ was put on, and you move it explicitly when you want it moved.
 Put a bookmark on the commit you want to push, then push. `jj bookmark create` makes one, `jj git push`
 sends it, and `--bookmark` says which.
 
+Naming the change you are in is the obvious thing to try, and it goes like this.
+
 ```console
 ❯ jj bookmark create main -r @
+Warning: Target revision is empty.
+Created 1 bookmarks pointing to xszrwutz a5de0af0 main* | (empty) (no description set)
 ❯ jj git push --bookmark main
-Changes to push to origin:
-  bookmark: main [add to ab228dc9c9ac]
-Warning: The working-copy commit became immutable; a new commit has been created on top of it.
-Working copy  (@) now at: upwouywx 309ce578 (empty) (no description set)
-Parent commit (@-)      : ovvvnnor ab228dc9 main | Add a licence note
+Error: Won't push commit a5de0af08b29 since it has no description
+Hint: Rejected commit: xszrwutz a5de0af0 main* | (empty) (no description set)
 ```
 
-The instant it was pushed, the change you were in became immutable (`◆`) and a new empty change was
-created on top. A commit that has landed on the remote's `main` is no longer something to rewrite at
-home — that is jj's judgement. It is safest to remember "rewritable" as meaning "not pushed yet".
+The `@` left behind by `jj abandon` is an empty change with no description, and jj will not push one.
+Move the bookmark one down.
+
+```console
+❯ jj bookmark delete main
+Deleted 1 bookmarks.
+❯ jj bookmark create main -r @-
+Created 1 bookmarks pointing to kmkwxkzl 6fb6906d main* | Add a licence note
+❯ jj git push --bookmark main
+Changes to push to origin:
+  bookmark: main [add to 6fb6906d0cbd]
+```
+
+`@-` is "the parent of the change you are in", which here is the "Add a licence note" you meant to
+push. Once pushed, that commit becomes immutable (`◆`).
+
+```console
+❯ jj log
+@  xszrwutz jambalaya.pyoncafe@outlook.jp 2026-09-14 01:32:14 a5de0af0
+│  (empty) (no description set)
+◆  kmkwxkzl jambalaya.pyoncafe@outlook.jp 2026-09-14 01:32:13 main 6fb6906d
+│  Add a licence note
+~
+```
+
+"Add a licence note" was `○` a moment ago and is `◆` now. A commit that has landed on the remote's
+`main` is no longer something to rewrite at home — that is jj's judgement. It is safest to remember
+"rewritable" as meaning "not pushed yet".
 
 ### Bringing in the remote's changes
 
-After a colleague pushes to `main`, `jj git fetch` brings it in. Then `jj log` shows what that did.
+Put a piece of work into the empty change you are standing in.
+
+```console
+❯ echo "Send patches as pull requests." > CONTRIBUTING.md
+❯ jj describe -m "Add contributing guide"
+Working copy  (@) now at: xszrwutz 122ef8b9 Add contributing guide
+Parent commit (@-)      : kmkwxkzl 6fb6906d main | Add a licence note
+```
+
+Now a colleague pushes to `main`. `jj git fetch` brings it in, and `jj log` shows what that did.
 
 ```console
 ❯ jj git fetch
+bookmark: main@origin [updated] tracked
 ❯ jj log
-@  upwouywx jambalaya.pyoncafe@outlook.jp 2026-09-13 13:22:13 0be7156b
+@  xszrwutz jambalaya.pyoncafe@outlook.jp 2026-09-14 01:32:14 122ef8b9
 │  Add contributing guide
-│ ◆  zumzptvl teammate@example.com 2026-09-13 13:22:11 main eccc91c7
+│ ◆  ktzwvlxw teammate@example.com 2026-09-14 01:32:14 main d5598eef
 ├─╯  Add the copyright line
-◆  ovvvnnor jambalaya.pyoncafe@outlook.jp 2026-09-13 13:21:46 ab228dc9
+◆  kmkwxkzl jambalaya.pyoncafe@outlook.jp 2026-09-14 01:32:13 6fb6906d
 │  Add a licence note
 ~
 ```
@@ -451,8 +533,9 @@ Unlike `git pull`, fetch moves nothing of yours. `main` has advanced and your ch
 ```console
 ❯ jj rebase -d main
 Rebased 1 commits to destination.
-Working copy  (@) now at: upwouywx 56f5616c Add contributing guide
-Parent commit (@-)      : zumzptvl eccc91c7 main | Add the copyright line
+Working copy  (@) now at: xszrwutz 7fee7ee2 Add contributing guide
+Parent commit (@-)      : ktzwvlxw d5598eef main | Add the copyright line
+Added 0 files, modified 1 files, removed 0 files
 ```
 
 `-d` is the destination. With nothing else given, the current change and its descendants are what
@@ -462,16 +545,19 @@ moves, so day to day this one line is enough.
 
 ### Opening a PR
 
-Put a bookmark on your work and push it, and GitHub sees a branch.
+Put a bookmark on your work and push it, and GitHub sees a branch. `@` has a description here, so `-r @`
+is fine this time.
 
 ```console
 ❯ jj bookmark create contributing -r @
+Created 1 bookmarks pointing to xszrwutz 7fee7ee2 contributing* | Add contributing guide
 ❯ jj git push --bookmark contributing
-❯ gh pr create --head contributing
+Changes to push to origin:
+  bookmark: contributing [add to 7fee7ee258c3]
 ```
 
-Once the PR is merged, `jj git fetch` advances `main` and the merged commits are abandoned automatically.
-There is no local branch to delete.
+`gh pr create --head contributing` turns that into a PR. Once the PR is merged, `jj git fetch` advances
+`main` and the merged commits are abandoned automatically. There is no local branch to delete.
 
 > [!WARNING]
 > After a merge, `jj git fetch` moves a working copy that sat on an abandoned commit onto **the parent
@@ -480,16 +566,34 @@ There is no local branch to delete.
 
 ### A conflict does not stop you
 
-Here a colleague and I have changed the same line of `README.md`, and I rebase.
+Change the `World` line of `README.md` to `Everyone`.
+
+```console
+❯ jj new -m "Greet everyone"
+Working copy  (@) now at: mkqlmvpy 110cd2a7 (empty) Greet everyone
+Parent commit (@-)      : xszrwutz 7fee7ee2 contributing | Add contributing guide
+❯ jj status
+Working copy changes:
+M README.md
+Working copy  (@) : mkqlmvpy 5dc0f98f Greet everyone
+Parent commit (@-): xszrwutz 7fee7ee2 contributing | Add contributing guide
+```
+
+Meanwhile a colleague changed the same line to `World!` and pushed it to `main`. Bring that in and
+rebase.
 
 ```console
 ❯ jj git fetch
+bookmark: main@origin [updated] tracked
 ❯ jj rebase -d main
-Rebased 1 commits to destination.
-Working copy  (@) now at: znwtpvsx 224cb834 (conflict) Greet everyone
-Parent commit (@-)      : xsxqypzo 29608896 main | Add an exclamation mark
+Rebased 2 commits to destination.
+Working copy  (@) now at: mkqlmvpy e555650d (conflict) Greet everyone
+Parent commit (@-)      : xszrwutz f5ea44f4 contributing* | Add contributing guide
+Added 0 files, modified 1 files, removed 0 files
 Warning: There are unresolved conflicts at these paths:
 README.md    2-sided conflict
+New conflicts appeared in 1 commits:
+  mkqlmvpy e555650d (conflict) Greet everyone
 ```
 
 A Git rebase would stop here and demand `--continue` or `--abort`. jj **completes the rebase with the
@@ -504,25 +608,26 @@ Resolving it means opening the file and fixing it. Here is what is inside.
 ❯ cat -n README.md
      1	Hello!
      2	<<<<<<< conflict 1 of 1
-     3	%%%%%%% diff from: zumzptvl eccc91c7 "Add the copyright line" (parents of rebased revision)
-     4	\\\\\\\        to: xsxqypzo 29608896 "Add an exclamation mark" (rebase destination)
+     3	%%%%%%% diff from: xszrwutz 7fee7ee2 "Add contributing guide" (parents of rebased revision)
+     4	\\\\\\\        to: xszrwutz f5ea44f4 "Add contributing guide" (rebase destination)
      5	-World
      6	+World!
-     7	+++++++ znwtpvsx 8046350f "Greet everyone" (rebased revision)
+     7	+++++++ mkqlmvpy 5dc0f98f "Greet everyone" (rebased revision)
      8	Everyone
      9	>>>>>>> conflict 1 of 1 ends
+    10	Thanks for reading.
 ```
 
 The markers are shaped differently from Git's. The top half is a diff of what the other side changed; the
-bottom half is your side's content after your change. Read both, replace it all with `Everyone!`, and
-save.
+bottom half is your side's content after your change. Read both, replace the marked region with
+`Everyone!`, and save.
 
 ```console
 ❯ jj status
 Working copy changes:
 M README.md
-Working copy  (@) : znwtpvsx 93afbae1 Greet everyone
-Parent commit (@-): xsxqypzo 29608896 main | Add an exclamation mark
+Working copy  (@) : mkqlmvpy 78622d5f Greet everyone
+Parent commit (@-): xszrwutz f5ea44f4 contributing* | Add contributing guide
 ```
 
 `(conflict)` is gone. There is no command that declares a conflict resolved: saving a file without
@@ -556,13 +661,13 @@ expert tools, in jj they are the everyday operation.
 
 To make that work, a commit carries two IDs.
 
-- **The change ID** — letters, like `tturtmot`. Rewriting the content or rebasing does not change it.
-- **The commit ID** — hex, like `4bb47a91`. This is the Git commit hash itself, and it changes with every
+- **The change ID** — letters, like `sqyulwvq`. Rewriting the content or rebasing does not change it.
+- **The commit ID** — hex, like `3b5d2b0f`. This is the Git commit hash itself, and it changes with every
   rewrite.
 
 When you think "add one line to that change from earlier", the change ID is what you name. After
-`jj squash`, the commit ID of "Greet the world" went from `bf873b9b` to `901a7c31` and its change ID
-stayed `oklvxylu`, so the same name kept working.
+`jj squash`, the commit ID of "Greet the world" went from `4649fbd2` to `3a836b86` and its change ID
+stayed `qztnnlsk`, so the same name kept working.
 
 The exception: a commit that has been pushed to the remote's `main` becomes immutable (`◆`) and leaves
 the set of things you fix. "Fixable afterwards" applies to what has not been shared yet.

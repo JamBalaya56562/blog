@@ -306,21 +306,13 @@ o  9d729f9329  65 minutes ago  jambalaya.pyoncafe  remote/main
 ❯ sl next
 1 files updated, 0 files merged, 0 files removed, 0 files unresolved
 [feb42b] Add a licence
-❯ ls -la
-total 3599
-drwxr-xr-x 1 Jam 197611  0  9月 13 22:30 .
-drwxr-xr-x 1 Jam 197611  0  9月 13 22:29 ..
-drwxr-xr-x 1 Jam 197611  0  9月 13 22:30 .sl
--rw-r--r-- 1 Jam 197611 48  9月 13 18:53 hello.txt
--rw-r--r-- 1 Jam 197611 42  9月 13 22:30 LICENSE
--rw-r--r-- 1 Jam 197611 86  9月 13 18:48 README.md
 ❯ cat hello.txt
 Hello
 World!
 Nice to meet you.
 ```
 
-`1 files updated` で `LICENSE` が戻り、`hello.txt` には真ん中で足した行が入っています。
+`1 files updated` のとおり `LICENSE` が戻り、`hello.txt` には真ん中で足した行が入っています。
 
 ## `sl pr submit` — スタックがそのまま PR になる
 
@@ -445,10 +437,10 @@ PR 番号は smartlog の中でリビジョンとして使えます。`sl goto p
 Hello
 ❯ sl next
 1 files updated, 0 files merged, 0 files removed, 0 files unresolved
-[a8fc4a] Greet the world
+[9cb3be] Greet the world
 ❯ sl next
 1 files updated, 0 files merged, 0 files removed, 0 files unresolved
-[9181b8] Add a licence
+[f719fb] Add a licence
 ```
 
 `hello.txt` が最初の 1 行だけの状態に戻っています。レビューで指摘を受けた PR に移動して直し、`sl amend` して `sl next` で上まで戻り、`sl pr submit`、という流れがそのまま組めます。
