@@ -1,7 +1,7 @@
 ---
 title: mise でタスクを書く
 date: "2026-09-11"
-updated: "2026-09-13"
+updated: "2026-09-14"
 description: プロジェクトのコマンドを mise.toml に集約する方法と、順序・依存・引数の扱い
 image: /thumbnails/mise-tasks.avif
 tags:
@@ -107,10 +107,11 @@ run = ["echo step1", "false", "echo step3"]
 ❯ mise run steps
 [steps] $ echo step1
 step1
+[steps] $ false
 [steps] ERROR task failed
 ```
 
-`step3` は実行されていません。
+2 行目の `false` で失敗したので、そこで打ち切られています。`step3` は実行されていません。
 
 ![run の配列が上から実行され、false で失敗した時点で打ち切られ、次の行が実行されない図](mise-tasks-fail-stop.svg)
 
@@ -189,7 +190,7 @@ run = "echo cmd-style=%OS% bash-style=$OSTYPE"
 cmd-style=Windows_NT bash-style=$OSTYPE
 ```
 
-`%OS%` は展開され、`$OSTYPE` はそのまま残りました。Unix のシェル記法は効きません。`$VAR`、`&&` 以外の制御構文、パイプの細かい挙動、クォートの規則が変わります。
+`%OS%` は展開され、`$OSTYPE` はそのまま残りました。Unix のシェル記法は効きません。`$VAR` の展開、`&&` を除く制御構文、パイプの細かい挙動、クォートの規則が変わります。
 
 ## ファイルタスクなら shebang で指定できる
 
@@ -237,4 +238,4 @@ mise-tasks/thumbnail  →  mise run thumbnail
 - 引数はコマンドの末尾に付く。使い方は `description` に書いておく
 - Windows では cmd に渡される。2 行以上書きたくなったら `mise-tasks/` のファイルタスクに切り出し、shebang でインタープリタを指定する
 
-タスクは、READMEに書いてあった手順をコードにするための場所です。書いておけば、次に触る人は `mise tasks` を打つだけで済みます。
+タスクは、README に書いてあった手順をコードにするための場所です。書いておけば、次に触る人は `mise tasks` を打つだけで済みます。

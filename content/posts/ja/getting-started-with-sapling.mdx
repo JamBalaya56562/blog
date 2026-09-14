@@ -1,7 +1,7 @@
 ---
 title: Sapling 入門ガイド
 date: "2026-09-13"
-updated: "2026-09-13"
+updated: "2026-09-14"
 description: Meta 製の Git 互換 VCS「Sapling (sl)」を、インストールからスタック、sl pr submit での PR 作成、ReviewStack、GUI の sl web まで
 image: /thumbnails/getting-started-with-sapling.avif
 tags:
@@ -41,7 +41,8 @@ echo 'export PATH="$HOME/.local/share/sapling:$PATH"' >> ~/.bashrc
 
 ```powershell
 # 管理者の PowerShell で。zip は GitHub Releases から取る
-Expand-Archive -Path .\sapling-0.2.20260811-150444+8fb02b32-windows-x64.zip -DestinationPath "C:\Program Files\Sapling"
+# zip の中に Sapling ディレクトリが 1 段あるので、その 1 つ上に展開する
+Expand-Archive -Path .\sapling-0.2.20260811-150444+8fb02b32-windows-x64.zip -DestinationPath "C:\Program Files"
 setx PATH "$env:PATH;C:\Program Files\Sapling" -m
 # PowerShell の sl は Set-Location の別名なので、外しておく
 Remove-Item Alias:sl -Force
@@ -49,7 +50,7 @@ Remove-Item Alias:sl -Force
 
 </CodeTabs>
 
-Windows は zip の中に `Sapling` というディレクトリが 1 段あるので、展開先はその中身が直下に来るように調整してください。入ったかどうかは、バージョンを表示して確かめます。
+Windows の zip には `Sapling` というディレクトリが 1 段あります。上の例が 1 つ上の `C:\Program Files` に展開しているのはそのためで、こうすると実行ファイルは `PATH` に入れた `C:\Program Files\Sapling` の直下に来ます。入ったかどうかは、バージョンを表示して確かめます。
 
 ```console
 ❯ sl --version

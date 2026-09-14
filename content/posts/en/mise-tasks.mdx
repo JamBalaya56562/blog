@@ -1,7 +1,7 @@
 ---
 title: Writing Tasks with mise
 date: "2026-09-11"
-updated: "2026-09-13"
+updated: "2026-09-14"
 description: Collecting a project's commands into mise.toml, and how order, dependencies and arguments behave
 image: /thumbnails/mise-tasks.avif
 tags:
@@ -122,10 +122,11 @@ run = ["echo step1", "false", "echo step3"]
 ❯ mise run steps
 [steps] $ echo step1
 step1
+[steps] $ false
 [steps] ERROR task failed
 ```
 
-`step3` never ran.
+`false` on the second line failed, so the run stopped there. `step3` never ran.
 
 ![An array in run executing from the top, cut short at the failing false, with the next line never reached](mise-tasks-fail-stop.svg)
 

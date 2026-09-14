@@ -1,7 +1,7 @@
 ---
 title: mise bootstrap でマシンをセットアップする
 date: "2026-09-12"
-updated: "2026-09-12"
+updated: "2026-09-14"
 description: パッケージ・dotfiles・ツール・仕上げのタスクを 1 つの設定ファイルに宣言し、mise bootstrap 1 回で新しいマシンを揃える方法
 image: /thumbnails/mise-bootstrap.avif
 tags:
@@ -138,7 +138,7 @@ v22.23.2
 7   2026-09-12 16:51  bootstrap-before    before bootstrap
 ```
 
-失敗した回も `(failed)` として残ります。この一覧は dotfiles の節で戻ってきます。
+失敗した回も `(failed)` として残ります。番号はこのマシンでの通し番号で、後の dotfiles の節に出てくる 1 と 2 は、この記録より前に採ったものです。この一覧は dotfiles の節で戻ってきます。
 
 ## 順番は決まっている
 
@@ -269,7 +269,7 @@ dotfiles.root = "~/.dotfiles"
 - **`symlink`**（既定）— リンクを張る。配置先で編集すればリポジトリ側が変わる
 - **`copy`** — コピーする。配置先を直接編集しても、次の実行で上書きされる
 - **`template`** — テンプレートを描画して書き出す。`{{ vars.email }}` のように、マシンごとの値を埋め込める
-- **`block` / `line`** — 既存のファイルの中に、マーカーで囲んだ一部分だけを管理する
+- **`block` / `line`** — 既存のファイルの中に、マーカーで囲んだ一部分だけを管理する。この 2 つだけはキーが「配置先のパス + `/` + そのブロックの名前」で、`~/.zshrc/activate` は `~/.zshrc` の中の `activate` という名前のブロックを指します。1 つのファイルに複数のブロックを置けるようにするためです
 
 `source` を省くと `dotfiles.root` の下から、配置先と同じ相対パスで探します。`~/.zshrc` なら `~/.dotfiles/.zshrc` です。
 

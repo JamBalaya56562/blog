@@ -1,7 +1,7 @@
 ---
 title: Setting Up a Machine with mise bootstrap
 date: "2026-09-12"
-updated: "2026-09-12"
+updated: "2026-09-14"
 description: Declaring packages, dotfiles, tools and a finishing task in one config file, and bringing a new machine up to it with a single mise bootstrap
 image: /thumbnails/mise-bootstrap.avif
 tags:
@@ -156,7 +156,9 @@ Each run records the state before and after it as checkpoints.
 7   2026-09-12 16:51  bootstrap-before    before bootstrap
 ```
 
-A failed run stays in the list as `(failed)`. This list comes back in the dotfiles section.
+A failed run stays in the list as `(failed)`. The numbers run continuously for the machine, so the
+1 and 2 in the dotfiles section below were taken before these. This list comes back in the dotfiles
+section.
 
 ## The order is fixed
 
@@ -306,7 +308,9 @@ dotfiles.root = "~/.dotfiles"
 - **`template`** — renders a template and writes the result. Per-machine values go in as
   `{{ vars.email }}`
 - **`block` / `line`** — manages just one marker-fenced section, or one line, inside an existing
-  file
+  file. These two are the only modes whose key is the target path plus `/` plus a name for the
+  block: `~/.zshrc/activate` means the block called `activate` inside `~/.zshrc`, which is what
+  lets one file hold several managed blocks
 
 Leave out `source` and the file is looked for under `dotfiles.root` at the same relative path as
 its target: `~/.zshrc` comes from `~/.dotfiles/.zshrc`.
