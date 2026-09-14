@@ -4,7 +4,7 @@ set -euo pipefail
 
 # The container runs in the foreground: its log is this task's output, and
 # whatever stops this task stops the database. Backgrounding is the supervisor's
-# job — `pitchfork start db` runs this same task as a daemon — so there is no
+# job — `mise daemons start db` runs this same task as a daemon — so there is no
 # second, detached code path to keep in step with this one.
 
 # shellcheck source=runtime.sh

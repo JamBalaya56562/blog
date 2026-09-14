@@ -35,7 +35,22 @@ run = ["bun update", "mise deps"]
 
 [tasks."db:setup"]
 description = "Start DynamoDB Local in the background and create the table"
-run = "pitchfork start db"
+run = "mise daemons start db"
+
+# mise renders these into a pitchfork config under its state directory and
+# registers it, so pitchfork stays the supervisor and has to remain in [tools] —
+# the shell hooks that read this section never install tools themselves.
+# Starting is left explicit rather than `auto = ["start", "stop"]`: entering the
+# repository to read code should not bring a container and a server up.
+[daemons.db]
+run = "mise run db:start"
+ready_cmd = { run = "mise run db:push", timeout = "300s" }
+stop_signal = { signal = "SIGTERM", timeout = "30s" }
+
+[daemons.dev]
+run = "bun dev"
+depends = ["db"]
+ready_port = { port = 3000, timeout = "60s" }
 
 [deps.bun]
 auto = true
@@ -44,4 +59,5 @@ auto = true
 enter = ["mise upgrade -q", "mise deps -q"]
 
 [settings]
+# `[daemons]` is one of the sections gated behind this.
 experimental = true

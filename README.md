@@ -43,8 +43,9 @@ mise run db:setup
 ```
 
 `db:setup` hands the container to [pitchfork](https://pitchfork.jdx.dev/) and
-returns once the table exists. To watch the database's own log instead, run it
-in the foreground and stop it with Ctrl-C:
+returns once the table exists. The daemon itself is declared in `[daemons]` in
+`mise.toml`. To watch the database's own log instead, run it in the foreground
+and stop it with Ctrl-C:
 
 ```bash
 # Run DynamoDB Local (amazon/dynamodb-local) in the foreground
@@ -75,19 +76,19 @@ AWS the credentials come from the Lambda execution role.
 
 ### 4. Develop the app
 
-[pitchfork](https://pitchfork.jdx.dev/) runs the database and the dev server
-together, in the background:
+Both daemons are declared in `[daemons]` in `mise.toml`; mise registers them with
+[pitchfork](https://pitchfork.jdx.dev/), which runs them in the background:
 
 ```bash
 # Start DynamoDB Local, then the dev server once the table is ready
-pitchfork start dev
+mise daemons start dev
 
 # Start DynamoDB Local on its own
-pitchfork start db
+mise daemons start db
 
 # Watch the output, then stop both again
-pitchfork logs -f dev
-pitchfork stop dev db
+mise daemons logs -f dev
+mise daemons stop dev db
 ```
 
 The `dev` daemon depends on `db`, so it waits for the table rather than racing

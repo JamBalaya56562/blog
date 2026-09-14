@@ -127,7 +127,7 @@ bun run build && bun test:e2e
 
 | Command | Description |
 | --- | --- |
-| `pitchfork start dev` | Start DynamoDB Local, then the development server, in the background |
+| `mise daemons start dev` | Start DynamoDB Local, then the development server, in the background |
 | `bun dev` | Start the development server alone (every page stalls while the database is down) |
 | `bun run build` | Production build |
 | `bun start` | Start production server |
@@ -137,7 +137,7 @@ bun run build && bun test:e2e
 
 `.claude/launch.json` does not start a server of its own. It attaches the browser
 preview to `http://localhost:3000`, so bring the server up with
-`pitchfork start dev` first. A launcher that ran `bun dev` itself would find no
+`mise daemons start dev` first. A launcher that ran `bun dev` itself would find no
 `bun` — the desktop app inherits the machine environment, not a shell with mise
 activated — and would start the server against a database nobody started.
 
