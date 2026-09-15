@@ -64,6 +64,8 @@ jobs:
 
       - name: 🧪 Test app
         id: test
+        env:
+          FORCE_COLOR: 0
         run: |
           STATUS=0
           bun test:unit > test.log 2>&1 || STATUS=$?

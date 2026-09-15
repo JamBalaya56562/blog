@@ -19,6 +19,8 @@ permissions:
 jobs:
   commitlint:
     runs-on: ubuntu-latest
+    env:
+      FORCE_COLOR: 0
 
     steps:
       - name: 🐣 Install bun
@@ -39,7 +41,8 @@ jobs:
           TITLE: ${{ github.event.pull_request.title }}
         run: |
           STATUS=0
-          printf '%s\n' "$TITLE" | bun commitlint --verbose > title.log 2>&1 || STATUS=$?
+          printf '%s\n' "$TITLE" | bun commitlint --verbose --no-color \
+            > title.log 2>&1 || STATUS=$?
           cat title.log
           if [ "$STATUS" -eq 0 ]; then
             echo "is_success=true" >> "$GITHUB_OUTPUT"
@@ -58,7 +61,7 @@ jobs:
           : > commits.log
           while read -r message; do
             printf '%s' "$message" | base64 -d \
-              | bun commitlint --verbose >> commits.log 2>&1 || STATUS=$?
+              | bun commitlint --verbose --no-color >> commits.log 2>&1 || STATUS=$?
           done < <(gh api --paginate "repos/$REPO/pulls/$PR_NUMBER/commits" \
             --jq '.[].commit.message | @base64')
           cat commits.log
@@ -104,7 +107,7 @@ jobs:
               ? [
                   `# ❌ Conventional Commits check failed`,
                   ``,
-                  `@${context.payload.pull_request.user.login}, ${failed.length === 1 ? 'one check' : 'both checks'} below needs a look. We ask that pull request titles and commit messages follow the ${SPEC}.`,
+                  `@${context.payload.pull_request.user.login}, ${failed.length === 1 ? 'one check below needs' : 'both checks below need'} a look. We ask that pull request titles and commit messages follow the ${SPEC}.`,
                   ``,
                   ...failed.map((check) =>
                     [
