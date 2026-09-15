@@ -78,7 +78,13 @@ jobs:
           UUID=$(uuidgen)
           {
             echo "test_log<<EOF_$UUID"
-            cat test.log
+            awk '
+              /^::group::/ { sub(/^::group::/, ""); block = $0 "\n"; grouped = 1; failed = 0; next }
+              /^::endgroup::/ { if (failed) printf "%s", block; grouped = 0; next }
+              /^::error/ { next }
+              grouped { if ($0 !~ /^\(pass\)/) block = block $0 "\n"; if ($0 ~ /^\(fail\)/) failed = 1; next }
+              !/^\(pass\)/ { print }
+            ' test.log | cat -s
             echo "EOF_$UUID"
           } >> "$GITHUB_OUTPUT"
 
