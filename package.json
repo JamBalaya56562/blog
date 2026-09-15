@@ -39,13 +39,13 @@
     "test:unit": "bun test --isolate"
   },
   "dependencies": {
-    "@aws-sdk/client-dynamodb": "^3.1131.0",
-    "@aws-sdk/lib-dynamodb": "^3.1131.0",
+    "@aws-sdk/client-dynamodb": "^3.1132.0",
+    "@aws-sdk/lib-dynamodb": "^3.1132.0",
     "@shikijs/langs": "^4.4.3",
     "@shikijs/rehype": "^4.4.3",
     "@shikijs/themes": "^4.4.3",
     "@types/mdx": "^2.0.14",
-    "lucide-react": "^1.45.0",
+    "lucide-react": "^1.46.0",
     "next": "canary",
     "next-mdx-remote-client": "^2.1.12",
     "react": "^19.3.0",
