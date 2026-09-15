@@ -3,8 +3,6 @@ name: 💬 Comment on the pull request
 on:
   workflow_run:
     workflows:
-      - 📝 Check Conventional Commit
-      - ✨ Check Conventional Commit Title
       - 🧪 Test
     types:
       - completed
@@ -25,41 +23,53 @@ jobs:
         uses: actions/download-artifact@v8
         with:
           github-token: ${{ github.token }}
+          name: comment
           run-id: ${{ github.event.workflow_run.id }}
       - name: 💬 Add a comment
         uses: actions/github-script@v9
         env:
           CONCLUSION: ${{ github.event.workflow_run.conclusion }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
           WORKFLOW_NAME: ${{ github.event.workflow_run.name }}
         with:
           script: |
-            const fs = require('fs');
+            const fs = require('fs')
 
-            const prNumber = fs.readFileSync('pr_number/pr_number.txt', 'utf8').replace(/[^0-9]/g, '');
-            const comment = fs.readFileSync('comment/comment.txt', 'utf8');
-
-            const { data: comments } = await github.rest.issues.listComments({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: prNumber,
-            })
-            const oldComment = comments.find(c => {
-              return c.user.type === 'Bot' && c.body.includes(process.env.WORKFLOW_NAME)
-            })
-            const shouldComment = oldComment || process.env.CONCLUSION === 'failure'
-            if (!shouldComment) return
-
-            if (oldComment) {
-              await github.rest.issues.deleteComment({
+            const { data: associated } =
+              await github.rest.repos.listPullRequestsAssociatedWithCommit({
+                commit_sha: process.env.HEAD_SHA,
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                comment_id: oldComment.id,
               })
-            }
+            const pullRequest =
+              associated.find((pr) => pr.state === 'open') ?? associated[0]
+            if (!pullRequest) { return }
 
-            await github.rest.issues.createComment({
+            const body = fs.readFileSync('comment.txt', 'utf8')
+            const { data: comments } = await github.rest.issues.listComments({
+              issue_number: pullRequest.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              issue_number: prNumber,
-              body: comment
+            })
+            const previous = comments.find(
+              (comment) =>
+                comment.user.type === 'Bot' &&
+                comment.body.includes(process.env.WORKFLOW_NAME),
+            )
+            if (!previous && process.env.CONCLUSION !== 'failure') { return }
+
+            if (previous) {
+              await github.rest.issues.updateComment({
+                body,
+                comment_id: previous.id,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+              })
+              return
+            }
+            await github.rest.issues.createComment({
+              body,
+              issue_number: pullRequest.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
             })

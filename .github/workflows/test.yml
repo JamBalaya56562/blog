@@ -65,18 +65,20 @@ jobs:
       - name: 🧪 Test app
         id: test
         run: |
-          bun test:unit &> >(tee -p test.log) || STATUS=$?
-          if [ $STATUS -ne 0 ]; then
-            echo "is_success=false" >> $GITHUB_OUTPUT
+          STATUS=0
+          bun test:unit > test.log 2>&1 || STATUS=$?
+          cat test.log
+          if [ "$STATUS" -ne 0 ]; then
+            echo "is_success=false" >> "$GITHUB_OUTPUT"
           else
-            echo "is_success=true" >> $GITHUB_OUTPUT
+            echo "is_success=true" >> "$GITHUB_OUTPUT"
           fi
           UUID=$(uuidgen)
           {
             echo "test_log<<EOF_$UUID"
             cat test.log
             echo "EOF_$UUID"
-          } >> $GITHUB_OUTPUT
+          } >> "$GITHUB_OUTPUT"
 
       - name: 💔 Fail if test failed
         if: steps.test.outputs.is_success == 'false'
@@ -124,20 +126,8 @@ jobs:
           EOF_$UUID
           fi
 
-      - name: 🔢 Create pull request number
-        env:
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-        run: |
-          echo "$PR_NUMBER" > pr_number.txt
-
       - name: 🆙 Upload test comment
         uses: actions/upload-artifact@v7
         with:
           name: comment
           path: comment.txt
-
-      - name: 🆙 Upload pull request number
-        uses: actions/upload-artifact@v7
-        with:
-          name: pr_number
-          path: pr_number.txt
