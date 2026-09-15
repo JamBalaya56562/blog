@@ -1,0 +1,150 @@
+name: 📝 Check Conventional Commits
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+on:
+  pull_request_target:
+    types:
+      - opened
+      - edited
+      - reopened
+      - synchronize
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  commitlint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 🐣 Install bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - name: 📦 Install commitlint
+        run: bun add -d @commitlint/cli @commitlint/config-conventional
+      - name: 📝 Create commitlint config
+        run: |
+          echo 'export default { extends: ["@commitlint/config-conventional"],
+          ignores: [(message: string) => message.includes("Signed-off-by: dependabot[bot]")] }' > commitlint.config.ts
+
+      - name: 👀 Validate the pull request title
+        id: title
+        if: github.event.pull_request.user.login != 'dependabot[bot]'
+        env:
+          TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          STATUS=0
+          printf '%s\n' "$TITLE" | bun commitlint --verbose > title.log 2>&1 || STATUS=$?
+          cat title.log
+          if [ "$STATUS" -eq 0 ]; then
+            echo "is_success=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "is_success=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: 👀 Validate the pull request commits
+        id: commits
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          STATUS=0
+          : > commits.log
+          while read -r message; do
+            printf '%s' "$message" | base64 -d \
+              | bun commitlint --verbose >> commits.log 2>&1 || STATUS=$?
+          done < <(gh api --paginate "repos/$REPO/pulls/$PR_NUMBER/commits" \
+            --jq '.[].commit.message | @base64')
+          cat commits.log
+          if [ "$STATUS" -eq 0 ]; then
+            echo "is_success=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "is_success=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: 💬 Comment on the pull request
+        if: ${{ !cancelled() && github.event.pull_request.user.login != 'dependabot[bot]' }}
+        uses: actions/github-script@v9
+        env:
+          COMMITS_OK: ${{ steps.commits.outputs.is_success }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          TITLE_OK: ${{ steps.title.outputs.is_success }}
+        with:
+          script: |
+            const fs = require('fs')
+
+            const MARKER = '<!-- conventional-commit-check -->'
+            const SPEC = '[Conventional Commits specification](https://www.conventionalcommits.org/en/v1.0.0/)'
+
+            const read = (path) =>
+              fs.existsSync(path) ? fs.readFileSync(path, 'utf8').trim() : ''
+            const checks = [
+              { log: read('title.log'), name: 'Pull request title', ok: process.env.TITLE_OK },
+              { log: read('commits.log'), name: 'Commit messages', ok: process.env.COMMITS_OK },
+            ].filter((check) => check.ok)
+            const failed = checks.filter((check) => check.ok === 'false')
+
+            const { data: comments } = await github.rest.issues.listComments({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+            })
+            const previous = comments.find(
+              (comment) => comment.user.type === 'Bot' && comment.body.includes(MARKER),
+            )
+            if (!failed.length && !previous) { return }
+
+            const body = failed.length
+              ? [
+                  `# ❌ Conventional Commits check failed`,
+                  ``,
+                  `@${context.payload.pull_request.user.login}, ${failed.length === 1 ? 'one check' : 'both checks'} below needs a look. We ask that pull request titles and commit messages follow the ${SPEC}.`,
+                  ``,
+                  ...failed.map((check) =>
+                    [
+                      `<details>`,
+                      `<summary><strong>${check.name}</strong></summary>`,
+                      ``,
+                      '```shell',
+                      check.log,
+                      '```',
+                      ``,
+                      `</details>`,
+                      ``,
+                    ].join('\n'),
+                  ),
+                  `👀 [View in Actions](${process.env.RUN_URL})`,
+                  MARKER,
+                ].join('\n')
+              : [
+                  `# ✅ Conventional Commits check passed`,
+                  ``,
+                  `Thank you for bringing the title and the commit messages in line with the ${SPEC}.`,
+                  MARKER,
+                ].join('\n')
+
+            if (previous) {
+              await github.rest.issues.updateComment({
+                body,
+                comment_id: previous.id,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+              })
+              return
+            }
+            await github.rest.issues.createComment({
+              body,
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+            })
+
+      - name: 💔 Fail if the check failed
+        if: steps.title.outputs.is_success == 'false' || steps.commits.outputs.is_success == 'false'
+        run: exit 1
