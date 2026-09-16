@@ -1,0 +1,738 @@
+---
+title: Getting Started with Oh My Posh
+date: "2026-09-16"
+description: Oh My Posh, the prompt theme engine for every shell — installing it and a Nerd Font, picking a theme, writing your own config from scratch, and the trap it sets when you also use mise
+image: /thumbnails/getting-started-with-oh-my-posh.avif
+tags:
+  - oh-my-posh
+  - shell
+  - powershell
+  - cli
+  - devtools
+---
+
+## What Oh My Posh is
+
+[Oh My Posh](https://ohmyposh.dev/) is **a tool that draws your shell prompt**.
+
+The prompt is the line the shell prints while it waits for you to type a command. Out of the box, PowerShell shows
+this:
+
+```text
+PS C:\Users\Jam\Documents\blog>
+```
+
+bash and zsh are similar: a user name, a host name and the current directory. It works, but the only thing it
+tells you is where you are.
+
+With Oh My Posh, the line becomes this. It is the configuration I actually use, drawn inside this blog's repository.
+
+![A prompt drawn by Oh My Posh: user name, the blog directory, the jj bookmark main and a change ID, Node.js 26.8.2, Bun 1.4.2, the previous command's duration and its exit status as coloured powerline chips, with the shell name, battery and clock at the right edge](oh-my-posh-mine.avif)
+
+From the left: the user name, the directory, the [Jujutsu](/en/blog/getting-started-with-jujutsu) bookmark and
+change ID, the Node.js and Bun versions this project uses, how long the previous command took, and whether it
+succeeded. At the right edge, the shell, the battery and the time. The point is that **everything you need in order
+to decide whether to type the next command is on one line, before you type it**.
+
+You can build a prompt like this with the shell alone. But bash wants `PS1`, zsh wants `PROMPT`, PowerShell wants a
+`prompt` function, and each spells it differently. The part that reads the git status you write yourself, or you go
+looking for a plugin for that particular shell.
+
+Oh My Posh puts all of it into **one configuration file**.
+
+![Figure "One config, the same prompt in every shell": one mine.omp.json on the left, with path, git and status in its blocks, fans out to pwsh, bash and zsh, and each of the three ends in the same app, main, ok chips](oh-my-posh-one-config.svg)
+
+- **The same configuration across shells** — PowerShell, bash, zsh, fish, Nushell and cmd (through
+  [Clink](https://chrisant996.github.io/clink/)) all read the same file
+- **The data collection is built in** — git, Jujutsu, Sapling, Node.js, Go, Python, the AWS profile, the battery:
+  you pick from [more than a hundred segments](https://ohmyposh.dev/docs/configuration/segment)
+- **Themes come with it** — there are over a hundred [official themes](https://ohmyposh.dev/docs/themes), and you try
+  one by naming it
+
+It is a single Go binary that the shell calls every time it needs a prompt. [Starship](https://starship.rs/) is
+built on the same idea; this article is about Oh My Posh only.
+
+I use it in PowerShell 7 on Windows, with the configuration file under OneDrive. Every screen in this article was
+taken there, with Oh My Posh 31.3.0.
+
+## Installing
+
+Pick your operating system.
+
+<CodeTabs labels={["macOS / Linux", "Windows"]}>
+
+```bash
+# Homebrew
+brew install jandedobbeleer/oh-my-posh/oh-my-posh
+
+# or the install script
+curl -s https://ohmyposh.dev/install.sh | bash -s
+```
+
+```powershell
+winget install JanDeDobbeleer.OhMyPosh --source winget
+```
+
+</CodeTabs>
+
+I install it through [mise](/en/blog/getting-started-with-mise), so it is versioned in the same place as the rest of
+my tools and `mise upgrade` updates everything at once. `mise use -g` installs it and writes it into the global
+config file in one go.
+
+```console
+❯ mise use -g oh-my-posh
+mise by @jdx – installing 1 tool
+mise ✓ oh-my-posh@31.3.0  1.1s  posh-windows-amd64.exe
+mise ████████████████ 1/1 · installed 1 tool in 1.1s
+mise C:\Users\Jam\AppData\Local\Temp\ompdemo\config\config.toml tools: oh-my-posh@31.3.0
+```
+
+The config path in that output is under Temp because it was recorded in a scratch directory for this article;
+normally it is `~/.config/mise/config.toml`. Whichever way it went in, asking for the version is the quickest
+check.
+
+```console
+❯ oh-my-posh version
+31.3.0
+```
+
+### Installing a Nerd Font
+
+The triangles between the chips, the folder icon, the branch icon — they are all **characters**. They live in the
+Unicode Private Use Area (U+E000 and up), and the prompt assumes your terminal font has glyphs there. Fonts that do
+are called [Nerd Fonts](https://www.nerdfonts.com/); ordinary fonts do not.
+
+Here is what happens without one. This is the configuration built later in this article, drawn with Consolas,
+which is not a Nerd Font.
+
+![The prompt drawn without a Nerd Font: every chip boundary and every icon has become a tofu box](oh-my-posh-no-nerd-font.avif)
+
+Every box is a character the font does not have. If this is the first screen you see after installing Oh My Posh, it
+looks broken. It is not; only the font is missing.
+
+Oh My Posh can install a Nerd Font itself. First, the list.
+
+```console
+❯ oh-my-posh font list | head -8
+0xProto
+3270
+AdwaitaMono
+Agave
+AnnotationMono
+AnonymousPro
+Arimo
+AtkinsonHyperlegibleMono
+```
+
+There are 74 of them. I use CascadiaCode, the Nerd Font build of the Cascadia Code that ships with Windows
+Terminal. Install it by name.
+
+```console
+❯ oh-my-posh font install CascadiaCode
+Installed CascadiaCode 🚀
+The following font families are now available for configuration:
+  • CaskaydiaCove NF
+  • CaskaydiaCove NFM
+  • CaskaydiaCove NFP
+```
+
+It downloads the zip from the nerd-fonts GitHub release and unpacks it into your user font directory. The Nerd Font
+build has a different name, "CaskaydiaCove". NF, NFM and NFP are the regular, monospace (icons take one cell) and
+proportional variants.
+
+Installing it changes nothing on its own. **The terminal has to be told to use it.**
+
+<CodeTabs labels={["Windows Terminal", "VS Code"]}>
+
+```json title="settings.json"
+{
+  "profiles": {
+    "defaults": {
+      "font": {
+        "face": "CaskaydiaCove Nerd Font"
+      }
+    }
+  }
+}
+```
+
+```json title="settings.json"
+{
+  "terminal.integrated.fontFamily": "CaskaydiaCove Nerd Font"
+}
+```
+
+</CodeTabs>
+
+> [!NOTE]
+> "CaskaydiaCove NF", as the installer printed it, and "CaskaydiaCove Nerd Font", as written here, are the same
+> font. The font file carries both names, and either one resolves.
+
+## Hooking it into the shell
+
+Oh My Posh works by having the shell run one line at startup. That line goes at the **end** of the shell's
+configuration file (with one exception when mise is in the same file, [explained below](#with-mise-the-prompt-function-is-contested)).
+
+<CodeTabs labels={["PowerShell", "bash", "zsh"]}>
+
+```powershell
+# append to the file $PROFILE points at
+oh-my-posh init pwsh | Invoke-Expression
+```
+
+```bash
+# append to ~/.bashrc
+eval "$(oh-my-posh init bash)"
+```
+
+```bash
+# append to ~/.zshrc
+eval "$(oh-my-posh init zsh)"
+```
+
+</CodeTabs>
+
+In PowerShell the configuration file is whatever the `$PROFILE` variable points at. Create it if it does not exist,
+then append.
+
+```powershell
+if (-not (Test-Path $PROFILE)) { New-Item -ItemType File -Path $PROFILE -Force }
+Add-Content -Path $PROFILE -Value 'oh-my-posh init pwsh | Invoke-Expression'
+```
+
+What does `oh-my-posh init pwsh` actually do? With `--print`, it shows the script it would otherwise feed to the
+shell. The transcripts in this article are typed in Git Bash; in PowerShell, read `wc -l` as `Measure-Object -Line`
+and `grep -n` as `Select-String`.
+
+```console
+❯ oh-my-posh init pwsh --print | wc -l
+1426
+❯ oh-my-posh init pwsh --print | grep -n 'Function:prompt = '
+986:        $Function:prompt = $promptFunction
+1370:                    $Function:prompt = $script:OriginalPromptFunction
+```
+
+It is a PowerShell script of 1,400-odd lines, and the heart of it is line 986. PowerShell calls a function named
+`prompt` before every command and prints whatever it returns, so **replacing that function with Oh My Posh's own** is
+the whole mechanism. Line 1370 is the reverse: the original function is put back when the module is removed.
+
+bash gets the same effect by adding a function to `PROMPT_COMMAND`.
+
+```console
+❯ oh-my-posh init bash --print | wc -l
+217
+❯ oh-my-posh init bash --print | grep -n "PROMPT_COMMAND=("
+210:        PROMPT_COMMAND=(_omp_hook "${prompt_command[@]}")
+212:        PROMPT_COMMAND=("${prompt_command[@]}" _omp_hook)
+```
+
+Open a new shell and the prompt has changed. No configuration file was given, so this is the default theme.
+
+![The default theme: user name, the app directory, the git branch and its changes, the exit status, and "in shell at 19:44:56" at the right edge](oh-my-posh-theme-default.avif)
+
+At this point Oh My Posh is running.
+
+## Picking a theme
+
+The default is fine, but there is a whole gallery to choose from: over a hundred themes ship in the Oh My Posh
+repository, and the [themes page](https://ohmyposh.dev/docs/themes) shows every one of them.
+
+A theme is chosen by adding `--config` to the `init` line. Three kinds of value work there.
+
+| Form | Example | Character |
+|---|---|---|
+| Theme name | `--config jandedobbeleer` | Fetched from GitHub every time the shell starts |
+| URL | `--config https://raw.githubusercontent.com/.../paradox.omp.json` | Same, and it can point at a config you published yourself |
+| Local path | `--config ~/.config/oh-my-posh/mine.omp.json` | Never touches the network. **Where you end up** |
+
+Theme names are the easy way to try things. **Run the line in the shell you already have open** and it switches on
+the spot, without touching any file.
+
+```powershell
+oh-my-posh init pwsh --config jandedobbeleer | Invoke-Expression
+```
+
+Four that I tried this way, top to bottom: `atomic`, `powerlevel10k_rainbow`, `pure` and `robbyrussell`.
+
+![The atomic theme: shell name, the app directory, git status and execution time as chips on the left, Node.js 26.8.2, the OS, battery and date-time on the right, with the input on a second line](oh-my-posh-theme-atomic.avif)
+
+![The powerlevel10k_rainbow theme: OS, path and git on the left, Node.js, exit status and the clock on the right, with the input on a second line](oh-my-posh-theme-powerlevel10k-rainbow.avif)
+
+![The pure theme: coloured text only, with user name, path and git status on one line and the input on the next](oh-my-posh-theme-pure.avif)
+
+![The robbyrussell theme, the oh-my-zsh default: an arrow, the directory name and git:(main ?1 ~1) on one line](oh-my-posh-theme-robbyrussell.avif)
+
+Same directory, same git state — one modified file, one untracked — shown four ways. They range from loud powerline
+chips to plain coloured text (pure, robbyrussell). There is no right answer; **pick the one you can look at every day
+without tiring of it**.
+
+### Keep the one you like locally
+
+A theme named or given by URL is fetched over the network each time a shell starts. Offline, that delays the prompt;
+and once you start adjusting a theme to taste, you need the file in front of you anyway.
+
+`oh-my-posh config export` writes a theme out to a file. Create the target directory first: if it is missing, the
+command writes nothing and reports no error (I checked).
+
+```console
+❯ mkdir -p ~/.config/oh-my-posh
+❯ oh-my-posh config export --config jandedobbeleer --output ~/.config/oh-my-posh/jandedobbeleer.omp.json
+❯ ls -la ~/.config/oh-my-posh/
+total 8
+drwxr-xr-x 1 Jam 197611    0 19:55 .
+drwxr-xr-x 1 Jam 197611    0 19:54 ..
+-rw-r--r-- 1 Jam 197611 7293 19:55 jandedobbeleer.omp.json
+```
+
+Then point the `--config` in `$PROFILE` at that path.
+
+```powershell
+oh-my-posh init pwsh --config "$HOME/.config/oh-my-posh/jandedobbeleer.omp.json" | Invoke-Expression
+```
+
+> [!TIP]
+> When mise installs Oh My Posh, the only thing it puts on disk is the executable; the theme files are not there.
+> Trying by name and fetching with `config export` is the route for that. Themes with `minimal` in the name do not
+> need a Nerd Font, so they are the ones to try before the font is installed.
+
+## Writing your own configuration
+
+Using a theme as-is is fine. But open the exported file and you find seven kilobytes of JSON, and it is not obvious
+which part draws what. **Building one from scratch** is the quickest way to learn to read them.
+
+There are three levels: a line of the terminal is a block, each chip in it is a segment, and what a segment says is
+its template.
+
+![Figure "A block is one line; each chip in it is a segment": on the left, terminal output with ~/app, main ~1 and ok chips, a clock at the right edge and a ❯ on the second line, bracketed as the left prompt block (prompt, alignment: left), the rprompt and the newline block; on the right, the definition of one chip — a segment with type, style, foreground, background and template — with the note that type is what to show and template is how to write it](oh-my-posh-anatomy.svg)
+
+- **block** — one line. `prompt` blocks are left-aligned; an `rprompt` block sits at the right edge. `newline` moves
+  to the next line
+- **segment** — one chip. `type` decides what to show, `template` decides how to write it
+- **template** — Go `text/template` syntax. `{{ .Path }}` inserts a value the segment prepared
+
+Let's add them one at a time. The working directory is a git repository called `~/work/app` with a `package.json`
+in it.
+
+### 1. The path only
+
+The smallest configuration that shows where you are. Save it as `~/.config/oh-my-posh/mine.omp.json`.
+
+```json title="~/.config/oh-my-posh/mine.omp.json"
+{
+  "$schema": "https://raw.githubusercontent.com/JanDeDobbeleer/oh-my-posh/main/themes/schema.json",
+  "version": 4,
+  "final_space": true,
+  "blocks": [
+    {
+      "type": "prompt",
+      "alignment": "left",
+      "segments": [
+        {
+          "type": "path",
+          "style": "powerline",
+          "powerline_symbol": "\ue0b0",
+          "foreground": "#ffffff",
+          "background": "#61afef",
+          "template": " \uea83 {{ .Path }} ",
+          "options": { "style": "folder" }
+        }
+      ]
+    }
+  ]
+}
+```
+
+![A prompt with only the path segment: a blue chip with a folder icon and app](oh-my-posh-step1-path.avif)
+
+Top to bottom:
+
+- `$schema` — lets the editor complete keys and flag errors. In VS Code, this line alone gets you key suggestions
+- `version: 4` — the configuration format version, currently 4
+- `final_space` — one space after the prompt. Without it the cursor sits against the chip
+- `blocks` — one left-aligned `prompt` block
+- `segments` — one `path` segment inside it
+
+Inside the segment: `style: "powerline"` closes the right edge with the `powerline_symbol` character (`\ue0b0`, a
+right-pointing triangle). In the `template`, `\uea83` is a folder icon and `{{ .Path }}` becomes the actual path.
+`options.style: "folder"` shows just the last directory rather than the whole path; `full` and `agnoster_short`
+(abbreviate the middle) are among the [ten choices](https://ohmyposh.dev/docs/segments/system/path#style).
+
+Code points written out like `\ue0b0` and `\uea83` are the Nerd Font characters. That is why they do not look like
+icons in the editor; to read one, look it up in the [cheat sheet](https://www.nerdfonts.com/cheat-sheet).
+
+### 2. Adding the git status
+
+Add a `git` segment to the `segments` array of the `mine.omp.json` from step 1, as the element after the `path`
+segment: put a `,` after the `path` segment's closing `}` and continue from there. From here on, each step is shown
+as a diff against the previous one; replace the `-` lines with the `+` lines.
+
+```diff title="~/.config/oh-my-posh/mine.omp.json"
+       "segments": [
+         {
+           "type": "path",
+           "style": "powerline",
+           "powerline_symbol": "\ue0b0",
+           "foreground": "#ffffff",
+           "background": "#61afef",
+           "template": " \uea83 {{ .Path }} ",
+           "options": { "style": "folder" }
+-        }
++        },
++        {
++          "type": "git",
++          "style": "powerline",
++          "powerline_symbol": "\ue0b0",
++          "foreground": "#193549",
++          "background": "#95ffa4",
++          "background_templates": [
++            "{{ if or (.Working.Changed) (.Staging.Changed) }}#ff9248{{ end }}"
++          ],
++          "template": " {{ .HEAD }}{{ if .Working.Changed }} \uf044 {{ .Working.String }}{{ end }}{{ if .Staging.Changed }} \uf046 {{ .Staging.String }}{{ end }} "
++        }
+       ]
+```
+
+With a clean working tree, and then after touching files:
+
+![The path and git prompt with a clean working tree: the git chip is green and shows only main](oh-my-posh-step2-git-clean.avif)
+
+![The same prompt with changes in the working tree: the git chip has turned orange and shows main followed by ?1 ~1](oh-my-posh-step2-git-dirty.avif)
+
+Two new things here.
+
+**`background_templates`** is a conditional background colour. The templates in the array are evaluated in order,
+and the first one that returns something non-empty wins. Here that means "orange if the working tree or the index has
+changes", falling back to the green `background` when none match. `foreground_templates` does the same for the text.
+
+**The `if` inside `template`** prints `\uf044` (a pencil) and the counts only when there are changes.
+`.Working.String` is a string like `?1 ~1`: `?` is untracked, `~` modified, `+` added, `-` deleted.
+
+The `git` segment exposes [plenty more](https://ohmyposh.dev/docs/segments/scm/git#properties): `.HEAD`, `.Branch`,
+`.Ahead`, `.Behind`, `.StashCount`, `.UpstreamIcon`. It only fetches what your templates reference, so **what you
+leave out you do not pay for**.
+
+### 3. Exit status and execution time
+
+Now, how the last command went. Add `executiontime` and `status` after the `git` segment.
+
+```diff title="~/.config/oh-my-posh/mine.omp.json"
+           "template": " {{ .HEAD }}{{ if .Working.Changed }} \uf044 {{ .Working.String }}{{ end }}{{ if .Staging.Changed }} \uf046 {{ .Staging.String }}{{ end }} "
+-        }
++        },
++        {
++          "type": "executiontime",
++          "style": "powerline",
++          "powerline_symbol": "\ue0b0",
++          "foreground": "#ffffff",
++          "background": "#83769c",
++          "template": " \ueba2 {{ .FormattedMs }} ",
++          "options": { "threshold": 500 }
++        },
++        {
++          "type": "status",
++          "style": "diamond",
++          "trailing_diamond": "\ue0b4",
++          "foreground": "#ffffff",
++          "background": "#00897b",
++          "background_templates": [
++            "{{ if gt .Code 0 }}#e91e63{{ end }}"
++          ],
++          "template": " {{ if gt .Code 0 }}\uf00d {{ .Code }}{{ else }}\uf00c{{ end }} ",
++          "options": { "always_enabled": true }
++        }
+       ]
+```
+
+After a command that succeeded, and after one that took 2.34 seconds and exited with code 1:
+
+![The path, git and status prompt after a successful command: a green chip with only a check mark](oh-my-posh-step3-status-ok.avif)
+
+![The same prompt after a failed command: a 2.34s execution-time chip has appeared and the status chip is red with ✕ 1](oh-my-posh-step3-status-fail.avif)
+
+`executiontime` stays hidden below `threshold` milliseconds. That is why the successful run has no such chip: "only
+tell me when it took a while" is the default. `status`, with `always_enabled: true`, is always there, and says
+pass or fail with its colour.
+
+`style: "diamond"` closes the end with the `trailing_diamond` character (`\ue0b4`, a rounded cap). Ending the last
+segment of a line with a rounded cap makes the row of chips look finished. There are four styles in all.
+
+| style | Look |
+|---|---|
+| `powerline` | Closes the right edge with `powerline_symbol`, cutting into the next chip |
+| `diamond` | Closes the start and end with `leading_diamond` / `trailing_diamond` |
+| `plain` | No chip; coloured text only |
+| `accordion` | Keeps the chip even when there is nothing to show in it |
+
+### 4. The right edge and a second line
+
+Last, two more entries in the `blocks` array: an `rprompt` block with the time at the right edge, and a `newline`
+block that puts the input on the next line. This time the addition is to `blocks`, the array outside `segments`,
+so it goes after the closing brace of the first block.
+
+```diff title="~/.config/oh-my-posh/mine.omp.json"
+           "options": { "always_enabled": true }
+         }
+       ]
+-    }
++    },
++    {
++      "type": "rprompt",
++      "segments": [
++        {
++          "type": "time",
++          "style": "plain",
++          "foreground": "#2e9599",
++          "template": "\uf017 {{ .CurrentDate | date .Format }}",
++          "options": { "time_format": "15:04" }
++        }
++      ]
++    },
++    {
++      "type": "prompt",
++      "alignment": "left",
++      "newline": true,
++      "segments": [
++        {
++          "type": "text",
++          "style": "plain",
++          "foreground": "#61afef",
++          "template": "\u276f"
++        }
++      ]
++    }
+   ]
+ }
+```
+
+A `node` segment also goes in while we are here, inside the first block's `segments`, between `git` and
+`executiontime`.
+
+```diff title="~/.config/oh-my-posh/mine.omp.json"
+           "template": " {{ .HEAD }}{{ if .Working.Changed }} \uf044 {{ .Working.String }}{{ end }}{{ if .Staging.Changed }} \uf046 {{ .Staging.String }}{{ end }} "
+         },
++        {
++          "type": "node",
++          "style": "powerline",
++          "powerline_symbol": "\ue0b0",
++          "foreground": "#ffffff",
++          "background": "#6ca35e",
++          "template": " \ue718 {{ .Full }} "
++        },
+         {
+           "type": "executiontime",
+```
+
+![The finished prompt: app, main ?1 ~1, Node.js 26.8.2 and a check mark on the first line, a clock icon with 19:46 at the right edge, and a blue ❯ at the start of the second line](oh-my-posh-step4-rprompt.avif)
+
+The `node` segment shows `26.8.2` because this directory has a `package.json`. Language segments appear only when
+they find that project's files; go back to `~` and it disappears.
+
+`time_format` is a Go time layout. `15:04` is hour:minute and `2006-01-02` is year-month-day. The digits themselves
+are the format, which is startling at first and then fine.
+
+That is roughly the skeleton of the prompt at the top of this article. Point the `--config` in `$PROFILE` at this
+`mine.omp.json` and the shell shows the same. From here on it is a loop of adding segments and adjusting colours.
+
+### Draw it after each change
+
+Reopening the shell after every edit gets old. `oh-my-posh config export image` **draws the configuration to an
+SVG**.
+
+```console
+❯ oh-my-posh config export image --config ~/.config/oh-my-posh/mine.omp.json --output ~/prompt.svg
+❯ ls -la ~/prompt.svg
+-rw-r--r-- 1 Jam 197611 3239 19:55 prompt.svg
+```
+
+Every prompt image in this article is one of these, converted to AVIF and nothing else. The text in the SVG assumes
+a Nerd Font, so the machine that opens it needs one too.
+
+If JSON feels cramped, YAML and TOML are accepted as well. `config export --format` converts, so export and then edit.
+
+```console
+❯ oh-my-posh config export --config ~/.config/oh-my-posh/mine.omp.json --format toml | head -12
+version = 4
+final_space = true
+
+[upgrade]
+  source = 'cdn'
+  interval = '168h'
+  auto = false
+  notice = false
+
+[[blocks]]
+  type = 'prompt'
+  alignment = 'left'
+```
+
+## My configuration
+
+The configuration in the first image started as an export of the official `jandedobbeleer` theme, with segments
+added and removed since. It has around twenty segments, too many to print, so here are only the changes.
+
+- **`disable_with_jj: true` on `git`** — a [colocated jj repository](/en/blog/getting-started-with-jujutsu) has a
+  `.git` too, so without this both the git and the jj chips appear. This silences the git one and leaves the
+  `jujutsu` segment
+- **A `jujutsu` segment** — the template uses `{{ .ClosestBookmarks }}` (the nearest bookmark), `{{ .AheadCount }}`
+  (how far past it) and `{{ .ChangeID }}` (the shortened change ID). In the first image that reads `main ↑1 ls`: one
+  change past `main`, on the change whose ID starts with `ls`
+- **`sapling`, `terraform` (with `command: "tofu"`) and `bun`** — the tools I use. The terraform segment runs
+  `terraform` by default, so it is pointed at OpenTofu's name
+- **`async: true` and `streaming: 100`** — see below
+
+`oh-my-posh debug` shows how long each segment takes. This is a run inside the blog's repository.
+
+```console
+❯ oh-my-posh debug --plain --config "$HOME/OneDrive/ドキュメント/PowerShell/jambalaya.omp.json"
+...
+Segments:
+
+ConsoleTitle(true)                         -   0 ms
+Session(true)                              -   2 ms
+Path(true)                                 -   4 ms
+Git(false)                                 -   0 ms
+Jujutsu(true)                              - 186 ms
+Sapling(false)                             -   6 ms
+Terraform(false)                           -   4 ms
+Spotify(false)                             -  32 ms
+Node(true)                                 -   2 ms
+Bun(true)                                  -   5 ms
+Go(false)                                  -   5 ms
+Python(false)                              -   5 ms
+Azfunc(false)                              -   4 ms
+Aws(false)                                 -   0 ms
+Root(false)                                -   1 ms
+Executiontime(true)                        -   0 ms
+Status(true)                               -   4 ms
+Shell(true)                                -   0 ms
+Claude(false)                              -   4 ms
+Battery(true)                              -   0 ms
+Time(true)                                 -   0 ms
+
+Run duration: 604.7916ms
+
+Cache path: C:\Users\Jam\AppData\Local\oh-my-posh
+
+Config path: C:\Users\Jam\OneDrive\ドキュメント\PowerShell\jambalaya.omp.json
+```
+
+The parenthesis says whether the segment was shown, the number is how long fetching its data took. `Git(false)` is
+`disable_with_jj` doing its job, and `Jujutsu(true)` is spending 186 ms instead. **When the prompt feels slow, look
+here first**; the culprit is in the list.
+
+The settings that stop every prompt from waiting for those 186 ms are the top-level `async` and `streaming`.
+`async: true` lets you start typing before the prompt has been drawn. `streaming: 100` draws any segment that is not
+done within 100 ms as `...` and replaces it in place once the value arrives (the documentation calls it beta). Both
+matter more the more segments you have.
+
+## Traps I actually hit
+
+### With mise, the `prompt` function is contested
+
+This is the one thing I most want this article to leave behind.
+
+I install Oh My Posh through mise, so my `$PROFILE` has both `mise activate pwsh` and `oh-my-posh init pwsh`. **Both
+of them rewrite PowerShell's `prompt` function.**
+
+On the mise side it looks like this.
+
+```console
+❯ mise activate pwsh | grep -n -A3 'function global:prompt'
+198:        function global:prompt {
+199-            if (Test-Path -Path Function:\_mise_hook){
+200-                # Skip only when the chpwd handler already ran hook-env for this
+201-                # exact directory and the MISE_* state has not changed since.
+```
+
+mise **saves whatever `prompt` is at that moment and wraps it**: its own work first, then a call to the previous
+function. It does this so that every prompt runs `hook-env`, which is what puts the per-directory tools on PATH.
+
+Oh My Posh, as we saw above, does `$Function:prompt = $promptFunction`. It **overwrites**, without looking at what
+was there.
+
+So the order matters.
+
+![Figure "$PROFILE: who owns prompt": on the left, the working order — 1 oh-my-posh init pwsh owns the prompt, 2 mise activate pwsh wraps it, and every prompt runs hook-env then the oh-my-posh line; on the right, the broken order — 1 mise activate pwsh wraps the old prompt, 2 oh-my-posh init pwsh overwrites the wrapper, and hook-env only runs on cd](oh-my-posh-init-order.svg)
+
+I loaded a shell in each order and checked whether the mise hook was still in the `prompt` function.
+
+```console
+❯ (Get-Command prompt).Definition -match '_mise_hook'   # init first, activate second
+True
+❯ (Get-Command prompt).Definition -match '_mise_hook'   # activate first, init second
+False
+```
+
+Reversed, the mise hook is gone from the prompt. The directory-change hook (`chpwd`) survives separately, so tools
+still switch on `cd`. But a `mise use` or an edit to `mise.toml` in the current directory is not picked up at the
+next prompt. It is a quiet way to break.
+
+The answer is **`oh-my-posh init` first, `mise activate` second**. If Oh My Posh itself came from mise there is one
+more wrinkle: before `mise activate`, it is not on PATH, so a bare `oh-my-posh` is not found. Hence `mise x`
+(`mise exec`).
+
+```powershell title="$PROFILE"
+# oh-my-posh is mise-managed. This line runs before `mise activate` below, so the
+# tool is not on PATH yet; swapping the order would let oh-my-posh's own `prompt`
+# overwrite mise's wrapper and kill the per-prompt hook-env. Hence `mise x`.
+mise x -- oh-my-posh init pwsh --config "$HOME/.config/oh-my-posh/mine.omp.json" | Invoke-Expression
+
+mise activate pwsh | Out-String | Invoke-Expression
+```
+
+That is the top of my `$PROFILE` (only the `--config` path is changed to this article's `mine.omp.json`). The
+comment is there because without it I would eventually reorder the lines myself and break it.
+
+### PowerShell has four profiles
+
+`$PROFILE` looks like a string, but it carries four paths.
+
+```console
+❯ $PROFILE | Select-Object AllUsersAllHosts,AllUsersCurrentHost,CurrentUserAllHosts,CurrentUserCurrentHost | Format-List
+AllUsersAllHosts       : C:\Program Files\PowerShell\7\profile.ps1
+AllUsersCurrentHost    : C:\Program Files\PowerShell\7\Microsoft.PowerShell_profile.ps1
+CurrentUserAllHosts    : C:\Users\Jam\OneDrive\ドキュメント\PowerShell\profile.ps1
+CurrentUserCurrentHost : C:\Users\Jam\OneDrive\ドキュメント\PowerShell\Microsoft.PowerShell_profile.ps1
+```
+
+Used bare, `$PROFILE` means the last one, `CurrentUserCurrentHost`. "CurrentHost" is the catch: **a PowerShell
+opened in the terminal and one opened in VS Code's integrated terminal can count as different hosts.** If the prompt
+changes in one and not the other, check what `$PROFILE` resolves to in that application. To have every host read it,
+write to `profile.ps1`, the `CurrentUserAllHosts` one.
+
+Incidentally, the `ドキュメント` in my paths is there because OneDrive manages the Windows Documents folder. It
+means the configuration syncs itself, so I leave it.
+
+### The font is installed and the boxes are still there
+
+If the Nerd Font is in and the terminal setting is changed and you still see boxes, it is usually one of these.
+
+- **The setting went into the wrong profile** — Windows Terminal has defaults and per-profile settings. Put the font
+  in `defaults`, or in the profile you actually use, but be sure which
+- **You are inside WSL or a container** — the font is drawn by the terminal on the Windows side, so it goes on the
+  **host**. Running `oh-my-posh font install` inside WSL does nothing useful
+- **The terminal has not been reopened** — a newly added font is not always picked up by windows already open
+
+## Everyday commands
+
+```bash
+oh-my-posh version                        # the version
+oh-my-posh init pwsh --config <path>      # the one line for $PROFILE
+oh-my-posh font list                      # Nerd Fonts it can install
+oh-my-posh font install <name>            # install one
+oh-my-posh config export --config <theme> --output <path>   # write a theme out locally
+oh-my-posh config export image --config <path> --output <svg>   # draw a config as SVG
+oh-my-posh debug                          # per-segment timings
+oh-my-posh upgrade                        # update itself (use the package manager if it came from one)
+```
+
+## Closing
+
+- Oh My Posh **keeps the prompt configuration in one file and gives every shell the same look**
+- The boxes you see first are not breakage; **the Nerd Font is missing**. Install it, then change the terminal's
+  font setting
+- Try themes by name, and `config export` the one you keep
+- The configuration is three levels: block → segment → template. `config export image` lets you draw as you edit
+- With mise, **`oh-my-posh init` first, `mise activate` second**. Reversed, mise's per-prompt hook disappears
+
+You look at your prompt hundreds of times a day. An hour spent on it keeps paying back.
