@@ -1,0 +1,648 @@
+---
+title: Oh My Posh 入門ガイド
+date: "2026-09-16"
+description: シェルのプロンプトをテーマで着せ替える Oh My Posh を、インストールと Nerd Font から、テーマ選び、設定ファイルの自作、mise と組み合わせたときの罠まで
+image: /thumbnails/getting-started-with-oh-my-posh.avif
+tags:
+  - oh-my-posh
+  - shell
+  - powershell
+  - cli
+  - devtools
+---
+
+## Oh My Posh とは
+
+[Oh My Posh](https://ohmyposh.dev/)（オーマイポッシュ）は、**シェルのプロンプトを描くためのツール**です。
+
+プロンプトとは、シェルがコマンドの入力を待つときに表示する、あの行のことです。何もしていなければ、PowerShell ならこう出ています。
+
+```text
+PS C:\Users\Jam\Documents\blog>
+```
+
+bash や zsh でも、ユーザー名とホスト名と現在のディレクトリが並ぶだけの、似たような 1 行です。動きはしますが、そこから読み取れるのは「今どこにいるか」だけです。
+
+Oh My Posh を入れると、この行が次のようになります。私が実際に使っている設定を、このブログのリポジトリで描いたものです。
+
+![Oh My Posh で描いたプロンプト。ユーザー名、blog ディレクトリ、jj の main ブックマークと変更 ID、Node.js 26.8.2、Bun 1.4.2、直前のコマンドの実行時間、終了ステータスが色つきの帯で並び、右端にシェル名・バッテリー・時刻が出ている](oh-my-posh-mine.avif)
+
+左から、ユーザー名、現在のディレクトリ、[Jujutsu](/ja/blog/getting-started-with-jujutsu) のブックマークと変更 ID、このプロジェクトが使う Node.js と Bun のバージョン、直前のコマンドにかかった時間、その終了ステータス。右端にはシェルの種類とバッテリー残量と時刻。**コマンドを打つ前に、打つべきかどうかを判断する材料が 1 行に揃っている**、というのが要点です。
+
+こういうプロンプトは、シェルの機能だけでも作れます。ただし、bash なら `PS1`、zsh なら `PROMPT`、PowerShell なら `prompt` 関数と、シェルごとに書き方が違います。git の状態を取ってくる部分は自分で書くか、シェルごとのプラグインを探すことになります。
+
+Oh My Posh は、そこを**設定ファイル 1 つ**にまとめます。
+
+![「設定ファイル 1 つで、どのシェルも同じプロンプト」の図。左の mine.omp.json（blocks に path・git・status）から線が 3 本に分かれ、pwsh・bash・zsh の 3 つのシェルに届いて、右端にはどれも app、main、ok の同じ帯が出ている](oh-my-posh-one-config.svg)
+
+- **シェルをまたいで同じ設定が使える** — PowerShell、bash、zsh、fish、Nushell、cmd（[Clink](https://chrisant996.github.io/clink/) 経由）で、同じファイルを読みます
+- **情報の取得は組み込み済み** — git、Jujutsu、Sapling、Node.js、Go、Python、AWS のプロファイル、バッテリーなど、[100 を超えるセグメント](https://ohmyposh.dev/docs/configuration/segment)から選ぶだけです
+- **テーマが最初から揃っている** — [公式テーマ](https://ohmyposh.dev/docs/themes)が 100 以上あり、名前を指定するだけで試せます
+
+Go で書かれた 1 つの実行ファイルで、プロンプトを描くたびにシェルがそれを呼び出す、という仕組みです。同じ発想のツールに [Starship](https://starship.rs/) がありますが、この記事では Oh My Posh だけを扱います。
+
+私は Windows の PowerShell 7 で使っていて、設定ファイルは OneDrive の下に置いてあります。この記事の画像はすべて、その環境で Oh My Posh 31.3.0 を動かして作ったものです。
+
+## インストール
+
+使っている OS で選んでください。
+
+<CodeTabs labels={["macOS / Linux", "Windows"]}>
+
+```bash
+# Homebrew
+brew install jandedobbeleer/oh-my-posh/oh-my-posh
+
+# または、インストールスクリプト
+curl -s https://ohmyposh.dev/install.sh | bash -s
+```
+
+```powershell
+winget install JanDeDobbeleer.OhMyPosh --source winget
+```
+
+</CodeTabs>
+
+私は [mise](/ja/blog/getting-started-with-mise) で入れています。他の開発ツールと同じ場所でバージョンが管理できて、`mise upgrade` でまとめて更新できるからです。`mise use -g` で、グローバルの設定ファイルに書き込みつつインストールします。
+
+```console
+❯ mise use -g oh-my-posh
+mise by @jdx – installing 1 tool
+mise ✓ oh-my-posh@31.3.0  1.1s  posh-windows-amd64.exe
+mise ████████████████ 1/1 · installed 1 tool in 1.1s
+mise C:\Users\Jam\AppData\Local\Temp\ompdemo\config\config.toml tools: oh-my-posh@31.3.0
+```
+
+この記事用の作業ディレクトリで実行したので設定ファイルのパスが Temp の下になっていますが、ふつうは `~/.config/mise/config.toml` に書き込まれます。どの方法で入れたにせよ、確認はバージョンを聞くのが早いです。
+
+```console
+❯ oh-my-posh version
+31.3.0
+```
+
+### Nerd Font を入れる
+
+プロンプトの帯の境目にある三角や、フォルダやブランチのアイコンは、**文字**です。Unicode の私用領域（U+E000 以降）に置かれたグリフを、ターミナルのフォントが持っていることが前提になっています。それを持つフォントが [Nerd Font](https://www.nerdfonts.com/) で、ふつうのフォントには入っていません。
+
+入っていないとどうなるか。この記事の後半で組み立てる設定を、Nerd Font ではない Consolas で描かせたものです。
+
+![Nerd Font のない環境で描いたプロンプト。帯の境目とアイコンの位置がすべて豆腐のような四角に置き換わっている](oh-my-posh-no-nerd-font.avif)
+
+四角に化けているところ全部が、フォントに無い文字です。Oh My Posh を入れて最初に見る画面がこれだと「壊れている」と思いがちですが、足りないのはフォントだけです。
+
+Oh My Posh 自身に、Nerd Font を入れるコマンドがあります。まず一覧を出してみます。
+
+```console
+❯ oh-my-posh font list | head -8
+0xProto
+3270
+AdwaitaMono
+Agave
+AnnotationMono
+AnonymousPro
+Arimo
+AtkinsonHyperlegibleMono
+```
+
+全部で 74 種類あります。私は Windows Terminal に同梱されている Cascadia Code の Nerd Font 版、CascadiaCode を使っています。名前を指定して入れます。
+
+```console
+❯ oh-my-posh font install CascadiaCode
+Installed CascadiaCode 🚀
+The following font families are now available for configuration:
+  • CaskaydiaCove NF
+  • CaskaydiaCove NFM
+  • CaskaydiaCove NFP
+```
+
+GitHub の nerd-fonts のリリースから zip を取ってきて、ユーザーのフォントディレクトリに展開してくれます。Nerd Font 版は名前が変わって「CaskaydiaCove」になります。NF・NFM・NFP はそれぞれ、通常・等幅（アイコンも 1 文字幅）・プロポーショナルです。
+
+入れただけでは使われません。**ターミナル側の設定でそのフォントを指定**して、初めて表示が変わります。
+
+<CodeTabs labels={["Windows Terminal", "VS Code"]}>
+
+```json title="settings.json"
+{
+  "profiles": {
+    "defaults": {
+      "font": {
+        "face": "CaskaydiaCove Nerd Font"
+      }
+    }
+  }
+}
+```
+
+```json title="settings.json"
+{
+  "terminal.integrated.fontFamily": "CaskaydiaCove Nerd Font"
+}
+```
+
+</CodeTabs>
+
+> [!NOTE]
+> インストール時に表示された「CaskaydiaCove NF」と、ここで書いた「CaskaydiaCove Nerd Font」は同じフォントです。フォントファイルが両方の名前を持っていて、どちらで指定しても通ります。
+
+## シェルに組み込む
+
+Oh My Posh は、シェルの起動時に 1 行実行してもらうことで動きます。その 1 行を、シェルの設定ファイルの**最後**に足します（mise と併用する場合だけ例外があり、[あとで説明します](#mise-と一緒に使うとprompt-関数の取り合いになる)）。
+
+<CodeTabs labels={["PowerShell", "bash", "zsh"]}>
+
+```powershell
+# $PROFILE が指すファイルに追記する
+oh-my-posh init pwsh | Invoke-Expression
+```
+
+```bash
+# ~/.bashrc に追記する
+eval "$(oh-my-posh init bash)"
+```
+
+```bash
+# ~/.zshrc に追記する
+eval "$(oh-my-posh init zsh)"
+```
+
+</CodeTabs>
+
+PowerShell の設定ファイルは `$PROFILE` という変数が指しています。ファイルが無ければ作ってから追記します。
+
+```powershell
+if (-not (Test-Path $PROFILE)) { New-Item -ItemType File -Path $PROFILE -Force }
+Add-Content -Path $PROFILE -Value 'oh-my-posh init pwsh | Invoke-Expression'
+```
+
+この `oh-my-posh init pwsh` は何をしているのか。`--print` を付けると、シェルに読み込ませるスクリプトがそのまま出てきます。この記事のターミナル操作は Git Bash で打っています。PowerShell なら `wc -l` は `Measure-Object -Line`、`grep -n` は `Select-String` に読み替えてください。
+
+```console
+❯ oh-my-posh init pwsh --print | wc -l
+1426
+❯ oh-my-posh init pwsh --print | grep -n 'Function:prompt = '
+986:        $Function:prompt = $promptFunction
+1370:                    $Function:prompt = $script:OriginalPromptFunction
+```
+
+1,400 行あまりの PowerShell スクリプトで、中心は 986 行目です。PowerShell は毎回 `prompt` という関数を呼んでその戻り値を表示するので、**その関数を Oh My Posh のものに置き換える**、というのが仕組みのすべてです。1370 行目は、モジュールを外したときに元の関数へ戻す処理です。
+
+bash では `PROMPT_COMMAND` に関数を足すことで同じことをしています。
+
+```console
+❯ oh-my-posh init bash --print | wc -l
+217
+❯ oh-my-posh init bash --print | grep -n "PROMPT_COMMAND=("
+210:        PROMPT_COMMAND=(_omp_hook "${prompt_command[@]}")
+212:        PROMPT_COMMAND=("${prompt_command[@]}" _omp_hook)
+```
+
+シェルを開き直すと、プロンプトが変わっています。設定ファイルを何も指定していないので、既定のテーマで描かれます。
+
+![既定のテーマで描いたプロンプト。ユーザー名、app ディレクトリ、git のブランチと変更、終了ステータスが並び、右端に「in shell at 19:44:56」と出ている](oh-my-posh-theme-default.avif)
+
+ここまでで、Oh My Posh は動いています。
+
+## テーマを選ぶ
+
+既定のテーマのままでもよいのですが、せっかくなので選びます。テーマは Oh My Posh のリポジトリに 100 以上入っていて、[テーマの一覧ページ](https://ohmyposh.dev/docs/themes)で全部の見た目を確認できます。
+
+テーマの指定は、`init` に `--config` を足すだけです。ここには 3 種類の値が書けます。
+
+| 書き方 | 例 | 性格 |
+|---|---|---|
+| テーマ名 | `--config jandedobbeleer` | シェルの起動時に GitHub から取ってくる |
+| URL | `--config https://raw.githubusercontent.com/.../paradox.omp.json` | 同上。自分で公開した設定も指せる |
+| ローカルのパス | `--config ~/.config/oh-my-posh/mine.omp.json` | ネットワークに出ない。**最終的にはこれ** |
+
+まずはテーマ名で試すのが楽です。**今開いているシェルで直接実行すれば**、設定ファイルを触らずにその場で切り替わります。
+
+```powershell
+oh-my-posh init pwsh --config jandedobbeleer | Invoke-Expression
+```
+
+こうして 4 つほど試したものを並べます。上から `atomic`、`powerlevel10k_rainbow`、`pure`、`robbyrussell` です。
+
+![atomic テーマ。左にシェル名、app ディレクトリ、git の状態、実行時間が帯で並び、右に Node.js 26.8.2、OS、バッテリー、日時が並んで、2 行目に入力位置がある](oh-my-posh-theme-atomic.avif)
+
+![powerlevel10k_rainbow テーマ。左に OS・パス・git、右に Node.js・終了ステータス・時刻が帯で並び、2 行目に入力位置がある](oh-my-posh-theme-powerlevel10k-rainbow.avif)
+
+![pure テーマ。色つきの文字だけで、ユーザー名、パス、git の状態が 1 行に並び、2 行目に入力位置がある](oh-my-posh-theme-pure.avif)
+
+![robbyrussell テーマ。oh-my-zsh の既定と同じ見た目で、矢印、ディレクトリ名、git:(main ?1 ~1) が 1 行に並ぶ](oh-my-posh-theme-robbyrussell.avif)
+
+同じディレクトリ、同じ git の状態（変更したファイルが 1 つ、追跡していないファイルが 1 つ）を、それぞれのテーマがどう見せるか、という比較です。帯で区切る派手なもの（powerline）から、文字と色だけのもの（pure、robbyrussell）まであります。どれが正解ということはなく、**自分が毎日見て疲れないもの**を選んでください。
+
+### 気に入ったテーマは、手元に置く
+
+テーマ名や URL での指定は、シェルを開くたびにネットワークへ取りに行きます。オフラインだと起動が遅れますし、そもそもテーマを自分好みに直し始めたら手元のファイルが要ります。
+
+`oh-my-posh config export` で、テーマをファイルに書き出せます。書き出し先のディレクトリは先に作っておいてください。無いと、エラーも出さずに何も書かれません（試しました）。
+
+```console
+❯ mkdir -p ~/.config/oh-my-posh
+❯ oh-my-posh config export --config jandedobbeleer --output ~/.config/oh-my-posh/jandedobbeleer.omp.json
+❯ ls -la ~/.config/oh-my-posh/
+total 8
+drwxr-xr-x 1 Jam 197611    0 19:55 .
+drwxr-xr-x 1 Jam 197611    0 19:54 ..
+-rw-r--r-- 1 Jam 197611 7293 19:55 jandedobbeleer.omp.json
+```
+
+あとは `$PROFILE` の `--config` をこのパスに向けるだけです。
+
+```powershell
+oh-my-posh init pwsh --config "$HOME/.config/oh-my-posh/jandedobbeleer.omp.json" | Invoke-Expression
+```
+
+> [!TIP]
+> mise で入れた場合、置かれるのは実行ファイル 1 つだけで、テーマのファイルは手元にありません。テーマ名で試して `config export` で取ってくる、というのはそのための手順です。名前に `minimal` がつくテーマは Nerd Font 無しでも崩れないので、フォントを入れる前に試すならそれを選んでください。
+
+## 設定ファイルを自分で書く
+
+テーマをそのまま使ってもよいのですが、書き出したファイルを開くと 7 KB ほどの JSON で、何がどこを描いているのかは一見して分かりません。**自分で 1 から組み立ててみる**のが、読めるようになる近道です。
+
+構造は 3 段です。ターミナルの 1 行が block、その中の帯 1 つが segment、segment の中身を決めるのが template です。
+
+![「ターミナルの 1 行が block、その中の帯 1 つが segment」の図。左にターミナルの出力として ~/app、main ~1、ok の帯と右端の時刻、2 行目の ❯ があり、それぞれに block: 左のプロンプト（prompt, alignment: left）、rprompt（右端に出す）、block: newline（改行して次の行へ）の括弧がついている。右に帯 1 つの定義として、segment の type・style・foreground・background・template が並び、type は何を出すか、template はどう書くか、と添えてある](oh-my-posh-anatomy.svg)
+
+- **block** — 行の単位。左寄せの `prompt` と、右端に寄せる `rprompt` がある。`newline` を `true` にすると次の行に移る
+- **segment** — 帯の単位。`type` で何を表示するかを選び、`template` でどう書くかを決める
+- **template** — Go の `text/template` 記法。`{{ .Path }}` のように、そのセグメントが用意した値を埋め込む
+
+これを、1 つずつ足しながら見ていきます。作業場所は `~/work/app` という名前の git リポジトリで、`package.json` が置いてあります。
+
+### 1. パスだけ
+
+まず、現在のディレクトリだけを出す最小の設定です。`~/.config/oh-my-posh/mine.omp.json` として保存します。
+
+```json title="~/.config/oh-my-posh/mine.omp.json"
+{
+  "$schema": "https://raw.githubusercontent.com/JanDeDobbeleer/oh-my-posh/main/themes/schema.json",
+  "version": 4,
+  "final_space": true,
+  "blocks": [
+    {
+      "type": "prompt",
+      "alignment": "left",
+      "segments": [
+        {
+          "type": "path",
+          "style": "powerline",
+          "powerline_symbol": "\ue0b0",
+          "foreground": "#ffffff",
+          "background": "#61afef",
+          "template": " \uea83 {{ .Path }} ",
+          "options": { "style": "folder" }
+        }
+      ]
+    }
+  ]
+}
+```
+
+![path セグメントだけのプロンプト。青い帯にフォルダのアイコンと app が入っている](oh-my-posh-step1-path.avif)
+
+上から順に読みます。
+
+- `$schema` — エディタに補完とエラー表示をさせるためのもの。VS Code なら、これがあるだけでキー名の候補が出ます
+- `version: 4` — 設定ファイル形式の版。今は 4 です
+- `final_space` — プロンプトの末尾に空白を 1 つ置く。無いとカーソルが帯にくっつきます
+- `blocks` — 左寄せの `prompt` ブロックが 1 つ
+- `segments` — その中に `path` セグメントが 1 つ
+
+セグメントの中身です。`style: "powerline"` は、右端を `powerline_symbol` の文字（`\ue0b0`、右向きの三角）で閉じるスタイルです。`template` の `\uea83` はフォルダのアイコンで、`{{ .Path }}` が実際のパスに置き換わります。`options.style: "folder"` は、パス全体ではなく最後のディレクトリ名だけを出す指定です。`full`（全部）や `agnoster_short`（途中を省略）など、[10 種類](https://ohmyposh.dev/docs/segments/system/path#style)から選べます。
+
+`\ue0b0` や `\uea83` のように直接コードポイントで書いているのが Nerd Font の文字です。エディタで開いたときにアイコンとして見えないのはこのためで、読むときは[チートシート](https://www.nerdfonts.com/cheat-sheet)で引きます。
+
+### 2. git の状態を足す
+
+さっきの `mine.omp.json` の `segments` 配列に、`path` セグメントの次の要素として `git` セグメントを足します。`path` セグメントの閉じ括弧 `}` に `,` を付けて、そのあとに続けます。ここから先は前の段階からの差分で示します。`-` の行を `+` の行に置き換えてください。
+
+```diff title="~/.config/oh-my-posh/mine.omp.json"
+       "segments": [
+         {
+           "type": "path",
+           "style": "powerline",
+           "powerline_symbol": "\ue0b0",
+           "foreground": "#ffffff",
+           "background": "#61afef",
+           "template": " \uea83 {{ .Path }} ",
+           "options": { "style": "folder" }
+-        }
++        },
++        {
++          "type": "git",
++          "style": "powerline",
++          "powerline_symbol": "\ue0b0",
++          "foreground": "#193549",
++          "background": "#95ffa4",
++          "background_templates": [
++            "{{ if or (.Working.Changed) (.Staging.Changed) }}#ff9248{{ end }}"
++          ],
++          "template": " {{ .HEAD }}{{ if .Working.Changed }} \uf044 {{ .Working.String }}{{ end }}{{ if .Staging.Changed }} \uf046 {{ .Staging.String }}{{ end }} "
++        }
+       ]
+```
+
+作業ツリーに変更が無いときと、ファイルを触ったあとで、こう変わります。
+
+![path と git のプロンプト。作業ツリーに変更が無い状態で、git の帯が緑で main とだけ出ている](oh-my-posh-step2-git-clean.avif)
+
+![同じプロンプトで、作業ツリーに変更がある状態。git の帯がオレンジになり、main のあとに ?1 ~1 と出ている](oh-my-posh-step2-git-dirty.avif)
+
+新しく出てきたのが 2 つあります。
+
+**`background_templates`** は、条件つきの背景色です。配列の中のテンプレートを順に評価して、空でない結果を返した最初のものが背景色になります。ここでは「作業ツリーかステージに変更があればオレンジ」で、どれにも当たらなければ `background` の緑に落ちます。前景色にも同じ `foreground_templates` があります。
+
+**`template` の中の `if`** で、変更があるときだけ `\uf044`（鉛筆のアイコン）と件数を出しています。`.Working.String` は `?1 ~1` のような文字列で、`?` が追跡していないファイル、`~` が変更したファイル、`+` が追加、`-` が削除です。
+
+`git` セグメントが使える値は `.HEAD`、`.Branch`、`.Ahead`、`.Behind`、`.StashCount`、`.UpstreamIcon` など[たくさんあります](https://ohmyposh.dev/docs/segments/scm/git#properties)。テンプレートに書いた値だけを取りに行くので、**書かなければその分速い**、という作りになっています。
+
+### 3. 終了ステータスと実行時間
+
+直前のコマンドがどうなったかを出します。`executiontime` と `status` の 2 つを、`git` セグメントの次に足します。
+
+```diff title="~/.config/oh-my-posh/mine.omp.json"
+           "template": " {{ .HEAD }}{{ if .Working.Changed }} \uf044 {{ .Working.String }}{{ end }}{{ if .Staging.Changed }} \uf046 {{ .Staging.String }}{{ end }} "
+-        }
++        },
++        {
++          "type": "executiontime",
++          "style": "powerline",
++          "powerline_symbol": "\ue0b0",
++          "foreground": "#ffffff",
++          "background": "#83769c",
++          "template": " \ueba2 {{ .FormattedMs }} ",
++          "options": { "threshold": 500 }
++        },
++        {
++          "type": "status",
++          "style": "diamond",
++          "trailing_diamond": "\ue0b4",
++          "foreground": "#ffffff",
++          "background": "#00897b",
++          "background_templates": [
++            "{{ if gt .Code 0 }}#e91e63{{ end }}"
++          ],
++          "template": " {{ if gt .Code 0 }}\uf00d {{ .Code }}{{ else }}\uf00c{{ end }} ",
++          "options": { "always_enabled": true }
++        }
+       ]
+```
+
+成功したときと、2.34 秒かかって終了コード 1 で失敗したときです。
+
+![path、git、status のプロンプト。直前のコマンドが成功して、緑の帯にチェックマークだけが出ている](oh-my-posh-step3-status-ok.avif)
+
+![同じプロンプトで、直前のコマンドが失敗した状態。実行時間 2.34s の帯が現れ、status の帯が赤くなって ✕ 1 と出ている](oh-my-posh-step3-status-fail.avif)
+
+`executiontime` は `threshold`（ミリ秒）より短いと出ません。成功した側に帯が無いのはそのためで、「時間がかかったときだけ知りたい」を既定で満たしています。`status` は逆に `always_enabled: true` で常に出し、色で成否を示しています。
+
+`style: "diamond"` は、末尾を `trailing_diamond` の文字（`\ue0b4`、丸い右端）で閉じるスタイルです。行の最後のセグメントを丸く終えると、帯の列が締まって見えます。スタイルは全部で 4 つあります。
+
+| style | 見た目 |
+|---|---|
+| `powerline` | 右端を `powerline_symbol` で閉じ、次の帯へ食い込む |
+| `diamond` | 先頭と末尾をそれぞれ `leading_diamond` / `trailing_diamond` で閉じる |
+| `plain` | 帯を描かず、色つきの文字だけ |
+| `accordion` | 表示する内容が無いときも、帯だけは残す |
+
+### 4. 右端と 2 行目
+
+最後に、`blocks` の配列に 2 つ足します。右端に時刻を出す `rprompt` と、入力位置を次の行に移す `newline` のブロックです。今度は `segments` ではなく、その外側の `blocks` の話なので、足す場所は最初のブロックの閉じ括弧のあとです。
+
+```diff title="~/.config/oh-my-posh/mine.omp.json"
+           "options": { "always_enabled": true }
+         }
+       ]
+-    }
++    },
++    {
++      "type": "rprompt",
++      "segments": [
++        {
++          "type": "time",
++          "style": "plain",
++          "foreground": "#2e9599",
++          "template": "\uf017 {{ .CurrentDate | date .Format }}",
++          "options": { "time_format": "15:04" }
++        }
++      ]
++    },
++    {
++      "type": "prompt",
++      "alignment": "left",
++      "newline": true,
++      "segments": [
++        {
++          "type": "text",
++          "style": "plain",
++          "foreground": "#61afef",
++          "template": "\u276f"
++        }
++      ]
++    }
+   ]
+ }
+```
+
+ついでに、`node` セグメントも入れておきます。こちらは最初のブロックの `segments` の中で、`git` と `executiontime` の間です。
+
+```diff title="~/.config/oh-my-posh/mine.omp.json"
+           "template": " {{ .HEAD }}{{ if .Working.Changed }} \uf044 {{ .Working.String }}{{ end }}{{ if .Staging.Changed }} \uf046 {{ .Staging.String }}{{ end }} "
+         },
++        {
++          "type": "node",
++          "style": "powerline",
++          "powerline_symbol": "\ue0b0",
++          "foreground": "#ffffff",
++          "background": "#6ca35e",
++          "template": " \ue718 {{ .Full }} "
++        },
+         {
+           "type": "executiontime",
+```
+
+![完成したプロンプト。1 行目に app、main ?1 ~1、Node.js 26.8.2、チェックマークの帯が並び、右端に時計のアイコンと 19:46、2 行目の先頭に青い ❯ がある](oh-my-posh-step4-rprompt.avif)
+
+`node` セグメントが `26.8.2` を出しているのは、このディレクトリに `package.json` があるからです。言語系のセグメントは、そのプロジェクトのファイルを見つけたときだけ現れます。`~` に戻れば消えます。
+
+`time_format` は Go の日時書式です。`15:04` が「時:分」で、`2006-01-02` が「年-月-日」。数字そのものが書式になっているので、最初は面食らいますが慣れます。
+
+これで、この記事の冒頭に出したものとだいたい同じ骨格のプロンプトができました。`$PROFILE` の `--config` をこの `mine.omp.json` に向ければ、シェルでもこの見た目になります。ここから先は、セグメントを足したり色を変えたりの繰り返しです。
+
+### 直したら、どう見えるかを描かせる
+
+設定を直すたびにシェルを開き直すのは面倒です。`oh-my-posh config export image` で、**設定ファイルから SVG を描かせる**ことができます。
+
+```console
+❯ oh-my-posh config export image --config ~/.config/oh-my-posh/mine.omp.json --output ~/prompt.svg
+❯ ls -la ~/prompt.svg
+-rw-r--r-- 1 Jam 197611 3239 19:55 prompt.svg
+```
+
+この記事に載せたプロンプトの画像は、すべてこのコマンドで描いたものを AVIF に変換しただけです。SVG のテキストは Nerd Font 前提なので、開くマシンにもフォントが要ります。
+
+JSON が窮屈なら、YAML や TOML でも書けます。`config export --format` で変換できるので、書き出してから直すのが楽です。
+
+```console
+❯ oh-my-posh config export --config ~/.config/oh-my-posh/mine.omp.json --format toml | head -12
+version = 4
+final_space = true
+
+[upgrade]
+  source = 'cdn'
+  interval = '168h'
+  auto = false
+  notice = false
+
+[[blocks]]
+  type = 'prompt'
+  alignment = 'left'
+```
+
+## 私の設定
+
+冒頭の画像の設定は、公式テーマの `jandedobbeleer` を書き出して、セグメントを足したり引いたりしたものです。全部で 20 ほどのセグメントがあり、載せるには長いので、変えたところだけ書きます。
+
+- **`git` に `disable_with_jj: true`** — [jj の colocated リポジトリ](/ja/blog/getting-started-with-jujutsu)では `.git` もあるので、そのままだと git と jj の両方の帯が出ます。このオプションで git 側を黙らせて、`jujutsu` セグメントだけにしています
+- **`jujutsu` セグメント** — テンプレートは `{{ .ClosestBookmarks }}`（いちばん近いブックマーク）、`{{ .AheadCount }}`（そこから何個進んだか）、`{{ .ChangeID }}`（変更 ID の短縮）。冒頭の画像で `main ↑1 ls` と出ているのがそれで、`main` から 1 つ進んだ、変更 ID が `ls` で始まる変更にいる、と読めます
+- **`sapling`、`terraform`（`command: "tofu"`）、`bun`** — 使っているツールの分を足しています。terraform セグメントは既定で `terraform` コマンドを呼ぶので、OpenTofu の名前に変えています
+- **`async: true` と `streaming: 100`** — 後述します
+
+どのセグメントにどれだけ時間がかかっているかは、`oh-my-posh debug` で見られます。このブログのリポジトリで実行したものです。
+
+```console
+❯ oh-my-posh debug --plain --config "$HOME/OneDrive/ドキュメント/PowerShell/jambalaya.omp.json"
+...
+Segments:
+
+ConsoleTitle(true)                         -   0 ms
+Session(true)                              -   2 ms
+Path(true)                                 -   4 ms
+Git(false)                                 -   0 ms
+Jujutsu(true)                              - 186 ms
+Sapling(false)                             -   6 ms
+Terraform(false)                           -   4 ms
+Spotify(false)                             -  32 ms
+Node(true)                                 -   2 ms
+Bun(true)                                  -   5 ms
+Go(false)                                  -   5 ms
+Python(false)                              -   5 ms
+Azfunc(false)                              -   4 ms
+Aws(false)                                 -   0 ms
+Root(false)                                -   1 ms
+Executiontime(true)                        -   0 ms
+Status(true)                               -   4 ms
+Shell(true)                                -   0 ms
+Claude(false)                              -   4 ms
+Battery(true)                              -   0 ms
+Time(true)                                 -   0 ms
+
+Run duration: 604.7916ms
+
+Cache path: C:\Users\Jam\AppData\Local\oh-my-posh
+
+Config path: C:\Users\Jam\OneDrive\ドキュメント\PowerShell\jambalaya.omp.json
+```
+
+括弧の中がそのセグメントを表示したかどうかで、右が取得にかかった時間です。`Git(false)` は `disable_with_jj` が効いている証拠で、代わりに `Jujutsu(true)` が 186 ms 使っています。**プロンプトが遅いと感じたら、まずこれを見る**と犯人が分かります。
+
+その jj の 186 ms を毎回待たないための設定が、トップレベルの `async` と `streaming` です。`async: true` は、プロンプトの描画を待たずに入力を受け付ける設定。`streaming: 100` は、100 ミリ秒以内に終わらなかったセグメントをいったん `...` で描いておいて、値が揃った時点でその場で差し替える設定です（ドキュメントではベータ扱い）。どちらも、セグメントを増やすほど効いてきます。
+
+## 実際に踏んだ罠
+
+### mise と一緒に使うと、`prompt` 関数の取り合いになる
+
+これが、この記事でいちばん伝えたいことです。
+
+私は Oh My Posh も mise で入れているので、`$PROFILE` には `mise activate pwsh` と `oh-my-posh init pwsh` の両方があります。この 2 つは、**どちらも PowerShell の `prompt` 関数を書き換えます**。
+
+mise の側を見ると、こうなっています。
+
+```console
+❯ mise activate pwsh | grep -n -A3 'function global:prompt'
+198:        function global:prompt {
+199-            if (Test-Path -Path Function:\_mise_hook){
+200-                # Skip only when the chpwd handler already ran hook-env for this
+201-                # exact directory and the MISE_* state has not changed since.
+```
+
+mise は、**その時点の `prompt` 関数を退避して、自分の処理のあとにそれを呼ぶ**ラッパーを被せます。プロンプトを描くたびに `hook-env` を走らせて、ディレクトリごとのツールを PATH に載せるためです。
+
+一方、Oh My Posh は上で見たとおり、`$Function:prompt = $promptFunction` で**上書き**します。前に何があったかは見ません。
+
+つまり順番が問題になります。
+
+![「$PROFILE の読み込み順 — prompt を最後に握るのはどちらか」の図。左の「動く順」は 1 に oh-my-posh init pwsh（prompt を握る）、2 に mise activate pwsh（包む）で、毎回 hook-env → oh-my-posh の順に動く。右の「壊れる順」は 1 に mise activate pwsh（古い prompt を包む）、2 に oh-my-posh init pwsh（ラッパーを上書き）で、hook-env は cd のときだけになる](oh-my-posh-init-order.svg)
+
+正しい順で読み込んだシェルと、逆の順で読み込んだシェルで、`prompt` 関数に mise のフックが残っているかを確かめました。
+
+```console
+❯ (Get-Command prompt).Definition -match '_mise_hook'   # init が先、activate が後
+True
+❯ (Get-Command prompt).Definition -match '_mise_hook'   # activate が先、init が後
+False
+```
+
+逆順だと、mise のフックがプロンプトから消えています。ディレクトリを移動したときのフック（`chpwd`）は別に残るので、`cd` すれば切り替わりはします。ただ、その場で `mise use` したり `mise.toml` を直したりしても、次のプロンプトでは反映されません。気づきにくい壊れ方です。
+
+答えは「**`oh-my-posh init` を先に、`mise activate` を後に**」です。ただし、Oh My Posh を mise で入れている場合はもう 1 つ問題があって、`mise activate` の前は Oh My Posh が PATH に無いので、素の `oh-my-posh` は見つかりません。そこで `mise x`（`mise exec`）で呼びます。
+
+```powershell title="$PROFILE"
+# oh-my-posh is mise-managed. This line runs before `mise activate` below, so the
+# tool is not on PATH yet; swapping the order would let oh-my-posh's own `prompt`
+# overwrite mise's wrapper and kill the per-prompt hook-env. Hence `mise x`.
+mise x -- oh-my-posh init pwsh --config "$HOME/.config/oh-my-posh/mine.omp.json" | Invoke-Expression
+
+mise activate pwsh | Out-String | Invoke-Expression
+```
+
+これが私の `$PROFILE` の冒頭です（`--config` のパスだけ、この記事の例に合わせて `mine.omp.json` にしてあります）。理由をコメントに書いておかないと、いつか自分で順番を入れ替えて壊すので、書いてあります。
+
+### PowerShell のプロファイルは 4 つある
+
+`$PROFILE` は文字列のように見えますが、実は 4 つのパスを持っています。
+
+```console
+❯ $PROFILE | Select-Object AllUsersAllHosts,AllUsersCurrentHost,CurrentUserAllHosts,CurrentUserCurrentHost | Format-List
+AllUsersAllHosts       : C:\Program Files\PowerShell\7\profile.ps1
+AllUsersCurrentHost    : C:\Program Files\PowerShell\7\Microsoft.PowerShell_profile.ps1
+CurrentUserAllHosts    : C:\Users\Jam\OneDrive\ドキュメント\PowerShell\profile.ps1
+CurrentUserCurrentHost : C:\Users\Jam\OneDrive\ドキュメント\PowerShell\Microsoft.PowerShell_profile.ps1
+```
+
+`$PROFILE` をそのまま使うと、最後の `CurrentUserCurrentHost` を指します。「CurrentHost」の部分がくせ者で、**ターミナルで開いた PowerShell と、VS Code の統合ターミナルで開いた PowerShell は、別のホスト扱い**になることがあります。片方でだけプロンプトが変わらないときは、そのアプリで `$PROFILE` が何を指しているかを確認してください。どのホストでも読ませたいなら、`CurrentUserAllHosts` の `profile.ps1` に書きます。
+
+ついでに、私の環境でパスが `ドキュメント` の下になっているのは、Windows のドキュメントフォルダを OneDrive が管理しているからです。おかげで設定ファイルが勝手に同期されるので、そのまま使っています。
+
+### フォントを入れたのに四角が出る
+
+Nerd Font を入れて、ターミナルの設定も変えたのに四角が残る場合、たいてい次のどれかです。
+
+- **ターミナルの設定を変えたプロファイルが違う** — Windows Terminal は、既定の設定とプロファイルごとの設定が別です。`defaults` に書くか、使っているプロファイルに書くか、どちらかに揃えます
+- **WSL やコンテナの中で動かしている** — フォントを描くのは Windows 側のターミナルなので、フォントは**ホスト側**に入れます。WSL の中で `oh-my-posh font install` しても意味がありません
+- **ターミナルを開き直していない** — フォントの追加は、開いているウィンドウには反映されないことがあります
+
+## よく使うコマンド
+
+```bash
+oh-my-posh version                        # バージョン
+oh-my-posh init pwsh --config <path>      # $PROFILE に書く 1 行
+oh-my-posh font list                      # 入れられる Nerd Font
+oh-my-posh font install <name>            # Nerd Font を入れる
+oh-my-posh config export --config <theme> --output <path>   # テーマを手元に書き出す
+oh-my-posh config export image --config <path> --output <svg>   # 設定を SVG に描く
+oh-my-posh debug                          # セグメントごとの所要時間
+oh-my-posh upgrade                        # 自分自身を更新する（パッケージマネージャで入れた場合はそちらで）
+```
+
+## まとめ
+
+- Oh My Posh は、**プロンプトの設定を 1 つのファイルにまとめて、どのシェルでも同じ見た目にする**ツール
+- 最初に見る四角は壊れているのではなく、**Nerd Font が無い**だけ。入れたらターミナル側の設定も変える
+- テーマは名前で試して、気に入ったら `config export` で手元に置く
+- 設定ファイルは block → segment → template の 3 段。`config export image` で描かせながら直すと早い
+- mise と一緒に使うなら、**`oh-my-posh init` が先、`mise activate` が後**。逆にすると mise のプロンプトごとのフックが消える
+
+プロンプトは、1 日に何百回も見るものです。1 時間かけて整えれば、その後ずっと効いてきます。
