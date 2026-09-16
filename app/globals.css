@@ -997,12 +997,19 @@
     border: 1px solid var(--cyber-line);
     color: var(--cyber-cyan);
   }
+  /* A block never grows taller than seven tenths of the viewport: past that
+     the code face scrolls inside its frame, so a long config or transcript
+     does not push the prose that explains it off the screen. The strip above
+     and the counts below sit outside the `pre`, so they stay put while the
+     text scrolls. `svh` is the height with the phone's toolbars shown, which
+     is the one the reader actually has. */
   .prose-cyber pre {
     background: var(--cyber-code-bg);
     border: 1px solid var(--cyber-line);
     padding: 16px;
     font-family: var(--blog-font-mono);
     font-size: 13px;
+    max-height: 70svh;
     overflow: auto;
     position: relative;
     margin: 1.4em 0;
