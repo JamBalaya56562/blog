@@ -63,10 +63,43 @@ env:
   IS_PUSH: ${{ github.event_name == 'push' || inputs.push == true }}
 
 jobs:
-  build:
+  meta:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
     if: github.repository_owner == 'jambalaya56562'
+    outputs:
+      is-push: ${{ env.IS_PUSH }}
+      version: ${{ steps.meta.outputs.version }}
+      tags: ${{ steps.meta.outputs.tags }}
+      labels: ${{ steps.meta.outputs.labels }}
+      annotations: ${{ steps.meta.outputs.annotations }}
+      json: ${{ steps.meta.outputs.json }}
+
+    steps:
+      - name: ℹ️ Docker Meta
+        id: meta
+        uses: docker/metadata-action@v6
+        with:
+          images: |
+            name=${{ env.REPOSITORY }}
+            name=${{ env.GHCR_REGISTRY }}/${{ env.GHCR_REPOSITORY }},enable=${{ fromJSON(env.IS_PUSH) }}
+          labels: org.opencontainers.image.revision=${{ env.SHA }}
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}},enable=${{ !startsWith(github.ref, 'refs/tags/v0.') }}
+            type=ref,event=pr,prefix=pr-
+            type=raw,value=canary,enable=${{ github.event_name != 'pull_request_target' }}
+        env:
+          DOCKER_METADATA_ANNOTATIONS_LEVELS: ${{ fromJSON(env.IS_PUSH) && 'manifest,index' || 'manifest' }}
+
+  build:
+    runs-on: ${{ matrix.arch == 'arm64' && 'ubuntu-26.04-arm' || 'ubuntu-latest' }}
+    timeout-minutes: 30
+    needs: meta
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: ${{ fromJSON(fromJSON(needs.meta.outputs.is-push) && '["amd64", "arm64"]' || '["amd64"]') }}
 
     steps:
       - name: 📥 Checkout
@@ -90,60 +123,119 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: 🐦‍⬛ Set up QEMU
-        uses: docker/setup-qemu-action@v4
-
       - name: 🛠️ Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
 
-      - name: ℹ️ Docker Meta
-        id: meta
-        uses: docker/metadata-action@v6
-        with:
-          images: |
-            name=${{ env.REPOSITORY }}
-            name=${{ env.GHCR_REGISTRY }}/${{ env.GHCR_REPOSITORY }},enable=${{ fromJSON(env.IS_PUSH) }}
-          labels: org.opencontainers.image.revision=${{ env.SHA }}
-          tags: |
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=semver,pattern={{major}},enable=${{ !startsWith(github.ref, 'refs/tags/v0.') }}
-            type=ref,event=pr,prefix=pr-
-            type=raw,value=canary,enable=${{ github.event_name != 'pull_request_target' }}
-        env:
-          DOCKER_METADATA_ANNOTATIONS_LEVELS: ${{ fromJSON(env.IS_PUSH) && 'manifest,index' || 'manifest' }}
-
       - name: 🚀 Build and Push
-        uses: docker/build-push-action@v7
         id: push
+        uses: docker/build-push-action@v7
         with:
-          annotations: ${{ steps.meta.outputs.annotations }}
-          cache-from: type=gha
-          cache-to: ${{ github.event_name != 'pull_request_target' && 'type=gha,mode=max' || '' }}
+          annotations: ${{ needs.meta.outputs.annotations }}
+          cache-from: type=gha,scope=linux/${{ matrix.arch }}
+          cache-to: ${{ github.event_name != 'pull_request_target' && format('type=gha,mode=max,scope=linux/{0}', matrix.arch) || '' }}
           context: ${{ github.event_name == 'pull_request_target' && env.CONTEXT || '.' }}
-          labels: ${{ steps.meta.outputs.labels }}
+          labels: ${{ needs.meta.outputs.labels }}
           load: ${{ !fromJSON(env.IS_PUSH) }}
           no-cache: ${{ inputs.no-cache == true }}
-          platforms: ${{ fromJSON(env.IS_PUSH) && 'linux/amd64,linux/arm64' || 'linux/amd64' }}
+          outputs: ${{ fromJSON(env.IS_PUSH) && format('type=image,"name={0},{1}/{2}",push-by-digest=true,name-canonical=true,push=true', env.REPOSITORY, env.GHCR_REGISTRY, env.GHCR_REPOSITORY) || '' }}
+          platforms: linux/${{ matrix.arch }}
           provenance: ${{ fromJSON(env.IS_PUSH) && 'mode=max' }}
-          push: ${{ fromJSON(env.IS_PUSH) }}
           sbom: ${{ fromJSON(env.IS_PUSH) }}
-          tags: ${{ steps.meta.outputs.tags }}
+          tags: ${{ !fromJSON(env.IS_PUSH) && needs.meta.outputs.tags || '' }}
           build-args: |
             GITHUB_REPO=${{ github.event.repository.name }}
-
-      - name: 🪪 Attest
-        if: fromJSON(env.IS_PUSH)
-        uses: actions/attest@v4.2.2
-        with:
-          subject-name: ${{ env.GHCR_REGISTRY }}/${{ env.GHCR_REPOSITORY }}
-          subject-digest: ${{ steps.push.outputs.digest }}
 
       - name: 🔎 Docker Scout
         if: github.event_name == 'pull_request_target'
         uses: docker/scout-action@v1.24.0
         with:
           command: compare
-          image: ${{ steps.meta.outputs.tags }}
+          image: ${{ needs.meta.outputs.tags }}
           to: ${{ env.REPOSITORY }}:canary
           only-severities: critical,high
+
+      - name: 📤 Export digest
+        if: fromJSON(env.IS_PUSH)
+        env:
+          DIGEST: ${{ steps.push.outputs.digest }}
+        run: mkdir -p digests && echo "${DIGEST#sha256:}" > "digests/${{ matrix.arch }}"
+
+      - name: 🆙 Upload digest
+        if: fromJSON(env.IS_PUSH)
+        uses: actions/upload-artifact@v7
+        with:
+          name: digests-${{ matrix.arch }}
+          path: digests/*
+          if-no-files-found: error
+          retention-days: 1
+
+  merge:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs:
+      - meta
+      - build
+    if: fromJSON(needs.meta.outputs.is-push)
+
+    steps:
+      - name: 📥 Download digests
+        uses: actions/download-artifact@v8
+        with:
+          path: digests
+          pattern: digests-*
+          merge-multiple: true
+
+      - name: 🐋 Login to Docker Hub
+        uses: docker/login-action@v4.6.0
+        with:
+          username: ${{ env.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: 🚢 Login to GitHub Container Registry
+        uses: docker/login-action@v4.6.0
+        with:
+          registry: ${{ env.GHCR_REGISTRY }}
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 🛠️ Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: 🧬 Create manifest lists
+        id: merge
+        working-directory: digests
+        env:
+          ANNOTATIONS: ${{ needs.meta.outputs.annotations }}
+          METADATA_JSON: ${{ needs.meta.outputs.json }}
+          VERSION: ${{ needs.meta.outputs.version }}
+        run: |
+          set -euo pipefail
+          mapfile -t annotations < <(printf '%s\n' "$ANNOTATIONS" | grep '^index:' | sed 's/^/--annotation=/')
+          mapfile -t digests < <(cat ./*)
+          for image in "$REPOSITORY" "$GHCR_REGISTRY/$GHCR_REPOSITORY"; do
+            mapfile -t tags < <(jq -r --arg image "$image" \
+              '.tags[] | select(startswith($image + ":")) | "--tag=" + .' <<< "$METADATA_JSON")
+            docker buildx imagetools create "${tags[@]}" "${annotations[@]}" "${digests[@]/#/$image@sha256:}"
+          done
+          echo "digest=$(docker buildx imagetools inspect \
+            "$GHCR_REGISTRY/$GHCR_REPOSITORY:$VERSION" \
+            --format '{{json .Manifest}}' | jq -r .digest)" >> "$GITHUB_OUTPUT"
+
+      - name: 🪪 Attest
+        uses: actions/attest@v4.2.2
+        with:
+          subject-name: ${{ env.GHCR_REGISTRY }}/${{ env.GHCR_REPOSITORY }}
+          subject-digest: ${{ steps.merge.outputs.digest }}
+
+      - name: 🔍 Inspect
+        env:
+          VERSION: ${{ needs.meta.outputs.version }}
+        run: |
+          set -euo pipefail
+          for image in "$REPOSITORY" "$GHCR_REGISTRY/$GHCR_REPOSITORY"; do
+            docker buildx imagetools inspect "$image:$VERSION" --raw | jq -e '
+              [.manifests[] | "\(.platform.os)/\(.platform.architecture)"] as $platforms
+              | ($platforms | index("linux/amd64")) and ($platforms | index("linux/arm64"))
+              and ([.manifests[] | select(.annotations["vnd.docker.reference.type"] == "attestation-manifest")] | length == 2)
+              and (.annotations | has("org.opencontainers.image.revision"))'
+          done
