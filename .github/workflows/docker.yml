@@ -70,8 +70,8 @@ jobs:
       set-meta-labels: true
       set-meta-annotations: true
       meta-images: |
-        name=jambalaya56562/blog
-        name=ghcr.io/jambalaya56562/blog,enable=${{ github.event_name == 'push' || inputs.push == true }}
+        jambalaya56562/blog
+        ghcr.io/jambalaya56562/blog
       meta-labels: org.opencontainers.image.revision=${{ github.event.pull_request.head.sha || github.sha }}
       meta-tags: |
         type=semver,pattern={{version}}
