@@ -37,7 +37,7 @@ env:
 
 jobs:
   lambda:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04-arm
     timeout-minutes: 30
     if: github.repository_owner == 'jambalaya56562'
 
@@ -51,9 +51,6 @@ jobs:
     - name: 🌳 Login to Amazon ECR
       id: login-ecr
       uses: aws-actions/amazon-ecr-login@v2
-
-    - name: 🐦‍⬛ Set up QEMU
-      uses: docker/setup-qemu-action@v4
 
     - name: 🛠️ Set up Docker Buildx
       uses: docker/setup-buildx-action@v4
