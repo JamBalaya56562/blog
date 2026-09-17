@@ -1,4 +1,4 @@
-# syntax=docker.io/docker/dockerfile-upstream:1.26.0-labs
+# syntax=docker/dockerfile:1
 # check=error=true
 FROM oven/bun:1.4.2 AS builder
 WORKDIR /usr/src/app
