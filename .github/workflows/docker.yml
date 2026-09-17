@@ -5,7 +5,7 @@ concurrency:
   cancel-in-progress: true
 
 on:
-  pull_request_target:
+  pull_request:
     paths:
       - "app/**"
       - "components/**"
@@ -48,102 +48,59 @@ on:
         type: boolean
 
 permissions:
-  attestations: write
-  id-token: write
-  packages: write
-  pull-requests: write
-
-env:
-  DOCKERHUB_USERNAME: jambalaya56562
-  REPOSITORY: jambalaya56562/blog
-  GHCR_REGISTRY: ghcr.io
-  GHCR_REPOSITORY: jambalaya56562/blog
-  SHA: ${{ github.event.pull_request.head.sha || github.sha }}
-  CONTEXT: ${{ github.server_url }}/${{ github.repository }}.git#${{ github.event.pull_request.head.sha || github.sha }}
-  IS_PUSH: ${{ github.event_name == 'push' || inputs.push == true }}
+  contents: read
 
 jobs:
   build:
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    if: github.repository_owner == 'jambalaya56562'
-
-    steps:
-      - name: 📥 Checkout
-        if: github.event_name != 'pull_request_target'
-        uses: actions/checkout@v7
-        with:
-          persist-credentials: false
-          ref: ${{ env.SHA }}
-
-      - name: 🐋 Login to Docker Hub
-        uses: docker/login-action@v4.6.0
-        with:
-          username: ${{ env.DOCKERHUB_USERNAME }}
+    uses: docker/github-builder/.github/workflows/build.yml@v1.17.0
+    permissions:
+      contents: read
+      id-token: write
+      packages: write
+    with:
+      output: image
+      push: ${{ github.event_name == 'push' || inputs.push == true }}
+      platforms: linux/amd64,linux/arm64
+      runner: |
+        default=ubuntu-26.04
+        linux/arm64=ubuntu-26.04-arm
+      cache: ${{ inputs.no-cache != true }}
+      cache-mode: max
+      sbom: ${{ github.event_name == 'push' || inputs.push == true }}
+      set-meta-labels: true
+      set-meta-annotations: true
+      meta-images: |
+        name=jambalaya56562/blog
+        name=ghcr.io/jambalaya56562/blog,enable=${{ github.event_name == 'push' || inputs.push == true }}
+      meta-labels: org.opencontainers.image.revision=${{ github.event.pull_request.head.sha || github.sha }}
+      meta-tags: |
+        type=semver,pattern={{version}}
+        type=semver,pattern={{major}}.{{minor}}
+        type=semver,pattern={{major}},enable=${{ !startsWith(github.ref, 'refs/tags/v0.') }}
+        type=ref,event=pr,prefix=pr-
+        type=raw,value=canary,enable=${{ github.event_name != 'pull_request' }}
+      build-args: |
+        GITHUB_REPO=${{ github.event.repository.name }}
+    secrets:
+      registry-auths: |
+        - registry: docker.io
+          username: jambalaya56562
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      - name: 🚢 Login to GitHub Container Registry
-        if: fromJSON(env.IS_PUSH)
-        uses: docker/login-action@v4.6.0
-        with:
-          registry: ${{ env.GHCR_REGISTRY }}
+        - registry: ghcr.io
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: 🐦‍⬛ Set up QEMU
-        uses: docker/setup-qemu-action@v4
+  attest:
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.event_name == 'push' || inputs.push == true
+    permissions:
+      attestations: write
+      id-token: write
 
-      - name: 🛠️ Set up Docker Buildx
-        uses: docker/setup-buildx-action@v4
-
-      - name: ℹ️ Docker Meta
-        id: meta
-        uses: docker/metadata-action@v6
-        with:
-          images: |
-            name=${{ env.REPOSITORY }}
-            name=${{ env.GHCR_REGISTRY }}/${{ env.GHCR_REPOSITORY }},enable=${{ fromJSON(env.IS_PUSH) }}
-          labels: org.opencontainers.image.revision=${{ env.SHA }}
-          tags: |
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=semver,pattern={{major}},enable=${{ !startsWith(github.ref, 'refs/tags/v0.') }}
-            type=ref,event=pr,prefix=pr-
-            type=raw,value=canary,enable=${{ github.event_name != 'pull_request_target' }}
-        env:
-          DOCKER_METADATA_ANNOTATIONS_LEVELS: ${{ fromJSON(env.IS_PUSH) && 'manifest,index' || 'manifest' }}
-
-      - name: 🚀 Build and Push
-        uses: docker/build-push-action@v7
-        id: push
-        with:
-          annotations: ${{ steps.meta.outputs.annotations }}
-          cache-from: type=gha
-          cache-to: ${{ github.event_name != 'pull_request_target' && 'type=gha,mode=max' || '' }}
-          context: ${{ github.event_name == 'pull_request_target' && env.CONTEXT || '.' }}
-          labels: ${{ steps.meta.outputs.labels }}
-          load: ${{ !fromJSON(env.IS_PUSH) }}
-          no-cache: ${{ inputs.no-cache == true }}
-          platforms: ${{ fromJSON(env.IS_PUSH) && 'linux/amd64,linux/arm64' || 'linux/amd64' }}
-          provenance: ${{ fromJSON(env.IS_PUSH) && 'mode=max' }}
-          push: ${{ fromJSON(env.IS_PUSH) }}
-          sbom: ${{ fromJSON(env.IS_PUSH) }}
-          tags: ${{ steps.meta.outputs.tags }}
-          build-args: |
-            GITHUB_REPO=${{ github.event.repository.name }}
-
+    steps:
       - name: 🪪 Attest
-        if: fromJSON(env.IS_PUSH)
         uses: actions/attest@v4.2.2
         with:
-          subject-name: ${{ env.GHCR_REGISTRY }}/${{ env.GHCR_REPOSITORY }}
-          subject-digest: ${{ steps.push.outputs.digest }}
-
-      - name: 🔎 Docker Scout
-        if: github.event_name == 'pull_request_target'
-        uses: docker/scout-action@v1.24.0
-        with:
-          command: compare
-          image: ${{ steps.meta.outputs.tags }}
-          to: ${{ env.REPOSITORY }}:canary
-          only-severities: critical,high
+          subject-name: ghcr.io/jambalaya56562/blog
+          subject-digest: ${{ needs.build.outputs.digest }}
