@@ -44,7 +44,7 @@ ready_port = { port = 3000, timeout = "60s" }
 auto = true
 
 [hooks]
-enter = ["mise upgrade -q", "mise deps -q"]
+enter = ["mise deps -q"]
 
 [settings]
 # `[daemons]` is one of the sections gated behind this.
