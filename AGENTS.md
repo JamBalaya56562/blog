@@ -9,34 +9,51 @@ This repository is a multilingual blog built with Next.js (App Router).
 - **Runtime / Package Manager**: Bun
 - **Styling**: Tailwind CSS v4 + PostCSS
 - **Content**: MDX (`next-mdx-remote-client`, `remark-gfm`)
+- **Data**: DynamoDB (page view counts, via `@aws-sdk/lib-dynamodb`); DynamoDB Local in development
 - **Linter / Formatter**: Biome
 - **Testing**: Bun test (unit) + Playwright (E2E)
 - **Tool Management**: Mise
-- **Deployment**: Docker (distroless + AWS Lambda Web Adapter)
+- **Deployment**: Docker (distroless + AWS Lambda Web Adapter), provisioned with OpenTofu
 
 ## Project Structure
 
 ```bash
-app/                  # Next.js App Router pages
-  [locale]/           # Multilingual routing (en, ja)
-    blog/[slug]/      # Blog post page
-    portfolio/        # Portfolio page
-    privacy-policy/   # Privacy policy
-  api/images/         # Image proxy API
-components/           # Shared React components
+app/
+  [locale]/              # Multilingual routing (en, ja)
+    blog/                # Post index (paginated, sortable)
+      [slug]/            # Blog post page
+    portfolio/           # Portfolio page
+    privacy-policy/      # Privacy policy
+    feed.xml/            # Per-locale RSS feed
+    [...rest]/           # Catch-all for unmatched paths
+    opengraph-image.tsx  # OG card (one per route, five in total)
+    error.tsx            # Route error boundary, plus not-found.tsx
+  api/images/[...path]/  # Image proxy API
+  manifest.ts            # Web app manifest, plus robots.ts and sitemap.ts
+  globals.css            # Global stylesheet (see Styling)
+proxy.ts                 # Redirects unprefixed paths to a negotiated locale
+components/              # Shared React components
+  blog/ home/            # Components scoped to a single route
+  skeletons/             # Loading skeletons
+  ui/                    # Presentational primitives
 lib/
-  content/            # Content loader (local / GitHub), adjacent post utils
-  i18n/               # Internationalization (dictionaries, locale config)
-  theme/              # Theme provider and hook (dark/light mode)
-  routes.ts           # Route definitions
-  toc.ts              # Table of contents generation
+  actions/               # Server Actions (view count) and reader/bot detection
+  content/               # Content loader (local / GitHub), frontmatter, adjacent posts
+  db/                    # DynamoDB page view store (client, schema, queries)
+  i18n/                  # Internationalization (dictionaries, locale config, negotiation)
+  og/                    # Open Graph card rendering (`next/og`)
+  theme/                 # Theme provider and hook (dark/light mode)
+  routes.ts              # Route definitions
+  toc.ts                 # Table of contents generation
 content/
-  posts/{en,ja}/      # MDX blog posts
-  images/             # Content images
-public/               # Static assets (logos, icons)
+  posts/{en,ja}/         # MDX blog posts
+  images/                # Content images
+infra/                   # OpenTofu configuration for the AWS deployment
+mise-tasks/              # Task scripts (DynamoDB Local, lint, thumbnails)
+public/                  # Static assets (logos, icons, thumbnails)
 test/
-  unit/               # Bun unit tests
-  e2e/                # Playwright E2E tests
+  unit/                  # Bun unit tests
+  e2e/                   # Playwright E2E tests
 ```
 
 ## Coding Conventions
@@ -49,6 +66,15 @@ test/
 - Semicolons: omitted (`"semicolons": "asNeeded"`)
 - Trailing newline: yes
 
+Biome's assist actions rewrite source, not just report on it — `bun lint:fix`
+will reorder what you wrote — so write code the way they would leave it:
+
+- **Object keys are sorted alphabetically** (`useSortedKeys`). This applies to
+  config objects too — `next.config.ts` and `.devcontainer/devcontainer.json`
+  are both in key order. `package.json` is exempt, since it keeps the
+  conventional npm field order via `useSortedPackageJson`.
+- Duplicate Tailwind classes on one element are removed (`noDuplicateClasses`).
+
 ### TypeScript
 
 - Adhere to `strict: true`
@@ -56,6 +82,10 @@ test/
 - Unused imports are errors (`noUnusedImports: "error"`)
 - `useBlockStatements: "error"` — always use block statements `{}`
 - `noUselessElse: "error"` — do not write unnecessary else clauses
+
+Beyond these explicit rules, Biome runs with its `next`, `react`, `tailwind`,
+`drizzle`, `playwright`, `test`, `types` and `project` domains all set to
+`recommended`, so framework-specific lints are on without being listed here.
 
 ### React / Next.js
 
@@ -94,6 +124,10 @@ MDX output follows the same split: `.prose-cyber` owns what it declares, and
 
 - Blog posts are placed as MDX files in `content/posts/{locale}/`
 - Frontmatter must include `title`, `date`, `description`, `tags`
+- `updated` and `image` are optional. `updated` is rejected if it is earlier
+  than `date`, so a revision date cannot silently predate publication
+- `lib/content/frontmatter.ts` is the only validator; a field it does not read
+  is not part of the format
 - `CONTENT_SOURCE` environment variable switches between local / GitHub sources
 
 ## Testing Strategy
@@ -104,12 +138,18 @@ MDX output follows the same split: `.prose-cyber` owns what it declares, and
 bun test:unit
 ```
 
-- Test runner: Bun test
-- DOM environment: Happy DOM (globally registered via `happydom.ts`)
+- Test runner: Bun test (`bun test --isolate`)
+- Test root is `test/unit/` and the order is randomized (`bunfig.toml`), so
+  tests must not depend on each other or on the order they run in
+- Four preloads run before every test, all registered in `bunfig.toml`:
+  `happydom.ts` for the DOM environment, and `setup-react-mock.ts`,
+  `setup-lucide-mock.ts`, `setup-next-navigation-mock.ts` for the mocks. They
+  are global — do not re-register them per file
 - Test files are placed under `test/unit/` mirroring the source structure
 - File naming: `*.test.ts` / `*.test.tsx`
 - Uses Testing Library (`@testing-library/react`, `@testing-library/dom`)
-- Property-based testing: `fast-check` is available
+- Property-based testing with `fast-check` is established practice here, not
+  just an available dependency; prefer it for pure functions over example rows
 
 ### E2E Tests
 
@@ -120,7 +160,8 @@ bun run build && bun test:e2e
 - Test runner: Playwright
 - Test files are placed under `test/e2e/`
 - Target browsers: Chromium, Firefox, WebKit, Mobile Chrome, Mobile Safari
-- Standalone server (`bun .next/standalone/server.js`) is started before tests
+- Playwright starts the production server itself (`bun start`, configured as
+  `webServer`), which is why the build has to come first
 - CI is limited to 2 retries and 1 worker
 
 ## Commands
@@ -132,8 +173,18 @@ bun run build && bun test:e2e
 | `bun run build` | Production build |
 | `bun start` | Start production server |
 | `bun lint:fix` | Format + lint with Biome (auto-fix) |
+| `mise lint` | Everything `bun lint:fix` does, plus markdown, OpenTofu and emphasis checks |
 | `bun test:unit` | Run unit tests |
 | `bun test:e2e` | Run E2E tests |
+
+`mise lint` is what CI runs, so prefer it over `bun lint:fix` before pushing:
+Biome does not see markdown or `.tf` files, and `lint:emphasis` reports rather
+than repairs.
+
+Other tasks worth knowing (`mise tasks` lists them all): `mise db:setup` brings
+up DynamoDB Local and creates the table, `mise db:scan` dumps every page view
+row as JSON, `mise thumbnail <png> <slug>` encodes a post thumbnail as AVIF, and
+`mise update` updates Bun dependencies and reinstalls.
 
 `.claude/launch.json` does not start a server of its own. It attaches the browser
 preview to `http://localhost:3000`, so bring the server up with
@@ -150,5 +201,14 @@ Follow [Conventional Commits](https://www.conventionalcommits.org/):
 ```
 
 - type: `build`, `chore`, `ci`, `docs`, `feat`, `fix`, `perf`, `refactor`, `revert`, `style`, `test`
-- scope (e.g.): `biome`, `bun`, `common`, `css`, `docker`, `git`, `security`, `vscode`
+- scope: name the part of the repository that changed. `blog` is the most common
+  one by far — it is what a new or edited post under `content/posts/` takes.
+  Others in regular use: `actions`, `ci`, `common`, `css`, `db`, `devcontainer`,
+  `docker`, `e2e`, `i18n`, `infra`, `mdx`, `mise`, `security`, `seo`, `ui`
 - summary: imperative, present tense, lowercase first letter, no trailing period
+
+The type list is not a style preference: `.github/workflows/conventional-commits.yml`
+runs commitlint with `@commitlint/config-conventional`, which rejects anything
+outside it. Scopes are not constrained by that config, so the list above is
+convention rather than enforcement. The check validates the **pull request
+title** as well as every commit on the branch, so both have to parse.
