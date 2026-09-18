@@ -3,7 +3,7 @@ bun = "latest"
 opentofu = "latest"
 pitchfork = "latest"
 rumdl = "latest"
-"github:BtbN/FFmpeg-Builds" = { version = "autobuild-2026-09-08-23-15", exe = "ffmpeg" }
+"github:BtbN/FFmpeg-Builds" = { version = "autobuild-2026-09-17-13-19", exe = "ffmpeg" }
 
 [env]
 AWS_REGION = "ap-northeast-1"
