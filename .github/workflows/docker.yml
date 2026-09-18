@@ -6,32 +6,8 @@ concurrency:
 
 on:
   pull_request:
-    paths:
-      - "app/**"
-      - "components/**"
-      - "content/**"
-      - "lib/**"
-      - "public/**"
-      - "test/**"
-      - ".dockerignore"
-      - "bun.lock"
-      - "Dockerfile"
-      - "package.json"
-      - "*config.*"
   push:
     branches: main
-    paths:
-      - "app/**"
-      - "components/**"
-      - "content/**"
-      - "lib/**"
-      - "public/**"
-      - "test/**"
-      - ".dockerignore"
-      - "bun.lock"
-      - "Dockerfile"
-      - "package.json"
-      - "*config.*"
     tags:
       - "v*.*.*"
   workflow_dispatch:
