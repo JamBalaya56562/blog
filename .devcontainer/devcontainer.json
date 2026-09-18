@@ -20,7 +20,7 @@
     "ghcr.io/devcontainers/features/github-cli:1": {}
   },
   "forwardPorts": [3000],
-  "image": "mcr.microsoft.com/devcontainers/typescript-node:dev-24",
+  "image": "mcr.microsoft.com/devcontainers/typescript-node:dev-26",
   "name": "Blog",
   "postCreateCommand": "mise trust && mise install && bun i",
   "postStartCommand": "bun dev",
