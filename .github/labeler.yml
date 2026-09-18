@@ -25,7 +25,10 @@ docker:
 🪸git:
 - changed-files:
   - any-glob-to-any-file: ['.gitattributes', '.gitignore']
-🧰infrastructure:
+🏗️infrastructure:
+- changed-files:
+  - any-glob-to-any-file: 'infra/**'
+🧰tooling:
 - changed-files:
   - any-glob-to-any-file: ['**/*.toml', '.devcontainer/*', '.editorconfig', 'biome.json']
 ✅test:

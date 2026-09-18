@@ -15,6 +15,9 @@ changelog:
     - title: ✅ Test
       labels:
         - ✅test
+    - title: 🏗️ Infrastructure
+      labels:
+        - 🏗️infrastructure
     - title: 🧰 Maintenance
       labels:
         - "*"
