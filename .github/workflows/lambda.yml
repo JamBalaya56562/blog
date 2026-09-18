@@ -7,18 +7,6 @@ concurrency:
 on:
   push:
     branches: main
-    paths:
-      - "app/**"
-      - "components/**"
-      - "content/**"
-      - "lib/**"
-      - "public/**"
-      - "test/**"
-      - ".dockerignore"
-      - "bun.lock"
-      - "Dockerfile"
-      - "package.json"
-      - "*config.*"
   workflow_dispatch:
     inputs:
       no-cache:
