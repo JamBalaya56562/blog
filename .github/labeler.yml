@@ -1,27 +1,15 @@
 🍱asset:
 - changed-files:
   - any-glob-to-any-file: ['**/*.avif', '**/*.ico', '**/*.png', '**/*.svg']
-🐛bug:
-- head-branch: ['^fix', 'fix']
 ♻️ci:
 - changed-files:
   - any-glob-to-any-file: '.github/**/*.yml'
 ⚙️config:
 - changed-files:
   - any-glob-to-any-file: '*config.*'
-dependencies:
-- changed-files:
-  - any-glob-to-any-file: ['bun.lock', 'package.json']
 docker:
 - changed-files:
   - any-glob-to-any-file: ['.dockerignore', 'Dockerfile']
-📝documentation:
-- changed-files:
-  - any-glob-to-any-file: ['.rumdl.toml', '**/*.md', '**/*.mdx']
-🚀enhancement:
-- all:
-  - changed-files:
-    - any-glob-to-any-file: ['app/**', 'components/**', 'lib/**']
 🪸git:
 - changed-files:
   - any-glob-to-any-file: ['.gitattributes', '.gitignore']
@@ -31,9 +19,6 @@ docker:
 🧰tooling:
 - changed-files:
   - any-glob-to-any-file: ['**/*.toml', '.devcontainer/*', '.editorconfig', 'biome.json']
-✅test:
-- changed-files:
-  - any-glob-to-any-file: ['happydom.ts', 'test/**']
 🆚vscode:
 - changed-files:
   - any-glob-to-any-file: '.vscode/*'
