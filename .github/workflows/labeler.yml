@@ -2,6 +2,11 @@ name: 🏷️ Pull Request Labeler
 
 on:
   pull_request_target:
+    types:
+      - opened
+      - edited
+      - reopened
+      - synchronize
 
 permissions:
   contents: read
@@ -12,7 +17,41 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: 🏷️ Labeling
+    - name: 🏷️ Label by the files changed
       uses: actions/labeler@v7
       with:
         sync-labels: true
+
+    - name: 🏷️ Label by the type in the title
+      uses: actions/github-script@v9
+      env:
+        TITLE: ${{ github.event.pull_request.title }}
+      with:
+        script: |
+          const BY_TYPE = {
+            docs: '📝documentation',
+            feat: '🚀enhancement',
+            fix: '🐛bug',
+            test: '✅test',
+          }
+          const managed = Object.values(BY_TYPE)
+
+          const type = process.env.TITLE.match(/^([a-z]+)(?:\([^)]*\))?!?:/)?.[1]
+          const wanted = BY_TYPE[type]
+
+          const issue = {
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+          }
+          const { data: labels } = await github.rest.issues.listLabelsOnIssue(issue)
+          const current = labels.map((label) => label.name)
+
+          for (const label of managed) {
+            if (label === wanted && !current.includes(label)) {
+              await github.rest.issues.addLabels({ ...issue, labels: [label] })
+            }
+            if (label !== wanted && current.includes(label)) {
+              await github.rest.issues.removeLabel({ ...issue, name: label })
+            }
+          }
