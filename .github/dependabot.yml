@@ -31,3 +31,7 @@ updates:
   - package-ecosystem: "github-actions"
     directory: "/"
     multi-ecosystem-group: "infrastructure"
+
+  - package-ecosystem: "terraform"
+    directory: "/infra"
+    multi-ecosystem-group: "infrastructure"
