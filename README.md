@@ -39,13 +39,13 @@ This project uses DynamoDB for page view tracking. A container runtime is requir
 
 ```bash
 # Start DynamoDB Local in the background and create the table
-mise run db:setup
+mise daemons start db
 ```
 
-`db:setup` hands the container to [pitchfork](https://pitchfork.jdx.dev/) and
-returns once the table exists. The daemon itself is declared in `[daemons]` in
-`mise.toml`. To watch the database's own log instead, run it in the foreground
-and stop it with Ctrl-C:
+The `db` daemon is declared in `[daemons]` in `mise.toml`; mise hands the
+container to [pitchfork](https://pitchfork.jdx.dev/) and returns once the table
+exists. To watch the database's own log instead, run it in the foreground and
+stop it with Ctrl-C:
 
 ```bash
 # Run DynamoDB Local (amazon/dynamodb-local) in the foreground

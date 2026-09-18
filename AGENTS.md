@@ -181,10 +181,9 @@ bun run build && bun test:e2e
 Biome does not see markdown or `.tf` files, and `lint:emphasis` reports rather
 than repairs.
 
-Other tasks worth knowing (`mise tasks` lists them all): `mise db:setup` brings
-up DynamoDB Local and creates the table, `mise db:scan` dumps every page view
-row as JSON, `mise thumbnail <png> <slug>` encodes a post thumbnail as AVIF, and
-`mise update` updates Bun dependencies and reinstalls.
+Other tasks worth knowing (`mise tasks` lists them all): `mise db:scan` dumps
+every page view row as JSON, `mise thumbnail <png> <slug>` encodes a post
+thumbnail as AVIF, and `mise update` updates Bun dependencies and reinstalls.
 
 `.claude/launch.json` does not start a server of its own. It attaches the browser
 preview to `http://localhost:3000`, so bring the server up with
