@@ -27,7 +27,6 @@
   },
   "linter": {
     "domains": {
-      "drizzle": "recommended",
       "next": "recommended",
       "playwright": "recommended",
       "project": "recommended",

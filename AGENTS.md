@@ -84,7 +84,7 @@ will reorder what you wrote — so write code the way they would leave it:
 - `noUselessElse: "error"` — do not write unnecessary else clauses
 
 Beyond these explicit rules, Biome runs with its `next`, `react`, `tailwind`,
-`drizzle`, `playwright`, `test`, `types` and `project` domains all set to
+`playwright`, `test`, `types` and `project` domains all set to
 `recommended`, so framework-specific lints are on without being listed here.
 
 ### React / Next.js

@@ -4,22 +4,15 @@
 /node_modules
 
 # testing
-/blob-report/
 /coverage
-/playwright/.cache/
 /playwright-report/
 /test-results/
 
 # next.js
 /.next/
-/out/
-
-# production
-/build
 
 # misc
 .DS_Store
-*.pem
 
 # debug
 bun-debug.log*
