@@ -5,6 +5,7 @@ on:
     types:
       - opened
       - reopened
+      - synchronize
 
 permissions:
   contents: write
@@ -28,3 +29,10 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_URL: ${{ github.event.pull_request.html_url }}
         run: gh pr merge --auto --squash "$PR_URL"
+
+      - name: 🛑 Disable auto-merge
+        if: steps.metadata.outputs.update-type == 'version-update:semver-major' && github.event.pull_request.auto_merge != null
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+        run: gh pr merge --disable-auto "$PR_URL"
