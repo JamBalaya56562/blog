@@ -15,7 +15,7 @@
     }
   },
   "files": {
-    "includes": ["**", "!**/*.svg", "!**/.sl"]
+    "includes": ["**", "!**/*.svg"]
   },
   "formatter": {
     "useEditorconfig": true

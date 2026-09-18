@@ -9,7 +9,6 @@
 /playwright/.cache/
 /playwright-report/
 /test-results/
-.playwright-mcp/
 
 # next.js
 /.next/

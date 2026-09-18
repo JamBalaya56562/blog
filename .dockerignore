@@ -8,9 +8,7 @@
 .gitignore
 .jj
 .next
-.playwright-mcp
 .rumdl.toml
-.sl
 .vscode
 AGENTS.md
 biome.json

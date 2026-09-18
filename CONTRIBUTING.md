@@ -118,9 +118,9 @@ The [Commit Message Footer](#commit-message-footer) format describes what the fo
   │       │             │
   │       │             └─⫸ Summary in present tense. Not capitalized. No period at the end.
   │       │
-  │       └─⫸ Commit Scope: biome|bun|common|css|docker|git|security|vscode ...
+  │       └─⫸ Commit Scope: blog|mdx|css|seo|mise|docker|actions|infra|db ... (optional)
   │
-  └─⫸ Commit Type: build|chore|ci|docs|feat|fix|perf|refactor|test
+  └─⫸ Commit Type: build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test
 ```
 
 The `<type>` and `<summary>` fields are mandatory, the `(<scope>)` field is optional.
@@ -129,9 +129,9 @@ The `<type>` and `<summary>` fields are mandatory, the `(<scope>)` field is opti
 
 Must be one of the following:
 
-- **build**: Changes that affect the build system or external dependencies (example scopes: npm)
-- **chore**: Updating grunt tasks etc, no production code change
-- **ci**: Changes to our CI configuration files and scripts (examples: CircleCI, Sauce Labs)
+- **build**: Changes that affect the build system or external dependencies (example scopes: bun, docker, mise)
+- **chore**: Other maintenance with no production code change
+- **ci**: Changes to our CI configuration files and scripts (example scopes: actions)
 - **docs**: Documentation only changes
 - **feat**: A new feature
 - **fix**: A bug fix
@@ -143,18 +143,13 @@ Must be one of the following:
 
 ##### Scope
 
-The following is the example list of supported scopes:
+The scope names the part of the project a change lands in. These are the ones in use:
 
-- `biome`
-- `bun`
-- `common`
-- `css`
-- `docker`
-- `git`
-- `npm`
-- `security`
-- `vscode`
-- etc ...
+- `blog`, `mdx`, `css`, `seo`, `i18n`, `a11y` — the site
+- `mise`, `bun`, `docker`, `actions`, `infra`, `db` — tooling, CI and the AWS deployment
+- `common` — changes that span several of the above
+
+Pick the one that describes where the change is, or leave the scope off when none fits.
 
 ##### Summary
 
@@ -163,7 +158,6 @@ Use the summary field to provide a succinct description of the change:
 - use the imperative, present tense: "change" not "changed" nor "changes"
 - don't capitalize the first letter
 - no dot (.) at the end
-- to make commits easier to understand, we recommend adding emojis♥️
 
 ### Commit Message Body
 

@@ -29,7 +29,6 @@
   "scripts": {
     "build": "next build",
     "dev": "next dev",
-    "dev-win": "WATCHPACK_POLLING=true next dev",
     "format": "biome format --write",
     "lint": "biome lint --write",
     "lint:fix": "biome check --write",
