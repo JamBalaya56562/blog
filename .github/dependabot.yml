@@ -22,16 +22,20 @@ updates:
 
   - package-ecosystem: "devcontainers"
     directory: "/"
+    patterns: ["*"]
     multi-ecosystem-group: "infrastructure"
 
   - package-ecosystem: "docker"
     directory: "/"
+    patterns: ["*"]
     multi-ecosystem-group: "infrastructure"
 
   - package-ecosystem: "github-actions"
     directory: "/"
+    patterns: ["*"]
     multi-ecosystem-group: "infrastructure"
 
   - package-ecosystem: "terraform"
     directory: "/infra"
+    patterns: ["*"]
     multi-ecosystem-group: "infrastructure"
