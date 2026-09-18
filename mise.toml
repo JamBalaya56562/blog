@@ -11,9 +11,6 @@ DYNAMODB_ENDPOINT = "{{ env.DYNAMODB_ENDPOINT | default(value='http://127.0.0.1:
 DYNAMODB_TABLE_NAME = "blog-page-views"
 
 [tasks.lint]
-# The fixers run first and the check last: `lint:emphasis` reports rather than
-# repairs, and aborting the list early would leave the remaining fixes unapplied
-# in autofix.ci, which commits whatever the fixers produced even on failure.
 run = [
   "bun lint:fix --unsafe",
   "mise lint:md",
@@ -33,15 +30,6 @@ run = "rumdl check --fix ."
 description = "Update bun dependencies and reinstall"
 run = ["bun update", "mise deps"]
 
-[tasks."db:setup"]
-description = "Start DynamoDB Local in the background and create the table"
-run = "mise daemons start db"
-
-# mise renders these into a pitchfork config under its state directory and
-# registers it, so pitchfork stays the supervisor and has to remain in [tools] —
-# the shell hooks that read this section never install tools themselves.
-# Starting is left explicit rather than `auto = ["start", "stop"]`: entering the
-# repository to read code should not bring a container and a server up.
 [daemons.db]
 run = "mise run db:start"
 ready_cmd = { run = "mise run db:push", timeout = "300s" }
