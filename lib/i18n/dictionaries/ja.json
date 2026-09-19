@@ -2,8 +2,11 @@
   "blog": {
     "clearSearch": "検索をクリア",
     "continueExploring": "他の記事を探す",
+    "countPostOne": "件",
+    "countPosts": "件",
+    "countTagOne": "タグ",
+    "countTags": "タグ",
     "description": "ブログ記事の一覧。TypeScript、Next.js、Tailwind CSS など Web 開発についての記事を、検索・日付順や閲覧数順の並び替え・タグで絞り込めます。",
-    "dispatchesMatch": "件のディスパッチがフィルター条件に一致",
     "dispatchLabel": "ディスパッチ",
     "min": "分",
     "minRead": "分で読める",

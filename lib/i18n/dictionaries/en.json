@@ -2,8 +2,11 @@
   "blog": {
     "clearSearch": "Clear search",
     "continueExploring": "Continue Exploring",
+    "countPostOne": "post",
+    "countPosts": "posts",
+    "countTagOne": "tag",
+    "countTags": "tags",
     "description": "Every dispatch from the blog — write-ups on TypeScript, Next.js, Tailwind CSS and the tools around them. Search, sort by date or views, and filter by tag.",
-    "dispatchesMatch": "dispatches matching filter",
     "dispatchLabel": "DISPATCH",
     "min": "MIN",
     "minRead": "MIN READ",

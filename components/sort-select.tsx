@@ -47,7 +47,7 @@ export function SortSelect({ labels, basePath }: SortSelectProps) {
             key={opt.value}
             onClick={() => setSort(opt.value)}
             aria-pressed={active}
-            className={`px-4 py-2 font-mono text-[10px] uppercase tracking-[0.18em] transition-colors ${
+            className={`px-3 py-2 font-mono text-[10px] uppercase tracking-[0.18em] transition-colors ${
               i > 0 ? "border-l border-cyber-line" : ""
             } ${
               active

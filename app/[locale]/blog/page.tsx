@@ -3,6 +3,7 @@ import Link from "next/link"
 import { notFound } from "next/navigation"
 import { Suspense } from "react"
 import { BlogListRow } from "@/components/blog/blog-list-row"
+import { IndexCounts } from "@/components/blog/index-counts"
 import { TagLink } from "@/components/home/tag-link"
 import { PageTransition } from "@/components/page-transition"
 import { Pagination } from "@/components/pagination"
@@ -99,11 +100,6 @@ async function BlogListContent({
         {dictionary.blog.title}
         <span className="text-cyber-cyan">.</span>
       </h1>
-      <p className="mt-2 font-mono text-xs text-cyber-dim">
-        {"// "}
-        {posts.length} of {allPosts.length} {dictionary.blog.dispatchesMatch}
-      </p>
-
       <div className="mt-7 flex flex-wrap items-center gap-3">
         <div className="min-w-[260px] flex-1 sm:max-w-[380px]">
           <Suspense>
@@ -125,6 +121,13 @@ async function BlogListContent({
             basePath={`/${locale}/blog`}
           />
         </Suspense>
+        {/* The post count is the size of the current result, so a search
+            or a tag changes it. */}
+        <IndexCounts
+          posts={posts.length}
+          tags={tagCounts.size}
+          dictionary={dictionary.blog}
+        />
       </div>
 
       <div className="mt-5 flex flex-wrap gap-1.5">
