@@ -75,6 +75,85 @@ describe("extractToc", () => {
     const ids = extractToc(md).map((i) => i.id)
     expect(new Set(ids).size).toBe(ids.length)
   })
+
+  // A changelog printed inside a console fence starts with `## [unreleased]`
+  // and `### 🚀 Features`; neither is a heading of the post.
+  test("a heading inside a code fence is program output, not an entry", () => {
+    const md = [
+      "## Real",
+      "```console",
+      "❯ git cliff --unreleased",
+      "## [unreleased]",
+      "### 🚀 Features",
+      "```",
+      "### After",
+    ].join("\n")
+    expect(extractToc(md)).toEqual([
+      { id: "real", level: 2, text: "Real" },
+      { id: "after", level: 3, text: "After" },
+    ])
+  })
+
+  test("a fence closes only on its own marker, at least as long", () => {
+    const md = [
+      "~~~~",
+      "## Not this",
+      "```",
+      "## Nor this: a backtick fence does not close a tilde one",
+      "~~~",
+      "## Nor this: three tildes do not close four",
+      "~~~~~",
+      "## Yes",
+      "````md",
+      "```",
+      "## Not this either: the inner fence is shorter",
+      "```",
+      "````",
+      "## Also yes",
+    ].join("\n")
+    expect(extractToc(md).map((i) => i.text)).toEqual(["Yes", "Also yes"])
+  })
+
+  // Three spaces of indent still open a fence; four make an indented code
+  // block, whose backticks are content and open nothing.
+  test("a marker indented four spaces is not a fence", () => {
+    const md = ["    ```", "## Real", "   ```", "## Fenced", "   ```"].join(
+      "\n",
+    )
+    expect(extractToc(md).map((i) => i.text)).toEqual(["Real"])
+  })
+
+  test("a fence closes on CRLF input too", () => {
+    const md = "```\r\n## No\r\n```\r\n## Yes\r\n"
+    expect(extractToc(md)).toEqual([{ id: "yes", level: 2, text: "Yes" }])
+  })
+
+  // The closer is the opening character and nothing else; a line that
+  // starts with the marker and goes on with the other character is content.
+  test("a closer mixed with the other character does not close", () => {
+    const md = ["```", "```~~~", "## No", "```", "## Yes"].join("\n")
+    expect(extractToc(md).map((i) => i.text)).toEqual(["Yes"])
+  })
+
+  // A backtick opener cannot have a backtick after it on the line, so
+  // ```` ```a`b ```` is a paragraph and opens nothing; a tilde opener may.
+  test("a backtick opener with a backtick in its info string is not one", () => {
+    const md = ["```a`b", "## Yes", "~~~a`b", "## No", "~~~", "## Also"].join(
+      "\n",
+    )
+    expect(extractToc(md).map((i) => i.text)).toEqual(["Yes", "Also"])
+  })
+
+  test("an unclosed fence runs to the end", () => {
+    expect(extractToc("## Yes\n```\n## No")).toEqual([
+      { id: "yes", level: 2, text: "Yes" },
+    ])
+  })
+
+  test("a fenced heading does not take an id from a real one after it", () => {
+    const md = "```\n## Setup\n```\n## Setup"
+    expect(extractToc(md)).toEqual([{ id: "setup", level: 2, text: "Setup" }])
+  })
 })
 
 describe("extractText", () => {
