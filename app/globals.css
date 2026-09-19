@@ -377,12 +377,18 @@
   }
   /* table-of-contents list: the scrollbar is a hint that there is more,
      shown only while the list moves; `data-scrolling` is set by the
-     component for 700ms after each scroll event */
+     component for 700ms after each scroll event. Only its colour changes:
+     the track is always there, at its thin width, so the entries keep one
+     width whether the bar is showing or not. It used to come and go, and
+     each time it took 10px with it, an entry that just fit would wrap,
+     the list would grow, the scroll position would shift, and that scroll
+     showed the bar again — a flicker that fed itself. */
   .pp-toc-list {
-    scrollbar-width: none;
+    scrollbar-width: thin;
+    scrollbar-gutter: stable;
+    scrollbar-color: transparent transparent;
   }
   .pp-toc-list[data-scrolling] {
-    scrollbar-width: thin;
     scrollbar-color: var(--cyber-line-hi) transparent;
   }
   /* ---- header parts: hamburger, drop panel, menu items ------------------ */

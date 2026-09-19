@@ -50,9 +50,10 @@ describe("TableOfContents", () => {
 })
 
 describe("TableOfContents scrollbar", () => {
-  // The list hides its scrollbar at rest and shows it only while moving:
-  // `data-scrolling` goes on with the first scroll event and off 700ms after
-  // the last one, and the stylesheet keys `scrollbar-width` off it.
+  // The list keeps a thin gutter for its scrollbar and colours the bar in
+  // only while moving: `data-scrolling` goes on with the first scroll event
+  // and off 700ms after the last one, and the stylesheet keys
+  // `scrollbar-color` off it.
   test("the list is marked scrolling only briefly after a scroll", async () => {
     const { container } = render(<TableOfContents items={items} title="TOC" />)
     const list = container.querySelector("ul")
