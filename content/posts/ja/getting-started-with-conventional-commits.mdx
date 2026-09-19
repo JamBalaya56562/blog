@@ -1,7 +1,7 @@
 ---
 title: Conventional Commits 入門ガイド
 date: "2026-09-17"
-description: コミットメッセージの書き方の規約 Conventional Commits を、書式と利点から、commitlint と husky でのコミット時チェック、CI での検査まで
+description: コミットメッセージの書き方の規約 Conventional Commits を、書式と利点から、commitlint と lefthook でのコミット時チェック、CI での検査まで
 image: /thumbnails/getting-started-with-conventional-commits.avif
 tags:
   - conventional-commits
@@ -172,10 +172,10 @@ Conventional Commits と [Semantic Versioning](https://semver.org/lang/ja/) は�
 
 ```console
 ❯ git log --oneline
-5986478 fix(api): return 404 for an unknown id
-83e1f0e feat(api): add a search endpoint
-c6022d6 build(git): check commit messages with commitlint through husky
-71f2d75 chore: initial commit
+a2dda38 fix(api): return 404 for an unknown id
+c5e0a22 feat(api): add a search endpoint
+9568ccc build(git): check commit messages with commitlint through lefthook
+667aefe chore: initial commit
 ```
 
 `git cliff --bumped-version` は、タグ以降のコミットから次のバージョンを計算して出力します。
@@ -189,7 +189,7 @@ v1.3.0
 
 ```console
 ❯ git log --oneline -1
-444e0f4 feat(api)!: drop the v1 endpoints
+c3bfba0 feat(api)!: drop the v1 endpoints
 ❯ git cliff --bumped-version
 v2.0.0
 ```
@@ -211,7 +211,7 @@ v2.0.0
 
 ### 💼 Other
 
-- *(git)* Check commit messages with commitlint through husky
+- *(git)* Check commit messages with commitlint through lefthook
 ```
 
 「次は何番にするか」を人が考えなくてよくなります。[semantic-release](https://semantic-release.gitbook.io/) や [release-please](https://github.com/googleapis/release-please) は、この計算とタグ付けと公開までを CI で自動化するツールです。
@@ -282,67 +282,84 @@ fix(auth): keep the session alive across a token refresh
 ✔   found 0 problems, 0 warnings
 ```
 
-## husky でコミット時に検査する
+## lefthook でコミット時に検査する
 
-commitlint 単体では、自分で流し込まないと動きません。Git の `commit-msg` フックに繋ぐと、`git commit` のたびに自動で走ります。フックの管理には [husky](https://typicode.github.io/husky/) を使います。
+commitlint 単体では、自分で流し込まないと動きません。Git の `commit-msg` フックに繋ぐと、`git commit` のたびに自動で走ります。フックの管理には [lefthook](https://lefthook.dev/) を使います。Go 製の単体バイナリで、[mise](/ja/blog/getting-started-with-mise) から入れられます。
 
 ```bash
-bun add -d husky
-bunx husky init
+mise use lefthook
 ```
 
-`husky init` が何をしたかを見ておきます。
+設定は `lefthook.yml` に、フック名と、そこで走らせるコマンドを書きます。
+
+```yaml title="lefthook.yml"
+commit-msg:
+  jobs:
+    - run: bun commitlint --edit {1}
+```
+
+`commit-msg` フックには、メッセージが書かれた一時ファイルのパスが引数で渡されます。lefthook はそれを `{1}` に展開し、commitlint の `--edit` がそのファイルを読んで検査します。
+
+`lefthook install` で、この設定を `.git/hooks/` に書き込みます。
 
 ```console
-❯ ls -a .husky
-.  ..  _  pre-commit
-❯ cat .husky/pre-commit
-bun test
-❯ git config core.hooksPath
-.husky/_
+❯ lefthook install
+sync hooks: ✔️(commit-msg)
+❯ ls .git/hooks
+commit-msg
+prepare-commit-msg
 ```
 
-`.husky/` ディレクトリを作り、`pre-commit` に `bun test` を書き、Git のフック置き場を `.husky/_` に向けています。`package.json` には `"prepare": "husky"` が足されていて、`bun install` のたびにこの設定が再現されるので、クローンした人の手元でも同じフックが動きます。
-
-`pre-commit` の `bun test` は、テストをコミット前に走らせたい人向けの雛形です。今回はメッセージの検査だけをしたいので、これは消して、代わりに `commit-msg` を置きます。
-
-```bash title=".husky/commit-msg"
-bun commitlint --edit "$1"
-```
-
-`commit-msg` フックには、メッセージが書かれた一時ファイルのパスが引数で渡されます。`--edit` は、そのファイルを読んで検査するオプションです。
+`.git/hooks/commit-msg` は lefthook を呼ぶだけの短いシェルスクリプトで、中身は `lefthook.yml` の側にあります。`.git/` はクローンに含まれないので、クローンした人はそれぞれ `lefthook install` を一度打つ必要があります。
 
 これで `git commit` が規約を守らせるようになります。規約に沿っていないメッセージでコミットしてみます。
 
 ```console
-❯ git commit -m "add husky"
+❯ git commit -m "add lefthook"
+╭───────────────────────────────────────╮
+│ lefthook  v2.1.14   hook:  commit-msg │
+╰───────────────────────────────────────╯
+┃  bun commitlint --edit {1} ❯
 ⧗   --- input ---
-add husky
+add lefthook
 ✖   subject may not be empty [subject-empty]
 ✖   type may not be empty [type-empty]
 
 ✖   found 2 problems, 0 warnings
 ⓘ   Get help: https://github.com/conventional-changelog/commitlint/#what-is-commitlint
 
-husky - commit-msg script failed (code 1)
+
+exit status 1
+  ────────────────────────────────────
+summary: (done in 1.16 seconds)
+✗ bun commitlint --edit {1} (1.16 seconds)
 ```
 
-コミットは作られず、最後の行で husky がフックの失敗を伝えています。メッセージを直して打ち直します。
+lefthook が枠を描いてフック名を示し、その下に commitlint の指摘が出て、最後にジョブの結果が `✗` で締められています。コミットは作られていません。メッセージを直して打ち直します。
 
 ```console
-❯ git commit -m "build(git): check commit messages with commitlint through husky"
-[main c6022d6] build(git): check commit messages with commitlint through husky
- 5 files changed, 219 insertions(+), 1 deletion(-)
+❯ git commit -m "build(git): check commit messages with commitlint through lefthook"
+╭───────────────────────────────────────╮
+│ lefthook  v2.1.14   hook:  commit-msg │
+╰───────────────────────────────────────╯
+┃  bun commitlint --edit {1} ❯
+
+  ────────────────────────────────────
+summary: (done in 1.21 seconds)
+✓ bun commitlint --edit {1} (1.21 seconds)
+[main 9568ccc] build(git): check commit messages with commitlint through lefthook
+ 6 files changed, 216 insertions(+), 1 deletion(-)
  create mode 100644 .gitignore
- create mode 100644 .husky/commit-msg
  create mode 100644 bun.lock
  create mode 100644 commitlint.config.ts
+ create mode 100644 lefthook.yml
+ create mode 100644 mise.toml
 ```
 
-今度は通りました。`bun.lock` と `commitlint.config.ts` が入っているのが、この記事で作ってきたリポジトリの中身そのものです。
+今度は通りました。`bun.lock` と `commitlint.config.ts`、`lefthook.yml`、`mise.toml` が入っているのが、この記事で作ってきたリポジトリの中身そのものです。
 
 > [!TIP]
-> husky に限らず、フックはコミットの直前に走るものなので、重い処理を入れると毎回のコミットが遅くなります。メッセージの検査は一瞬で終わりますが、`pre-commit` にテスト一式を入れるかどうかは、テストにかかる時間と相談してください。
+> lefthook に限らず、フックはコミットの直前に走るものなので、重い処理を入れると毎回のコミットが遅くなります。メッセージの検査は一瞬で終わりますが、`pre-commit` にテスト一式を入れるかどうかは、テストにかかる時間と相談してください。
 
 ### フックは最後の砦ではない
 
@@ -352,26 +369,26 @@ husky - commit-msg script failed (code 1)
 
 ```console
 ❯ git commit --no-verify -m "wip"
-[main c2cbfa0] wip
+[main 2d2ac02] wip
  1 file changed, 1 insertion(+)
 ```
 
 先ほど弾かれたのと同じ形のメッセージが、そのまま通りました。緊急時のための抜け道ですが、抜け道である以上、使う人がいます。
 
-2 つ目は、Git 以外のツールでコミットすることです。このブログのリポジトリは [Jujutsu](/ja/blog/getting-started-with-jujutsu) で管理しています。jj は Git のリポジトリをそのまま扱いますが、**Git のフックは実行しません。** 先ほどの husky を設定したリポジトリを jj でも開いて、同じメッセージでコミットしてみます。
+2 つ目は、Git 以外のツールでコミットすることです。このブログのリポジトリは [Jujutsu](/ja/blog/getting-started-with-jujutsu) で管理しています。jj は Git のリポジトリをそのまま扱いますが、**Git のフックは実行しません。** 先ほどの lefthook を設定したリポジトリを jj でも開いて、同じメッセージでコミットしてみます。
 
 ```console
 ❯ jj git init --colocate
 Done importing changes from the underlying Git repo.
 Initialized repo in "."
-❯ jj commit -m "add husky"
-Working copy  (@) now at: xuyzvnmv 8535b0cc (empty) (no description set)
-Parent commit (@-)      : zqsvsrrz 1473495c add husky
+❯ jj commit -m "add lefthook"
+Working copy  (@) now at: mxplotnk ee678aab (empty) (no description set)
+Parent commit (@-)      : xorxynkl b4f0beae add lefthook
 ```
 
-何も検査されずにコミットされました。`core.hooksPath` は `.husky/_` のままで、Git 側から見れば設定は生きているのですが、コミットを作っているのが Git ではないので、フックが呼ばれる場面がありません。
+何も検査されずにコミットされました。`.git/hooks/commit-msg` はそのまま残っていて、Git 側から見れば設定は生きているのですが、コミットを作っているのが Git ではないので、フックが呼ばれる場面がありません。
 
-だから、このリポジトリでは husky を入れていません。手元で検査する代わりに、**CI で検査しています。**
+だから、このリポジトリでは lefthook を入れていません。手元で検査する代わりに、**CI で検査しています。**
 
 ## CI で検査する
 
@@ -423,7 +440,7 @@ PR のタイトルまで検査しているのは、このリポジトリが squa
 - Conventional Commits は、コミットの 1 行目を `type(scope): summary` の形にする規約
 - `feat` と `fix` は仕様で決まっていて、SemVer のマイナーとパッチに対応する。`!` か `BREAKING CHANGE:` がメジャー
 - 揃っていると、`git log --grep` で履歴を絞れ、CHANGELOG と次のバージョンが履歴から自動で決まる
-- commitlint がメッセージを検査し、husky の `commit-msg` フックに繋ぐと `git commit` のたびに走る
+- commitlint がメッセージを検査し、lefthook の `commit-msg` フックに繋ぐと `git commit` のたびに走る
 - フックは `--no-verify` と、jj のような Git 以外のツールで抜けられる。CI で PR のタイトルとコミットを検査するのが本当の砦
 
 規約そのものは 1 行の書式にすぎません。効いてくるのは、それを機械が読めることです。書式を揃えた瞬間から、履歴は人が読むだけのものではなく、ツールが使えるデータになります。
