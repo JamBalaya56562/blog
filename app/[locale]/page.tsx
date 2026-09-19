@@ -26,22 +26,9 @@ async function HomeBody({ locale }: { locale: Locale }) {
     BENTO_GRID_POST_COUNT + 5,
   )
 
-  const tagSet = new Set<string>()
-  for (const p of posts) {
-    for (const t of p.frontmatter.tags) {
-      tagSet.add(t)
-    }
-  }
-
   return (
     <>
-      <HeroSection
-        locale={locale}
-        dictionary={dictionary}
-        postCount={posts.length}
-        tagCount={tagSet.size}
-        latestDate={posts[0]?.frontmatter.date}
-      />
+      <HeroSection locale={locale} dictionary={dictionary} />
       <ViewCountsProvider slugs={bentoGridPosts.map((p) => p.slug)}>
         <BentoGrid
           locale={locale}
