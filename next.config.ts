@@ -97,7 +97,8 @@ const nextConfig: NextConfig = {
             value: "public, max-age=3600, stale-while-revalidate=86400",
           },
         ],
-        source: "/(sitemap\\.xml|robots\\.txt|manifest\\.webmanifest)",
+        source:
+          "/(sitemap\\.xml|robots\\.txt|manifest\\.webmanifest|ads\\.txt)",
       },
     ]
   },
