@@ -986,6 +986,17 @@
   .prose-cyber a:hover {
     background: color-mix(in srgb, var(--cyber-cyan) 14%, transparent);
   }
+  /* Sits on the text line like a glyph: nudged down so its centre meets the
+     x-height, a small gap before the link text, and rounded because most
+     icons are drawn square for a browser tab. */
+  .prose-cyber .pp-link-favicon {
+    display: inline-block;
+    width: 1em;
+    height: 1em;
+    margin-right: 0.3em;
+    vertical-align: -0.15em;
+    border-radius: 3px;
+  }
   .prose-cyber strong {
     color: var(--cyber-amber);
   }
