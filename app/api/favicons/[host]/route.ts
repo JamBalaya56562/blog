@@ -27,8 +27,13 @@ export async function GET(
     const res = await fetch(faviconSource(host), {
       signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
     })
-    if (!res.ok) {
+    // Only an upstream 404 means the icon is missing; anything else is the
+    // service having a bad moment, and says so rather than looking permanent.
+    if (res.status === 404) {
       return new Response("Not Found", { status: 404 })
+    }
+    if (!res.ok) {
+      return new Response("Bad Gateway", { status: 502 })
     }
     return new Response(res.body, {
       headers: {
