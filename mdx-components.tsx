@@ -5,6 +5,7 @@ import { resolveImagePath } from "@/app/api/images/[...path]/route"
 import { CodeTabs } from "@/components/code-tabs"
 import { CopyButton } from "@/components/copy-button"
 import { ZoomableImage } from "@/components/zoomable-image"
+import { externalHost, faviconPath } from "@/lib/favicon"
 import { createIdGenerator, extractText } from "@/lib/toc"
 
 type BlockquoteProps = React.BlockquoteHTMLAttributes<HTMLQuoteElement> & {
@@ -70,6 +71,31 @@ function countLines(children: React.ReactNode): {
  * belong to one render, so they are built in `useMDXComponents`.
  */
 const staticComponents: MDXComponents = {
+  // A link that leaves the site carries the favicon of where it goes, so the
+  // reader can tell a GitHub link from a docs link before hovering. The icon
+  // comes through `/api/favicons`, not from a third party, and is decoration:
+  // no alt text, hidden from assistive tech, lazy like the article's pictures.
+  a: ({ href, children, ...props }) => {
+    const host = externalHost(href)
+    return (
+      <a href={href} {...props}>
+        {host && (
+          // biome-ignore lint/performance/noImgElement: a 16px icon from a route handler; `images.unoptimized` is enabled, so next/image adds nothing
+          <img
+            src={faviconPath(host)}
+            width={16}
+            height={16}
+            alt=""
+            aria-hidden
+            loading="lazy"
+            decoding="async"
+            className="pp-link-favicon"
+          />
+        )}
+        {children}
+      </a>
+    )
+  },
   blockquote: ({
     "data-alert": alert,
     children,
