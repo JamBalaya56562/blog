@@ -49,7 +49,7 @@ d700e68 fix(actions): give the cache cleanup the permission it needs (#1257)
 
 ### type
 
-変更の種類です。仕様が定めているのは `feat` と `fix` の 2 つだけで、それ以外は各プロジェクトが決めます。とはいえ、実際には commitlint の `config-conventional` が持つ次の一覧をそのまま使うプロジェクトがほとんどです。
+変更の種類です。仕様が定めているのは `feat` と `fix` の 2 つだけで、それ以外は各プロジェクトが決めます。とはいえ、実際には commitlint の `config-conventional` が持つ次の一覧をそのまま使うプロジェクトが多いです。
 
 | type | 意味 |
 | --- | --- |
@@ -168,7 +168,7 @@ Conventional Commits と [Semantic Versioning](https://semver.org/lang/ja/) は�
 | `feat` | マイナー（1.2.3 → 1.3.0） |
 | `BREAKING CHANGE` または `!` | メジャー（1.2.3 → 2.0.0） |
 
-これを実際に見てみます。小さなリポジトリで、`v1.2.3` のタグの後に `feat` と `fix` を 1 つずつ積みました。
+これを実際に見てみます。小さなリポジトリで、`v1.2.3` のタグの後に `feat` と `fix` を 1 つずつ積みました。間にある `build(git)` は、この記事の後半で commitlint と lefthook を入れるコミットです。
 
 ```console
 ❯ git log --oneline
@@ -271,7 +271,7 @@ Fix: Login Button.
 ⓘ   Get help: https://github.com/conventional-changelog/commitlint/#what-is-commitlint
 ```
 
-大文字、末尾のピリオド、type の大文字、type の一覧に無い、と 4 つです。先ほど表にした type の一覧が `type-enum` のルールにそのまま入っていることも分かります。
+subject の大文字、末尾のピリオド、type の大文字、type が一覧に無い、と 4 つです。先ほど表にした type の一覧が `type-enum` のルールにそのまま入っていることも分かります。
 
 規約に沿ったメッセージなら、問題無しで終わります。
 
@@ -356,7 +356,7 @@ summary: (done in 1.21 seconds)
  create mode 100644 mise.toml
 ```
 
-今度は通りました。`bun.lock` と `commitlint.config.ts`、`lefthook.yml`、`mise.toml` が入っているのが、この記事で作ってきたリポジトリの中身そのものです。
+今度は通りました。`bun.lock`、`commitlint.config.ts`、`lefthook.yml`、`mise.toml` が並んでいるのが、この記事で作ってきたリポジトリの中身そのものです。
 
 > [!TIP]
 > lefthook に限らず、フックはコミットの直前に走るものなので、重い処理を入れると毎回のコミットが遅くなります。メッセージの検査は一瞬で終わりますが、`pre-commit` にテスト一式を入れるかどうかは、テストにかかる時間と相談してください。

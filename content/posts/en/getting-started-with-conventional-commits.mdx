@@ -58,7 +58,7 @@ required.
 ### type
 
 The kind of change. The specification itself defines only two, `feat` and `fix`; everything else
-is up to the project. In practice, though, nearly every project uses the list that commitlint's
+is up to the project. In practice, though, most projects use the list that commitlint's
 `config-conventional` ships with, as is.
 
 | type | Meaning |
@@ -194,7 +194,8 @@ Conventional Commits lines up with [Semantic Versioning](https://semver.org/).
 | `BREAKING CHANGE` or `!` | Major (1.2.3 → 2.0.0) |
 
 Here it is happening. In a small repository, one `feat` and one `fix` were stacked on top of a
-`v1.2.3` tag.
+`v1.2.3` tag. The `build(git)` between them is the commit that sets up commitlint and lefthook
+later in this article.
 
 ```console
 ❯ git log --oneline
@@ -222,7 +223,7 @@ c3bfba0 feat(api)!: drop the v1 endpoints
 v2.0.0
 ```
 
-The `!` bumps the major, and it is `v2.0.0`. The CHANGELOG side marks that one commit too.
+The `!` bumps the major: `v2.0.0`. The CHANGELOG side marks that one commit too.
 
 ```console
 ❯ git cliff --unreleased --strip all
@@ -403,7 +404,7 @@ summary: (done in 1.21 seconds)
  create mode 100644 mise.toml
 ```
 
-Through. The `bun.lock`, `commitlint.config.ts`, `lefthook.yml` and `mise.toml` in the list are
+This time it goes through. The `bun.lock`, `commitlint.config.ts`, `lefthook.yml` and `mise.toml` in the list are
 exactly what this article has been building in that repository.
 
 > [!TIP]
