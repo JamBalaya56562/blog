@@ -45,7 +45,7 @@ export function TableOfContents({
     // breathing room below. The list is the part that scrolls, so the INDEX
     // label and the title stay put however long the post is.
     <nav
-      className="hidden xl:flex xl:flex-col fixed top-32 left-1/2 ml-96 w-56 max-h-[calc(100vh-10rem)] border border-cyber-line bg-cyber-bg-1/60 p-4 backdrop-blur-md"
+      className="hidden xl:flex xl:flex-col fixed top-32 left-1/2 ml-96 w-60 max-h-[calc(100vh-10rem)] border border-cyber-line bg-cyber-bg-1/60 p-4 backdrop-blur-md"
       data-testid="post-index"
     >
       <div className="pp-tick mb-3 text-cyber-cyan">◢ INDEX</div>
