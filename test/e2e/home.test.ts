@@ -1,16 +1,14 @@
 import { expect, test } from "@playwright/test"
 
 test.describe("Home page - Section visibility", () => {
-  test("hero section shows title, subtitle, HUD strip, and CTAs", async ({
-    page,
-  }) => {
+  test("hero section shows title, subtitle and CTAs", async ({ page }) => {
     await page.goto("/en")
     await expect(page.getByText("Making programming")).toBeVisible()
     await expect(page.getByText("more accessible.")).toBeVisible()
-    // The HUD strip beneath the headline replaced the old badge.
-    await expect(page.getByText("POSTS", { exact: true })).toBeVisible()
-    await expect(page.getByText("TAGS", { exact: true })).toBeVisible()
-    await expect(page.getByText("LATEST", { exact: true })).toBeVisible()
+    // The metrics strip that used to sit beneath the headline is gone; the
+    // counts live on the blog index now.
+    await expect(page.getByText("POSTS", { exact: true })).toHaveCount(0)
+    await expect(page.getByText("LATEST", { exact: true })).toHaveCount(0)
     await expect(
       page.getByRole("link", { name: "Browse All Articles" }),
     ).toBeVisible()
