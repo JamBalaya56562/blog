@@ -75,6 +75,55 @@ describe("extractToc", () => {
     const ids = extractToc(md).map((i) => i.id)
     expect(new Set(ids).size).toBe(ids.length)
   })
+
+  // A changelog printed inside a console fence starts with `## [unreleased]`
+  // and `### 🚀 Features`; neither is a heading of the post.
+  test("a heading inside a code fence is program output, not an entry", () => {
+    const md = [
+      "## Real",
+      "```console",
+      "❯ git cliff --unreleased",
+      "## [unreleased]",
+      "### 🚀 Features",
+      "```",
+      "### After",
+    ].join("\n")
+    expect(extractToc(md)).toEqual([
+      { id: "real", level: 2, text: "Real" },
+      { id: "after", level: 3, text: "After" },
+    ])
+  })
+
+  test("a fence closes only on its own marker, at least as long", () => {
+    const md = [
+      "~~~~",
+      "## Not this",
+      "```",
+      "## Nor this: a backtick fence does not close a tilde one",
+      "~~~",
+      "## Nor this: three tildes do not close four",
+      "~~~~~",
+      "## Yes",
+      "````md",
+      "```",
+      "## Not this either: the inner fence is shorter",
+      "```",
+      "````",
+      "## Also yes",
+    ].join("\n")
+    expect(extractToc(md).map((i) => i.text)).toEqual(["Yes", "Also yes"])
+  })
+
+  test("an unclosed fence runs to the end", () => {
+    expect(extractToc("## Yes\n```\n## No")).toEqual([
+      { id: "yes", level: 2, text: "Yes" },
+    ])
+  })
+
+  test("a fenced heading does not take an id from a real one after it", () => {
+    const md = "```\n## Setup\n```\n## Setup"
+    expect(extractToc(md)).toEqual([{ id: "setup", level: 2, text: "Setup" }])
+  })
 })
 
 describe("extractText", () => {

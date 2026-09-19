@@ -45,10 +45,40 @@ export function createIdGenerator() {
   }
 }
 
+/**
+ * The markdown with its fenced code blocks emptied out. A `## ` inside a
+ * fence is program output, not a heading — a git-cliff changelog starts with
+ * `## [unreleased]` — and it was reaching the index as one. A fence opens
+ * with three or more backticks or tildes and closes with at least as many of
+ * the same character on a line of their own; an unclosed one runs to the end.
+ */
+function withoutFences(markdown: string): string {
+  const kept: string[] = []
+  let fence: string | null = null
+  for (const line of markdown.split("\n")) {
+    const mark = line.match(/^[ \t]*(`{3,}|~{3,})/)?.[1]
+    if (fence === null) {
+      if (mark) {
+        fence = mark
+      } else {
+        kept.push(line)
+      }
+    } else if (
+      mark &&
+      mark[0] === fence[0] &&
+      mark.length >= fence.length &&
+      /^[ \t]*[`~]+[ \t]*$/.test(line)
+    ) {
+      fence = null
+    }
+  }
+  return kept.join("\n")
+}
+
 export function extractToc(markdown: string): TocItem[] {
   const items: TocItem[] = []
   const generateId = createIdGenerator()
-  for (const match of markdown.matchAll(/^(#{2,3})\s+(.+)$/gm)) {
+  for (const match of withoutFences(markdown).matchAll(/^(#{2,3})\s+(.+)$/gm)) {
     // The index shows the heading as it renders, so inline code loses its
     // backticks. The id is unaffected: `slugify` drops them either way, and
     // the heading in the page is slugified from its rendered text.
