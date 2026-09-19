@@ -55,6 +55,8 @@ required.
 <footer>
 ```
 
+![Diagram titled "One line: type, scope, summary". On the left, feat(api)!: drop the v1 endpoints is colour-coded and broken into four rows: feat is the type (the kind of change), (api) the scope (what part changed), ! the breaking-change marker, and summary what was done. On the right, a box for the whole message lists the header, a blank line, the body, a blank line and a BREAKING CHANGE: footer, with the note that only the header is required](conventional-commits-anatomy.svg)
+
 ### type
 
 The kind of change. The specification itself defines only two, `feat` and `fix`; everything else
@@ -193,6 +195,8 @@ Conventional Commits lines up with [Semantic Versioning](https://semver.org/).
 | `feat` | Minor (1.2.3 → 1.3.0) |
 | `BREAKING CHANGE` or `!` | Major (1.2.3 → 2.0.0) |
 
+![Diagram titled "The type you write decides the next version". Three rows: fix, a bug fix, takes 1.2.3 to 1.2.4 as a patch; feat, a new feature, takes 1.2.3 to 1.3.0 as a minor; !, a breaking change, takes 1.2.3 to 2.0.0 as a major. Below: ! means the same as BREAKING CHANGE:, and git cliff --bumped-version computes the bump from the history](conventional-commits-semver.svg)
+
 Here it is happening. In a small repository, one `feat` and one `fix` were stacked on top of a
 `v1.2.3` tag. The `build(git)` between them is the commit that sets up commitlint and lefthook
 later in this article.
@@ -252,6 +256,8 @@ and the publishing, and run the whole thing from CI.
 > `build(git)` lands under "Other" because git-cliff's default configuration does not assign
 > `build` to any group. A `cliff.toml` that gives `build` a group fixes that. This article ran it
 > with no configuration on purpose, to see how far the defaults go.
+
+![Diagram titled "A tidy history produces the changelog". On the left, five lines of git log --oneline (fix, feat, feat!, build, chore); in the middle, git cliff reads the log; on the right, the changelog it writes under ## [unreleased] with Features and Bug Fixes headings, and --bumped-version giving v1.3.0. Captions: the type becomes a heading and the scope a prefix, and you only ever wrote commit messages](conventional-commits-changelog.svg)
 
 ### Writing gets easier too
 
@@ -448,6 +454,8 @@ would be called.
 That is why this repository does not use lefthook. Instead of checking locally, **it checks in
 CI**.
 
+![Diagram titled "Two ways past the hook, so CI is the real gate". On the left, git commit goes through the lefthook commit-msg hook, git commit --no-verify skips the hook, and jj commit never calls Git hooks. All three arrows meet at CI on the right, where commitlint checks the PR title and its commits. Caption: a local check can be skipped; a merge check cannot](conventional-commits-hook-holes.svg)
+
 ## Checking in CI
 
 A GitHub Actions workflow runs commitlint over the pull request title and every commit in the pull
@@ -496,6 +504,8 @@ The title is checked because this repository merges with squash merge. Under squ
 message of the commit that lands on `main` is the pull request title, so checking the individual
 commits alone would not protect the history of `main`.
 
+![Diagram titled "With squash merge, the PR title becomes the commit". On the left, a pull request with the title feat(blog): add dark mode and three commits: feat(blog): draft the toggle, fix(blog): keep the icon aligned, test(blog): cover the toggle. A squash merge arrow leads to main, which holds a single commit, feat(blog): add dark mode. Captions: the three commits are folded into one, so the title is checked too](conventional-commits-squash-title.svg)
+
 The real workflow goes on to post commitlint's output on the pull request as a comment when the
 check fails, and to rewrite that comment to a ✅ once it passes. The whole file is in the
 [repository](https://github.com/JamBalaya56562/blog/blob/main/.github/workflows/conventional-commits.yml).
@@ -504,6 +514,8 @@ check fails, and to rewrite that comment to a ✅ once it passes. The whole file
 > A hook and CI are not either-or. The hook is there so you find out before you push; CI is there so
 > nothing that breaks the convention gets merged. A team that commits through Git is best off with
 > both.
+
+![Diagram titled "Where the check runs: on your machine, and in CI". On the left, on your machine, git commit flows through the lefthook commit-msg hook into commitlint, to catch it before you push. On the right, in CI, the PR title and every commit in the PR go into commitlint, to keep an unchecked message out of main. Caption: hooks and CI are not an either-or](conventional-commits-where-checked.svg)
 
 ## Summary
 

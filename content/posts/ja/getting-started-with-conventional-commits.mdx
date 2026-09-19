@@ -47,6 +47,8 @@ d700e68 fix(actions): give the cache cleanup the permission it needs (#1257)
 <footer>
 ```
 
+![「コミットの 1 行目は、type・scope・summary でできている」の図。左に feat(api)!: drop the v1 endpoints を色分けして、feat が type（変更の種類）、(api) が scope（変更した範囲）、! が破壊的変更の印、summary が何をしたか、と 4 段に分解してある。右にはメッセージ全体の枠があり、header・空行・body・空行・BREAKING CHANGE: のフッターが並び、必須なのは header だけと書かれている](conventional-commits-anatomy.svg)
+
 ### type
 
 変更の種類です。仕様が定めているのは `feat` と `fix` の 2 つだけで、それ以外は各プロジェクトが決めます。とはいえ、実際には commitlint の `config-conventional` が持つ次の一覧をそのまま使うプロジェクトが多いです。
@@ -168,6 +170,8 @@ Conventional Commits と [Semantic Versioning](https://semver.org/lang/ja/) は�
 | `feat` | マイナー（1.2.3 → 1.3.0） |
 | `BREAKING CHANGE` または `!` | メジャー（1.2.3 → 2.0.0） |
 
+![「どの type を書いたかで、次のバージョンが決まる」の図。fix は 1.2.3 → 1.2.4 のパッチ、feat は 1.2.3 → 1.3.0 のマイナー、! は 1.2.3 → 2.0.0 のメジャーと、3 段に並んでいる。下に「! は BREAKING CHANGE: と同じ意味。git cliff --bumped-version が履歴から計算する」とある](conventional-commits-semver.svg)
+
 これを実際に見てみます。小さなリポジトリで、`v1.2.3` のタグの後に `feat` と `fix` を 1 つずつ積みました。間にある `build(git)` は、この記事の後半で commitlint と lefthook を入れるコミットです。
 
 ```console
@@ -218,6 +222,8 @@ v2.0.0
 
 > [!NOTE]
 > `build(git)` が「Other」に入っているのは、git-cliff の既定の設定が `build` をどのグループにも割り当てていないからです。`cliff.toml` で `build` にグループを与えれば直ります。この記事では、設定を書かずにどこまで出るかを見るために、あえて既定のまま動かしました。
+
+![「揃った履歴から、CHANGELOG と次のバージョンが出てくる」の図。左に git log --oneline の 5 行（fix、feat、feat!、build、chore）、真ん中に「履歴を読む」git cliff、右に ## [unreleased] の下に Features と Bug Fixes の見出しで整形された CHANGELOG と、--bumped-version の v1.3.0 が出ている。「type が見出しに、scope が先頭に付く」「書いたのはコミットメッセージだけ」と添えてある](conventional-commits-changelog.svg)
 
 ### 書く側も楽になる
 
@@ -390,6 +396,8 @@ Parent commit (@-)      : xorxynkl b4f0beae add lefthook
 
 だから、このリポジトリでは lefthook を入れていません。手元で検査する代わりに、**CI で検査しています。**
 
+![「フックには 2 つの抜け道がある。だから CI で受ける」の図。左の git commit は lefthook の commit-msg フックを通るが、git commit --no-verify はフックを飛ばし、jj commit は Git フックを呼ばない。3 本の矢印はどれも右の CI に集まり、そこで commitlint が PR のタイトルとコミットを検査する。「手元の検査は抜けられる。マージ前の検査は抜けられない」とある](conventional-commits-hook-holes.svg)
+
 ## CI で検査する
 
 GitHub Actions で、PR のタイトルと、PR に含まれるすべてのコミットを commitlint に通しています。フックと違って、どのツールでコミットしたかも、`--no-verify` を付けたかどうかも関係ありません。マージされる前に必ず通る場所で検査するので、これが本当の砦です。
@@ -430,10 +438,14 @@ jobs:
 
 PR のタイトルまで検査しているのは、このリポジトリが squash merge でマージしているからです。squash merge では、`main` に入るコミットのメッセージは PR のタイトルになります。個々のコミットを検査するだけでは、`main` の履歴を守れません。
 
+![「squash merge では、PR タイトルが main のメッセージになる」の図。左の pull request には PR タイトル feat(blog): add dark mode と、3 つのコミット feat(blog): draft the toggle、fix(blog): keep the icon aligned、test(blog): cover the toggle が並ぶ。squash merge の矢印の先の main には feat(blog): add dark mode の 1 コミットだけがあり、「3 つのコミットは 1 つに畳まれる」「だから PR タイトルも commitlint に通す」とある](conventional-commits-squash-title.svg)
+
 実際のワークフローでは、失敗したときに commitlint の出力を PR にコメントとして貼り、直ったらそのコメントを ✅ に書き換えるところまでやっています。全文は[リポジトリ](https://github.com/JamBalaya56562/blog/blob/main/.github/workflows/conventional-commits.yml)にあります。
 
 > [!NOTE]
 > フックと CI は、どちらか一方を選ぶものではありません。フックは「push する前に気付ける」ためのもので、CI は「守られていないものをマージさせない」ためのものです。Git でコミットするチームなら、両方置くのが一番です。
+
+![「検査が走るのは、手元と CI の 2 か所」の図。左の「手元」では git commit → lefthook の commit-msg → commitlint と流れ、「push する前に気付くため」とある。右の「CI」では PR のタイトルと PR の全コミットが commitlint に入り、「守られていないものをマージさせないため」とある。下に「フックと CI は、どちらかを選ぶものではない」](conventional-commits-where-checked.svg)
 
 ## まとめ
 
