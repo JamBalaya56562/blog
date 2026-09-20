@@ -1,0 +1,560 @@
+---
+title: コンテナと Docker 入門ガイド
+date: "2026-09-20"
+description: コンテナが何を解決するのかから、Docker のインストール、イメージとコンテナ、ポート、ボリュームまで。Node・nginx・PostgreSQL の公式イメージを起こして、覗いて、消して、実際に確かめた
+image: /thumbnails/getting-started-with-docker.avif
+tags:
+  - docker
+  - container
+  - devtools
+---
+
+## コンテナとは
+
+[mise の記事](/ja/blog/getting-started-with-mise)で、「ツールのバージョンが揃わない」問題を扱いました。mise は Node や Bun のようなツールの版を揃えてくれますが、揃えられるのはツールまでです。そのツールが依存する OS のライブラリ、設定ファイル、環境変数、ディレクトリの配置、起動時に必要なデータベース。「自分の環境では動く」の「環境」には、こうしたものが全部含まれています。
+
+コンテナは、**この「環境」を丸ごと 1 つの箱に詰めて、どこでも同じように起こせるようにする**仕組みです。箱の中には OS のユーザーランド（Debian や Alpine のファイル一式）から、ランタイム、アプリのコード、設定まで入っています。箱の外にあるのはカーネルだけです。
+
+### 仮想マシンとの違い
+
+「OS ごと持ち運ぶ」と聞くと仮想マシンを思い浮かべますが、コンテナは仮想マシンではありません。仮想マシンは、ハードウェアを模倣した上にカーネルを含む OS を丸ごと起動します。コンテナは、**ホストのカーネルをそのまま共有して**、その上でプロセスを隔離して動かします。
+
+だからコンテナは秒で起動しますし、ディスクもメモリも軽い。仮想マシンが 1 台数 GB のところ、コンテナのイメージは数十 MB から数百 MB です。この記事で使う Alpine Linux のイメージは 13 MB しかありません。
+
+![「仮想マシンはカーネルごと、コンテナはカーネルを共有する」の図。左の仮想マシンでは、ハードウェア → ハイパーバイザ → ゲスト OS（カーネル込み）→ アプリ、と層が積まれ、ゲスト OS が 3 つ並んでそれぞれカーネルを持っている。右のコンテナでは、ハードウェア → ホスト OS のカーネル → コンテナランタイム → 3 つのコンテナ、で、コンテナには OS のユーザーランドとアプリだけがあり、カーネルはホストの 1 つを共有している。「起動は秒、イメージは数十 MB から」と添えてある](docker-vm-vs-container.svg)
+
+カーネルを共有していることは、実際に見て確かめられます。`docker run --rm イメージ コマンド` は、イメージからコンテナを 1 つ起こしてその中でコマンドを実行し、終わったらコンテナを消す、という 1 行です（詳しくは後述します）。Debian、Alpine、Node 公式イメージ、どれで `uname -r` を打っても同じカーネルの版が返ってきます。
+
+```console
+❯ docker run --rm debian:bookworm uname -r
+7.0.12-linuxkit
+❯ docker run --rm alpine uname -r
+7.0.12-linuxkit
+❯ docker run --rm node:22-slim uname -r
+7.0.12-linuxkit
+```
+
+`linuxkit` は Docker Desktop が動かしている Linux VM のカーネルです。Windows や macOS では Linux カーネルが無いので、Docker Desktop が軽量な Linux VM を 1 台起動し、すべてのコンテナがそのカーネルを共有します。Linux ホストなら、そのカーネルを直接共有します。
+
+### イメージとコンテナ
+
+コンテナを扱ううえで一番大事な区別が、**イメージ**と**コンテナ**です。
+
+- **イメージ**は、箱の中身を焼き固めた雛形です。読み取り専用で、レジストリ（Docker Hub など）から取ってくるか、`Dockerfile` から自分でビルドします
+- **コンテナ**は、イメージから起こした実体です。プロセスが動き、ファイルが書き込まれ、止めたり消したりできます
+
+1 つのイメージから何個でもコンテナを起こせますし、コンテナを消してもイメージは残ります。この関係が分かっていれば、Docker のコマンドはだいたい読めます。`docker build` と `docker pull` はイメージを作る・取ってくる、`docker run` はイメージからコンテナを起こす、`docker ps` はコンテナを一覧する、`docker images` はイメージを一覧する、という具合です。
+
+![「イメージは雛形、コンテナは実体」の図。左に読み取り専用のイメージ nginx:1.29-alpine が 1 つあり、そこから右へ 3 本の矢印が出て、コンテナ A・B・C が起きている。各コンテナには「書き込み可能な層」が上に乗っている。B には × が付いて「docker rm しても」、その下に「イメージは残る」と書いてある。左下に「docker build / docker pull → イメージ」、右下に「docker run → コンテナ」](docker-image-container.svg)
+
+## コンテナで何が嬉しいか
+
+抽象的な利点を並べるより、この記事の後半で実際に見せる 4 つを先に言っておきます。
+
+1. **環境を汚さずに試せる。** Node を入れていないマシンで Node が動く。試し終わったら跡形もなく消える
+2. **同じイメージがそのまま本番へ行く。** 手元で動いたものと同じバイト列を本番でも起こすので、「手元では動いた」が起きない
+3. **複数の版が同居できる。** Node 20 と Node 22 が同じマシンで同時に動く
+4. **消すのが一瞬。** コンテナもイメージもボリュームも、1 コマンドで消えて何も残らない
+
+## Docker のインストール
+
+Docker は、コンテナを作って動かすためのツール一式です。コンテナを動かすエンジン（`dockerd`）、それに指示を出す CLI（`docker`）、イメージを置くレジストリ（Docker Hub）から成ります。
+
+Windows と macOS では [Docker Desktop](https://docs.docker.com/desktop/) を入れます。Linux VM の管理、CLI、GUI がまとめて入ります。Windows の要件は、Windows 11 23H2 以降（または Windows 10 22H2）、64 bit で SLAT 対応の CPU、8 GB 以上の RAM、BIOS/UEFI でハードウェア仮想化が有効なこと、WSL 2.1.5 以降です。[インストーラ](https://docs.docker.com/desktop/setup/install/windows-install/)を実行して、バックエンドは既定の WSL 2 のままで進めます。
+
+入ったら、`docker version` でクライアントとサーバーの両方が返ることを確認します。
+
+```console
+❯ docker version
+Client:
+ Version:           29.8.0
+ API version:       1.56
+ OS/Arch:           windows/amd64
+ Context:           desktop-linux
+
+Server: Docker Desktop 4.91.0 (239619)
+ Engine:
+  Version:          29.8.0
+  API version:      1.56 (minimum version 1.40)
+  OS/Arch:          linux/amd64
+```
+
+Client が `windows/amd64` で Server が `linux/amd64` なのが、先ほどの構図そのものです。CLI は Windows で動いていて、エンジンは Linux VM の中にいます。
+
+> [!NOTE]
+> Linux では Docker Desktop でなく Docker Engine を直接入れられます。手順はディストリビューションごとに[公式ドキュメント](https://docs.docker.com/engine/install/)にあります。また Windows には、WSL に同梱された Docker 互換 CLI の wslc もあります。軽い用途なら wslc で足りますが、`compose` に対応していないので、この記事は Docker Desktop で進めます。
+
+## まず 1 行動かす
+
+Docker が入ったら、これを打ってみてください。`docker run` はイメージからコンテナを起こすコマンドで、`node:22-slim` が起こすイメージ、その後ろの `node -v` がコンテナの中で実行するコマンドです。`--rm` は、実行が終わったらコンテナを消すオプションです。
+
+```console
+❯ docker run --rm node:22-slim node -v
+Unable to find image 'node:22-slim' locally
+22-slim: Pulling from library/node
+Digest: sha256:48e4b67d85f87bd551df43704e24d252f56cc5f8e9718841aace50f19948f0f9
+Status: Downloaded newer image for node:22-slim
+v22.23.2
+```
+
+このマシンには Node を入れていませんが、`v22.23.2` が返ってきました。起きたことを分解するとこうです。
+
+1. `node:22-slim` というイメージが手元に無いので、Docker Hub から取ってきた（`Pulling from library/node`）
+2. そのイメージからコンテナを 1 つ起こして、中で `node -v` を実行した
+3. 出力を表示して、コンテナが終了した
+4. `--rm` が付いているので、終了したコンテナはその場で消えた
+
+もう一度打つと、イメージは手元にあるので `v22.23.2` だけが即座に返ります。Node 20 も同じように動きます。
+
+```console
+❯ docker run --rm node:20-slim node -v
+v20.20.2
+```
+
+2 つの版が同じマシンに同居していて、どちらも「入れて」いません。`docker images` を見ると、手元にあるイメージが分かります。
+
+```console
+❯ docker images
+REPOSITORY   TAG       IMAGE ID       SIZE
+node         22-slim   48e4b67d85f8   329MB
+node         20-slim   2cf067cfed83   293MB
+alpine       latest    294b683cb724   13MB
+```
+
+`node:22-slim` の `22-slim` の部分が**タグ**で、同じ `node` イメージの中の版や変種を選びます。`slim` は Debian の最小構成に Node を載せたもので、`ps` すら入っていません。それでよいのは、コンテナの中にはそのアプリを動かすのに必要なものだけがあればよいからです。
+
+## Web サーバーを起こす
+
+1 回だけコマンドを実行して終わるのではなく、裏で動き続けるコンテナを起こしてみます。題材は nginx です。先ほどの `docker run` に、オプションを 3 つ足します。
+
+| オプション | 意味 |
+| --- | --- |
+| `-d` | detach。裏で動かして、ターミナルをすぐ返す |
+| `--name web` | コンテナに名前を付ける。付けないとランダムな名前になる |
+| `-p 8080:80` | ホストの 8080 番をコンテナの 80 番に繋ぐ（`ホスト:コンテナ`） |
+| `nginx:1.29-alpine` | 起こすイメージ |
+
+![「docker run の 1 行の読み方」の図。docker run -d --name db -e POSTGRES_PASSWORD=secret -p 5432:5432 -v pgdata:/var/lib/postgresql postgres:18-alpine という 1 行を色分けし、-d は「裏で動かす」、--name は「コンテナの名前」、-e は「中の環境変数」、-p は「ホストの port : コンテナの port」、-v は「ボリューム名 : 中のパス」、最後の postgres:18-alpine は「起こすイメージ:タグ」と、6 つに分解してある。「イメージ名より後ろに書いたものは、イメージの既定のコマンドの代わりに実行される」と添えてある](docker-run-anatomy.svg)
+
+イメージ名の後ろにコマンドを書いていないのは、nginx のイメージが「起動したら nginx を実行する」と既定のコマンドを持っているからです。
+
+```console
+❯ docker run -d --name web -p 8080:80 nginx:1.29-alpine
+Unable to find image 'nginx:1.29-alpine' locally
+1.29-alpine: Pulling from library/nginx
+aee4e54b3865: Pulling fs layer
+6a0ac1617861: Pulling fs layer
+...
+6a0ac1617861: Pull complete
+82736a35d0e7: Pull complete
+583599bb7d38: Pull complete
+aee4e54b3865: Pull complete
+781ff50d2644: Pull complete
+453da7dbc73e: Pull complete
+4a8b0b2a5b19: Pull complete
+612c0c1df4c5: Pull complete
+Digest: sha256:5616878291a2eed594aee8db4dade5878cf7edcb475e59193904b198d9b830de
+Status: Downloaded newer image for nginx:1.29-alpine
+bfc5c618a904b2fd5d7f6ac680a8c9a2ea5e251ac3493534f42eff26ebef7aaf
+```
+
+`Pull complete` が 8 行あるのは、イメージが 8 枚の**レイヤー**でできているからです。イメージは 1 つの大きなファイルではなく、差分を積み重ねたもので、同じレイヤーは別のイメージとも共有されます。最後の長い文字列が、起きたコンテナの ID です。`-d` を付けたので、コンテナは裏で動いたまま、ターミナルはすぐ戻ってきています。
+
+`-p` が無いと、コンテナの中で 80 番を listen していてもホストからは届きません。コンテナは自分のネットワークの名前空間を持っていて、ホストとは別の世界にいるからです。`-p` で穴を開けて初めて `http://localhost:8080` が通ります。
+
+動いているコンテナは `docker ps` で一覧できます。それから、ホスト側から `curl` で 8080 番にアクセスしてみます。
+
+```console
+❯ docker ps
+NAMES     IMAGE               STATUS         PORTS
+web       nginx:1.29-alpine   Up 3 seconds   0.0.0.0:8080->80/tcp, [::]:8080->80/tcp
+❯ curl -s http://localhost:8080/ | head -5
+<!DOCTYPE html>
+<html>
+<head>
+<title>Welcome to nginx!</title>
+<style>
+```
+
+ブラウザで `http://localhost:8080` を開けば、nginx の既定のページが出ます。Windows に nginx は入っていません。Linux VM の中の Alpine Linux の上で動いています。
+
+### 中を覗く
+
+コンテナが何をしているかを知る方法は 3 つあります。
+
+`docker logs` は、コンテナの中のプロセスが標準出力と標準エラーに書いたものを見せます。先ほどの `curl` のアクセスログも出ています。
+
+```console
+❯ docker logs web
+2026/09/20 07:46:01 [notice] 1#1: start worker process 35
+2026/09/20 07:46:01 [notice] 1#1: start worker process 36
+2026/09/20 07:46:01 [notice] 1#1: start worker process 37
+172.17.0.1 - - [20/Sep/2026:07:46:04 +0000] "GET / HTTP/1.1" 200 896 "-" "curl/8.21.0" "-"
+```
+
+`1#1` の `1` はプロセス ID です。コンテナの中では、イメージが指定したコマンドで起動したプロセスが PID 1 になります。
+
+`docker exec` は、動いているコンテナの中でコマンドを実行します。nginx がどこのファイルを配っているか、どの OS の上で動いているかを見てみます。
+
+```console
+❯ docker exec web ls /usr/share/nginx/html
+50x.html
+index.html
+❯ docker exec web cat /etc/os-release | head -1
+NAME="Alpine Linux"
+```
+
+`docker exec -it web sh` とすれば、コンテナの中でシェルが開いて、自由に歩き回れます。
+
+`docker top` は、コンテナの中のプロセスを外から見せます。
+
+```console
+❯ docker top web
+PID                 USER                COMMAND
+679                 root                nginx: master process nginx -g daemon off;
+722                 statd               nginx: worker process
+723                 statd               nginx: worker process
+```
+
+### 自分のページを配る
+
+既定のページの代わりに、手元の HTML を配ってみます。`docker cp 元 コンテナ名:先` で、ホストのファイルをコンテナの中へコピーできます。先ほど `docker exec` で見た `/usr/share/nginx/html/index.html` を、手元の `site/index.html` で上書きします。
+
+```console
+❯ cat site/index.html
+<!doctype html>
+<meta charset="utf-8">
+<title>Hello from a container</title>
+<h1>Hello from a container</h1>
+<p>This page is served by nginx running in Docker.</p>
+❯ docker cp site/index.html web:/usr/share/nginx/html/index.html
+❯ curl -s http://localhost:8080/
+<!doctype html>
+<meta charset="utf-8">
+<title>Hello from a container</title>
+<h1>Hello from a container</h1>
+<p>This page is served by nginx running in Docker.</p>
+```
+
+差し替わりました。ここで、コンテナがイメージからどう変わったかを `docker diff` で見てみます。
+
+```console
+❯ docker diff web
+C /etc
+C /etc/nginx
+C /etc/nginx/conf.d
+C /etc/nginx/conf.d/default.conf
+C /var
+C /var/cache
+C /var/cache/nginx
+A /var/cache/nginx/fastcgi_temp
+A /var/cache/nginx/proxy_temp
+A /var/cache/nginx/scgi_temp
+A /var/cache/nginx/uwsgi_temp
+A /var/cache/nginx/client_temp
+C /usr
+C /usr/share
+C /usr/share/nginx
+C /usr/share/nginx/html
+C /usr/share/nginx/html/index.html
+C /run
+A /run/nginx.pid
+```
+
+`C` は変更、`A` は追加です。コピーした `index.html` の他に、nginx が起動時に生成した設定ファイル、キャッシュのディレクトリ、PID ファイルが並んでいます。イメージそのものは読み取り専用で、**コンテナはイメージの上に薄い書き込み層を 1 枚乗せたもの**です。`docker diff` が見せているのは、その書き込み層の中身です。
+
+### コンテナを消すと、書いたものも消える
+
+その書き込み層は、コンテナを消すと一緒に消えます。`docker rm -f` は、動いているコンテナを止めて消すコマンドです。消してから、同じイメージで起こし直します。
+
+```console
+❯ docker rm -f web
+web
+❯ docker run -d --name web -p 8080:80 nginx:1.29-alpine
+c31743f6370df987b8d0cecadba91e250969249c4e70637bc17dfa88ab02fa87
+❯ curl -s http://localhost:8080/ | grep -o "<title>.*</title>"
+<title>Welcome to nginx!</title>
+```
+
+既定のページに戻りました。新しいコンテナは、イメージの焼き固めた状態から真っさらに始まります。コピーした `index.html` は、消えたコンテナの書き込み層にしか無かったからです。
+
+![「イメージは読み取り専用、コンテナは書き込み層を 1 枚乗せたもの」の図。下に読み取り専用のイメージのレイヤーが 8 枚積まれ、その上に「書き込み層」が 1 枚乗って、そこに index.html と nginx.pid が書かれている。右で docker rm -f すると、書き込み層だけが × で消え、イメージのレイヤーはそのまま残る。「docker diff が見せているのはこの 1 枚」「stop では残る、rm で消える」と添えてある](docker-writable-layer.svg)
+
+これは不具合ではなく、コンテナとはそういうものです。「環境を汚さない」「消すのが一瞬」の裏側がこれです。コンテナは使い捨てで、だからこそ、消えてほしくないものはコンテナの外に置く必要があります。それを次のデータベースで見ます。
+
+> [!NOTE]
+> 「ホストのフォルダをそのままコンテナに見せる」やり方もあります。`-v "$PWD/site:/usr/share/nginx/html"` のように書く **bind mount** で、ホスト側でファイルを編集するとコンテナに即座に反映されます。ただし Windows と macOS では、Docker Desktop の Settings → Resources → File Sharing で共有を許したディレクトリしか繋げません。このマシンでは何も共有していなかったので、`the path "C:\Users\..." is not shared from the host; add it in Settings > Resources > File Sharing before using it in a container` と断られました。この記事では設定を触らずに済む `docker cp` と、次に出てくる名前付きボリュームで進めます。
+
+## データベースを起こす
+
+Web サーバーは消えても困りませんが、データベースは困ります。PostgreSQL で、「消えてほしくないもの」をどう扱うかを見ます。
+
+### 起動したのに動いていない
+
+まず、何も考えずに起こしてみます。nginx のときと同じ `docker run -d --name`、イメージは `postgres:18-alpine` です。
+
+```console
+❯ docker run -d --name db postgres:18-alpine
+679092db38ef33b97fb3dabf61da95c364a8c52f514878df5eac8b7e85e1238d
+❯ docker ps
+NAMES     IMAGE     STATUS
+```
+
+コンテナの ID は返ってきたのに、`docker ps` には何もいません。`docker ps` は動いているコンテナしか出さないので、`-a` で止まったものも見ます。
+
+```console
+❯ docker ps -a
+NAMES          IMAGE                STATUS
+db             postgres:18-alpine   Exited (1) 4 seconds ago
+❯ docker logs db
+Error: Database is uninitialized and superuser password is not specified.
+       You must specify POSTGRES_PASSWORD to a non-empty value for the
+       superuser. For example, "-e POSTGRES_PASSWORD=password" on "docker run".
+```
+
+4 秒前に終了していて（`Exited (1)` の `1` は終了コード）、理由は `docker logs` に書いてあります。パスワードを決めていないので起動を拒否した、と。`docker run -d` はコンテナを起こしたら即座に戻ってくるので、中のプロセスが文句を言っていてもターミナルには何も出ません。**`docker run -d` の後は `docker ps` と `docker logs` を見る**、を習慣にしてください。
+
+言われたとおり `-e` で環境変数を渡します。終了したコンテナの名前 `db` が残っているので、先に消します。
+
+```console
+❯ docker rm db
+db
+❯ docker run -d --name db -e POSTGRES_PASSWORD=secret postgres:18-alpine
+1f8998b931d857319b31dd611fab9ab654b58916681967b375392ace1d6aa721
+❯ docker ps
+NAMES     IMAGE                STATUS         PORTS
+db        postgres:18-alpine   Up 6 seconds   5432/tcp
+❯ docker logs db | tail -3
+2026-09-20 07:48:49.223 UTC [1] LOG:  listening on Unix socket "/var/run/postgresql/.s.PGSQL.5432"
+2026-09-20 07:48:49.229 UTC [65] LOG:  database system was shut down at 2026-09-20 07:48:49 UTC
+2026-09-20 07:48:49.237 UTC [1] LOG:  database system is ready to accept connections
+```
+
+今度は `Up` で、ログも `ready to accept connections` です。`PORTS` が `5432/tcp` だけで `->` が無いのは、`-p` を付けていないからです。イメージが「5432 番を使う」と宣言しているだけで、ホストには繋がっていません。今回はホストから繋ぐ必要が無いので、このままにします。
+
+### 中にデータを書く
+
+`docker exec` で、コンテナの中の `psql` を使ってテーブルを作り、1 行入れます。`-U postgres` は接続するユーザー、`-c` はその後ろの SQL を 1 文だけ実行するオプションで、どちらも `psql` 側のものです。
+
+```console
+❯ docker exec db psql -U postgres -c "CREATE TABLE notes (body text)"
+CREATE TABLE
+❯ docker exec db psql -U postgres -c "INSERT INTO notes VALUES ('written inside a container')"
+INSERT 0 1
+❯ docker exec db psql -U postgres -c "SELECT * FROM notes"
+            body
+----------------------------
+ written inside a container
+(1 row)
+```
+
+このマシンには PostgreSQL も `psql` も入っていません。全部コンテナの中です。
+
+### 消して、起こし直す
+
+nginx のときと同じことをします。`docker rm -f` で消して、同じ `docker run` で起こし直し、`SELECT` を打ちます。
+
+```console
+❯ docker rm -f db
+db
+❯ docker run -d --name db -e POSTGRES_PASSWORD=secret postgres:18-alpine
+bd9c6e9bc761a20a9506acee65d3acf62b875f74e3ccd0bdb8eb10567017df6a
+❯ docker exec db psql -U postgres -c "SELECT * FROM notes"
+ERROR:  relation "notes" does not exist
+LINE 1: SELECT * FROM notes
+                      ^
+```
+
+テーブルごと消えました。データベースでこれは困ります。
+
+ところで、このとき `docker volume ls` を見ると、作った覚えの無いものが並んでいます。
+
+```console
+❯ docker volume ls
+DRIVER    VOLUME NAME
+local     115c37a34938ab37c7050ea1319679906cd06bafb9edd24dcb9e0fa0391e82da
+local     eecab68902c969ec60d33b1dbcdb1f0214ed72dce6641f788c303f7bfc3248f0
+local     ef5d8204ad6ea069b0551e7f856938662333dadd5b02085b3fec3842fac130ce
+```
+
+postgres のイメージは「`/var/lib/postgresql` はデータの置き場だ」と宣言していて、`-v` を付けなくても Docker はそこを**匿名ボリューム**として外に出します。ただし名前が無いので、新しいコンテナは新しい匿名ボリュームをもらい、古いほうは誰にも繋がれずに残ります。ここまでに起こした 3 つのコンテナの分がこの 3 つで、2 つは迷子、1 つはいま動いている `db` が使っています。データは消えたのではなく、迷子になっています。
+
+迷子のボリュームは `docker volume prune` で消せます。使われているものは消しません。
+
+```console
+❯ docker volume prune -f
+Deleted Volumes:
+115c37a34938ab37c7050ea1319679906cd06bafb9edd24dcb9e0fa0391e82da
+eecab68902c969ec60d33b1dbcdb1f0214ed72dce6641f788c303f7bfc3248f0
+
+Total reclaimed space: 40.6MB
+```
+
+迷子を作らないためには、コンテナを消すときに `-v` を付けます。`docker rm -v` は、そのコンテナの匿名ボリュームも一緒に消します。
+
+```console
+❯ docker rm -f -v db
+db
+❯ docker volume ls
+DRIVER    VOLUME NAME
+```
+
+### 名前付きボリューム — 消えてほしくないものの置き場
+
+消えては困るデータの置き場には、ボリュームに名前を付けて、毎回同じものを繋ぎます。`docker volume create 名前` で作り、`docker run` に `-v 名前:コンテナの中のパス` を足して繋ぎます。
+
+```console
+❯ docker volume create pgdata
+pgdata
+❯ docker run -d --name db -e POSTGRES_PASSWORD=secret -v pgdata:/var/lib/postgresql postgres:18-alpine
+4c5700d374cafd484d11142554afd361db4b89d55445b128605a1a1cdbf74a78
+```
+
+`-v pgdata:/var/lib/postgresql` は、「`pgdata` というボリュームを、コンテナの `/var/lib/postgresql` に繋ぐ」です。PostgreSQL がそこに書けば、それは実際にはボリュームに書かれます。
+
+先ほどと同じ 1 行を入れて、消して、起こし直します。`-c` は複数書けるので、`CREATE TABLE` と `INSERT` を 1 回の `docker exec` にまとめています。
+
+```console
+❯ docker exec db psql -U postgres -c "CREATE TABLE notes (body text)" -c "INSERT INTO notes VALUES ('written inside a container')"
+CREATE TABLE
+INSERT 0 1
+❯ docker rm -f db
+db
+❯ docker volume ls
+DRIVER    VOLUME NAME
+local     pgdata
+❯ docker run -d --name db -e POSTGRES_PASSWORD=secret -v pgdata:/var/lib/postgresql postgres:18-alpine
+fc72c26f2bf7a3b8159af8502ba5b50b4c1d6e2c788cc9362df9c5f70296173c
+❯ docker exec db psql -U postgres -c "SELECT * FROM notes"
+            body
+----------------------------
+ written inside a container
+(1 row)
+```
+
+今度は残っています。コンテナは確かに消えて新しく作られたのに、`docker volume ls` に残っていた `pgdata` を新しいコンテナが繋ぎ直したので、その中のデータがそのまま見えています。繋がっているかは `docker inspect` で確かめられます。
+
+```console
+❯ docker inspect db --format "{{range .Mounts}}{{.Type}} {{.Name}} -> {{.Destination}}{{end}}"
+volume pgdata -> /var/lib/postgresql
+```
+
+![「コンテナを消しても、ボリュームは残る」の図。上段では、コンテナ db（書き込み層付き）の /var/lib/postgresql が、外にある円筒のボリューム pgdata に線で繋がっている。中段でコンテナに × が付き「docker rm -f db」、書き込み層は消えるが、ボリュームは残っている。下段で新しいコンテナが起き、同じボリュームに繋ぎ直されて「notes テーブルはそのまま」と書いてある。「コンテナの中に書いたものはコンテナと一緒に消える。ボリュームに書いたものは残る」と添えてある](docker-volume-survives.svg)
+
+これが、コンテナでデータを扱うときの基本形です。**コンテナは使い捨て、データはボリューム。** イメージを新しい版に上げるときも、コンテナを起こし直すだけで、データはボリュームに残っています。
+
+### `stop` と `rm` は違う
+
+`docker stop` はプロセスを止めるだけで、書き込み層もボリュームも残り、`docker start` で続きから動きます。Docker Desktop を再起動したときも同じです。消えるのは `docker rm` したときだけです。
+
+```console
+❯ docker stop db
+db
+❯ docker ps -a
+NAMES          STATUS
+db             Exited (0) Less than a second ago
+❯ docker start db
+db
+❯ docker exec db psql -U postgres -c "SELECT * FROM notes"
+            body
+----------------------------
+ written inside a container
+(1 row)
+```
+
+## 全部消す
+
+この記事で作ったものを、全部消します。コンテナは `docker rm -f`、ボリュームは `docker volume rm`、イメージは `docker rmi` で、コンテナ、ボリューム、イメージの順です（使っているものは消せないので、この順になります）。最後に `docker ps -a` と `docker volume ls` で何も無いことを確かめます。
+
+```console
+❯ docker rm -f db
+db
+❯ docker volume rm pgdata
+pgdata
+❯ docker rmi postgres:18-alpine nginx:1.29-alpine node:22-slim node:20-slim alpine
+Untagged: postgres:18-alpine
+Deleted: sha256:6c538e7206ea40ff740ef27883529390a690b6ead6ba96b44c67a9f7c638e8fd
+Untagged: nginx:1.29-alpine
+Deleted: sha256:5616878291a2eed594aee8db4dade5878cf7edcb475e59193904b198d9b830de
+Untagged: node:22-slim
+Deleted: sha256:48e4b67d85f87bd551df43704e24d252f56cc5f8e9718841aace50f19948f0f9
+Untagged: node:20-slim
+Deleted: sha256:2cf067cfed83d5ea958367df9f966191a942351a2df77d6f0193e162b5febfc0
+Untagged: alpine:latest
+Deleted: sha256:294b683cb724975bec92580e1e685676bd4b50bda910ddb8c51d4cabeaec77e6
+❯ docker ps -a
+NAMES          STATUS
+❯ docker volume ls
+DRIVER    VOLUME NAME
+```
+
+ホストには Node も nginx も PostgreSQL も入れていないので、消すべきものはこれで全部です。この記事で動かしたものは、何も残っていません。
+
+## 実際に踏んだ罠
+
+### Git Bash がパスを書き換える
+
+Windows の Git Bash から、コンテナの中のパスを引数に渡すと、こうなることがあります。
+
+```console
+❯ docker exec web ls /usr/share/nginx/html
+ls: C:/Program Files/Git/usr/share/nginx/html: No such file or directory
+```
+
+コンテナの中のパス `/usr/share/nginx/html` を、Git Bash（MSYS2）が Windows のパスに変換してから渡しています。Docker とは関係ない、MSYS2 の仕様です。環境変数 `MSYS_NO_PATHCONV=1` を付けると変換が止まります。
+
+```console
+❯ MSYS_NO_PATHCONV=1 docker exec web ls /usr/share/nginx/html
+50x.html
+index.html
+```
+
+PowerShell から打つ場合は起きません。この記事の transcript は、Git Bash で `MSYS_NO_PATHCONV=1` を設定して取っています。
+
+### Docker Desktop の VM にはメモリの上限がある
+
+コンテナは軽いとはいえ、Windows と macOS では Linux VM の中で動いていて、その VM のメモリは Docker Desktop の設定で決まっています。`docker info` で見えます。
+
+```console
+❯ docker info --format 'CPUs={{.NCPU}} Mem={{.MemTotal}}'
+CPUs=8 Mem=8388608000
+```
+
+このマシンでは 8 GB に設定してあります。ホストに 16 GB あっても、コンテナから見える世界はこの 8 GB です。この記事の PostgreSQL なら、`docker stats` で見ると 24 MB しか使っていませんが、大きなビルドやテストをコンテナの中で回すと、プロセスがエラーメッセージ無しに `Killed` されることがあります。そのときは Settings → Resources → Memory を疑ってください。
+
+```console
+❯ docker stats --no-stream
+NAME      CPU %     MEM USAGE / LIMIT
+db        0.13%     23.83MiB / 7.812GiB
+```
+
+## よく使うコマンド
+
+| コマンド | 何をするか |
+| --- | --- |
+| `docker run --rm IMAGE CMD` | イメージから使い捨てコンテナを起こして CMD を 1 回実行する |
+| `docker run -d --name NAME -p H:C -e K=V -v VOL:PATH IMAGE` | 裏で動かす。ポート、環境変数、ボリュームを繋ぐ |
+| `docker ps` / `docker ps -a` | 動いているコンテナ / 止まったものも含めて一覧 |
+| `docker logs NAME` | コンテナの標準出力と標準エラーを見る。`-f` で追いかける |
+| `docker exec NAME CMD` / `docker exec -it NAME sh` | 動いているコンテナの中でコマンドを実行する / シェルを開く |
+| `docker top NAME` | コンテナの中のプロセスを外から見る |
+| `docker cp SRC NAME:DST` | ホストとコンテナの間でファイルをコピーする |
+| `docker diff NAME` | コンテナがイメージから変えたファイルを見る |
+| `docker stop NAME` / `docker start NAME` | 止める / 起こし直す（書き込み層は残る） |
+| `docker rm -f NAME` / `docker rm -v NAME` | 止めて消す（書き込み層も消える） / 匿名ボリュームも一緒に消す |
+| `docker images` / `docker rmi IMAGE` | イメージの一覧 / 削除 |
+| `docker volume create` / `ls` / `rm` / `prune` | ボリュームを作る / 一覧 / 消す / 迷子を消す |
+| `docker inspect NAME` | コンテナやイメージの詳細を JSON で見る |
+| `docker stats` | コンテナの CPU とメモリの使用量 |
+
+## まとめ
+
+- コンテナは、アプリが動く「環境」を OS のユーザーランドごと箱に詰めたもの。カーネルはホストと共有するので、仮想マシンより軽くて速い
+- **イメージ**は焼き固めた雛形、**コンテナ**はそこから起こした実体。1 つのイメージから何個でも起こせて、コンテナを消してもイメージは残る
+- `docker run --rm` で、何も入れずにコマンドを 1 回だけ試せる。Node の版違いも同居する
+- `-d` で裏に回し、`-p` でポートを繋ぎ、`-e` で環境変数を渡す。起こしたら `docker ps` と `docker logs` を見る
+- コンテナはイメージの上に書き込み層を 1 枚乗せたもの。`docker diff` で見えて、`docker rm` で消える
+- **コンテナは使い捨て。** 消えてほしくないものは**名前付きボリューム**に置く。名前が無いと迷子になる
+- Windows と macOS のコンテナは Docker Desktop の VM の中にいて、メモリも共有できるフォルダもその設定で決まる
+
+ここまでは、誰かが作ったイメージを使うだけでした。次の記事では、`Dockerfile` を書いて自分のイメージをビルドします。題材は Cloudflare が「WordPress の後継」を掲げて公開した CMS、EmDash です。ビルドコンテキスト、レイヤーのキャッシュ、マルチステージビルドといった、イメージを「作る側」の話をします。
