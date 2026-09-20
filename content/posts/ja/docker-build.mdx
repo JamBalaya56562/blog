@@ -1,0 +1,518 @@
+---
+title: Dockerfile でイメージをビルドする
+date: "2026-09-21"
+description: 2 行の Dockerfile から始めて、ビルドコンテキスト、レイヤーとキャッシュ、マルチステージビルドまで。Cloudflare 製の CMS EmDash を公式の Dockerfile からビルドして動かし、その途中で踏んだ 2 つの罠を upstream に直しに行った記録
+image: /thumbnails/docker-build.avif
+tags:
+  - docker
+  - dockerfile
+  - emdash
+  - devtools
+---
+
+## 前回のおさらい
+
+[前回](/ja/blog/getting-started-with-docker)は、誰かが作ったイメージを `docker run` で起こすだけでした。nginx のコンテナに `docker cp` でページを入れて、コンテナを消したらページも消える、というところで終わっています。
+
+今回は、そのページを**イメージに焼き込みます**。イメージのレシピが `Dockerfile` で、レシピからイメージを作るのが `docker build` です。まず 2 行の `Dockerfile` で仕組みを掴み、それから 70 行ある本物の `Dockerfile` を読んで、ビルドして、動かします。題材は Cloudflare が「WordPress の後継」を掲げて公開した CMS、[EmDash](https://emdashcms.com/) です。
+
+## 2 行の Dockerfile
+
+前回の `site/index.html` と同じ HTML を、`mysite` というディレクトリに置きます。その隣に `Dockerfile` という名前のファイルを作って、この 2 行を書きます。
+
+```console
+❯ ls
+Dockerfile
+index.html
+❯ cat Dockerfile
+FROM nginx:1.29-alpine
+COPY index.html /usr/share/nginx/html/index.html
+```
+
+- `FROM` は「このイメージから始める」です。前回使った nginx のイメージの上に積みます
+- `COPY` は「手元のこのファイルを、イメージのこのパスに入れる」です
+
+つまり「nginx のイメージに、`index.html` を 1 枚足したもの」がレシピです。`docker build` でビルドします。`-t mysite` はできたイメージに付ける名前で、最後の `.` は「このディレクトリを材料として渡す」という意味です（後述します）。
+
+```console
+❯ docker build -t mysite .
+#1 [internal] load build definition from Dockerfile
+#1 DONE 0.3s
+#2 [internal] load metadata for docker.io/library/nginx:1.29-alpine
+#2 DONE 6.9s
+#4 [internal] load .dockerignore
+#4 DONE 0.2s
+#6 [internal] load build context
+#6 transferring context: 203B 0.2s done
+#6 DONE 0.6s
+#5 [1/2] FROM docker.io/library/nginx:1.29-alpine@sha256:5616878291a2eed594aee8db4dade5878cf7edcb475e59193904b198d9b830de
+#5 DONE 15.8s
+#7 [2/2] COPY index.html /usr/share/nginx/html/index.html
+#7 DONE 1.3s
+#8 exporting to image
+#8 naming to docker.io/library/mysite:latest 0.0s done
+#8 DONE 2.5s
+```
+
+`[1/2]` と `[2/2]` が `Dockerfile` の 2 行に対応しています。`FROM` で nginx のイメージを取ってきて、`COPY` で `index.html` を乗せて、`mysite:latest` という名前で保存した、と読めます。
+
+できたイメージからコンテナを起こします。前回と同じ `docker run` で、イメージ名だけ `mysite` です。
+
+```console
+❯ docker run -d --name web -p 8080:80 mysite
+284a718c3d9f0fa0a8d75d3b31cbd97374d013f96ed89ef9bd4ad4841d9e7038
+❯ curl -s http://localhost:8080/ | grep -o "<title>.*</title>"
+<title>Hello from a container</title>
+```
+
+最初から自分のページです。ここで前回と同じように、コンテナを消して、起こし直します。
+
+```console
+❯ docker rm -f web
+web
+❯ docker run -d --name web -p 8080:80 mysite
+da81ae157bf62e01aa1d911bc8e2563d8f3fbd7f21aba70e867618055f710dc4
+❯ curl -s http://localhost:8080/ | grep -o "<title>.*</title>"
+<title>Hello from a container</title>
+```
+
+今度は残っています。前回の `docker cp` はコンテナの書き込み層に入れただけだったので、コンテナと一緒に消えました。今回はイメージそのものに入っているので、そのイメージから起こすコンテナには最初から入っています。**変えたいものがアプリの一部ならイメージに焼く、データならボリュームに置く**、という使い分けです。
+
+### レイヤーが 1 枚増えている
+
+`docker history` で、イメージがどの手順でできたかを見られます。
+
+```console
+❯ docker history mysite
+CREATED BY                                       SIZE
+COPY index.html /usr/share/nginx/html/index.…   24.6kB
+RUN /bin/sh -c set -x     && apkArch="$(cat …   51.8MB
+ENV ACME_VERSION=0.3.1                           0B
+ENV NJS_RELEASE=1                                0B
+```
+
+一番上が、今回の `COPY` でできた 24.6 kB のレイヤーです。その下は全部 nginx のイメージが持っていたものです。**イメージはレイヤーの積み重ねで、`Dockerfile` の 1 行が 1 枚のレイヤーになります。** 前回、nginx を pull したときに `Pull complete` が 8 行出たのは、この積み重ねを 1 枚ずつ取ってきていたからです。
+
+### 2 回目は速い
+
+同じ `docker build` をもう一度打つと、一瞬で終わります。
+
+```console
+❯ docker build -t mysite .
+#5 [1/2] FROM docker.io/library/nginx:1.29-alpine@sha256:5616878291a2eed594aee8db4dade5878cf7edcb475e59193904b198d9b830de
+#5 DONE 1.3s
+#6 [2/2] COPY index.html /usr/share/nginx/html/index.html
+#6 CACHED
+#7 DONE 2.6s
+```
+
+`[2/2]` が `CACHED` です。手順もコピーするファイルも前回と同じなので、Docker は前回作ったレイヤーをそのまま使いました。これが**ビルドキャッシュ**で、後で本物の `Dockerfile` を見るときに効いてきます。
+
+![「Dockerfile の 1 行が 1 枚のレイヤーになる」の図。左に 2 行の Dockerfile（FROM nginx:1.29-alpine、COPY index.html ...）。右にレイヤーの積み重ねがあり、下の 8 枚が「nginx:1.29-alpine のレイヤー（pull してきたもの）」、その上に 1 枚だけ「COPY index.html（24.6 kB）」が乗って、全体が mysite:latest と括られている。「変わっていない行のレイヤーは CACHED で再利用される」と添えてある](docker-layers.svg)
+
+## Dockerfile の命令
+
+本物の `Dockerfile` を読む前に、出てくる命令をまとめておきます。
+
+| 命令 | 意味 |
+| --- | --- |
+| `FROM image` | このイメージから始める。`AS name` を付けるとステージに名前が付く |
+| `WORKDIR /path` | 以降の命令の作業ディレクトリ。無ければ作る |
+| `COPY src dst` | ビルドコンテキストのファイルをイメージに入れる。`--from=stage` で別のステージから |
+| `RUN command` | イメージの中でコマンドを実行し、結果をレイヤーとして残す |
+| `ENV KEY=value` | コンテナ起動時の環境変数 |
+| `EXPOSE port` | このイメージが使うポートの宣言。`-p` で繋ぐのは別 |
+| `CMD ["cmd", "arg"]` | コンテナ起動時に実行するコマンド。`docker run` でイメージ名の後ろに書くと上書きされる |
+
+`ENV`、`EXPOSE`、`CMD` は、イメージの中身ではなく「起こしたときの振る舞い」を決めます。前回 `docker run -d --name web -p 8080:80 nginx:1.29-alpine` で nginx が勝手に起動したのは、nginx のイメージが `CMD` を持っていたからで、`docker run --rm node:22-slim node -v` で `node -v` が実行されたのは、イメージ名の後ろに書いたものが `CMD` を上書きしたからです。
+
+## ビルドコンテキスト
+
+`docker build .` の `.` は、**ビルドコンテキスト**です。Docker はこのディレクトリの中身を丸ごとエンジンに送り、`COPY` はそこからしかファイルを取れません。
+
+エンジンは Linux VM の中にいるので、送るのは本当に「転送」です。先ほどの出力に `transferring context: 203B` とあったのがそれで、`Dockerfile` と `index.html` の 2 つで 203 バイトでした。ここに `node_modules` や `.git` があると、数百 MB を毎回 VM に送ることになります。
+
+それを避けるのが `.dockerignore` です。EmDash のリポジトリにあるものを見ると、意図が分かります。
+
+```text title=".dockerignore"
+node_modules
+**/node_modules
+**/dist
+.git
+.github
+.changeset
+.vscode
+slidev
+```
+
+手元でインストールした依存、ビルド結果、Git の履歴、CI の設定。どれもイメージの中で作り直すか、そもそも要らないものです。
+
+![「ビルドコンテキストは、エンジンに送られる」の図。左に手元のディレクトリ（Dockerfile、index.html、node_modules、.git）。中央の矢印「docker build .」が Linux VM の中の Docker エンジンへ向かい、.dockerignore がフィルタになって node_modules と .git を弾いている。右のエンジン側に届いたのは Dockerfile と index.html だけで、「COPY はここからしか取れない」と添えてある](docker-build-context.svg)
+
+## EmDash をビルドする
+
+ここからが本編です。EmDash は、Astro の上に TypeScript で書かれた CMS で、Cloudflare Workers でも Node.js + SQLite でも動きます。公式リポジトリに `Dockerfile` があり、SQLite とアップロードという「ボリュームに置くべきデータ」があり、ブラウザで触れる管理画面があります。ビルドの題材として、大きさも中身もちょうどよい相手です。
+
+この記事で動かしたのは、リポジトリのコミット `f67a120`（2026 年 9 月 19 日、core パッケージ 0.38.0）です。開発が速いので、読む時点では細部が違うかもしれません。
+
+リポジトリを取ってきて、ビルドします。`-t emdash` と `.` は先ほどと同じです。
+
+```bash
+git clone https://github.com/emdash-cms/emdash.git
+cd emdash
+```
+
+```console
+❯ docker build -t emdash .
+#1 [internal] load build definition from Dockerfile
+#1 DONE 0.3s
+#2 [internal] load metadata for docker.io/library/node:22-slim
+#2 DONE 3.5s
+#4 [internal] load .dockerignore
+#4 DONE 0.3s
+#5 [internal] load build context
+#5 DONE 19.3s
+#6 [base 1/3] FROM docker.io/library/node:22-slim@sha256:48e4b67d85f87bd551df43704e24d252f56cc5f8e9718841aace50f19948f0f9
+#6 CACHED
+#8 [base 2/3] RUN corepack enable && corepack prepare pnpm@10.28.0 --activate
+#8 DONE 38.5s
+#9 [base 3/3] WORKDIR /app
+#9 DONE 0.5s
+#10 [deps  1/10] RUN apt-get update     && apt-get install -y --no-install-recommends python3 make g++     && rm -rf /var/lib/apt/lists/*
+#10 DONE 149.7s
+#11 [deps  2/10] COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
+#11 DONE 0.8s
+#12 [deps  3/10] COPY patches/ patches/
+#12 DONE 0.5s
+#13 [deps  4/10] COPY packages/ packages/
+#13 DONE 15.7s
+#14 [deps  5/10] COPY templates/ templates/
+#14 DONE 2.8s
+#15 [deps  6/10] COPY demos/ demos/
+#15 DONE 1.0s
+#16 [deps  7/10] COPY docs/package.json docs/package.json
+#16 DONE 0.3s
+#17 [deps  8/10] COPY e2e/fixture/package.json e2e/fixture/package.json
+#17 DONE 0.3s
+#18 [deps  9/10] RUN sed -i '/slidev/d' pnpm-workspace.yaml
+#18 DONE 2.5s
+#19 [deps 10/10] RUN pnpm install --frozen-lockfile
+#19 DONE 1592.3s
+#20 [build 1/8] COPY . .
+#20 DONE 54.5s
+#21 [build 2/8] RUN sed -i '/slidev/d;/verifyDepsBeforeRun/d' pnpm-workspace.yaml
+#21 DONE 1.9s
+#22 [build 3/8] RUN sed -i 's|file:./data.db|file:./data/data.db|' templates/blog/astro.config.mjs
+#22 DONE 1.5s
+#23 [build 4/8] RUN pnpm build && pnpm --filter @emdash-cms/template-blog build
+#23 DONE 1161.6s
+#24 [build 5/8] RUN NODE_OPTIONS=--max-old-space-size=4096 pnpm --filter @emdash-cms/template-blog deploy /deploy --prod --legacy
+#24 DONE 601.3s
+#25 [build 6/8] RUN cp -r /app/templates/blog/dist /deploy/dist
+#25 DONE 25.7s
+#26 [build 7/8] RUN cp -r /app/templates/blog/seed /deploy/seed
+#26 DONE 1.6s
+#27 [build 8/8] RUN cp /app/templates/blog/astro.config.mjs /deploy/astro.config.mjs
+#27 DONE 1.9s
+#28 [stage-3 3/4] COPY --from=build /deploy .
+#28 DONE 144.8s
+#29 [stage-3 4/4] RUN mkdir -p data uploads     && ln -s /app/node_modules/.pnpm/node_modules/kysely /app/node_modules/kysely
+#29 DONE 3.6s
+#30 exporting to image
+#30 naming to docker.io/library/emdash:latest 0.0s done
+#30 DONE 253.9s
+```
+
+`[deps 10/10]` のような表示で、どのステージの何番目の手順にいるかが分かり、右端の `DONE 1592.3s` がその手順にかかった時間です。`base`、`deps`、`build`、`stage-3` と 4 つのステージがあり、これがマルチステージビルドです（後述）。
+
+この回は 70 分かかりました。`pnpm install` が 26 分、`pnpm build` が 19 分、`pnpm deploy` が 10 分です。ただしこれは、回線が細くて pnpm の並列を 4 に絞り（「[実際に踏んだ罠](#実際に踏んだ罠)」参照）、同じマシンで他の作業も動かしながらキャッシュ無しで通した数字で、同じ `Dockerfile` を空いているときにビルドしたら `pnpm install` は 5 分半、`pnpm build` は 8 分でした。ビルドの時間は環境次第です。
+
+> [!NOTE]
+> このコミットの `Dockerfile` は、そのままでは 2 か所で止まります。上の transcript はそれを直した状態のもので、修正は [PR #3222](https://github.com/emdash-cms/emdash/pull/3222) として送ってあります。何が起きてどう直したかは「[実際に踏んだ罠](#実際に踏んだ罠)」に書きました。読む時点でマージされていれば、何もしなくて済みます。
+
+できたイメージは 1.1 GB です。
+
+```console
+❯ docker images emdash
+REPOSITORY   TAG       IMAGE ID       SIZE
+emdash       latest    55db89995612   1.1GB
+```
+
+## Dockerfile を読む
+
+EmDash の `Dockerfile` を、要点だけ抜き出して読みます。
+
+```dockerfile title="Dockerfile"
+FROM node:22-slim AS base
+
+RUN corepack enable && corepack prepare pnpm@10.28.0 --activate
+WORKDIR /app
+
+# ---- Install dependencies ----
+FROM base AS deps
+
+COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
+COPY packages/ packages/
+COPY templates/ templates/
+RUN pnpm install --frozen-lockfile
+
+# ---- Build ----
+FROM deps AS build
+
+COPY . .
+RUN pnpm build && pnpm --filter @emdash-cms/template-blog build
+RUN pnpm --filter @emdash-cms/template-blog deploy /deploy --prod --legacy
+
+# ---- Runtime ----
+FROM node:22-slim
+
+WORKDIR /app
+COPY --from=build /deploy .
+RUN mkdir -p data uploads
+
+ENV HOST=0.0.0.0
+ENV PORT=4321
+EXPOSE 4321
+
+CMD ["node", "./dist/server/entry.mjs"]
+```
+
+### 変わりにくいものを先にコピーする
+
+`deps` ステージを見てください。リポジトリ全体をコピーする前に、`pnpm-lock.yaml` と `package.json` だけを先にコピーして `pnpm install` しています。そして `build` ステージで初めて `COPY . .` でソース全体をコピーします。
+
+これはビルドキャッシュのためです。キャッシュは「その手順と、それまでの手順が前回と同じなら再利用する」ので、`COPY` するファイルが 1 バイトでも変われば、その行から下は全部やり直しになります。ソースコードは毎日変わりますが、lockfile はたまにしか変わりません。だから lockfile だけを先にコピーして、一番重い `pnpm install` を済ませておけば、ソースをいじって再ビルドしても `pnpm install` は `CACHED` で飛ばせます。
+
+実際、この記事を書く間に `Dockerfile` を直して何度もビルドし直しましたが、2 回目からはこうなりました。
+
+```console
+❯ docker build -t emdash .
+...
+#19 [deps 10/10] RUN pnpm install --frozen-lockfile
+#19 CACHED
+#20 [build 1/8] COPY . .
+#20 DONE 4.5s
+...
+```
+
+![「変わりにくいものを先に、変わりやすいものを後に」の図。Dockerfile の手順が上から下に並び、上から COPY pnpm-lock.yaml（たまに変わる）→ RUN pnpm install（5 分半）→ COPY . .（毎日変わる）→ RUN pnpm build。右側に「ソースだけ変えた再ビルド」の列があり、上 2 つが CACHED、下 2 つだけが再実行になっている。「変わった行から下は全部やり直し。だから重くて変わらないものを上に置く」と添えてある](docker-layer-cache.svg)
+
+### マルチステージビルド
+
+`FROM` が 4 回出てきます。`base` → `deps` → `build` と積み上げていって、最後の `FROM node:22-slim` は**真っさらな Node イメージから始め直して**、`COPY --from=build /deploy .` でビルド結果だけを持ってきます。
+
+`deps` と `build` には、`python3` や `g++`、開発用の依存、ソースコード全体が入っています。それらは最終的なイメージには要りません。`docker history` で確かめられます。
+
+```console
+❯ docker history emdash --format 'table {{.CreatedBy}}\t{{.Size}}'
+CREATED BY                                       SIZE
+CMD ["node" "./dist/server/entry.mjs"]           0B
+EXPOSE [4321/tcp]                                0B
+ENV PORT=4321                                    0B
+ENV HOST=0.0.0.0                                 0B
+RUN /bin/sh -c mkdir -p data uploads     && …   20.5kB
+COPY /deploy . # buildkit                        641MB
+WORKDIR /app                                     8.19kB
+...
+```
+
+`COPY /deploy .` の 641 MB が EmDash の本体（ビルド済みのアプリと本番用の `node_modules`）で、それより下は `node:22-slim` そのものです。`python3` も `g++` もソースコードも、最終イメージには 1 バイトも入っていません。
+
+![「ビルド用と実行用でイメージを分ける」の図。左から右へ 4 つのステージが並ぶ。base（node:22-slim + pnpm）→ deps（lockfile と pnpm install で node_modules が乗る）→ build（COPY . . と pnpm build で dist ができる。python3 や g++ も入っていて重い）。そこから COPY --from=build /deploy . の矢印だけが、独立した 4 つ目の runtime（node:22-slim に /deploy と data、uploads だけ）へ伸びている。build は「捨てる」、runtime は「これが emdash:latest」と書いてある](docker-multistage.svg)
+
+> [!TIP]
+> `docker history` で大きなレイヤーを見つけたら、その `RUN` や `COPY` を疑ってください。ビルドに使ったツールが最終イメージに残っているなら、マルチステージにするだけで数百 MB 減ることがあります。
+
+## 動かす
+
+イメージができたので、起こします。ここからは前回やったことの応用です。
+
+### イメージの中の CLI を使う
+
+EmDash はプラグインの秘密情報を暗号化するために `EMDASH_ENCRYPTION_KEY` という環境変数を要求します。鍵は EmDash 付属の `emdash secrets generate` で作れますが、そのためだけに手元に EmDash を入れるのは本末転倒です。イメージの中に CLI が入っているので、`docker run --rm` で使い捨てのコンテナを起こして、それを呼びます。イメージ名の後ろに書いたコマンドが `CMD` の代わりに実行される、という前回の話の実用例です。
+
+```console
+❯ docker run --rm emdash node_modules/.bin/emdash secrets generate
+emdash_enc_v1_PQ0B3ivmoMq9stOewK6wkw_4FGwAvRK3S0zBCP29lJw
+
+EmDash encryption key generated.
+
+Set EMDASH_ENCRYPTION_KEY in your environment.
+For Cloudflare deployments, push it to your Worker's secrets.
+For Node deployments, add it to your process environment or .env file.
+
+Keep this value secret. Losing it means losing every secret encrypted with it.
+```
+
+### 起動する
+
+`Dockerfile` の末尾を思い出してください。`EXPOSE 4321` と `ENV PORT=4321` があったので、繋ぐポートは 4321 です。データは `/app/data`（SQLite）と `/app/uploads` に書かれるので、そこに名前付きボリュームを繋ぎます。
+
+```console
+❯ docker volume create emdash-data
+emdash-data
+❯ docker volume create emdash-uploads
+emdash-uploads
+❯ docker run -d --name emdash -p 4321:4321 -e EMDASH_ENCRYPTION_KEY=emdash_enc_v1_... \
+    -v emdash-data:/app/data -v emdash-uploads:/app/uploads emdash
+88254b6d6c18065376170dd50289e3b110739f69ccf369048dd64835c9ff4193
+```
+
+`http://localhost:4321/_emdash/admin/` を開くと、初回はセットアップウィザードに転送されます。サイト名、メールアドレス、パスキーの登録の 3 ステップで、Windows なら Windows Hello のダイアログが出ます。ダッシュボードが開いたら、Posts から記事を 1 本書いて公開します。
+
+![EmDash の公開サイトに、Hello from a container というタイトルの記事が表示されている。本文は This post was written inside a Docker container. Its data lives in a volume. の 1 行。左に PUBLISHED September 20, 2026 と READING TIME 1 min、右にサンプル記事のカテゴリとタグ、最近の記事一覧が並ぶ](docker-emdash-post.avif)
+
+```console
+❯ curl -s -o /dev/null -w '%{http_code}\n' http://localhost:4321/posts/hello-from-a-container
+200
+```
+
+### イメージを作り直して、起こし直す
+
+この記事の「[EmDash をビルドする](#emdash-をビルドする)」の transcript は、実はこの後で `--no-cache` を付けて最初から作り直したものです。つまり、`emdash` という名前は同じでも、記事を書いたときとは別のイメージになっています。そのイメージで、コンテナを消して、同じボリュームを繋いで起こし直します。
+
+```console
+❯ docker images emdash
+REPOSITORY   TAG       IMAGE ID       SIZE
+emdash       latest    55db89995612   1.1GB
+❯ docker rm -f emdash
+emdash
+❯ docker run -d --name emdash -p 4321:4321 -e EMDASH_ENCRYPTION_KEY=emdash_enc_v1_... \
+    -v emdash-data:/app/data -v emdash-uploads:/app/uploads emdash
+8fc56333248c59358937480bbf1d06556fe6a5911444c6153dad68319a0846c1
+❯ docker logs emdash
+10:30:04 [@astrojs/node] Server listening on
+  local: http://localhost:4321
+  network: http://172.17.0.2:4321
+❯ curl -s -o /dev/null -w '%{http_code}\n' http://localhost:4321/posts/hello-from-a-container
+200
+```
+
+新しいイメージから起きたコンテナに、前のコンテナで書いた記事がそのまま出ています。データはボリュームにあって、イメージには入っていないからです。**アプリを更新するときは、イメージを作り直してコンテナを起こし直すだけ。** これが、前回「コンテナは使い捨て、データはボリューム」と言ったことの、作る側から見た意味です。
+
+## 実際に踏んだ罠
+
+### Dockerfile がそのままでは通らない
+
+コミット `f67a120` の `Dockerfile` は、`pnpm build` で止まりました。
+
+```console
+❯ docker build -t emdash .
+...
+#23 [build 4/8] RUN pnpm build && pnpm --filter @emdash-cms/template-blog build
+#23 3.099 [ERR_PNPM_VERIFY_DEPS_BEFORE_RUN] The workspace structure has changed since last install
+#23 3.099
+#23 3.099 Run "pnpm install"
+#23 ERROR: process "/bin/sh -c pnpm build && pnpm --filter @emdash-cms/template-blog build" did not complete successfully: exit code: 1
+```
+
+原因は、先ほど「変わりにくいものを先にコピーする」で見た構造にあります。`deps` ステージはワークスペースのうちブログのテンプレートに要るメンバー（`packages/`、`templates/`、`demos/` など）だけをコピーして `pnpm install` します。ところが `build` ステージの `COPY . .` はリポジトリ全体を持ってくるので、7 月に `Dockerfile` が書かれた後に増えたメンバー（`apps/*`、`fixtures/*`、`i18n`、`infra/*`）がそこで現れます。`pnpm-workspace.yaml` に `verifyDepsBeforeRun: error` が設定されているため、pnpm は「install したときとワークスペースの構造が違う」と言って `pnpm build` を拒否します。
+
+CI は `Dockerfile` をビルドしていないので、誰も気付かないまま壊れていました。直し方は、`build` ステージで同じファイルをすでに `sed` している行に、その設定を落とす指示を足すだけです。
+
+```diff title="Dockerfile"
+ FROM deps AS build
+
+ COPY . .
+-RUN sed -i '/slidev/d' pnpm-workspace.yaml
++RUN sed -i '/slidev/d;/verifyDepsBeforeRun/d' pnpm-workspace.yaml
+```
+
+ここでキャッシュが効きました。直したのは `build` ステージの 2 番目の手順なので、再ビルドでは `deps` ステージの 5 分半の `pnpm install` が `CACHED` になり、変えた行より後だけが走りました。
+
+### Node のヒープが 2 GB で止まる
+
+それを直すと、今度は次の手順で落ちました。
+
+```console
+❯ docker build -t emdash .
+...
+#24 [build 5/8] RUN pnpm --filter @emdash-cms/template-blog deploy /deploy --prod --legacy
+...
+#24 104.7 FATAL ERROR: Reached heap limit Allocation failed - JavaScript heap out of memory
+...
+#24 ERROR: process "/bin/sh -c pnpm --filter @emdash-cms/template-blog deploy /deploy --prod --legacy" did not complete successfully: exit code: 134
+```
+
+Node のヒープが 2 GB で頭打ちになっています。最初は Docker Desktop の VM のメモリ（このマシンでは 4 GB）が原因だと思い、Settings → Resources → Memory で 8 GB にして再起動しました。ところが結果は同じでした。Node の既定のヒープ上限は、VM のメモリを倍にしても 2 GB のままだったからです。
+
+```console
+❯ docker info --format 'Mem={{.MemTotal}}'
+Mem=8388595712
+❯ docker run --rm node:22-slim node -e 'console.log("heap limit MB:", Math.round(require("v8").getHeapStatistics().heap_size_limit/1048576))'
+heap limit MB: 2096
+```
+
+つまり VM のサイズの問題ではなく、`pnpm deploy` が 69 プロジェクトのワークスペースの lockfile を読むのに 2 GB では足りない、という問題です。直し方は、その手順にだけ `NODE_OPTIONS` でヒープの上限を広げることです。
+
+```diff title="Dockerfile"
+-RUN pnpm --filter @emdash-cms/template-blog deploy /deploy --prod --legacy
++RUN NODE_OPTIONS=--max-old-space-size=4096 pnpm --filter @emdash-cms/template-blog deploy /deploy --prod --legacy
+```
+
+これで通りました。2 つの修正を合わせて [PR #3222](https://github.com/emdash-cms/emdash/pull/3222) にしてあります。
+
+> [!NOTE]
+> VM のメモリを増やしたのが無駄だったわけではありません。EmDash のリポジトリの型情報付き lint をコンテナの中で走らせたら、4 GB では OOM killer に殺され、8 GB で通りました。エラーメッセージ付きの `Reached heap limit` は Node の設定、メッセージ無しで `Killed` されるのは VM のメモリ、と切り分けてください。
+
+### Dockerfile を直すと COPY のキャッシュが飛ぶ
+
+`Dockerfile` を 1 行直して再ビルドしたら、`COPY . .` から下が全部やり直しになり、8 分の `pnpm build` がもう一度走りました。`Dockerfile` 自身がビルドコンテキストの中にあるからです。`COPY . .` は `Dockerfile` もコピーしていて、その中身が変わったので、Docker から見れば「コピーするファイルが変わった」のと同じです。
+
+`.dockerignore` に `Dockerfile` を書くと、コンテキストから外れてこの再実行を避けられます。`Dockerfile` 自体は別経路でエンジンに渡るので、ビルドには支障ありません。小さな `Dockerfile`（`COPY . /src` だけ）で確かめると、こうなります。
+
+```console
+❯ docker build -t ctx-test .        # Dockerfile にコメントを 1 行足した後
+#6 [2/3] COPY . /src
+#6 DONE 13.6s
+❯ echo Dockerfile > .dockerignore
+❯ docker build -t ctx-test .        # もう一度コメントを変えた後
+#6 [2/3] COPY . /src
+#6 CACHED
+```
+
+EmDash の `.dockerignore` には無いので、修正のたびに 8 分待ちました。
+
+### 回線が細いと pnpm がタイムアウトする
+
+`--no-cache` で最初から通してビルドし直したら、`pnpm install` がこう言って止まりました。
+
+```text
+[WARN] Request took 39786ms: https://registry.npmjs.org/typescript
+[WARN] GET https://registry.npmjs.org/vite error (23). Will retry in 10 seconds. 2 retries left.
+✗ Lockfile failed supply-chain policy check (2053 entries in 11m 8.2s)
+[ERR_PNPM_BROKEN_METADATA_JSON] The operation was aborted due to timeout
+```
+
+EmDash の `pnpm-workspace.yaml` には `minimumReleaseAge`（公開から一定時間経ったバージョンだけ入れる、サプライチェーン対策の設定）があり、そのために pnpm は各パッケージの**完全な**メタデータを取りに行きます。それが typescript で 16 MB、vite で 39 MB あります。2053 パッケージ分を既定の 16 並列で取ると、10 MB/s の回線では 1 本あたりが既定のタイムアウト 60 秒を超えます。
+
+Docker の問題ではなく pnpm の設定の問題なので、`pnpm-workspace.yaml` に手元だけの設定を足して通しました。`deps` ステージが最初にコピーするファイルなので、`Dockerfile` は変えずに済みます。
+
+```yaml title="pnpm-workspace.yaml（手元だけ）"
+fetchTimeout: 600000
+fetchRetries: 5
+networkConcurrency: 4
+```
+
+## よく使うコマンド
+
+| コマンド | 何をするか |
+| --- | --- |
+| `docker build -t NAME .` | カレントディレクトリの Dockerfile からイメージを作り、NAME を付ける |
+| `docker build --no-cache` | キャッシュを使わず最初から |
+| `docker build --target STAGE` | マルチステージのそのステージまでをイメージにする |
+| `docker history IMAGE` | イメージのレイヤーと、それを作った手順とサイズ |
+| `docker image prune` | どのタグからも参照されないイメージを消す |
+| `docker builder prune` | ビルドキャッシュを消す |
+| `docker system df` | イメージ・コンテナ・ボリューム・ビルドキャッシュの使用量 |
+
+## まとめ
+
+- `Dockerfile` はイメージのレシピ。`FROM` で始めて、`COPY` と `RUN` で積み、`CMD` で起動時の振る舞いを決める
+- `Dockerfile` の 1 行が 1 枚のレイヤー。変わっていない行は `CACHED` で再利用されるので、**変わりにくいもの（lockfile）を先に、変わりやすいもの（ソース）を後に**書く
+- `docker build .` の `.` はビルドコンテキストで、丸ごとエンジンに送られる。`.dockerignore` で要らないものを外す
+- マルチステージビルドで、ビルドに使ったものを最終イメージから外す。`docker history` で効果が見える
+- イメージに焼くのはアプリの一部、ボリュームに置くのはデータ
+- 公式の `Dockerfile` でも壊れていることはある。エラーを読んで、どのステージの何番目で何が起きたかを辿れば、直せる
+
+次の記事では、この記事の `docker run` の長い 1 行と 2 つの `docker volume create` を、1 つの設定ファイルに書き下ろす Docker Compose の話をします。EmDash のリポジトリにも `compose.yaml` が同梱されていて、この記事でやったことがそのまま十数行で書いてあります。
