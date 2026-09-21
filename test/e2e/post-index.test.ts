@@ -118,23 +118,32 @@ test.describe("The index panel beside a post", () => {
     const panel = page.getByTestId("post-index")
     await expect(panel).toBeInViewport()
 
-    const columnBottom = await page.evaluate(() => {
+    const geometry = await page.evaluate(() => {
       const column = document.querySelector("article")?.parentElement
       return column
-        ? column.getBoundingClientRect().bottom + window.scrollY
+        ? {
+            columnBottom:
+              column.getBoundingClientRect().bottom + window.scrollY,
+            maxScroll: document.body.scrollHeight - window.innerHeight,
+          }
         : null
     })
-    if (columnBottom === null) {
+    if (!geometry) {
       throw new Error("the post has no column to measure")
     }
 
-    // Where the column's last line sits in the window, from most of a screen
-    // below the panel's resting line to above the top of the window: the run
-    // through the gap the footer used to cover for.
-    for (const columnBottomAt of [800, 400, 128, 0]) {
+    // The last stretch of the post, ending as far down as the page goes. The
+    // window stops at the document's end and the footer is not tall enough to
+    // push the column's last line off the top, so the panel is never scrolled
+    // away — it is stopped, and that is the difference being measured.
+    for (const top of [
+      Math.max(0, geometry.columnBottom - 800),
+      Math.max(0, geometry.columnBottom - 400),
+      geometry.maxScroll,
+    ]) {
       await page.evaluate(
-        (top) => window.scrollTo({ behavior: "instant", top }),
-        columnBottom - columnBottomAt,
+        (y) => window.scrollTo({ behavior: "instant", top: y }),
+        top,
       )
       const overhang = await page.evaluate(() => {
         const column = document.querySelector("article")?.parentElement
@@ -149,18 +158,26 @@ test.describe("The index panel beside a post", () => {
       })
       expect(
         overhang,
-        `the panel hangs below the column with its end at ${columnBottomAt}px`,
+        `the panel hangs below the column at scroll ${Math.round(top)}`,
       ).toBeLessThanOrEqual(0.5)
     }
 
-    // And with the footer on screen there is nothing left of it to cover.
-    await page.evaluate(() =>
-      window.scrollTo({
-        behavior: "instant",
-        top: document.body.scrollHeight,
-      }),
-    )
+    // Which at the foot of the page leaves the gap above the footer, and the
+    // footer itself, with nothing of the panel over them.
     await expect(page.locator("footer")).toBeInViewport()
-    await expect(panel).not.toBeInViewport()
+    const clearance = await page.evaluate(() => {
+      const nav = document.querySelector('[data-testid="post-index"]')
+      const footer = document.querySelector("footer")
+      if (!nav || !footer) {
+        return null
+      }
+      return (
+        footer.getBoundingClientRect().top - nav.getBoundingClientRect().bottom
+      )
+    })
+    expect(
+      clearance,
+      "the panel reaches into the footer",
+    ).toBeGreaterThanOrEqual(0)
   })
 })
