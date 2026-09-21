@@ -1,19 +1,24 @@
 import { expect, test } from "@playwright/test"
 
 /**
- * The index panel beside a post is positioned rather than laid out: it is
- * `fixed`, and it finds the right edge of the post's column by arithmetic on
- * the viewport width. Which viewport width is the whole question. A classic
- * scrollbar is inside `100vw` and outside the box the column is centred in,
- * so the old `right: max(1.5rem, calc((100vw - 72rem)/2 - 2rem))` read one
- * width and was applied against the other, and the panel sat half a
- * scrollbar — 7.5px of the usual 15 — inside the column's padding. It never
- * reached the text, which is why it went unnoticed; it ate a third of the
- * gap that separates them.
+ * The index panel beside a post hangs off the column rather than off the
+ * window: a track at `left-full` on the column carries a `sticky` panel. Both
+ * halves of that are regressions waiting to happen.
  *
- * Playwright's headless shell passes `--hide-scrollbars`, which removes the
- * very difference these are about and makes both forms measure the same, so
- * they run with the scrollbar put back.
+ * Horizontally, the panel used to be `fixed` and find the column's right edge
+ * by arithmetic on the viewport width — and which viewport width is the whole
+ * question. A classic scrollbar is inside `100vw` and outside the box the
+ * column is centred in, so `right: max(1.5rem, calc((100vw - 72rem)/2 - 2rem))`
+ * read one width and was applied against the other, and the panel sat half a
+ * scrollbar — 7.5px of the usual 15 — inside the column's padding. Playwright's
+ * headless shell passes `--hide-scrollbars`, which removes the very difference
+ * that is about and makes every form measure the same, so these run with the
+ * scrollbar put back.
+ *
+ * Vertically, `fixed` held the panel on its line to the bottom of the page: it
+ * floated over the gap above the footer, indexing a post that was no longer
+ * beside it, and the footer hid it only by being painted later. The panel now
+ * ends where the column ends, which is what the last test measures.
  */
 test.use({ launchOptions: { ignoreDefaultArgs: ["--hide-scrollbars"] } })
 
@@ -100,4 +105,79 @@ test.describe("The index panel beside a post", () => {
       expect(buttons, "the header's index button").toBe(panel ? 0 : 1)
     })
   }
+
+  // The column's end is the panel's end. Measured as an overhang rather than
+  // as visibility, because the two cases the reader sees are different sizes
+  // of the same fault: a few pixels into the gap is a panel that outlived its
+  // post, and a full panel over the footer is that same panel never having
+  // been told to stop.
+  test("never reaches past the end of the post's column", async ({ page }) => {
+    await page.setViewportSize({ height: 900, width: 1440 })
+    await page.goto("/en/blog/getting-started-with-mise")
+
+    const panel = page.getByTestId("post-index")
+    await expect(panel).toBeInViewport()
+
+    const geometry = await page.evaluate(() => {
+      const column = document.querySelector("article")?.parentElement
+      return column
+        ? {
+            columnBottom:
+              column.getBoundingClientRect().bottom + window.scrollY,
+            maxScroll: document.body.scrollHeight - window.innerHeight,
+          }
+        : null
+    })
+    if (!geometry) {
+      throw new Error("the post has no column to measure")
+    }
+
+    // The last stretch of the post, ending as far down as the page goes. The
+    // window stops at the document's end and the footer is not tall enough to
+    // push the column's last line off the top, so the panel is never scrolled
+    // away — it is stopped, and that is the difference being measured.
+    for (const top of [
+      Math.max(0, geometry.columnBottom - 800),
+      Math.max(0, geometry.columnBottom - 400),
+      geometry.maxScroll,
+    ]) {
+      await page.evaluate(
+        (y) => window.scrollTo({ behavior: "instant", top: y }),
+        top,
+      )
+      const overhang = await page.evaluate(() => {
+        const column = document.querySelector("article")?.parentElement
+        const nav = document.querySelector('[data-testid="post-index"]')
+        if (!column || !nav) {
+          return null
+        }
+        return (
+          nav.getBoundingClientRect().bottom -
+          column.getBoundingClientRect().bottom
+        )
+      })
+      expect(
+        overhang,
+        `the panel hangs below the column at scroll ${Math.round(top)}`,
+      ).toBeLessThanOrEqual(0.5)
+    }
+
+    // Which at the foot of the page leaves the gap above the footer, and the
+    // footer itself, with nothing of the panel over them.
+    await expect(page.locator("footer")).toBeInViewport()
+    const clearance = await page.evaluate(() => {
+      const nav = document.querySelector('[data-testid="post-index"]')
+      const footer = document.querySelector("footer")
+      if (!nav || !footer) {
+        return null
+      }
+      return (
+        footer.getBoundingClientRect().top - nav.getBoundingClientRect().bottom
+      )
+    })
+    expect(
+      clearance,
+      "the panel reaches into the footer",
+    ).toBeGreaterThanOrEqual(0)
+  })
 })

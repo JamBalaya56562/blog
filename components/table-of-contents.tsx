@@ -30,27 +30,41 @@ export function TableOfContents({
   }
 
   return (
-    // The panel hangs off the right edge of the post's column: the column is
-    // `max-w-3xl` centred, so that edge is half the viewport plus 24rem,
-    // which is what `left-1/2 ml-96` says. Measuring from the left is what
-    // makes it exact. `left` resolves against this element's containing
-    // block, which is the viewport with the classic scrollbar's width
-    // already taken out — the same width the column is centred in. The
-    // `right: max(1.5rem, calc((100vw - 72rem)/2 - 2rem))` this replaced
-    // mixed the two: `100vw` counts that scrollbar, so the panel sat half a
-    // scrollbar (7.5px of the usual 15) inside the column's padding.
-    // Keeping the panel on screen is the breakpoint's job — below `xl`
-    // nothing fits beside a 48rem column, so there is no panel to place.
+    // The panel is placed by the post's column rather than by arithmetic on
+    // the viewport: the track is `left-full` on that column, so its left edge
+    // is the column's right edge by construction. The `fixed left-1/2 ml-96`
+    // this replaced had to reason about which width the classic scrollbar is
+    // inside of — `left` resolves against the box the column is centred in,
+    // `100vw` counts the scrollbar — and an earlier `right: max(1.5rem,
+    // calc((100vw - 72rem)/2 - 2rem))` got it wrong by half a scrollbar.
+    //
+    // The track spans the column's height and the panel is `sticky` in it,
+    // which is what ends the panel where the post ends. Fixed, it held its
+    // line over the gap above the footer and indexed a post that was no
+    // longer beside it; the footer covered it only because the footer is
+    // painted later. `top-32` is still the resting line — sticky pushes the
+    // panel down to it at the top of the page, and holds it there until the
+    // column's end takes it up and away.
+    //
     // `max-h` keeps it inside the viewport: 8rem for its own `top`, 2rem of
     // breathing room below. The list is the part that scrolls, so the INDEX
     // label and the title stay put however long the post is.
-    <nav
-      className="hidden xl:flex xl:flex-col fixed top-32 left-1/2 ml-96 w-60 max-h-[calc(100vh-10rem)] border border-cyber-line bg-cyber-bg-1/60 p-4 backdrop-blur-md"
-      data-testid="post-index"
-    >
-      <div className="pp-tick mb-3 text-cyber-cyan">◢ INDEX</div>
-      <p className="pp-tick mb-3 text-cyber-dim">{title}</p>
-      <TocList items={items} />
-    </nav>
+    //
+    // Below `xl` nothing fits beside a 48rem column, so the track is not
+    // rendered at all and the header's index button is the way in.
+    //
+    // The track is otherwise empty and as tall as the post, so it does not
+    // take the pointer: a drag that starts in the margin selects the text
+    // below it the way it did before the track existed.
+    <div className="pointer-events-none absolute inset-y-0 left-full hidden w-60 xl:block">
+      <nav
+        className="pointer-events-auto sticky top-32 flex max-h-[calc(100vh-10rem)] flex-col border border-cyber-line bg-cyber-bg-1/60 p-4 backdrop-blur-md"
+        data-testid="post-index"
+      >
+        <div className="pp-tick mb-3 text-cyber-cyan">◢ INDEX</div>
+        <p className="pp-tick mb-3 text-cyber-dim">{title}</p>
+        <TocList items={items} />
+      </nav>
+    </div>
   )
 }
