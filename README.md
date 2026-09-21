@@ -118,9 +118,11 @@ mise e2e
 ```
 
 `mise e2e` builds first, because Playwright serves the build with `bun start`,
-and starts DynamoDB Local if it is not already running — the task declares it in
-`daemons`, so an already-running container is reused rather than restarted. Run
-`bun test:e2e` directly when the build and the database are already up.
+and brings DynamoDB Local up through the `db` daemon. A daemon that is already
+running is reused; a `blog-dynamodb` container started outside it — `mise run
+db:start` in another terminal — is replaced rather than reused, because
+`db:start` cannot tell a live container from one an interrupted run left behind.
+Run `bun test:e2e` directly when the build and the database are already up.
 
 ### 7. Format and Lint the files
 

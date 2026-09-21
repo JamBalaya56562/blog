@@ -162,8 +162,8 @@ mise e2e
 - Target browsers: Chromium, Firefox, WebKit, Mobile Chrome, Mobile Safari
 - Playwright starts the production server itself (`bun start`, configured as
   `webServer`), which is why the build has to come first
-- `mise e2e` builds, starts DynamoDB Local if it is not already up, and then
-  runs `bun test:e2e`. `bun run build && bun test:e2e` still works; it leaves
+- `mise e2e` builds, starts the `db` daemon unless it is already running, and
+  then runs `bun test:e2e`. `bun run build && bun test:e2e` still works; it leaves
   the app talking to a database nobody started, so every view count in the run
   waits on a refused connection
 - CI is limited to 2 retries and 1 worker
