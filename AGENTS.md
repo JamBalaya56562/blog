@@ -154,7 +154,7 @@ bun test:unit
 ### E2E Tests
 
 ```bash
-bun run build && bun test:e2e
+mise e2e
 ```
 
 - Test runner: Playwright
@@ -162,6 +162,10 @@ bun run build && bun test:e2e
 - Target browsers: Chromium, Firefox, WebKit, Mobile Chrome, Mobile Safari
 - Playwright starts the production server itself (`bun start`, configured as
   `webServer`), which is why the build has to come first
+- `mise e2e` builds, starts DynamoDB Local if it is not already up, and then
+  runs `bun test:e2e`. `bun run build && bun test:e2e` still works; it leaves
+  the app talking to a database nobody started, so every view count in the run
+  waits on a refused connection
 - CI is limited to 2 retries and 1 worker
 
 ## Commands
@@ -175,7 +179,8 @@ bun run build && bun test:e2e
 | `bun lint:fix` | Format + lint with Biome (auto-fix) |
 | `mise lint` | Everything `bun lint:fix` does, plus markdown, OpenTofu and emphasis checks |
 | `bun test:unit` | Run unit tests |
-| `bun test:e2e` | Run E2E tests |
+| `bun test:e2e` | Run E2E tests against a build and a database that are already up |
+| `mise e2e` | Build, bring the database up, then run the E2E tests |
 
 `mise lint` is what CI runs, so prefer it over `bun lint:fix` before pushing:
 Biome does not see markdown or `.tf` files, and `lint:emphasis` reports rather

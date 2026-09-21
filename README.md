@@ -114,8 +114,13 @@ bun test:unit
 ### 6. E2E Test
 
 ```bash
-bun test:e2e
+mise e2e
 ```
+
+`mise e2e` builds first, because Playwright serves the build with `bun start`,
+and starts DynamoDB Local if it is not already running — the task declares it in
+`daemons`, so an already-running container is reused rather than restarted. Run
+`bun test:e2e` directly when the build and the database are already up.
 
 ### 7. Format and Lint the files
 

@@ -26,12 +26,17 @@ run = "tofu fmt -recursive infra"
 description = "Check markdown files for linting issues"
 run = "rumdl check --fix ."
 
+[tasks.e2e]
+description = "Build, then run the E2E tests with the database up"
+daemons = ["db"]
+run = ["bun run build", "bun test:e2e"]
+
 [tasks.update]
 description = "Update bun dependencies and reinstall"
 run = ["bun update", "mise deps"]
 
 [daemons.db]
-run = "mise run db:start"
+task = "db:start"
 ready_cmd = { run = "mise run db:push", timeout = "300s" }
 stop_signal = { signal = "SIGTERM", timeout = "30s" }
 
