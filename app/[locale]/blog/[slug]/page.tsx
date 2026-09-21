@@ -150,8 +150,13 @@ async function BlogPostContent({
       />
       <JsonLd data={postBreadcrumb(locale, slug, post.frontmatter.title)} />
       <ScrollProgress />
-      <TableOfContents items={tocItems} title={dictionary.blog.toc} />
-      <div className="mx-auto max-w-3xl px-4 py-10 sm:px-6">
+      {/*
+        The panel is a child of the column so that it can be placed and ended
+        by it — see the track in `table-of-contents.tsx`. `relative` is what
+        makes this the box it is placed against.
+      */}
+      <div className="relative mx-auto max-w-3xl px-4 py-10 sm:px-6">
+        <TableOfContents items={tocItems} title={dictionary.blog.toc} />
         <article>
           <header className="mb-10">
             <div className="pp-tick mb-3">

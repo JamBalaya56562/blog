@@ -34,12 +34,26 @@ describe("TableOfContents", () => {
 
   test("has hidden class for non-xl screens", () => {
     const { container } = render(<TableOfContents items={items} title="TOC" />)
+    const track = container.firstElementChild
+    // The panel needs the horizontal room around the centred article column,
+    // so the track that carries it appears from `xl`.
+    expect(track?.className).toContain("hidden")
+    expect(track?.className).toContain("xl:block")
+  })
+
+  test("the panel is placed and ended by the post's column", () => {
+    const { container } = render(<TableOfContents items={items} title="TOC" />)
+    const track = container.firstElementChild
     const nav = container.querySelector("nav")
-    expect(nav?.className).toContain("hidden")
-    // The floating panel needs the horizontal room around the centred article
-    // column, so it appears from `xl` — as a flex column, since the list
-    // inside it is the part that scrolls.
-    expect(nav?.className).toContain("xl:flex")
+    // `left-full` on the column puts the panel's left edge on the column's
+    // right edge without measuring the viewport, and `inset-y-0` with a
+    // `sticky` panel is what takes the panel away at the column's end rather
+    // than leaving it over the gap above the footer.
+    expect(track?.className).toContain("left-full")
+    expect(track?.className).toContain("inset-y-0")
+    expect(nav?.className).toContain("sticky")
+    // The list is still the part that scrolls, so the panel is a flex column.
+    expect(nav?.className).toContain("flex-col")
   })
 
   test("renders the provided title", () => {
