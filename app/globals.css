@@ -47,12 +47,16 @@
      the same family below. */
   --blog-font-sans:
     var(--font-sans-loaded), "Noto Sans JP", system-ui, sans-serif;
-  /* Headline JP fallback: when Orbitron / Syne / Space Grotesk lack a
-     glyph (true for any kana/kanji), drop into Noto Sans JP at heavy
-     weight so the hero headline doesn't fall to MS Gothic. */
+  /* Headline JP fallback: Orbitron has no kana or kanji, so those glyphs drop
+     into Noto Sans JP at heavy weight and the hero headline never falls to
+     MS Gothic. "Syne" and "Space Grotesk" used to sit between the two. Neither
+     was ever loaded — no commit in this repository has declared them — and
+     neither could have been reached even where a reader had them installed:
+     Orbitron already answers for Latin, and a Latin display face has nothing
+     to offer a kana. */
   --blog-font-headline:
-    var(--font-orbitron-loaded), "Orbitron", "Syne", "Space Grotesk",
-    var(--font-sans-loaded), "Noto Sans JP", sans-serif;
+    var(--font-orbitron-loaded), "Orbitron", var(--font-sans-loaded),
+    "Noto Sans JP", sans-serif;
   --blog-font-mono:
     var(--font-mono-loaded), "JetBrains Mono", ui-monospace, monospace;
 }
@@ -965,15 +969,24 @@
   }
   /* Japanese writes no spaces between words, so the engine may break a line at
      almost any character: `デ / ィレクトリ` strands a small kana at the start of
-     a line, and `揃わな / い` leaves one kana behind. `line-break: strict`
-     asks for the full kinsoku rules, and `word-break: auto-phrase` lets the
-     engine find phrase boundaries and break there instead.
+     a line, and `揃わな / い` leaves one kana behind. The two properties answer
+     different halves of that, and they do not reach the same engines.
 
-     Both properties are defined over CJK text and behave as `normal`
-     elsewhere, so `:lang(ja)` states the intent rather than guarding anything —
-     `lang` comes from `app/[locale]/layout.tsx`. `auto-phrase` is Chrome-only
-     for now and the rest fall back to exactly today's breaking, so this costs
-     nothing where it is unsupported. */
+     `line-break: strict` is the kinsoku half and is supported broadly, so it is
+     not a Chromium-only change. Measured against a line ending on `ィ`, `ッ`,
+     `ゃ` or `ー`: Chromium moves the preceding glyph down instead of starting a
+     line with it, while Firefox already declined those breaks under `auto` and
+     renders identically either way. It takes effect there too; it simply has
+     nothing left to correct.
+
+     `word-break: auto-phrase` is the phrase half, and that one really is
+     Chromium-only today. Elsewhere it computes to `normal` and breaking stays
+     character-by-character within a phrase.
+
+     `:lang(ja)` marks intent rather than guarding anything, since both
+     properties are defined over CJK text — but the `lang` behind it carries
+     weight of its own: with no `lang="ja"` on the document, Chromium ignores
+     `line-break: strict` outright. It comes from `app/[locale]/layout.tsx`. */
   .prose-cyber:lang(ja) {
     line-break: strict;
     word-break: auto-phrase;
