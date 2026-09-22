@@ -128,7 +128,31 @@ step1
 
 `false` on the second line failed, so the run stopped there. `step3` never ran.
 
-![An array in run executing from the top, cut short at the failing false, with the next line never reached](mise-tasks-fail-stop.svg)
+<OrderedRun
+  title="the run array"
+  hint="Move false all the way down and see what happens to the others."
+  rule="stopOnFail"
+  lines={[
+    { text: "echo step1" },
+    { text: "false", fails: true, note: "a command that exits 1" },
+    { text: "echo step3" },
+  ]}
+  labels={{
+    lines: "run = [ ... ]",
+    outcome: "Lines reached",
+    up: "Move up: {line}",
+    down: "Move down: {line}",
+    state: {
+      ran: "ran",
+      failed: "cut short here",
+      skipped: "never reached",
+      wins: "this one stands",
+      overridden: "overwritten",
+    },
+  }}
+  status="Reached line {outcome} of 3"
+  caption="The array stops at the first failure, which is why the order matters"
+/>
 
 > [!IMPORTANT]
 > That matters for the order you put them in. Tasks split into ones that rewrite files
