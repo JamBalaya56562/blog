@@ -9,6 +9,7 @@ import { CommitGraph } from "@/components/explorables/commit-graph"
 import { CommitLint } from "@/components/explorables/commit-lint"
 import { ContainerLifecycle } from "@/components/explorables/container-lifecycle"
 import { LayerCache } from "@/components/explorables/layer-cache"
+import { SemverBump } from "@/components/explorables/semver-bump"
 import { ZoomableImage } from "@/components/zoomable-image"
 import { externalHost, faviconPath } from "@/lib/favicon"
 import { createIdGenerator, extractText } from "@/lib/toc"
@@ -215,6 +216,7 @@ const staticComponents: MDXComponents = {
       </div>
     )
   },
+  SemverBump,
   table: (props) => (
     <div className="my-4 overflow-x-auto">
       <table className="text-foreground" {...props} />
