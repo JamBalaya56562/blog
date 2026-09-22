@@ -98,7 +98,7 @@ describe("Explorable", () => {
 
     expect(getByRole("button", { name: "最初に戻す" })).toBeDefined()
     expect(container.querySelector(".pp-explorable-kind")?.textContent).toBe(
-      "インタラクティブ",
+      "動かしてみよう",
     )
   })
 })

@@ -44,7 +44,7 @@
     "tick": "SIBYL // 障害レポート"
   },
   "explorable": {
-    "kind": "インタラクティブ",
+    "kind": "動かしてみよう",
     "reset": "最初に戻す"
   },
   "footer": {
