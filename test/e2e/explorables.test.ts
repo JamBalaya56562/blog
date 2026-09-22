@@ -4,6 +4,15 @@ const POST = "/ja/blog/docker-build"
 const FIGURE = "figure.pp-explorable"
 
 /**
+ * The figure whose strip carries this title. Posts gain figures — the
+ * Jujutsu one has four — so a position would quietly point somewhere else
+ * the next time one is added.
+ */
+function figureNamed(page: import("@playwright/test").Page, title: string) {
+  return page.locator(`figure.pp-explorable[aria-label="${title}"]`)
+}
+
+/**
  * The Dockerfile post carries a figure the reader can touch: the four steps of
  * a build, one of them changed, and the cache state of each. It is a client
  * component inside server-rendered MDX, so what matters is the same as for
@@ -26,7 +35,7 @@ test.describe("Explorable figures", () => {
     page,
   }) => {
     await page.goto(POST)
-    const figure = page.locator(FIGURE).first()
+    const figure = figureNamed(page, "Dockerfile")
     await figure.scrollIntoViewIfNeeded()
     const rows = figure.locator(".pp-explorable-row")
     const reset = figure.locator(".pp-explorable-reset")
@@ -52,7 +61,7 @@ test.describe("Explorable figures", () => {
 
   test("a step can be pressed from the keyboard", async ({ page }) => {
     await page.goto(POST)
-    const figure = page.locator(FIGURE).first()
+    const figure = figureNamed(page, "Dockerfile")
     await figure.scrollIntoViewIfNeeded()
     const first = figure.locator(".pp-explorable-row").first()
 
@@ -71,7 +80,7 @@ test.describe("Explorable figures", () => {
     page,
   }) => {
     await page.goto(POST)
-    const figure = page.locator(FIGURE).first()
+    const figure = figureNamed(page, "Dockerfile")
     await figure.scrollIntoViewIfNeeded()
     const overflow = await figure.evaluate((el) => ({
       clientWidth: el.clientWidth,
@@ -113,7 +122,7 @@ test.describe("Commit message figure", () => {
     page,
   }) => {
     await page.goto(POST)
-    const figure = page.locator(FIGURE).first()
+    const figure = figureNamed(page, "commitlint")
     await figure.scrollIntoViewIfNeeded()
     const field = figure.locator("input.pp-explorable-input")
 
@@ -146,7 +155,7 @@ test.describe("Bookmark figure", () => {
     figure.locator(`ol[aria-label="${column}"] .pp-explorable-graph-row`)
 
   function figureOn(page: import("@playwright/test").Page) {
-    return page.locator(FIGURE).first()
+    return figureNamed(page, "git / jj")
   }
 
   test("the served HTML carries both histories", async ({ request }) => {
@@ -236,7 +245,7 @@ test.describe("Container figure", () => {
   }) => {
     await page.goto(POST)
     // The second figure is the one with a volume mounted.
-    const figure = page.locator(FIGURE).nth(1)
+    const figure = figureNamed(page, "postgres:18-alpine")
     await figure.scrollIntoViewIfNeeded()
     const volume = figure.locator(".pp-explorable-volume")
     const layer = figure.locator(".pp-explorable-box")
@@ -253,7 +262,7 @@ test.describe("Container figure", () => {
   // can be read, which is the opposite of the other disabled commands.
   test("a volume in use refuses to be removed", async ({ page }) => {
     await page.goto(POST)
-    const figure = page.locator(FIGURE).nth(1)
+    const figure = figureNamed(page, "postgres:18-alpine")
     await figure.scrollIntoViewIfNeeded()
 
     const remove = figure.locator(".pp-explorable-cmd", {
@@ -272,7 +281,7 @@ test.describe("Container figure", () => {
     page,
   }) => {
     await page.goto(POST)
-    const figure = page.locator(FIGURE).first()
+    const figure = figureNamed(page, "nginx:1.29-alpine")
     await figure.scrollIntoViewIfNeeded()
     const layer = figure.locator(".pp-explorable-box")
 
@@ -291,16 +300,22 @@ test.describe("Container figure", () => {
 test.describe("Stepped graph figure", () => {
   const POST = "/ja/blog/getting-started-with-jujutsu"
   const squash = (page: import("@playwright/test").Page) =>
-    page.locator(FIGURE).first()
+    figureNamed(page, "jj squash README.md")
 
+  // The article's own prose quotes both hashes a few lines above the figure,
+  // so the assertions read the figure's markup rather than the page's.
   test("the served HTML is the first step of the first figure", async ({
     request,
   }) => {
     const html = await (await request.get(POST)).text()
-    expect(html).toContain("pp-explorable-command")
-    expect(html).toContain("bf873b9b")
-    // The second step's hash is not in the markup until the reader asks.
-    expect(html).not.toContain("901a7c31")
+    const start = html.indexOf('aria-label="jj squash README.md"')
+    expect(start).toBeGreaterThan(-1)
+    const figure = html.slice(start, html.indexOf("</figure>", start))
+
+    expect(figure).toContain('class="pp-explorable-command">jj log<')
+    expect(figure).toContain("bf873b9b")
+    // The second step is not in the markup until the reader asks for it.
+    expect(figure).not.toContain("901a7c31")
   })
 
   test("stepping forward marks the rewritten commit", async ({ page }) => {
@@ -309,15 +324,13 @@ test.describe("Stepped graph figure", () => {
     await figure.scrollIntoViewIfNeeded()
     const rows = figure.locator(".pp-explorable-graph-row")
 
-    await expect(figure.locator(".pp-explorable-command")).toHaveText(
-      "❯ jj log",
-    )
+    await expect(figure.locator(".pp-explorable-command")).toHaveText("jj log")
     await expect(rows.nth(1)).toHaveAttribute("data-mark", "same")
 
     await figure.locator(".pp-explorable-cmd", { hasText: "進む" }).click()
 
     await expect(figure.locator(".pp-explorable-command")).toHaveText(
-      "❯ jj squash README.md",
+      "jj squash README.md",
     )
     await expect(rows.nth(1)).toHaveAttribute("data-mark", "rewritten")
     await expect(rows.nth(1)).toContainText("901a7c31")
@@ -330,7 +343,7 @@ test.describe("Stepped graph figure", () => {
   // what closes it.
   test("the fork closes when the change is rebased", async ({ page }) => {
     await page.goto(POST)
-    const figure = page.locator(FIGURE).last()
+    const figure = figureNamed(page, "jj git fetch → jj rebase -d main")
     await figure.scrollIntoViewIfNeeded()
     const graph = figure.locator(".pp-explorable-graph")
 
@@ -349,7 +362,7 @@ test.describe("Stepped graph figure", () => {
     await page.keyboard.press("ArrowRight")
     await expect(range).toHaveValue("1")
     await expect(figure.locator(".pp-explorable-command")).toHaveText(
-      "❯ jj squash README.md",
+      "jj squash README.md",
     )
   })
 })
@@ -361,7 +374,7 @@ test.describe("Explorable figures — prefers-reduced-motion", () => {
   // transition; a reader who asked for less motion gets neither.
   test("neither the strip nor the bar moves", async ({ page }) => {
     await page.goto(POST)
-    const figure = page.locator(FIGURE).first()
+    const figure = figureNamed(page, "jj squash README.md")
     await figure.scrollIntoViewIfNeeded()
 
     const motion = await figure.evaluate((el) => {
