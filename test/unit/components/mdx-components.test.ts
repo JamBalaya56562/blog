@@ -33,7 +33,12 @@ const REQUIRED_ELEMENTS = [
  * turns every post that uses it into a build failure; `mdx-tags.test.ts`
  * checks the posts' side of the same contract.
  */
-const REQUIRED_COMPONENTS = ["CodeTabs", "CommitLint", "LayerCache"] as const
+const REQUIRED_COMPONENTS = [
+  "BookmarkGraph",
+  "CodeTabs",
+  "CommitLint",
+  "LayerCache",
+] as const
 
 describe("MDX Components", () => {
   test("Property 5: MDX component completeness", () => {

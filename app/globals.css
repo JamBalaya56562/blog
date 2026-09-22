@@ -1584,6 +1584,93 @@
   .prose-cyber .pp-explorable-rule {
     color: var(--cyber-dim);
   }
+  /* Two commit graphs side by side, each a column of rows: a node drawn in
+     SVG, the description, and the names pointing at that commit. The columns
+     stay side by side at every width — the comparison is the figure — so the
+     descriptions are what gives way and wrap. */
+  .prose-cyber .pp-explorable-columns {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    min-width: 0;
+  }
+  .prose-cyber .pp-explorable-column-head {
+    margin: 0 0 4px;
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--cyber-dim);
+    border-bottom: 1px solid var(--cyber-line);
+    padding-bottom: 4px;
+  }
+  /* The commits are a list, and the glyph column is their marker: the
+     numbers and the indent the article gives its lists would say the rows
+     are steps to follow rather than a history to read. */
+  .prose-cyber .pp-explorable-graph {
+    margin: 0;
+    padding-left: 0;
+    list-style: none;
+  }
+  .prose-cyber .pp-explorable-graph-row {
+    display: grid;
+    grid-template-columns: 24px minmax(0, 1fr);
+    align-items: start;
+    column-gap: 4px;
+  }
+  .prose-cyber .pp-explorable-glyph {
+    grid-row: 1 / span 2;
+    color: var(--cyber-dim);
+  }
+  .prose-cyber .pp-explorable-glyph svg {
+    display: block;
+    width: 24px;
+    height: 36px;
+  }
+  .prose-cyber .pp-explorable-glyph[data-kind="at"] {
+    color: var(--cyber-cyan);
+  }
+  .prose-cyber .pp-explorable-glyph[data-kind="immutable"] {
+    color: var(--cyber-amber);
+  }
+  .prose-cyber .pp-explorable-graph-desc {
+    padding-top: 9px;
+    font-size: 12px;
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+    color: var(--cyber-text);
+  }
+  .prose-cyber .pp-explorable-refs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    padding-bottom: 4px;
+  }
+  .prose-cyber .pp-explorable-ref {
+    --pp-explorable-accent: var(--cyber-dim);
+    padding: 0 5px;
+    border: 1px solid var(--pp-explorable-accent);
+    font-size: 10px;
+    line-height: 1.6;
+    white-space: nowrap;
+    color: var(--pp-explorable-accent);
+  }
+  .prose-cyber .pp-explorable-ref[data-ref="bookmark"] {
+    --pp-explorable-accent: var(--cyber-magenta);
+  }
+  .prose-cyber .pp-explorable-ref[data-ref="at"],
+  .prose-cyber .pp-explorable-ref[data-ref="head"] {
+    --pp-explorable-accent: var(--cyber-cyan);
+  }
+  /* A pair of commands on one button: what the reader would type on each
+     side, the Git one above the jj one. */
+  .prose-cyber .pp-explorable-cmd-pair {
+    display: grid;
+    gap: 2px;
+    text-align: left;
+  }
+  .prose-cyber .pp-explorable-cmd-pair > span:first-child {
+    color: var(--cyber-dimmer);
+  }
   .prose-cyber pre code {
     background: transparent;
     border: 0;
