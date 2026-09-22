@@ -83,7 +83,7 @@ export function OrderedRun({ title, hint, caption, ...content }: Props) {
       title={title}
     >
       <p className="pp-explorable-column-head">{content.labels.lines}</p>
-      <ol className="pp-explorable-lines" ref={list}>
+      <ol className="pp-explorable-lines" data-reorder="true" ref={list}>
         {view.rows.map((row, position) => (
           <li
             className="pp-explorable-row"

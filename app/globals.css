@@ -1905,7 +1905,13 @@
     grid-template-columns: minmax(0, 1fr) auto auto;
     align-items: center;
   }
-  .prose-cyber .pp-explorable-lines > .pp-explorable-row > .pp-explorable-note {
+  /* Only where a third column is actually occupied: the build-context list
+     has no controls, so its notes keep the whole row — ending them at the
+     third track would leave them a column gap short of it. */
+  .prose-cyber
+    .pp-explorable-lines[data-reorder="true"]
+    > .pp-explorable-row
+    > .pp-explorable-note {
     grid-column: 1 / 3;
     grid-row: 2;
   }
