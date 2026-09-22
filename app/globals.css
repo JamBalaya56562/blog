@@ -1839,6 +1839,52 @@
   .prose-cyber .pp-explorable-legend > [data-mark="added"] {
     --pp-explorable-accent: var(--cyber-lime);
   }
+  /* A release: the version the commits ask for, and the changelog they
+     write. The arrow's right-hand side takes the colour of the bump, the
+     same three-step vocabulary the rest of these figures use. */
+  .prose-cyber .pp-explorable-release {
+    padding: 8px 10px;
+    border: 1px solid var(--cyber-line);
+    background: color-mix(in srgb, var(--cyber-bg-0) 55%, transparent);
+  }
+  .prose-cyber .pp-explorable-version {
+    margin: 2px 0;
+    font-size: 18px;
+    letter-spacing: 0.04em;
+  }
+  .prose-cyber .pp-explorable-version-from {
+    color: var(--cyber-dim);
+  }
+  .prose-cyber .pp-explorable-version > [data-bump="major"] {
+    color: var(--cyber-red);
+  }
+  .prose-cyber .pp-explorable-version > [data-bump="minor"] {
+    color: var(--cyber-amber);
+  }
+  .prose-cyber .pp-explorable-version > [data-bump="patch"] {
+    color: var(--cyber-cyan);
+  }
+  .prose-cyber .pp-explorable-version > [data-bump="none"] {
+    color: var(--cyber-dimmer);
+  }
+  .prose-cyber .pp-explorable-changelog-head {
+    margin: 8px 0 2px;
+    font-size: 12px;
+    color: var(--cyber-text);
+  }
+  .prose-cyber .pp-explorable-changelog-entry {
+    margin: 0;
+    font-size: 12px;
+    line-height: 1.7;
+    color: var(--cyber-dim);
+    overflow-wrap: anywhere;
+  }
+  .prose-cyber .pp-explorable-changelog-entry::before {
+    content: "- ";
+  }
+  .prose-cyber .pp-explorable-changelog-entry[data-breaking="true"] {
+    color: var(--cyber-red);
+  }
   .prose-cyber pre code {
     background: transparent;
     border: 0;

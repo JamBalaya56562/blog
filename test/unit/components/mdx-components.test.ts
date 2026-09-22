@@ -40,6 +40,7 @@ const REQUIRED_COMPONENTS = [
   "CommitLint",
   "ContainerLifecycle",
   "LayerCache",
+  "SemverBump",
 ] as const
 
 describe("MDX Components", () => {

@@ -257,7 +257,40 @@ and the publishing, and run the whole thing from CI.
 > `build` to any group. A `cliff.toml` that gives `build` a group fixes that. This article ran it
 > with no configuration on purpose, to see how far the defaults go.
 
-![Diagram titled "A tidy history produces the changelog". On the left, five lines of git log --oneline (fix, feat, feat!, build, chore); in the middle, git cliff reads the log; on the right, the changelog it writes under ## [unreleased] with Features and Bug Fixes headings, and --bumped-version giving v1.3.0. Captions: the type becomes a heading and the scope a prefix, and you only ever wrote commit messages](conventional-commits-changelog.svg)
+Here is that same history, to rearrange. Take a commit out of the release and both the version and
+the changelog follow.
+
+<SemverBump
+  title="git cliff"
+  hint="Press a commit to take it in or out of the release. One breaking change is all it takes."
+  current="1.2.3"
+  commits={[
+    "feat(api)!: drop the v1 endpoints",
+    "fix(api): return 404 for an unknown id",
+    "feat(api): add a search endpoint",
+    "build(git): check commit messages with commitlint through lefthook",
+  ]}
+  initial={[1, 2, 3]}
+  groups={[
+    { label: "🚀 Features", types: ["feat"] },
+    { label: "🐛 Bug Fixes", types: ["fix"] },
+  ]}
+  otherLabel="💼 Other"
+  labels={{
+    commits: "Commits since the tag",
+    version: "Next version",
+    changelog: "CHANGELOG",
+    none: "nothing to release",
+    reason: {
+      major: "because one commit is breaking",
+      minor: "because there is a feat",
+      patch: "because there are only fixes",
+      none: "because there is no fix and no feat",
+    },
+  }}
+  status="{version} — {reason}"
+  caption="The type becomes a heading and the scope a prefix, and you only ever wrote commit messages"
+/>
 
 ### Writing gets easier too
 

@@ -103,16 +103,16 @@ test.describe("Commit message figure", () => {
   const POST = "/ja/blog/getting-started-with-conventional-commits"
 
   // The article's own transcript prints the same findings a little above,
-  // so the assertions look only at the figure's terminal panel, which the
-  // transcript does not have.
+  // and the release figure higher up the page has a panel of the same kind,
+  // so the slice starts at this figure rather than at the first match.
   test("the served HTML carries the findings for the preset", async ({
     request,
   }) => {
     const html = await (await request.get(POST)).text()
     expect(html).toContain('value="Fix: Login Button."')
-    const term = html.indexOf('class="pp-explorable-term"')
-    expect(term).toBeGreaterThan(-1)
-    const panel = html.slice(term, html.indexOf("</figure>", term))
+    const start = html.indexOf('aria-label="commitlint"')
+    expect(start).toBeGreaterThan(-1)
+    const panel = html.slice(start, html.indexOf("</figure>", start))
     expect(panel).toContain("[subject-full-stop]")
     expect(panel).toContain("found 4 problems, 0 warnings")
   })
@@ -412,6 +412,49 @@ test.describe("Stacked graph figure", () => {
 
     await range.fill("1")
     await expect(figure.locator(".pp-explorable-legend")).toHaveCount(1)
+  })
+})
+
+/**
+ * The release figure works out the two things the article's transcripts
+ * print — the next version and the grouped changelog — from the commit
+ * messages alone.
+ */
+test.describe("Release figure", () => {
+  const POST = "/ja/blog/getting-started-with-conventional-commits"
+
+  test("the served HTML is the article's first transcript", async ({
+    request,
+  }) => {
+    const html = await (await request.get(POST)).text()
+    const start = html.indexOf('aria-label="git cliff"')
+    expect(start).toBeGreaterThan(-1)
+    const figure = html.slice(start, html.indexOf("</figure>", start))
+
+    expect(figure).toContain("1.3.0")
+    expect(figure).toContain("🚀 Features")
+    // The breaking change is out of the release, so its entry is not there.
+    expect(figure).not.toContain("[**breaking**]")
+  })
+
+  test("adding the breaking change makes it a major release", async ({
+    page,
+  }) => {
+    await page.goto(POST)
+    const figure = figureNamed(page, "git cliff")
+    await figure.scrollIntoViewIfNeeded()
+    const version = figure.locator(".pp-explorable-version")
+
+    await expect(version).toHaveText("1.2.3 → 1.3.0")
+
+    await figure
+      .locator(".pp-explorable-row", { hasText: "drop the v1 endpoints" })
+      .click()
+
+    await expect(version).toHaveText("1.2.3 → 2.0.0")
+    await expect(
+      figure.locator(".pp-explorable-changelog-entry[data-breaking=true]"),
+    ).toHaveCount(1)
   })
 })
 
