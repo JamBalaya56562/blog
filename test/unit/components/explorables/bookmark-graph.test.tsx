@@ -29,6 +29,7 @@ function renderFigure() {
         commit: "committed {desc}",
         initial: "one commit on each side",
         push: "pushed",
+        pushGitOnly: "only Git had something to send",
       }}
       title="git / jj"
     />,
@@ -129,10 +130,31 @@ describe("BookmarkGraph", () => {
       "immutable | Greet the world | main origin/main",
       "immutable | Add README | ",
     ])
+    // Git's own commits are no less rewritable for having been pushed; only
+    // the remote's name is new.
     expect(column(container, "Git")).toEqual([
-      "immutable | Greet the world | HEAD main origin/main",
-      "immutable | Add README | ",
+      "commit | Greet the world | HEAD main origin/main",
+      "commit | Add README | ",
     ])
+  })
+
+  /**
+   * With the bookmark left behind, `git push` has a commit to send and
+   * `jj git push --bookmark main` has none — the same lesson, from the
+   * other direction.
+   */
+  test("a commit after a push leaves only Git with something to send", () => {
+    const { container, getByText } = renderFigure()
+
+    press(container, "git commit")
+    press(container, "jj bookmark set")
+    press(container, "jj git push")
+    press(container, "git commit")
+    press(container, "jj git push")
+
+    expect(getByText("only Git had something to send")).toBeDefined()
+    expect(column(container, "Git")[0]).toContain("origin/main")
+    expect(column(container, "jj")[1]).not.toContain("origin/main")
   })
 
   /**
@@ -190,6 +212,7 @@ describe("BookmarkGraph", () => {
             commit: "c",
             initial: "i",
             push: "p",
+            pushGitOnly: "g",
           }}
           title="t"
         />,

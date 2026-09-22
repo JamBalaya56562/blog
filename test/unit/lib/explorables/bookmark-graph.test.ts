@@ -32,6 +32,7 @@ const content: BookmarkContent = {
     commit: "committed {desc}",
     initial: "start",
     push: "pushed",
+    pushGitOnly: "git only",
   },
 }
 
@@ -114,16 +115,29 @@ describe("bookmark graph", () => {
     )
   })
 
-  test("Property 5: immutable is exactly what the remote holds", () => {
+  test("Property 5: on jj, immutable is exactly what the remote holds", () => {
     fc.assert(
       fc.property(actions, (list) => {
-        for (const side of [run(list).git, run(list).jj]) {
-          side.commits.forEach((commit, i) => {
-            expect(commit.immutable).toBe(
-              side.remoteMain !== null && i <= side.remoteMain,
-            )
-          })
-        }
+        const { jj } = run(list)
+        jj.commits.forEach((commit, i) => {
+          expect(commit.immutable).toBe(
+            jj.remoteMain !== null && i <= jj.remoteMain,
+          )
+        })
+      }),
+      { numRuns: 300 },
+    )
+  })
+
+  /**
+   * Immutability is jj's rule, not Git's: `git commit --amend` and a forced
+   * push are still there after a push. Marking Git's commits would put one
+   * tool's rule on the other in a figure whose job is to keep them apart.
+   */
+  test("Property 5b: nothing on the Git side is ever immutable", () => {
+    fc.assert(
+      fc.property(actions, (list) => {
+        expect(run(list).git.commits.every((c) => !c.immutable)).toBe(true)
       }),
       { numRuns: 300 },
     )
@@ -195,7 +209,31 @@ describe("bookmark graph", () => {
       false,
     ])
     expect(state.jj.remoteMain).toBe(1)
+    // Git's copies of the same commits stay as rewritable as they were.
+    expect(state.git.commits.every((c) => !c.immutable)).toBe(true)
+    expect(state.git.remoteMain).toBe(1)
     expect(allowed(state, { type: "push" }, content)).toBe(false)
+  })
+
+  /**
+   * The section's point arriving from the other direction: with the bookmark
+   * left behind, `git push` sends the commit and
+   * `jj git push --bookmark main` finds nothing to send.
+   */
+  test("a commit after a push leaves only Git with something to send", () => {
+    let state = reduce(initialState(content), { type: "commit" }, content)
+    state = reduce(state, { type: "bookmark" }, content)
+    state = reduce(state, { type: "push" }, content)
+    state = reduce(state, { type: "commit" }, content)
+
+    expect(allowed(state, { type: "push" }, content)).toBe(true)
+
+    const jjBefore = state.jj
+    state = reduce(state, { type: "push" }, content)
+
+    expect(state.last).toBe("pushGitOnly")
+    expect(state.git.remoteMain).toBe(state.git.main)
+    expect(state.jj).toBe(jjBefore)
   })
 
   test("commits run out with the descriptions", () => {

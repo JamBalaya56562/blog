@@ -54,7 +54,13 @@ export type BookmarkContent = Readonly<{
   status: Readonly<Record<LastAction, string>>
 }>
 
-export type LastAction = "initial" | "commit" | "bookmark" | "push"
+export type LastAction =
+  | "initial"
+  | "commit"
+  | "bookmark"
+  | "push"
+  /** Git had something to send and jj did not, because the bookmark is behind. */
+  | "pushGitOnly"
 
 export type BookmarkState = Readonly<{
   git: Side
@@ -107,7 +113,13 @@ export function allowed(
     case "bookmark":
       return state.jj.main !== state.jj.head - 1
     case "push":
-      return state.jj.remoteMain !== state.jj.main
+      // Either side having something to send is reason enough to press it:
+      // the pair of commands is two commands, and Git's half can have work
+      // to do while jj's has none.
+      return (
+        state.git.remoteMain !== state.git.main ||
+        state.jj.remoteMain !== state.jj.main
+      )
     case "reset":
       return true
   }
@@ -131,10 +143,20 @@ function commitOnJj(side: Side, desc: string): Side {
   return { ...side, commits, head: commits.length - 1 }
 }
 
-function push(side: Side): Side {
+/**
+ * Git's push moves the remote's name and nothing else. A commit Git has
+ * sent looks exactly like one it has not: `git commit --amend` and
+ * `git push --force` are still there. Marking them here would put jj's rule
+ * on Git's side of a figure whose whole job is to keep the two apart.
+ */
+function pushGit(side: Side): Side {
+  return { ...side, remoteMain: side.main }
+}
+
+/** jj's push also puts what the remote holds out of reach of a rewrite. */
+function pushJj(side: Side): Side {
   return {
     ...side,
-    // Everything the remote now holds is out of reach of a rewrite.
     commits: side.commits.map((commit, i) =>
       i <= side.main ? { ...commit, immutable: true } : commit,
     ),
@@ -169,13 +191,21 @@ export function reduce(
         jj: { ...state.jj, main: state.jj.head - 1 },
         last: "bookmark",
       }
-    case "push":
+    case "push": {
+      // With the bookmark left behind, `jj git push --bookmark main` finds
+      // nothing to send while `git push` sends the commit — which is the
+      // section's point arriving from the other direction.
+      const jjHasWork = state.jj.remoteMain !== state.jj.main
       return {
         ...state,
-        git: push(state.git),
-        jj: push(state.jj),
-        last: "push",
+        git:
+          state.git.remoteMain === state.git.main
+            ? state.git
+            : pushGit(state.git),
+        jj: jjHasWork ? pushJj(state.jj) : state.jj,
+        last: jjHasWork ? "push" : "pushGitOnly",
       }
+    }
     case "reset":
       return initialState(content)
   }
