@@ -116,7 +116,30 @@ SHARED = "from-mise-toml"
 export SHARED=from-mise-toml
 ```
 
-![The same mise.toml with SHARED and _.file swapped, producing the opposite exported value](mise-env-later-wins.svg)
+<OrderedRun
+  title="[env] in mise.toml"
+  hint="Swap the two lines and the exported value swaps with them."
+  rule="lastWins"
+  lines={[
+    { text: 'SHARED = "from-mise-toml"', value: "from-mise-toml" },
+    { text: '_.file = ".env"', value: "from-dotenv", note: ".env holds SHARED=from-dotenv" },
+  ]}
+  labels={{
+    lines: "Inside [env]",
+    outcome: "What mise env prints",
+    up: "Move up: {line}",
+    down: "Move down: {line}",
+    state: {
+      wins: "this one stands",
+      overridden: "overwritten by a later line",
+      ran: "applied",
+      failed: "failed",
+      skipped: "not applied",
+    },
+  }}
+  status="export SHARED={outcome}"
+  caption="Neither .env nor mise.toml always wins: they are applied top to bottom and the later line takes it"
+/>
 
 So it is neither "`.env` always wins" nor "`mise.toml` always wins". Entries are applied top to
 bottom, and a later one overwrites what came before it. **If you want defaults in `mise.toml` that

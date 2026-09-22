@@ -113,7 +113,31 @@ step1
 
 2 行目の `false` で失敗したので、そこで打ち切られています。`step3` は実行されていません。
 
-![run の配列が上から実行され、false で失敗した時点で打ち切られ、次の行が実行されない図](mise-tasks-fail-stop.svg)
+<OrderedRun
+  title="run の配列"
+  hint="false を一番下まで下ろすと、他の行はどうなるでしょうか。"
+  rule="stopOnFail"
+  lines={[
+    { text: "echo step1" },
+    { text: "false", fails: true, note: "終了ステータスが 1 のコマンド" },
+    { text: "echo step3" },
+  ]}
+  labels={{
+    lines: "run = [ ... ]",
+    outcome: "実行された行数",
+    up: "上へ移動: {line}",
+    down: "下へ移動: {line}",
+    state: {
+      ran: "実行された",
+      failed: "ここで打ち切り",
+      skipped: "実行されない",
+      wins: "これが残る",
+      overridden: "上書きされた",
+    },
+  }}
+  status="{outcome} 行目まで実行された（全 3 行）"
+  caption="失敗した時点で打ち切られる。だから並べる順序が効く"
+/>
 
 > [!IMPORTANT]
 > これは並べる順序に効きます。タスクには、ファイルを書き換えるもの（フォーマッタ、自動修正付きのリンタ）と、検査して報告するだけのもの（テスト、型チェック）があります。**書き換える方を先に並べてください。**

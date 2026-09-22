@@ -1885,6 +1885,60 @@
   .prose-cyber .pp-explorable-changelog-entry[data-breaking="true"] {
     color: var(--cyber-red);
   }
+  /* Lines of a file in an order the reader can change, with what each one
+     came to beside it. The accent carries the same three steps the rest of
+     these figures use: cyan for what stands, amber for the one that turned
+     things, red for what never happened. */
+  .prose-cyber .pp-explorable-lines {
+    display: grid;
+    gap: 6px;
+    margin: 0;
+    padding-left: 0;
+    list-style: none;
+  }
+  .prose-cyber .pp-explorable-lines > .pp-explorable-row {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    align-items: center;
+  }
+  .prose-cyber .pp-explorable-row[data-line-state="wins"],
+  .prose-cyber .pp-explorable-row[data-line-state="ran"] {
+    --pp-explorable-accent: var(--cyber-cyan);
+  }
+  .prose-cyber .pp-explorable-row[data-line-state="failed"] {
+    --pp-explorable-accent: var(--cyber-amber);
+  }
+  .prose-cyber .pp-explorable-row[data-line-state="overridden"],
+  .prose-cyber .pp-explorable-row[data-line-state="skipped"] {
+    --pp-explorable-accent: var(--cyber-red);
+    opacity: 0.6;
+  }
+  .prose-cyber .pp-explorable-moves {
+    display: flex;
+    gap: 2px;
+  }
+  .prose-cyber .pp-explorable-move {
+    width: 26px;
+    height: 26px;
+    border: 1px solid var(--cyber-line);
+    background: color-mix(in srgb, var(--cyber-bg-0) 55%, transparent);
+    color: var(--cyber-dim);
+    transition:
+      color 0.15s ease,
+      border-color 0.15s ease;
+  }
+  .prose-cyber .pp-explorable-move:hover:not(:disabled) {
+    color: var(--cyber-cyan);
+    border-color: var(--cyber-cyan);
+  }
+  .prose-cyber .pp-explorable-move:disabled {
+    opacity: 0.35;
+  }
+  .prose-cyber .pp-explorable-outcome {
+    margin: 2px 0 0;
+    font-size: 16px;
+    color: var(--cyber-cyan);
+    overflow-wrap: anywhere;
+  }
   .prose-cyber pre code {
     background: transparent;
     border: 0;

@@ -458,6 +458,55 @@ test.describe("Release figure", () => {
   })
 })
 
+/**
+ * Two of the mise sections come down to the order of a few lines, and the
+ * figure is the same one in both: move a line and the answer moves.
+ */
+test.describe("Ordering figures", () => {
+  const moveDown = (figure: ReturnType<typeof figureNamed>, position: number) =>
+    figure
+      .locator(".pp-explorable-row")
+      .nth(position)
+      .locator('[data-move="down"]')
+      .click()
+
+  test("swapping the env lines swaps the exported value", async ({ page }) => {
+    await page.goto("/ja/blog/mise-environment-variables")
+    const figure = figureNamed(page, "mise.toml の [env]")
+    await figure.scrollIntoViewIfNeeded()
+    const outcome = figure.locator(".pp-explorable-outcome")
+
+    await expect(outcome).toHaveText("from-dotenv")
+    await moveDown(figure, 0)
+    await expect(outcome).toHaveText("from-mise-toml")
+  })
+
+  test("moving the failing step down lets the rest run", async ({ page }) => {
+    await page.goto("/ja/blog/mise-tasks")
+    const figure = figureNamed(page, "run の配列")
+    await figure.scrollIntoViewIfNeeded()
+    const rows = figure.locator(".pp-explorable-row")
+
+    await expect(rows.nth(2)).toHaveAttribute("data-line-state", "skipped")
+    await moveDown(figure, 1)
+    await expect(rows.nth(1)).toHaveAttribute("data-line-state", "ran")
+    await expect(rows.nth(2)).toHaveAttribute("data-line-state", "failed")
+  })
+
+  // The row moves out from under the pointer, so the button that moved it
+  // has to keep the focus rather than dropping it to the document.
+  test("focus follows the line that moved", async ({ page }) => {
+    await page.goto("/ja/blog/mise-tasks")
+    const figure = figureNamed(page, "run の配列")
+    await figure.scrollIntoViewIfNeeded()
+
+    await moveDown(figure, 0)
+    await expect(
+      figure.locator(".pp-explorable-row").nth(1).locator('[data-move="down"]'),
+    ).toBeFocused()
+  })
+})
+
 test.describe("Explorable figures — prefers-reduced-motion", () => {
   test.use({ reducedMotion: "reduce" })
 

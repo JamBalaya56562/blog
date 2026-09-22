@@ -105,7 +105,30 @@ SHARED = "from-mise-toml"
 export SHARED=from-mise-toml
 ```
 
-![同じ mise.toml でも SHARED と _.file の記述順を入れ替えると、export される値が入れ替わる図](mise-env-later-wins.svg)
+<OrderedRun
+  title="mise.toml の [env]"
+  hint="2 行を入れ替えると、export される値も入れ替わります。"
+  rule="lastWins"
+  lines={[
+    { text: 'SHARED = "from-mise-toml"', value: "from-mise-toml" },
+    { text: '_.file = ".env"', value: "from-dotenv", note: ".env の中は SHARED=from-dotenv" },
+  ]}
+  labels={{
+    lines: "[env] の中身",
+    outcome: "mise env の出力",
+    up: "上へ移動: {line}",
+    down: "下へ移動: {line}",
+    state: {
+      wins: "これが残る",
+      overridden: "後の行に上書きされた",
+      ran: "適用された",
+      failed: "失敗",
+      skipped: "適用されない",
+    },
+  }}
+  status="export SHARED={outcome}"
+  caption="「.env が常に優先」でも「mise.toml が常に優先」でもない。上から順に適用され、後に書いた方が勝つ"
+/>
 
 つまり「`.env` が常に優先」でも「`mise.toml` が常に優先」でもありません。上から順に適用され、後から書いたものが前を上書きします。**既定値を `mise.toml` に置き、`.env` で個人ごとに上書きさせたい**なら、`_.file` を後ろに書きます。
 
