@@ -86,6 +86,48 @@ test.describe("Explorable figures", () => {
   })
 })
 
+/**
+ * The Conventional Commits post checks a commit message as the reader types
+ * it. The served markup already prints the findings for the preset message;
+ * typing replaces them.
+ */
+test.describe("Commit message figure", () => {
+  const POST = "/ja/blog/getting-started-with-conventional-commits"
+
+  test("the served HTML carries the findings for the preset", async ({
+    request,
+  }) => {
+    const html = await (await request.get(POST)).text()
+    expect(html).toContain("[subject-full-stop]")
+    expect(html).toContain("found 4 problems, 0 warnings")
+  })
+
+  test("typing a conventional message clears the findings", async ({
+    page,
+  }) => {
+    await page.goto(POST)
+    const figure = page.locator(FIGURE).first()
+    await figure.scrollIntoViewIfNeeded()
+    const field = figure.locator("input.pp-explorable-input")
+
+    await field.fill("feat(blog): add a figure the reader can touch")
+    await expect(figure.locator(".pp-explorable-line").last()).toHaveText(
+      "found 0 problems, 0 warnings",
+    )
+    await expect(
+      figure.locator(".pp-explorable-line[data-level=error]"),
+    ).toHaveCount(0)
+
+    await field.fill("Feat: Add a figure.")
+    await expect(
+      figure.locator(".pp-explorable-line[data-level=error]"),
+    ).toHaveCount(5)
+    await expect(figure.locator(".pp-explorable-line").last()).toHaveText(
+      "found 4 problems, 0 warnings",
+    )
+  })
+})
+
 test.describe("Explorable figures — prefers-reduced-motion", () => {
   test.use({ reducedMotion: "reduce" })
 
