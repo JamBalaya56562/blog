@@ -283,6 +283,77 @@ test.describe("Container figure", () => {
   })
 })
 
+/**
+ * The Jujutsu post steps through three of its own transcripts. What the
+ * figure adds over the pictures it replaces is the mark: the row whose
+ * commit ID moved while its change ID stayed.
+ */
+test.describe("Stepped graph figure", () => {
+  const POST = "/ja/blog/getting-started-with-jujutsu"
+  const squash = (page: import("@playwright/test").Page) =>
+    page.locator(FIGURE).first()
+
+  test("the served HTML is the first step of the first figure", async ({
+    request,
+  }) => {
+    const html = await (await request.get(POST)).text()
+    expect(html).toContain("pp-explorable-command")
+    expect(html).toContain("bf873b9b")
+    // The second step's hash is not in the markup until the reader asks.
+    expect(html).not.toContain("901a7c31")
+  })
+
+  test("stepping forward marks the rewritten commit", async ({ page }) => {
+    await page.goto(POST)
+    const figure = squash(page)
+    await figure.scrollIntoViewIfNeeded()
+    const rows = figure.locator(".pp-explorable-graph-row")
+
+    await expect(figure.locator(".pp-explorable-command")).toHaveText(
+      "❯ jj log",
+    )
+    await expect(rows.nth(1)).toHaveAttribute("data-mark", "same")
+
+    await figure.locator(".pp-explorable-cmd", { hasText: "進む" }).click()
+
+    await expect(figure.locator(".pp-explorable-command")).toHaveText(
+      "❯ jj squash README.md",
+    )
+    await expect(rows.nth(1)).toHaveAttribute("data-mark", "rewritten")
+    await expect(rows.nth(1)).toContainText("901a7c31")
+    await expect(
+      figure.locator(".pp-explorable-cmd", { hasText: "進む" }),
+    ).toBeDisabled()
+  })
+
+  // The fetch/rebase figure is the only one with a fork, and the rebase is
+  // what closes it.
+  test("the fork closes when the change is rebased", async ({ page }) => {
+    await page.goto(POST)
+    const figure = page.locator(FIGURE).last()
+    await figure.scrollIntoViewIfNeeded()
+    const graph = figure.locator(".pp-explorable-graph")
+
+    await expect(graph).toHaveAttribute("data-forked", "true")
+    await figure.locator(".pp-explorable-cmd", { hasText: "進む" }).click()
+    await expect(graph).toHaveAttribute("data-forked", "false")
+  })
+
+  test("the slider moves the step too", async ({ page }) => {
+    await page.goto(POST)
+    const figure = squash(page)
+    await figure.scrollIntoViewIfNeeded()
+    const range = figure.locator("input[type=range]")
+
+    await range.focus()
+    await page.keyboard.press("ArrowRight")
+    await expect(range).toHaveValue("1")
+    await expect(figure.locator(".pp-explorable-command")).toHaveText(
+      "❯ jj squash README.md",
+    )
+  })
+})
+
 test.describe("Explorable figures — prefers-reduced-motion", () => {
   test.use({ reducedMotion: "reduce" })
 
