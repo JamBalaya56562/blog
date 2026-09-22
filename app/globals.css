@@ -168,11 +168,22 @@
      but exactly what a headline wants. Only the headline rules take it. The
      feature touches CJK glyphs alone, so Latin display text is unaffected and
      no `:lang()` scope is needed. */
+  /* `balance` asks the engine to even out the lines of a short block instead of
+     filling each one to the edge and letting the remainder fall where it may.
+     Headlines are the case it exists for, and #1291 made the need concrete:
+     `palt` narrowed the kana enough that `コンテナと Docker 入門ガイド` fit one
+     more character on its first line and left `ド` alone on the second.
+
+     Chromium stops balancing past a handful of lines and falls back to normal
+     filling, which is the right failure: a headline long enough to hit that is
+     no longer a headline. Supported in Chromium and Firefox; elsewhere the
+     declaration is dropped and the text fills as it does today. */
   .pp-display {
     font-family: var(--blog-font-headline);
     font-feature-settings: "palt";
     letter-spacing: 0.04em;
     font-weight: 700;
+    text-wrap: balance;
   }
 
   /* Hero headline — must render on a single line at every desktop width.
@@ -1012,6 +1023,7 @@
     letter-spacing: 0.02em;
     margin-top: 1.6em;
     margin-bottom: 0.6em;
+    text-wrap: balance;
   }
   /* h2 and h3 take their size from here rather than from a utility class, so
      they must state their own line-height too — inheriting the 1.85 body
