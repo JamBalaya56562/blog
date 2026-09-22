@@ -6,6 +6,7 @@ import { CodeTabs } from "@/components/code-tabs"
 import { CopyButton } from "@/components/copy-button"
 import { BookmarkGraph } from "@/components/explorables/bookmark-graph"
 import { CommitLint } from "@/components/explorables/commit-lint"
+import { ContainerLifecycle } from "@/components/explorables/container-lifecycle"
 import { LayerCache } from "@/components/explorables/layer-cache"
 import { ZoomableImage } from "@/components/zoomable-image"
 import { externalHost, faviconPath } from "@/lib/favicon"
@@ -134,6 +135,7 @@ const staticComponents: MDXComponents = {
   },
   CodeTabs,
   CommitLint,
+  ContainerLifecycle,
   code: (props) => <code className="rounded" {...props} />,
   h1: (props) => <h1 className="text-4xl font-bold" {...props} />,
   h4: (props) => <h4 className="text-xl font-medium" {...props} />,

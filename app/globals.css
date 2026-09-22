@@ -1671,6 +1671,100 @@
   .prose-cyber .pp-explorable-cmd-pair > span:first-child {
     color: var(--cyber-dimmer);
   }
+  /* A container over its image, with a volume beside it. The image layers
+     are bars because that is all they are here — read-only and untouched;
+     the writable layer and the volume hold the things a command moves
+     between them. The three stack on a phone and line up once there is
+     room for them. */
+  .prose-cyber .pp-explorable-stack {
+    display: grid;
+    gap: 8px;
+    min-width: 0;
+  }
+  @media (width >= 34rem) {
+    .prose-cyber .pp-explorable-stack {
+      grid-template-columns: minmax(0, 1fr) 24px minmax(0, 1fr);
+      align-items: center;
+    }
+  }
+  .prose-cyber .pp-explorable-box {
+    padding: 8px 10px;
+    border: 1px solid var(--cyber-cyan);
+    background: color-mix(in srgb, var(--cyber-cyan) 8%, transparent);
+    transition:
+      opacity 0.25s ease,
+      border-color 0.25s ease;
+  }
+  .prose-cyber .pp-explorable-box[data-on="false"] {
+    opacity: 0.35;
+    border-style: dashed;
+    border-color: var(--cyber-line);
+  }
+  .prose-cyber .pp-explorable-items {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 4px;
+  }
+  .prose-cyber .pp-explorable-item {
+    padding: 1px 6px;
+    border: 1px solid var(--cyber-line-hi);
+    background: var(--cyber-code-bg);
+    font-size: 11px;
+    overflow-wrap: anywhere;
+  }
+  .prose-cyber .pp-explorable-item[data-on="false"] {
+    border-style: dashed;
+    color: var(--cyber-dimmer);
+  }
+  .prose-cyber .pp-explorable-layers {
+    display: grid;
+    gap: 2px;
+    margin-top: 4px;
+  }
+  .prose-cyber .pp-explorable-layer {
+    padding: 2px 8px;
+    border: 1px solid var(--cyber-line);
+    background: color-mix(in srgb, var(--cyber-dim) 8%, transparent);
+    font-size: 10px;
+    letter-spacing: 0.06em;
+    color: var(--cyber-dim);
+  }
+  /* The mount, drawn as the dashed run between the two. */
+  .prose-cyber .pp-explorable-link {
+    display: block;
+    height: 0;
+    border-top: 1px dashed var(--cyber-magenta);
+    opacity: 1;
+    transition: opacity 0.25s ease;
+  }
+  .prose-cyber .pp-explorable-link[data-on="false"] {
+    opacity: 0;
+  }
+  /* A cylinder without an SVG: the ellipse is the border radius. */
+  .prose-cyber .pp-explorable-volume {
+    padding: 12px 10px;
+    border: 1px solid var(--cyber-magenta);
+    border-radius: 50% / 14px;
+    background: color-mix(in srgb, var(--cyber-magenta) 8%, transparent);
+    text-align: center;
+    transition:
+      opacity 0.25s ease,
+      border-color 0.25s ease;
+  }
+  .prose-cyber .pp-explorable-volume[data-on="false"] {
+    opacity: 0.3;
+    border-style: dashed;
+    border-color: var(--cyber-line);
+  }
+  .prose-cyber .pp-explorable-volume-name {
+    margin: 0;
+    font-size: 12px;
+    color: var(--cyber-magenta);
+  }
+  .prose-cyber .pp-explorable-volume .pp-explorable-items {
+    justify-content: center;
+  }
   .prose-cyber pre code {
     background: transparent;
     border: 0;
