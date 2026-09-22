@@ -298,7 +298,42 @@ o  9d729f9329  65 minutes ago  jambalaya.pyoncafe  remote/main
 
 `restacking children automatically` の 3 行がそれです。Git で同じことをすると `rebase -i` で `edit` を選び、直して `--continue`、という手順になりますが、ここでは `amend` 1 回で済んでいます。コンフリクトする場合だけ止まり、そのときは `sl restack` で続きをやります。
 
-![sl prev → sl amend の前後。真ん中の Greet the world が amend されて a8fc4a1a60 になり、上の Add a licence が自動で restack されて feb42b2732 になる図](sapling-restack.svg)
+<CommitGraph
+  title="sl amend"
+  hint="真ん中を直すと、その上がどうなるかを見てください。"
+  scenes={[
+    {
+      command: "sl prev",
+      caption: "真ん中の Greet the world に降りたところ",
+      rows: [
+        { changeId: "licence", desc: "Add a licence", commitId: "c448d1b12f", kind: "commit" },
+        { changeId: "greet", desc: "Greet the world", commitId: "a7a69177b9", kind: "at" },
+        { changeId: "hello", desc: "Add hello.txt", commitId: "a0a3d365a6", kind: "commit" },
+        { changeId: "initial", desc: "Initial commit", commitId: "9d729f9329", kind: "commit", refs: [{ label: "remote/main", kind: "remote" }] },
+      ],
+    },
+    {
+      command: "sl amend",
+      caption: "直したコミットが書き換わり、その上が自動で載せ替えられた",
+      rows: [
+        { changeId: "licence", desc: "Add a licence", commitId: "feb42b2732", kind: "commit", note: "restacking children automatically" },
+        { changeId: "greet", desc: "Greet the world", commitId: "a8fc4a1a60", kind: "at" },
+        { changeId: "hello", desc: "Add hello.txt", commitId: "a0a3d365a6", kind: "commit" },
+        { changeId: "initial", desc: "Initial commit", commitId: "9d729f9329", kind: "commit", refs: [{ label: "remote/main", kind: "remote" }] },
+      ],
+    },
+  ]}
+  labels={{
+    step: "手順",
+    previous: "戻る",
+    next: "進む",
+    rewritten: "ハッシュが変わった",
+    added: "増えた",
+    graph: "sl",
+  }}
+  status="{n}/{total}・{command} — {caption}"
+  caption="amend 1 回で、直したコミットとその上が両方書き換わる"
+/>
 
 上に戻るのは `sl next` です。
 
@@ -430,7 +465,62 @@ o  9d729f9329  70 minutes ago  jambalaya.pyoncafe  remote/main
 - 1 回目の `sl pr submit` は真ん中から打ったので、**push されたのは `#15` の 1 コミットだけ**で、上の `#16` は触られていない。`sl pr submit` が扱うのは「今いるコミットとその下」だからです
 - `sl next` で上に戻って打ち直すと、今度は `#16` の分が push され、3 本の本文が揃う
 
-![sl pr submit の対象は @ とその下。真ん中の #15 から打つと #15 だけが push され、#14 は up-to-date、上の #16 は触られない。sl next で上に戻って打つと #16 が push される図](sapling-submit-scope.svg)
+<CommitGraph
+  title="sl pr submit"
+  hint="どこから打ったかで、push される範囲が変わります。"
+  scenes={[
+    {
+      command: "sl ssl",
+      caption: "3 本の PR が縦に並んでいる。@ は一番上",
+      rows: [
+        { changeId: "licence", desc: "Add a licence", commitId: "9181b8da46", kind: "at", refs: [{ label: "#16", kind: "bookmark" }] },
+        { changeId: "greet", desc: "Greet the world", commitId: "a8fc4a1a60", kind: "commit", refs: [{ label: "#15", kind: "bookmark" }] },
+        { changeId: "hello", desc: "Add hello.txt", commitId: "a0a3d365a6", kind: "commit", refs: [{ label: "#14", kind: "bookmark" }] },
+        { changeId: "initial", desc: "Initial commit", commitId: "9d729f9329", kind: "commit", refs: [{ label: "remote/main", kind: "remote" }] },
+      ],
+    },
+    {
+      command: "sl prev && sl amend",
+      caption: "真ん中を直した。上の #16 も自動で載せ替えられている",
+      rows: [
+        { changeId: "licence", desc: "Add a licence", commitId: "f719fbb60f", kind: "commit", refs: [{ label: "#16", kind: "bookmark" }] },
+        { changeId: "greet", desc: "Greet the world", commitId: "9cb3be1e59", kind: "at", refs: [{ label: "#15", kind: "bookmark" }] },
+        { changeId: "hello", desc: "Add hello.txt", commitId: "a0a3d365a6", kind: "commit", refs: [{ label: "#14", kind: "bookmark" }] },
+        { changeId: "initial", desc: "Initial commit", commitId: "9d729f9329", kind: "commit", refs: [{ label: "remote/main", kind: "remote" }] },
+      ],
+    },
+    {
+      command: "sl pr submit",
+      caption: "真ん中から打ったので、push されたのは #15 だけ。#14 は up-to-date、上の #16 は触られない",
+      rows: [
+        { changeId: "licence", desc: "Add a licence", commitId: "f719fbb60f", kind: "commit", note: "触られない", refs: [{ label: "#16", kind: "bookmark" }] },
+        { changeId: "greet", desc: "Greet the world", commitId: "9cb3be1e59", kind: "at", note: "pushing 1", refs: [{ label: "#15", kind: "bookmark" }] },
+        { changeId: "hello", desc: "Add hello.txt", commitId: "a0a3d365a6", kind: "commit", note: "#14 is up-to-date", refs: [{ label: "#14", kind: "bookmark" }] },
+        { changeId: "initial", desc: "Initial commit", commitId: "9d729f9329", kind: "commit", refs: [{ label: "remote/main", kind: "remote" }] },
+      ],
+    },
+    {
+      command: "sl next && sl pr submit",
+      caption: "上に戻って打ち直すと、今度は #16 の分が push される",
+      rows: [
+        { changeId: "licence", desc: "Add a licence", commitId: "f719fbb60f", kind: "at", note: "pushing 1", refs: [{ label: "#16", kind: "bookmark" }] },
+        { changeId: "greet", desc: "Greet the world", commitId: "9cb3be1e59", kind: "commit", refs: [{ label: "#15", kind: "bookmark" }] },
+        { changeId: "hello", desc: "Add hello.txt", commitId: "a0a3d365a6", kind: "commit", refs: [{ label: "#14", kind: "bookmark" }] },
+        { changeId: "initial", desc: "Initial commit", commitId: "9d729f9329", kind: "commit", refs: [{ label: "remote/main", kind: "remote" }] },
+      ],
+    },
+  ]}
+  labels={{
+    step: "手順",
+    previous: "戻る",
+    next: "進む",
+    rewritten: "ハッシュが変わった",
+    added: "増えた",
+    graph: "sl ssl",
+  }}
+  status="{n}/{total}・{command} — {caption}"
+  caption="sl pr submit が扱うのは、今いるコミットとその下だけ"
+/>
 
 一番上のコミットのハッシュが、前の smartlog（`feb42b2732`）と違うことに気づいた人がいるかもしれません。この間に `LICENSE` に 1 行足して `sl amend` → `sl pr submit` をしていて、そのときの流れも同じ「直したコミットだけ push される」でした。`Approved` は、このリポジトリに入れてある自動レビュー（Sourcery）が付けたものです。
 
