@@ -1502,6 +1502,88 @@
   .prose-cyber .pp-explorable-legend > [data-state="rerun"] {
     --pp-explorable-accent: var(--cyber-red);
   }
+  /* A one-line text field, the parts a parser took out of it, and a
+     transcript of what a tool printed for it, in the terminal panel's
+     colours: the glyph in front of each line is what commitlint prints. */
+  .prose-cyber .pp-explorable-input {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid var(--cyber-line);
+    background: var(--cyber-code-bg);
+    font: inherit;
+    font-size: 13px;
+    color: var(--cyber-text);
+    transition: border-color 0.15s ease;
+  }
+  .prose-cyber .pp-explorable-input:focus-visible {
+    outline: 1px solid var(--cyber-cyan);
+    outline-offset: 1px;
+    border-color: var(--cyber-cyan);
+  }
+  .prose-cyber .pp-explorable-parts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .prose-cyber .pp-explorable-part {
+    display: inline-flex;
+    gap: 8px;
+    padding: 3px 8px;
+    border: 1px solid var(--cyber-line);
+    font-size: 11px;
+    color: var(--cyber-text);
+    overflow-wrap: anywhere;
+    transition:
+      opacity 0.2s ease,
+      border-color 0.2s ease;
+  }
+  .prose-cyber .pp-explorable-part[data-on="false"] {
+    opacity: 0.4;
+    border-style: dashed;
+  }
+  .prose-cyber .pp-explorable-part-name {
+    color: var(--cyber-dim);
+    letter-spacing: 0.06em;
+  }
+  .prose-cyber .pp-explorable-term {
+    padding: 8px 10px;
+    border: 1px solid var(--cyber-line);
+    background: var(--cyber-code-bg);
+    font-size: 12px;
+    line-height: 1.7;
+    overflow-wrap: anywhere;
+  }
+  .prose-cyber .pp-explorable-line::before {
+    display: inline-block;
+    width: 1.8em;
+    color: var(--cyber-dim);
+  }
+  .prose-cyber .pp-explorable-line[data-level="input"] {
+    color: var(--cyber-dim);
+  }
+  .prose-cyber .pp-explorable-line[data-level="input"]::before {
+    content: "⧗";
+  }
+  .prose-cyber .pp-explorable-line[data-level="echo"]::before {
+    content: "";
+  }
+  .prose-cyber .pp-explorable-line[data-level="error"] {
+    color: var(--cyber-red);
+  }
+  .prose-cyber .pp-explorable-line[data-level="error"]::before {
+    content: "✖";
+    color: inherit;
+  }
+  .prose-cyber .pp-explorable-line[data-level="ok"] {
+    color: var(--cyber-lime);
+  }
+  .prose-cyber .pp-explorable-line[data-level="ok"]::before {
+    content: "✔";
+    color: inherit;
+  }
+  .prose-cyber .pp-explorable-rule {
+    color: var(--cyber-dim);
+  }
   .prose-cyber pre code {
     background: transparent;
     border: 0;
