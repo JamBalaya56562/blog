@@ -44,6 +44,7 @@
     "tick": "SIBYL // FAULT REPORT"
   },
   "explorable": {
+    "kind": "interactive",
     "reset": "Reset"
   },
   "footer": {

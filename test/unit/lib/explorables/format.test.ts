@@ -49,6 +49,14 @@ describe("fill", () => {
       "COPY . . took {time}",
     )
   })
+
+  // Only the values handed over count as supplied: a placeholder that happens
+  // to share a name with something on `Object.prototype` is still unknown.
+  test("does not read inherited properties as values", () => {
+    expect(fill("{toString} {constructor}", { cmd: "x" })).toBe(
+      "{toString} {constructor}",
+    )
+  })
 })
 
 describe("formatSeconds", () => {

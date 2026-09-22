@@ -87,10 +87,18 @@ describe("Explorable", () => {
     expect(document.activeElement).toBe(getByRole("figure"))
   })
 
-  test("labels the reset button in the locale of the URL", () => {
+  /**
+   * The strip's kind word and the reset label are the frame's own text, so
+   * they are the only words not written in the post itself; both follow the
+   * locale in the URL.
+   */
+  test("labels the strip and the reset button in the locale of the URL", () => {
     pathnameMock.value = "/ja/blog/post"
-    const { getByRole } = renderFrame()
+    const { container, getByRole } = renderFrame()
 
     expect(getByRole("button", { name: "最初に戻す" })).toBeDefined()
+    expect(container.querySelector(".pp-explorable-kind")?.textContent).toBe(
+      "インタラクティブ",
+    )
   })
 })

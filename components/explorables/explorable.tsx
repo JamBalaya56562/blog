@@ -31,9 +31,10 @@ type Props = Readonly<{
  *
  * Everything written here is the article's: the title, the hint, the status
  * sentence and the caption arrive as props from the MDX, in the post's own
- * language. The one label of the frame's own, on the reset button, comes from
- * the dictionary for the locale in the URL, the way the copy button and the
- * lightbox find theirs — the MDX component map has no locale to pass down.
+ * language. The two labels of the frame's own — the word in the strip that
+ * says what kind of panel this is, and the reset button — come from the
+ * dictionary for the locale in the URL, the way the copy button and the
+ * lightbox find theirs: the MDX component map has no locale to pass down.
  *
  * Resetting disables the button, which drops focus; it is moved to the figure
  * itself so a keyboard user is left where they were rather than at the top of
@@ -67,7 +68,7 @@ export function Explorable({
     >
       <div className="pp-explorable-head">
         <span className="pp-explorable-name">{title}</span>
-        <span className="pp-explorable-kind">interactive</span>
+        <span className="pp-explorable-kind">{dictionary.explorable.kind}</span>
         <button
           aria-label={dictionary.explorable.reset}
           className="pp-explorable-reset"

@@ -12,7 +12,7 @@ export function fill(
   vars: Readonly<Record<string, string | number>>,
 ): string {
   return template.replace(/\{(\w+)\}/g, (match, key: string) =>
-    key in vars ? String(vars[key]) : match,
+    Object.hasOwn(vars, key) ? String(vars[key]) : match,
   )
 }
 
