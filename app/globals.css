@@ -161,8 +161,16 @@
     letter-spacing: 0.05em;
   }
 
+  /* `palt` swaps each fullwidth punctuation glyph for a proportional one, so a
+     `、` stops reserving an em it does not fill. Measured on the real webfont,
+     `「環境」を（Debian）、起動時に。` goes from 252px to 210px — far too much
+     for body copy, where the even rhythm of the fullwidth grid is the point,
+     but exactly what a headline wants. Only the headline rules take it. The
+     feature touches CJK glyphs alone, so Latin display text is unaffected and
+     no `:lang()` scope is needed. */
   .pp-display {
     font-family: var(--blog-font-headline);
+    font-feature-settings: "palt";
     letter-spacing: 0.04em;
     font-weight: 700;
   }
@@ -991,11 +999,15 @@
     line-break: strict;
     word-break: auto-phrase;
   }
+  /* Same `palt` as `.pp-display`, for the headings inside an article. The
+     0.02em tracking below already gives back a little of what the feature
+     takes out. */
   .prose-cyber h1,
   .prose-cyber h2,
   .prose-cyber h3,
   .prose-cyber h4 {
     font-family: var(--blog-font-headline);
+    font-feature-settings: "palt";
     color: var(--cyber-text);
     letter-spacing: 0.02em;
     margin-top: 1.6em;
