@@ -295,7 +295,33 @@ CMD ["node", "./dist/server/entry.mjs"]
 ...
 ```
 
-![「変わりにくいものを先に、変わりやすいものを後に」の図。Dockerfile の手順が上から下に並び、上から COPY pnpm-lock.yaml（たまに変わる）→ RUN pnpm install（5 分半）→ COPY . .（毎日変わる）→ RUN pnpm build。右側に「ソースだけ変えた再ビルド」の列があり、上 2 つが CACHED、下 2 つだけが再実行になっている。「変わった行から下は全部やり直し。だから重くて変わらないものを上に置く」と添えてある](docker-layer-cache.svg)
+<LayerCache
+  title="Dockerfile"
+  hint="行をクリックすると、その行がコピーするファイルが変わったことになります。上の切り替えで、同じ 4 行の並び順を入れ替えられます。"
+  steps={[
+    { cmd: "COPY pnpm-lock.yaml ./", note: "lockfile。たまにしか変わらない", seconds: 1 },
+    { cmd: "RUN pnpm install", note: "5 分半かかる、一番重い行", seconds: 330 },
+    { cmd: "COPY . .", note: "ソースコード。毎日変わる", seconds: 4.5 },
+    { cmd: "RUN pnpm build", note: "上のどれかが変われば必ず走る", seconds: 480 },
+  ]}
+  orders={[
+    { label: "lockfile を先に", order: [0, 1, 2, 3] },
+    { label: "ソースを先に", order: [2, 0, 1, 3] },
+  ]}
+  changed={2}
+  labels={{
+    cached: "CACHED",
+    changed: "変えた行",
+    rerun: "やり直す行",
+    total: "再ビルドにかかる時間",
+    order: "並び順",
+  }}
+  status={{
+    none: "何も変えていないので、4 手順すべてが CACHED。0s",
+    some: "{cmd} が変わったので、その行から下の {rerun} 手順をやり直す。{time}",
+  }}
+  caption="変わった行から下は全部やり直し。だから重くて変わらないものを上に置く"
+/>
 
 ### マルチステージビルド
 

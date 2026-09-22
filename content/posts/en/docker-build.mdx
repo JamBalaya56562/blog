@@ -343,7 +343,33 @@ times, and from the second build on it looked like this.
 ...
 ```
 
-![Figure: "What rarely changes first, what changes often last". The Dockerfile steps run top to bottom: COPY pnpm-lock.yaml (changes now and then) → RUN pnpm install (5½ minutes) → COPY . . (changes every day) → RUN pnpm build. A second column, "a rebuild after a source change", shows the top two as CACHED and only the bottom two re-run. A caption reads "everything below the changed line is redone, so put the heavy, stable steps at the top"](docker-layer-cache.svg)
+<LayerCache
+  title="Dockerfile"
+  hint="Click a line to change the file it copies. The switch above reorders the same four lines."
+  steps={[
+    { cmd: "COPY pnpm-lock.yaml ./", note: "The lockfile. Changes now and then", seconds: 1 },
+    { cmd: "RUN pnpm install", note: "Five and a half minutes: the heaviest line", seconds: 330 },
+    { cmd: "COPY . .", note: "The sources. Change every day", seconds: 4.5 },
+    { cmd: "RUN pnpm build", note: "Runs whenever anything above it changed", seconds: 480 },
+  ]}
+  orders={[
+    { label: "Lockfile first", order: [0, 1, 2, 3] },
+    { label: "Sources first", order: [2, 0, 1, 3] },
+  ]}
+  changed={2}
+  labels={{
+    cached: "CACHED",
+    changed: "the line you changed",
+    rerun: "redone",
+    total: "Rebuild time",
+    order: "Order",
+  }}
+  status={{
+    none: "Nothing changed, so all four steps are CACHED. 0s",
+    some: "{cmd} changed, so it and the steps below it are redone: {rerun} steps, {time}",
+  }}
+  caption="Everything below the changed line is redone, so put the heavy, stable steps at the top"
+/>
 
 ### Multi-stage builds
 

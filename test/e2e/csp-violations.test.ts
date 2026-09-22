@@ -6,6 +6,7 @@ const PATHS = [
   "/en/blog",
   "/en/blog/getting-started-with-mise",
   "/ja/blog/getting-started-with-mise",
+  "/ja/blog/docker-build",
   "/en/portfolio",
   "/en/privacy-policy",
   "/en/nope",
@@ -69,6 +70,35 @@ test.describe("Content Security Policy", () => {
     // drives the same listeners on every project.
     await page.evaluate(() => window.scrollTo(0, 2000))
     await page.waitForTimeout(300)
+
+    const violations = await page.evaluate(
+      () =>
+        (window as unknown as { __cspViolations: string[] }).__cspViolations,
+    )
+    expect(violations).toEqual([])
+  })
+
+  // A press on an explorable figure writes a `style` attribute — the bar's
+  // width travels as a custom property — which `style-src-attr` allows and
+  // `style-src` alone would not. The press is what proves the distinction.
+  test("pressing an explorable figure trips nothing either", async ({
+    page,
+  }) => {
+    await page.addInitScript(() => {
+      const violations: string[] = []
+      Object.defineProperty(window, "__cspViolations", { value: violations })
+      document.addEventListener("securitypolicyviolation", (event) => {
+        violations.push(
+          `${event.effectiveDirective} blocked ${event.blockedURI || "inline"}`,
+        )
+      })
+    })
+
+    await page.goto("/ja/blog/docker-build")
+    const row = page.locator("figure.pp-explorable .pp-explorable-row").first()
+    await row.scrollIntoViewIfNeeded()
+    await row.click()
+    await expect(row).toHaveAttribute("data-state", "changed")
 
     const violations = await page.evaluate(
       () =>

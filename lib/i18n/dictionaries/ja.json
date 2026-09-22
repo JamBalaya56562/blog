@@ -43,6 +43,10 @@
     "retry": "再試行",
     "tick": "SIBYL // 障害レポート"
   },
+  "explorable": {
+    "kind": "動かしてみよう",
+    "reset": "最初に戻す"
+  },
   "footer": {
     "copyright": "© {year} Jam Balaya. All rights reserved.",
     "feed": "RSSフィード",

@@ -28,6 +28,13 @@ const REQUIRED_ELEMENTS = [
   "th",
 ] as const
 
+/**
+ * Custom tags the posts write by name. A tag that disappears from the map
+ * turns every post that uses it into a build failure; `mdx-tags.test.ts`
+ * checks the posts' side of the same contract.
+ */
+const REQUIRED_COMPONENTS = ["CodeTabs", "LayerCache"] as const
+
 describe("MDX Components", () => {
   test("Property 5: MDX component completeness", () => {
     fc.assert(
@@ -36,6 +43,16 @@ describe("MDX Components", () => {
         expect(components[element]).toBeDefined()
       }),
       { numRuns: 100 },
+    )
+  })
+
+  test("Property 6: every custom tag the posts use is mapped", () => {
+    fc.assert(
+      fc.property(fc.constantFrom(...REQUIRED_COMPONENTS), (name) => {
+        const components = useMDXComponents()
+        expect(typeof components[name]).toBe("function")
+      }),
+      { numRuns: 20 },
     )
   })
 })

@@ -43,6 +43,10 @@
     "retry": "RETRY",
     "tick": "SIBYL // FAULT REPORT"
   },
+  "explorable": {
+    "kind": "interactive",
+    "reset": "Reset"
+  },
   "footer": {
     "copyright": "© {year} Jam Balaya. All rights reserved.",
     "feed": "RSS feed",
