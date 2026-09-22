@@ -180,3 +180,29 @@ describe("commitlint port", () => {
     expect(rules("")).toEqual(["subject-empty", "type-empty"])
   })
 })
+
+/**
+ * commitlint's guard on the subject is Unicode-aware: a subject that starts
+ * with a capital in any script is judged, and one that starts with a small
+ * letter in any script passes.
+ */
+describe("commitlint port — letters beyond ASCII", () => {
+  test("a capital beyond ASCII still trips subject-case", () => {
+    expect(rules("fix: Ädd a figure")).toEqual(["subject-case"])
+    expect(rules("fix: Ölçek düzelt")).toEqual(["subject-case"])
+  })
+
+  test("a small letter beyond ASCII passes", () => {
+    expect(rules("fix: ädd a figure")).toEqual([])
+  })
+
+  test("a script without case is left alone", () => {
+    expect(rules("fix: 図を足す")).toEqual([])
+  })
+})
+
+test("a scope with several parts is split on slash, backslash and comma", () => {
+  expect(rules("fix(auth,Token): keep the session")).toEqual(["scope-case"])
+  expect(rules("fix(authToken): keep the session")).toEqual(["scope-case"])
+  expect(rules("fix(auth/token,api): keep the session")).toEqual([])
+})

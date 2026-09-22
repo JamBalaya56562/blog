@@ -94,12 +94,19 @@ test.describe("Explorable figures", () => {
 test.describe("Commit message figure", () => {
   const POST = "/ja/blog/getting-started-with-conventional-commits"
 
+  // The article's own transcript prints the same findings a little above,
+  // so the assertions look only at the figure's terminal panel, which the
+  // transcript does not have.
   test("the served HTML carries the findings for the preset", async ({
     request,
   }) => {
     const html = await (await request.get(POST)).text()
-    expect(html).toContain("[subject-full-stop]")
-    expect(html).toContain("found 4 problems, 0 warnings")
+    expect(html).toContain('value="Fix: Login Button."')
+    const term = html.indexOf('class="pp-explorable-term"')
+    expect(term).toBeGreaterThan(-1)
+    const panel = html.slice(term, html.indexOf("</figure>", term))
+    expect(panel).toContain("[subject-full-stop]")
+    expect(panel).toContain("found 4 problems, 0 warnings")
   })
 
   test("typing a conventional message clears the findings", async ({

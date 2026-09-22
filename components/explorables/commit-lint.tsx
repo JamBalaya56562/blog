@@ -70,6 +70,12 @@ export function CommitLint({
   if (presets.length === 0) {
     throw new Error("CommitLint: no presets")
   }
+  // A preset is a button keyed and pressed by its text, so two alike would
+  // be two buttons pressed at once.
+  const duplicate = presets.find((preset, i) => presets.indexOf(preset) !== i)
+  if (duplicate !== undefined) {
+    throw new Error(`CommitLint: preset "${duplicate}" appears twice`)
+  }
   if (!Number.isInteger(initial) || initial < 0 || initial >= presets.length) {
     throw new Error(
       `CommitLint: initial=${initial} but ${presets.length} presets`,

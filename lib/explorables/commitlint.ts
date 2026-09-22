@@ -89,6 +89,16 @@ function startsCapitalised(value: string): boolean {
   return first !== first.toLowerCase()
 }
 
+/**
+ * The subject-case rule only looks at a subject that starts with a cased
+ * letter, in any script: commitlint's own guard, with the same Unicode
+ * classes. A subject that opens with a digit or a quote is left alone.
+ */
+const STARTS_WITH_LETTER = /^[\p{Ll}\p{Lu}\p{Lt}]/u
+
+/** A scope may name several parts, split on `/`, `\` or `,` as upstream does. */
+const SCOPE_DELIMITER = /[/\\,]/
+
 function isLowerCase(value: string): boolean {
   const cleaned = value.replace(/`.*?`|".*?"|'.*?'/g, "").trim()
   return cleaned === "" || cleaned === cleaned.toLowerCase()
@@ -128,14 +138,14 @@ const RULES: readonly Rule[] = [
   },
   {
     check: (_, { scope }) =>
-      scope && !scope.split(/[/,]/).every(isLowerCase)
+      scope && !scope.split(SCOPE_DELIMITER).every(isLowerCase)
         ? "scope must be lower-case"
         : null,
     id: "scope-case",
   },
   {
     check: (_, { subject }) =>
-      subject && /^[a-z]/i.test(subject) && startsCapitalised(subject)
+      subject && STARTS_WITH_LETTER.test(subject) && startsCapitalised(subject)
         ? "subject must not be sentence-case, start-case, pascal-case, upper-case"
         : null,
     id: "subject-case",
@@ -151,9 +161,7 @@ const RULES: readonly Rule[] = [
   },
   {
     check: (_, { type }) =>
-      type && /^[a-z]/i.test(type) && !isLowerCase(type)
-        ? "type must be lower-case"
-        : null,
+      type && !isLowerCase(type) ? "type must be lower-case" : null,
     id: "type-case",
   },
   {

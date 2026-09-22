@@ -130,6 +130,26 @@ describe("CommitLint", () => {
     expect(reset.disabled).toBe(true)
   })
 
+  test("throws on a preset that appears twice", () => {
+    expect(() =>
+      render(
+        <CommitLint
+          initial={0}
+          label="l"
+          parts={{
+            breaking: "!",
+            scope: "scope",
+            subject: "subject",
+            type: "type",
+          }}
+          presets={["fix: a", "fix: a"]}
+          status={{ ok: "ok", problems: "{n}" }}
+          title="t"
+        />,
+      ),
+    ).toThrow('preset "fix: a" appears twice')
+  })
+
   test("throws on an initial index outside the presets", () => {
     expect(() => renderFigure(3)).toThrow("initial=3 but 3 presets")
   })
