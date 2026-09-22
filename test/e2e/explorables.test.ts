@@ -507,6 +507,39 @@ test.describe("Ordering figures", () => {
   })
 })
 
+/**
+ * `docker build .` sends the directory to the engine, and `.dockerignore`
+ * is what keeps it small. Switching a line off puts what it was keeping out
+ * back on the wire — unless another line covers it, which is the thing the
+ * repository's own file does twice over.
+ */
+test.describe("Build context figure", () => {
+  test("switching both node_modules lines off sends them", async ({ page }) => {
+    await page.goto(POST)
+    const figure = figureNamed(page, "docker build .")
+    await figure.scrollIntoViewIfNeeded()
+    const dependencies = figure
+      .locator(".pp-explorable-row", { hasText: "node_modules" })
+      .first()
+    const bare = figure.locator(".pp-explorable-cmd", {
+      hasText: /^node_modules$/,
+    })
+    const globstar = figure.locator(".pp-explorable-cmd", {
+      hasText: /^\*\*\/node_modules$/,
+    })
+
+    await expect(dependencies).toHaveAttribute("data-line-state", "skipped")
+
+    // The globstar line covers the bare one, so one is not enough.
+    await bare.click()
+    await expect(dependencies).toHaveAttribute("data-line-state", "skipped")
+    await expect(dependencies).toContainText("**/node_modules")
+
+    await globstar.click()
+    await expect(dependencies).toHaveAttribute("data-line-state", "ran")
+  })
+})
+
 test.describe("Explorable figures — prefers-reduced-motion", () => {
   test.use({ reducedMotion: "reduce" })
 
