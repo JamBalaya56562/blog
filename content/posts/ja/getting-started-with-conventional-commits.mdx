@@ -223,7 +223,39 @@ v2.0.0
 > [!NOTE]
 > `build(git)` が「Other」に入っているのは、git-cliff の既定の設定が `build` をどのグループにも割り当てていないからです。`cliff.toml` で `build` にグループを与えれば直ります。この記事では、設定を書かずにどこまで出るかを見るために、あえて既定のまま動かしました。
 
-![「揃った履歴から、CHANGELOG と次のバージョンが出てくる」の図。左に git log --oneline の 5 行（fix、feat、feat!、build、chore）、真ん中に「履歴を読む」git cliff、右に ## [unreleased] の下に Features と Bug Fixes の見出しで整形された CHANGELOG と、--bumped-version の v1.3.0 が出ている。「type が見出しに、scope が先頭に付く」「書いたのはコミットメッセージだけ」と添えてある](conventional-commits-changelog.svg)
+上の転記と同じ履歴を、ここで組み替えられます。コミットをリリースから外すと、バージョンと CHANGELOG の両方が追従します。
+
+<SemverBump
+  title="git cliff"
+  hint="コミットを押すとリリースから出し入れできます。破壊的変更を 1 つ入れるだけで、メジャーに変わります。"
+  current="1.2.3"
+  commits={[
+    "feat(api)!: drop the v1 endpoints",
+    "fix(api): return 404 for an unknown id",
+    "feat(api): add a search endpoint",
+    "build(git): check commit messages with commitlint through lefthook",
+  ]}
+  initial={[1, 2, 3]}
+  groups={[
+    { label: "🚀 Features", types: ["feat"] },
+    { label: "🐛 Bug Fixes", types: ["fix"] },
+  ]}
+  otherLabel="💼 Other"
+  labels={{
+    commits: "タグ以降のコミット",
+    version: "次のバージョン",
+    changelog: "CHANGELOG",
+    none: "上げる理由が無い",
+    reason: {
+      major: "破壊的変更が 1 つでもあるから",
+      minor: "feat があるから",
+      patch: "fix だけだから",
+      none: "fix も feat も無いから",
+    },
+  }}
+  status="{version} — {reason}"
+  caption="type が見出しに、scope が先頭に付く。書いたのはコミットメッセージだけ"
+/>
 
 ### 書く側も楽になる
 
