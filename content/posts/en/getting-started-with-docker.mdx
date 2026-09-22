@@ -340,7 +340,50 @@ c31743f6370df987b8d0cecadba91e250969249c4e70637bc17dfa88ab02fa87
 The default page is back. A new container starts clean from the image's baked state. The copied
 `index.html` existed only in the writable layer of the container that is now gone.
 
-![Figure: "The image is read-only; a container is one writable layer on top". Eight read-only image layers are stacked at the bottom, with one "writable layer" on top holding index.html and nginx.pid. On the right, docker rm -f crosses out only the writable layer while the image layers remain. Captions read "docker diff shows this one layer" and "stop keeps it, rm removes it"](docker-writable-layer.svg)
+<ContainerLifecycle
+  title="nginx:1.29-alpine"
+  hint="Press a command and watch what survives. Volumes come in the next section; read this one unmounted."
+  image={{
+    name: "nginx:1.29-alpine",
+    layers: ["alpine", "nginx", "conf", "entrypoint"],
+  }}
+  volume={{ name: "site", path: "/usr/share/nginx/html" }}
+  write={{ item: "index.html" }}
+  initial="plain"
+  commands={{
+    run: "docker run -d --name web",
+    runVolume: "docker run -d -v site:/usr/share/nginx/html",
+    write: "docker cp index.html web:/...",
+    stop: "docker stop web",
+    start: "docker start web",
+    rm: "docker rm -f web",
+    volumeRm: "docker volume rm site",
+  }}
+  labels={{
+    image: "Image (read-only)",
+    writable: "Writable layer",
+    container: "Container web",
+    running: "Up",
+    stopped: "Exited (0)",
+    none: "removed",
+    volume: "Volume",
+  }}
+  status={{
+    initialPlain: "web is running with {item} in its writable layer",
+    initialVolume: "web is running with {volume} mounted",
+    ran: "Started again with an empty layer: the default page is back",
+    ranVolume: "Started with {volume} mounted",
+    wrote: "{item} went into the writable layer, and goes with the container",
+    wroteVolume: "{item} went into {volume}",
+    stopped: "Only stopped: the writable layer is still there",
+    started: "Running again, {item} and all",
+    removed: "Gone, writable layer and all",
+    removedKept: "The container is gone; {volume} is still here",
+    volumeRemoved: "{volume} removed",
+    volumeInUse: "{volume} is in use by web and cannot be removed",
+  }}
+  caption="docker diff shows this one layer. stop keeps it, rm removes it"
+/>
 
 This is not a defect; this is what a container is. It is the other side of "nothing is polluted"
 and "removal is instant". Containers are disposable, which is exactly why anything that must
@@ -533,7 +576,50 @@ reattached the `pgdata` that `docker volume ls` still listed, so the data in it 
 volume pgdata -> /var/lib/postgresql
 ```
 
-![Figure: "Remove the container; the volume stays". Top: container db (with its writable layer) has /var/lib/postgresql connected by a line to a cylinder outside it, the volume pgdata. Middle: the container is crossed out with "docker rm -f db"; the writable layer is gone but the volume remains. Bottom: a new container starts and reattaches the same volume, labelled "the notes table is still there". A caption reads "what is written inside the container goes with it; what is written to a volume stays"](docker-volume-survives.svg)
+<ContainerLifecycle
+  title="postgres:18-alpine"
+  hint="Remove it and start it again. Starting without -v shows where the same write goes instead."
+  image={{
+    name: "postgres:18-alpine",
+    layers: ["alpine", "postgres", "initdb", "entrypoint"],
+  }}
+  volume={{ name: "pgdata", path: "/var/lib/postgresql" }}
+  write={{ item: "notes" }}
+  initial="volume"
+  commands={{
+    run: "docker run -d --name db",
+    runVolume: "docker run -d -v pgdata:/var/lib/postgresql",
+    write: "docker exec db psql -c INSERT",
+    stop: "docker stop db",
+    start: "docker start db",
+    rm: "docker rm -f db",
+    volumeRm: "docker volume rm pgdata",
+  }}
+  labels={{
+    image: "Image (read-only)",
+    writable: "Writable layer",
+    container: "Container db",
+    running: "Up",
+    stopped: "Exited (0)",
+    none: "removed",
+    volume: "Volume",
+  }}
+  status={{
+    initialPlain: "db is running with nothing mounted",
+    initialVolume: "db is running with {volume} on /var/lib/postgresql",
+    ran: "Started without -v: writes land inside the container",
+    ranVolume: "Mounted {volume} again, contents and all",
+    wrote: "{item} went into the writable layer, and goes with the container",
+    wroteVolume: "{item} went into {volume} and outlives the container",
+    stopped: "Only stopped: layer and volume are both still there",
+    started: "Running again",
+    removed: "Gone, writable layer and all",
+    removedKept: "The container is gone; {volume} is still here",
+    volumeRemoved: "{volume} removed: only now is the data gone",
+    volumeInUse: "{volume} is in use by db and cannot be removed",
+  }}
+  caption="What is written inside the container goes with it; what is written to a volume stays"
+/>
 
 This is the basic shape of data with containers: **containers are disposable, data lives in
 volumes**. Upgrading the image to a new version is just starting a new container; the data is

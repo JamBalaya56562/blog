@@ -278,7 +278,50 @@ c31743f6370df987b8d0cecadba91e250969249c4e70637bc17dfa88ab02fa87
 
 既定のページに戻りました。新しいコンテナは、イメージの焼き固めた状態から真っさらに始まります。コピーした `index.html` は、消えたコンテナの書き込み層にしか無かったからです。
 
-![「イメージは読み取り専用、コンテナは書き込み層を 1 枚乗せたもの」の図。下に読み取り専用のイメージのレイヤーが 8 枚積まれ、その上に「書き込み層」が 1 枚乗って、そこに index.html と nginx.pid が書かれている。右で docker rm -f すると、書き込み層だけが × で消え、イメージのレイヤーはそのまま残る。「docker diff が見せているのはこの 1 枚」「stop では残る、rm で消える」と添えてある](docker-writable-layer.svg)
+<ContainerLifecycle
+  title="nginx:1.29-alpine"
+  hint="コマンドを押すと、何が残って何が消えるかが分かります。ボリュームは次の節の話なので、ここでは繋がずに読んでください。"
+  image={{
+    name: "nginx:1.29-alpine",
+    layers: ["alpine", "nginx", "conf", "entrypoint"],
+  }}
+  volume={{ name: "site", path: "/usr/share/nginx/html" }}
+  write={{ item: "index.html" }}
+  initial="plain"
+  commands={{
+    run: "docker run -d --name web",
+    runVolume: "docker run -d -v site:/usr/share/nginx/html",
+    write: "docker cp index.html web:/...",
+    stop: "docker stop web",
+    start: "docker start web",
+    rm: "docker rm -f web",
+    volumeRm: "docker volume rm site",
+  }}
+  labels={{
+    image: "イメージ（読み取り専用）",
+    writable: "書き込み層",
+    container: "コンテナ web",
+    running: "Up",
+    stopped: "Exited (0)",
+    none: "消えている",
+    volume: "ボリューム",
+  }}
+  status={{
+    initialPlain: "web が動いていて、書き込み層に {item} がある",
+    initialVolume: "web が動いていて、{volume} が繋がっている",
+    ran: "起こし直した。書き込み層は真っさらで、既定のページに戻っている",
+    ranVolume: "{volume} を繋いで起こした",
+    wrote: "{item} は書き込み層に入った。コンテナを消せば一緒に消える",
+    wroteVolume: "{item} は {volume} に入った",
+    stopped: "止めただけ。書き込み層はそのまま残っている",
+    started: "続きから動き出した。{item} もそのまま",
+    removed: "書き込み層ごと消えた",
+    removedKept: "コンテナは消えたが、{volume} は残っている",
+    volumeRemoved: "{volume} を消した",
+    volumeInUse: "{volume} は web が使っているので消せない",
+  }}
+  caption="docker diff が見せているのはこの 1 枚。stop では残る、rm で消える"
+/>
 
 これは不具合ではなく、コンテナとはそういうものです。「環境を汚さない」「消すのが一瞬」の裏側がこれです。コンテナは使い捨てで、だからこそ、消えてほしくないものはコンテナの外に置く必要があります。それを次のデータベースで見ます。
 
@@ -439,7 +482,50 @@ fc72c26f2bf7a3b8159af8502ba5b50b4c1d6e2c788cc9362df9c5f70296173c
 volume pgdata -> /var/lib/postgresql
 ```
 
-![「コンテナを消しても、ボリュームは残る」の図。上段では、コンテナ db（書き込み層付き）の /var/lib/postgresql が、外にある円筒のボリューム pgdata に線で繋がっている。中段でコンテナに × が付き「docker rm -f db」、書き込み層は消えるが、ボリュームは残っている。下段で新しいコンテナが起き、同じボリュームに繋ぎ直されて「notes テーブルはそのまま」と書いてある。「コンテナの中に書いたものはコンテナと一緒に消える。ボリュームに書いたものは残る」と添えてある](docker-volume-survives.svg)
+<ContainerLifecycle
+  title="postgres:18-alpine"
+  hint="消して起こし直してみてください。-v を付けずに起こすと、同じ書き込みがどこへ行くかも比べられます。"
+  image={{
+    name: "postgres:18-alpine",
+    layers: ["alpine", "postgres", "initdb", "entrypoint"],
+  }}
+  volume={{ name: "pgdata", path: "/var/lib/postgresql" }}
+  write={{ item: "notes" }}
+  initial="volume"
+  commands={{
+    run: "docker run -d --name db",
+    runVolume: "docker run -d -v pgdata:/var/lib/postgresql",
+    write: "docker exec db psql -c INSERT",
+    stop: "docker stop db",
+    start: "docker start db",
+    rm: "docker rm -f db",
+    volumeRm: "docker volume rm pgdata",
+  }}
+  labels={{
+    image: "イメージ（読み取り専用）",
+    writable: "書き込み層",
+    container: "コンテナ db",
+    running: "Up",
+    stopped: "Exited (0)",
+    none: "消えている",
+    volume: "ボリューム",
+  }}
+  status={{
+    initialPlain: "db が動いているが、ボリュームは繋がっていない",
+    initialVolume: "db が {volume} を /var/lib/postgresql に繋いで動いている",
+    ran: "-v を付けずに起こした。書き込みはコンテナの中に入る",
+    ranVolume: "{volume} に繋ぎ直した。中身はそのまま",
+    wrote: "{item} は書き込み層に入った。コンテナを消せば一緒に消える",
+    wroteVolume: "{item} は {volume} に入った。コンテナを消しても残る",
+    stopped: "止めただけ。書き込み層もボリュームも残っている",
+    started: "続きから動き出した",
+    removed: "書き込み層ごと消えた",
+    removedKept: "コンテナは消えたが、{volume} は残っている",
+    volumeRemoved: "{volume} を消した。ここまで来て初めてデータが消える",
+    volumeInUse: "{volume} は db が使っているので消せない",
+  }}
+  caption="コンテナの中に書いたものはコンテナと一緒に消える。ボリュームに書いたものは残る"
+/>
 
 これが、コンテナでデータを扱うときの基本形です。**コンテナは使い捨て、データはボリューム。** イメージを新しい版に上げるときも、コンテナを起こし直すだけで、データはボリュームに残っています。
 

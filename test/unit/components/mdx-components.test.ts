@@ -37,6 +37,7 @@ const REQUIRED_COMPONENTS = [
   "BookmarkGraph",
   "CodeTabs",
   "CommitLint",
+  "ContainerLifecycle",
   "LayerCache",
 ] as const
 
