@@ -429,6 +429,35 @@ The instant it was pushed, the change you were in became immutable (`◆`) and a
 created on top. A commit that has landed on the remote's `main` is no longer something to rewrite at
 home — that is jj's judgement. It is safest to remember "rewritable" as meaning "not pushed yet".
 
+Here are the same three commands, run against Git and against jj side by side.
+
+<BookmarkGraph
+  title="git / jj"
+  hint="Press a command and both graphs move. Watch which main comes along."
+  descs={["Add README", "Greet the world", "Add a licence note"]}
+  empty="(empty) (no description set)"
+  commands={{
+    commit: { git: "git commit", jj: "jj describe → jj new" },
+    bookmark: { git: "(moves by itself)", jj: "jj bookmark set main -r @-" },
+    push: { git: "git push", jj: "jj git push --bookmark main" },
+  }}
+  labels={{
+    git: "Git",
+    jj: "jj",
+    head: "HEAD",
+    at: "@",
+    main: "main",
+    remote: "origin/main",
+  }}
+  status={{
+    initial: "One Add README on each side; in jj the empty @ sits above it",
+    commit: "Committed {desc}. Git's main came along; jj's stayed where it was put",
+    bookmark: "Moved jj's main up to the commit just written. Git has no such step",
+    push: "What the remote holds is immutable (◆) now. The @ is still yours to rewrite",
+  }}
+  caption="A Git branch follows the commits. A jj bookmark stays where you put it, and moving it is your step"
+/>
+
 ### Bringing in the remote's changes
 
 After a colleague pushes to `main`, `jj git fetch` brings it in. Then `jj log` shows what that did.
