@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, mock, test } from "bun:test"
+import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test"
 
 // The queries read the table name from the environment on every call, so it has
 // to be set before the module under test is imported.
@@ -185,5 +185,120 @@ describe("getAllViewCounts", () => {
   test("returns an empty array when the query fails", async () => {
     failingClient()
     expect(await getAllViewCounts()).toEqual([])
+  })
+})
+
+/**
+ * Every query above swallows its error, so the log is the only trace a
+ * failure leaves. With no database configured — the end-to-end run, a
+ * developer who has not started the container — the same refused connection
+ * arrives on every request, and hundreds of identical lines bury whatever
+ * else the run had to say.
+ */
+describe("failure reporting", () => {
+  let logged: string[] = []
+  let restore = () => {}
+
+  beforeEach(() => {
+    logged = []
+    const original = console.error
+    console.error = (...args: unknown[]) => {
+      logged.push(args.join(" "))
+    }
+    restore = () => {
+      console.error = original
+    }
+  })
+
+  afterEach(() => restore())
+
+  test("reports one cause once, however many calls hit it", async () => {
+    const send = mock(() => Promise.reject(new Error("first cause")))
+    mockGetDocClient.mockReturnValue({ send })
+
+    await getViewCount("a")
+    await getViewCount("b")
+    await getViewCount("c")
+
+    expect(logged).toEqual([
+      "[getViewCount] failed for slug a: Error: first cause",
+    ])
+  })
+
+  test("a different cause is reported at once", async () => {
+    mockGetDocClient.mockReturnValue({
+      send: mock(() => Promise.reject(new Error("cause one"))),
+    })
+    await getViewCount("a")
+
+    mockGetDocClient.mockReturnValue({
+      send: mock(() => Promise.reject(new Error("cause two"))),
+    })
+    await getViewCount("b")
+
+    expect(logged).toEqual([
+      "[getViewCount] failed for slug a: Error: cause one",
+      "[getViewCount] failed for slug b: Error: cause two",
+    ])
+  })
+
+  test("the same cause in another query is its own report", async () => {
+    const send = mock(() => Promise.reject(new Error("shared cause")))
+    mockGetDocClient.mockReturnValue({ send })
+
+    await getViewCount("a")
+    await incrementViewCount("a")
+    await getAllViewCounts()
+
+    expect(logged).toEqual([
+      "[getViewCount] failed for slug a: Error: shared cause",
+      "[incrementViewCount] failed for slug a: Error: shared cause",
+      "[getAllViewCounts] failed: Error: shared cause",
+    ])
+  })
+})
+
+/**
+ * The quiet time is what keeps a cause from being silenced forever: an
+ * outage that returns next week should be reported again, not swallowed by
+ * one from today. The clock is the only way to reach that branch.
+ */
+describe("failure reporting over time", () => {
+  let logged: string[] = []
+  let restore = () => {}
+  let now = 0
+
+  beforeEach(() => {
+    logged = []
+    now = 1_000_000
+    const originalError = console.error
+    const originalNow = Date.now
+    console.error = (...args: unknown[]) => {
+      logged.push(args.join(" "))
+    }
+    Date.now = () => now
+    restore = () => {
+      console.error = originalError
+      Date.now = originalNow
+    }
+  })
+
+  afterEach(() => restore())
+
+  test("a cause reports again once its quiet time has passed", async () => {
+    mockGetDocClient.mockReturnValue({
+      send: mock(() => Promise.reject(new Error("an outage"))),
+    })
+
+    await getViewCount("a")
+    now += 4 * 60 * 1000
+    await getViewCount("b")
+    now += 61 * 1000
+    await getViewCount("c")
+
+    expect(logged).toEqual([
+      "[getViewCount] failed for slug a: Error: an outage",
+      "[getViewCount] failed for slug c: Error: an outage",
+    ])
   })
 })
