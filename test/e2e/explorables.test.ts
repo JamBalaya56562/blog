@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test"
 
 const POST = "/ja/blog/docker-build"
-const FIGURE = "figure.pp-explorable"
+const _FIGURE = "figure.pp-explorable"
 
 /**
  * The figure whose strip carries this title. Posts gain figures — the
