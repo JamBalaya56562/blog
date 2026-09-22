@@ -995,9 +995,37 @@
      properties are defined over CJK text — but the `lang` behind it carries
      weight of its own: with no `lang="ja"` on the document, Chromium ignores
      `line-break: strict` outright. It comes from `app/[locale]/layout.tsx`. */
+  /* A Japanese opening bracket carries half an em of its own space, drawn into
+     the left of its fullwidth body. Mid-line that space is wanted; at the start
+     of a line it reads as an accidental indent, because the paragraphs here are
+     set flush. Chromium's default `normal` already collapses the space between
+     two adjacent punctuation marks — measured on `「環境」「設定」（Debian）`,
+     267px against 291px for `space-all` — but it leaves the line-start case
+     alone. `trim-start` is the value that takes it: `「自分の環境では動く」`
+     measures 176px under `normal` and 168px here.
+
+     The property inherits, so every run of prose text below takes it —
+     paragraphs, list items, headings, the `.pp-alert` asides. That is wanted:
+     a line-leading bracket should sit flush wherever the text is set, not only
+     in a paragraph. Code is the one place it must not reach, and the rule
+     below carves it out.
+
+     Chromium-only for now (Firefox does not implement the property), and
+     unsupported engines keep the indent they draw today. */
   .prose-cyber:lang(ja) {
     line-break: strict;
+    text-spacing-trim: trim-start;
     word-break: auto-phrase;
+  }
+  /* A fence has to render the characters it was handed. `trim-start` inherits
+     into `pre` and `code` like anywhere else — measured at 171px against 177px
+     on `「自分の環境では動く」` inside a `pre` — which would pull a line-leading
+     bracket half an em left of the lines it is meant to align with. `normal`
+     is the browser's own default for the property, so this restores exactly
+     what a code block drew before the rule above existed rather than inventing
+     a third behaviour. */
+  .prose-cyber:lang(ja) :where(pre, code) {
+    text-spacing-trim: normal;
   }
   /* Same `palt` as `.pp-display`, for the headings inside an article. The
      0.02em tracking below already gives back a little of what the feature
