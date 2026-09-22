@@ -263,7 +263,42 @@ Parent commit (@-)      : oklvxylu 901a7c31 Greet the world
 
 「Greet the world」のコミット ID が `bf873b9b` から `901a7c31` に変わり、変更 ID `oklvxylu` は変わっていません。その上に乗っていた「Add a licence note」も自動で載せ替えられています（`Rebased 1 descendant commits.`）。Git でいえば amend と rebase を一度にやったことになりますが、打ったのは 1 コマンドです。
 
-![jj squash README.md の前後で、README.md だけが Greet the world に移り、変更 ID は同じままコミット ID が新しくなり、上の Add a licence note が載せ替えられる図](jujutsu-squash.svg)
+<CommitGraph
+  title="jj squash README.md"
+  hint="進めると、上の jj log がそのまま動きます。変わった行に印が付きます。"
+  scenes={[
+    {
+      command: "jj log",
+      caption: "Hello! に直した直後。まだ squash していない",
+      rows: [
+        { changeId: "ovvvnnor", desc: "Add a licence note", kind: "at", note: "LICENSE と、直した README.md" },
+        { changeId: "oklvxylu", desc: "Greet the world", commitId: "bf873b9b", kind: "commit" },
+        { changeId: "tturtmot", desc: "Add README", commitId: "4bb47a91", kind: "commit" },
+        { changeId: "zzzzzzzz", desc: "root()", commitId: "00000000", kind: "immutable" },
+      ],
+    },
+    {
+      command: "jj squash README.md",
+      caption: "README.md だけが親に移った。oklvxylu は同じ変更 ID のままコミット ID が変わっている",
+      rows: [
+        { changeId: "ovvvnnor", desc: "Add a licence note", commitId: "5e6ce646", kind: "at", rewritten: true, note: "LICENSE は残ったまま、自動で載せ替えられた" },
+        { changeId: "oklvxylu", desc: "Greet the world", commitId: "901a7c31", kind: "commit" },
+        { changeId: "tturtmot", desc: "Add README", commitId: "4bb47a91", kind: "commit" },
+        { changeId: "zzzzzzzz", desc: "root()", commitId: "00000000", kind: "immutable" },
+      ],
+    },
+  ]}
+  labels={{
+    step: "手順",
+    previous: "戻る",
+    next: "進む",
+    rewritten: "コミット ID が変わった",
+    added: "増えた",
+    graph: "jj log",
+  }}
+  status="{n}/{total}・{command} — {caption}"
+  caption="変更 ID は変わらず、コミット ID だけが新しくなる。上に乗っていた変更は自動で載せ替えられる"
+/>
 
 ### もっと前の変更を直す
 
@@ -283,7 +318,42 @@ Parent commit (@-): zzzzzzzz 00000000 (empty) (no description set)
 
 ファイルを置いた時点で `tturtmot` の中身が変わり、その子孫 2 つがまた自動で載せ替えられました。
 
-![jj edit tturtmot の前後で、作業ディレクトリが Add README の中身に入れ替わって .gitignore が足され、上の 2 つの変更が載せ替えられる図](jujutsu-edit.svg)
+<CommitGraph
+  title="jj edit tturtmot"
+  hint="進めると、@ が 2 つ下に移って、その上の 2 つが載せ替えられます。"
+  scenes={[
+    {
+      command: "jj log",
+      caption: "squash が終わったところ。@ は一番上にいる",
+      rows: [
+        { changeId: "ovvvnnor", desc: "Add a licence note", kind: "at" },
+        { changeId: "oklvxylu", desc: "Greet the world", kind: "commit" },
+        { changeId: "tturtmot", desc: "Add README", commitId: "4bb47a91", kind: "commit" },
+        { changeId: "zzzzzzzz", desc: "root()", commitId: "00000000", kind: "immutable" },
+      ],
+    },
+    {
+      command: "jj edit tturtmot && echo node_modules/ > .gitignore",
+      caption: "tturtmot に移って .gitignore を置いた。中身が変わったので、子孫 2 つが載せ替えられた",
+      rows: [
+        { changeId: "ovvvnnor", desc: "Add a licence note", kind: "commit", rewritten: true, note: "Rebased 2 descendant commits" },
+        { changeId: "oklvxylu", desc: "Greet the world", kind: "commit", rewritten: true },
+        { changeId: "tturtmot", desc: "Add README", commitId: "2610b68f", kind: "at", note: ".gitignore と README.md" },
+        { changeId: "zzzzzzzz", desc: "root()", commitId: "00000000", kind: "immutable" },
+      ],
+    },
+  ]}
+  labels={{
+    step: "手順",
+    previous: "戻る",
+    next: "進む",
+    rewritten: "コミット ID が変わった",
+    added: "増えた",
+    graph: "jj log",
+  }}
+  status="{n}/{total}・{command} — {caption}"
+  caption="前の変更に直接移って直せる。その上に乗っていたものは、jj が自動で載せ替える"
+/>
 
 終わったら先頭に戻ります。
 
@@ -431,7 +501,40 @@ Parent commit (@-)      : zumzptvl eccc91c7 main | Add the copyright line
 
 `-d` は destination（載せ替え先）です。指定しなければ今いる変更とその子孫が対象になるので、日常ではこの 1 行で足ります。
 
-![jj git fetch で main だけが進んで @ は動かず、jj rebase -d main で自分の変更が新しい main の上に移る図](jujutsu-fetch-rebase.svg)
+<CommitGraph
+  title="jj git fetch → jj rebase -d main"
+  hint="1 枚目は fetch した直後です。@ が古い main の上に残っていること、rebase で初めて動くことを見てください。"
+  scenes={[
+    {
+      command: "jj git fetch",
+      caption: "main が進んだが、自分の変更は古い main の上に残っている",
+      rows: [
+        { changeId: "upwouywx", desc: "Add contributing guide", commitId: "0be7156b", kind: "at" },
+        { changeId: "zumzptvl", desc: "Add the copyright line", commitId: "eccc91c7", kind: "immutable", lane: 1, rejoins: true, refs: [{ label: "main", kind: "bookmark" }] },
+        { changeId: "ovvvnnor", desc: "Add a licence note", commitId: "ab228dc9", kind: "immutable" },
+      ],
+    },
+    {
+      command: "jj rebase -d main",
+      caption: "新しい main の上に載せ替えられた。変更 ID はそのまま、コミット ID が変わっている",
+      rows: [
+        { changeId: "upwouywx", desc: "Add contributing guide", commitId: "56f5616c", kind: "at" },
+        { changeId: "zumzptvl", desc: "Add the copyright line", commitId: "eccc91c7", kind: "immutable", refs: [{ label: "main", kind: "bookmark" }] },
+        { changeId: "ovvvnnor", desc: "Add a licence note", commitId: "ab228dc9", kind: "immutable" },
+      ],
+    },
+  ]}
+  labels={{
+    step: "手順",
+    previous: "戻る",
+    next: "進む",
+    rewritten: "コミット ID が変わった",
+    added: "増えた",
+    graph: "jj log",
+  }}
+  status="{n}/{total}・{command} — {caption}"
+  caption="fetch は手元の変更を動かさない。載せ替えるのは rebase"
+/>
 
 ### PR を作る
 

@@ -5,6 +5,7 @@ import { resolveImagePath } from "@/app/api/images/[...path]/route"
 import { CodeTabs } from "@/components/code-tabs"
 import { CopyButton } from "@/components/copy-button"
 import { BookmarkGraph } from "@/components/explorables/bookmark-graph"
+import { CommitGraph } from "@/components/explorables/commit-graph"
 import { CommitLint } from "@/components/explorables/commit-lint"
 import { ContainerLifecycle } from "@/components/explorables/container-lifecycle"
 import { LayerCache } from "@/components/explorables/layer-cache"
@@ -134,6 +135,7 @@ const staticComponents: MDXComponents = {
     )
   },
   CodeTabs,
+  CommitGraph,
   CommitLint,
   ContainerLifecycle,
   code: (props) => <code className="rounded" {...props} />,

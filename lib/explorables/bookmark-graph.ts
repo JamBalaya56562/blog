@@ -1,3 +1,5 @@
+import type { GraphRowView, RefKind } from "./graph"
+
 /**
  * The state behind the bookmark figure: the same three commands run against
  * Git and against jj, side by side, so the reader can watch one pointer move
@@ -219,15 +221,8 @@ export function isInitial(
   return state.next === initial.next && state.last === initial.last
 }
 
-export type RowKind = "at" | "commit" | "immutable"
-export type RefKind = "head" | "at" | "bookmark" | "remote"
-
-export type Row = Readonly<{
-  index: number
-  kind: RowKind
-  desc: string
-  refs: readonly Readonly<{ label: string; kind: RefKind }>[]
-}>
+/** The rows this figure draws; the shape is shared with the other graphs. */
+export type Row = GraphRowView
 
 /** One side's commits, newest first, with the names that point at them. */
 export function rowsOf(
@@ -252,7 +247,7 @@ export function rowsOf(
       }
       return {
         desc: commit.desc === "" ? content.empty : commit.desc,
-        index,
+        key: String(index),
         kind: commit.immutable
           ? "immutable"
           : isJj && index === side.head

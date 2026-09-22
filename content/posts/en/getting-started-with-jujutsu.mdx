@@ -303,7 +303,42 @@ The commit ID of "Greet the world" went from `bf873b9b` to `901a7c31`; its chang
 move. "Add a licence note", which sat on top of it, was rebased automatically (`Rebased 1 descendant
 commits.`). In Git terms that is an amend and a rebase at once, from one command.
 
-![Before and after jj squash README.md: only README.md moves into Greet the world, whose change ID stays and commit ID is new, and Add a licence note above it is rebased](jujutsu-squash.svg)
+<CommitGraph
+  title="jj squash README.md"
+  hint="Step forward and the jj log above moves with you. Rows that changed are marked."
+  scenes={[
+    {
+      command: "jj log",
+      caption: "Just after changing Hello to Hello!, before the squash",
+      rows: [
+        { changeId: "ovvvnnor", desc: "Add a licence note", kind: "at", note: "LICENSE, and the edited README.md" },
+        { changeId: "oklvxylu", desc: "Greet the world", commitId: "bf873b9b", kind: "commit" },
+        { changeId: "tturtmot", desc: "Add README", commitId: "4bb47a91", kind: "commit" },
+        { changeId: "zzzzzzzz", desc: "root()", commitId: "00000000", kind: "immutable" },
+      ],
+    },
+    {
+      command: "jj squash README.md",
+      caption: "Only README.md moved to the parent; oklvxylu keeps its change ID and takes a new commit ID",
+      rows: [
+        { changeId: "ovvvnnor", desc: "Add a licence note", commitId: "5e6ce646", kind: "at", rewritten: true, note: "LICENSE stayed; the change was rebased for you" },
+        { changeId: "oklvxylu", desc: "Greet the world", commitId: "901a7c31", kind: "commit" },
+        { changeId: "tturtmot", desc: "Add README", commitId: "4bb47a91", kind: "commit" },
+        { changeId: "zzzzzzzz", desc: "root()", commitId: "00000000", kind: "immutable" },
+      ],
+    },
+  ]}
+  labels={{
+    step: "Step",
+    previous: "Back",
+    next: "Forward",
+    rewritten: "new commit ID",
+    added: "new",
+    graph: "jj log",
+  }}
+  status="{n}/{total} · {command} — {caption}"
+  caption="The change ID stays and only the commit ID is new; whatever sat on top is rebased for you"
+/>
 
 ### Fixing a change further back
 
@@ -325,7 +360,42 @@ Parent commit (@-): zzzzzzzz 00000000 (empty) (no description set)
 The moment the file was placed, the content of `tturtmot` changed and its two descendants were rebased
 again.
 
-![Before and after jj edit tturtmot: the working directory swaps to the content of Add README, .gitignore is added there, and the two changes above are rebased](jujutsu-edit.svg)
+<CommitGraph
+  title="jj edit tturtmot"
+  hint="Step forward and @ drops two rows, taking the two above it along."
+  scenes={[
+    {
+      command: "jj log",
+      caption: "Where the squash left things: @ is at the tip",
+      rows: [
+        { changeId: "ovvvnnor", desc: "Add a licence note", kind: "at" },
+        { changeId: "oklvxylu", desc: "Greet the world", kind: "commit" },
+        { changeId: "tturtmot", desc: "Add README", commitId: "4bb47a91", kind: "commit" },
+        { changeId: "zzzzzzzz", desc: "root()", commitId: "00000000", kind: "immutable" },
+      ],
+    },
+    {
+      command: "jj edit tturtmot && echo node_modules/ > .gitignore",
+      caption: "Moved to tturtmot and put .gitignore there; its two descendants were rebased",
+      rows: [
+        { changeId: "ovvvnnor", desc: "Add a licence note", kind: "commit", rewritten: true, note: "Rebased 2 descendant commits" },
+        { changeId: "oklvxylu", desc: "Greet the world", kind: "commit", rewritten: true },
+        { changeId: "tturtmot", desc: "Add README", commitId: "2610b68f", kind: "at", note: ".gitignore and README.md" },
+        { changeId: "zzzzzzzz", desc: "root()", commitId: "00000000", kind: "immutable" },
+      ],
+    },
+  ]}
+  labels={{
+    step: "Step",
+    previous: "Back",
+    next: "Forward",
+    rewritten: "new commit ID",
+    added: "new",
+    graph: "jj log",
+  }}
+  status="{n}/{total} · {command} — {caption}"
+  caption="Move to an earlier change and fix it there; jj rebases whatever sat on top"
+/>
 
 Go back to the tip when done.
 
@@ -488,7 +558,40 @@ Parent commit (@-)      : zumzptvl eccc91c7 main | Add the copyright line
 `-d` is the destination. With nothing else given, the current change and its descendants are what
 moves, so day to day this one line is enough.
 
-![jj git fetch advances main while @ stays put, then jj rebase -d main moves your change onto the new main](jujutsu-fetch-rebase.svg)
+<CommitGraph
+  title="jj git fetch → jj rebase -d main"
+  hint="The first step is just after the fetch: @ is still on the old main, and only the rebase moves it."
+  scenes={[
+    {
+      command: "jj git fetch",
+      caption: "main moved on; your change is still on the old one",
+      rows: [
+        { changeId: "upwouywx", desc: "Add contributing guide", commitId: "0be7156b", kind: "at" },
+        { changeId: "zumzptvl", desc: "Add the copyright line", commitId: "eccc91c7", kind: "immutable", lane: 1, rejoins: true, refs: [{ label: "main", kind: "bookmark" }] },
+        { changeId: "ovvvnnor", desc: "Add a licence note", commitId: "ab228dc9", kind: "immutable" },
+      ],
+    },
+    {
+      command: "jj rebase -d main",
+      caption: "Moved onto the new main: the change ID stays, the commit ID is new",
+      rows: [
+        { changeId: "upwouywx", desc: "Add contributing guide", commitId: "56f5616c", kind: "at" },
+        { changeId: "zumzptvl", desc: "Add the copyright line", commitId: "eccc91c7", kind: "immutable", refs: [{ label: "main", kind: "bookmark" }] },
+        { changeId: "ovvvnnor", desc: "Add a licence note", commitId: "ab228dc9", kind: "immutable" },
+      ],
+    },
+  ]}
+  labels={{
+    step: "Step",
+    previous: "Back",
+    next: "Forward",
+    rewritten: "new commit ID",
+    added: "new",
+    graph: "jj log",
+  }}
+  status="{n}/{total} · {command} — {caption}"
+  caption="A fetch does not move your work. The rebase is what moves it"
+/>
 
 ### Opening a PR
 
