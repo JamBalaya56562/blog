@@ -147,7 +147,34 @@ slidev
 
 手元でインストールした依存、ビルド結果、Git の履歴、CI の設定。どれもイメージの中で作り直すか、そもそも要らないものです。
 
-![「ビルドコンテキストは、エンジンに送られる」の図。左に手元のディレクトリ（Dockerfile、index.html、node_modules、.git）。中央の矢印「docker build .」が Linux VM の中の Docker エンジンへ向かい、.dockerignore がフィルタになって node_modules と .git を弾いている。右のエンジン側に届いたのは Dockerfile と index.html だけで、「COPY はここからしか取れない」と添えてある](docker-build-context.svg)
+<BuildContext
+  title="docker build ."
+  hint=".dockerignore の行を押すと外せます。外したものがエンジンに送られるようになります。"
+  entries={[
+    { name: "Dockerfile" },
+    { name: "index.html" },
+    { name: "node_modules", note: "手元でインストールした依存。数百 MB" },
+    { name: "packages/core/node_modules", note: "ワークスペースの中にもある" },
+    { name: "dist" },
+    { name: ".git", note: "履歴。イメージには要らない" },
+  ]}
+  ignore={[
+    "node_modules",
+    "\*\*/node_modules",
+    "\*\*/dist",
+    ".git",
+    ".github",
+  ]}
+  labels={{
+    directory: "手元のディレクトリ",
+    ignore: ".dockerignore",
+    sent: "エンジンに届くもの",
+    sentState: "送られる",
+    excludedState: "{pattern} で除外",
+  }}
+  status="{total} 件のうち {sent} 件がエンジンに送られる"
+  caption="COPY はここからしか取れない。送るものを減らすのが .dockerignore"
+/>
 
 ## EmDash をビルドする
 
