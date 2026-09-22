@@ -4,6 +4,7 @@ import { Children, isValidElement } from "react"
 import { resolveImagePath } from "@/app/api/images/[...path]/route"
 import { CodeTabs } from "@/components/code-tabs"
 import { CopyButton } from "@/components/copy-button"
+import { LayerCache } from "@/components/explorables/layer-cache"
 import { ZoomableImage } from "@/components/zoomable-image"
 import { externalHost, faviconPath } from "@/lib/favicon"
 import { createIdGenerator, extractText } from "@/lib/toc"
@@ -147,6 +148,7 @@ const staticComponents: MDXComponents = {
       />
     )
   },
+  LayerCache,
   li: (props) => <li className="my-1" {...props} />,
   ol: (props) => (
     <ol className="my-4 ml-6 list-decimal text-foreground" {...props} />

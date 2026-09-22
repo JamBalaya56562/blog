@@ -1134,7 +1134,8 @@
      prompt glyph, the file name if the fence named one, the language at the
      right, and a band of light that crosses it slowly. */
   .prose-cyber .pp-code,
-  .prose-cyber .pp-tabs {
+  .prose-cyber .pp-tabs,
+  .prose-cyber .pp-explorable {
     margin: 1.4em 0;
     border: 1px solid var(--cyber-line);
     overflow: hidden;
@@ -1152,7 +1153,8 @@
     background-size: 22px 22px;
   }
   .prose-cyber .pp-code-title,
-  .prose-cyber .pp-tabs-list {
+  .prose-cyber .pp-tabs-list,
+  .prose-cyber .pp-explorable-head {
     position: relative;
     display: flex;
     align-items: center;
@@ -1172,7 +1174,8 @@
     padding-right: 48px;
   }
   .prose-cyber .pp-code-title::after,
-  .prose-cyber .pp-tabs-list::after {
+  .prose-cyber .pp-tabs-list::after,
+  .prose-cyber .pp-explorable-head::after {
     content: "";
     position: absolute;
     top: 0;
@@ -1192,7 +1195,8 @@
     content: "❯ ";
     color: var(--cyber-cyan);
   }
-  .prose-cyber .pp-code-lang {
+  .prose-cyber .pp-code-lang,
+  .prose-cyber .pp-explorable-kind {
     margin-left: auto;
     font-size: 9px;
     letter-spacing: 0.2em;
@@ -1297,6 +1301,206 @@
   .prose-cyber .pp-tabs-tab[aria-selected="true"] {
     color: var(--cyber-cyan);
     border-bottom-color: var(--cyber-cyan);
+  }
+  /* A figure the reader can touch: a code panel's frame and strip around a
+     small model of what the article explains. The strip carries the subject,
+     the word "interactive" where a panel names its language, and a reset
+     button where a panel keeps its copy button. These rules own the primitives
+     every such figure shares — chips for commands, rows for steps, a bar, a
+     status line — and the layout between them stays with utilities on the
+     figure's own elements. State reaches a row as `data-state` and the colour
+     follows it through one custom property, the way an alert takes its accent
+     from `data-alert`. Nothing here animates: the transitions are colour and
+     width, which the reduced-motion block already narrows to colour. */
+  .prose-cyber .pp-explorable {
+    font-family: var(--blog-font-mono);
+  }
+  .prose-cyber .pp-explorable:focus-visible {
+    outline: 1px solid var(--cyber-cyan);
+    outline-offset: 2px;
+  }
+  .prose-cyber .pp-explorable-head {
+    padding: 8px 48px 8px 14px;
+  }
+  .prose-cyber .pp-explorable-name::before {
+    content: "◇ ";
+    color: var(--cyber-cyan);
+  }
+  .prose-cyber .pp-explorable-reset {
+    position: absolute;
+    right: 10px;
+    top: 3px;
+    z-index: 2;
+    display: grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    border: 1px solid var(--cyber-line);
+    background: color-mix(in srgb, var(--cyber-bg-0) 80%, transparent);
+    color: var(--cyber-dim);
+    transition:
+      color 0.2s ease,
+      border-color 0.2s ease,
+      opacity 0.2s ease;
+  }
+  .prose-cyber .pp-explorable-reset:hover:not(:disabled) {
+    color: var(--cyber-cyan);
+    border-color: var(--cyber-cyan);
+  }
+  .prose-cyber .pp-explorable-reset:disabled {
+    opacity: 0.35;
+  }
+  .prose-cyber .pp-explorable-hint,
+  .prose-cyber .pp-explorable-status,
+  .prose-cyber .pp-explorable-caption {
+    margin: 0;
+    padding: 8px 14px;
+    font-family: var(--blog-font-sans);
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--cyber-dim);
+  }
+  .prose-cyber .pp-explorable-hint {
+    padding-bottom: 0;
+  }
+  .prose-cyber .pp-explorable-status {
+    border-top: 1px dashed var(--cyber-line);
+    color: var(--cyber-amber);
+  }
+  .prose-cyber .pp-explorable-caption {
+    border-top: 1px solid var(--cyber-line);
+  }
+  .prose-cyber .pp-explorable-body {
+    display: grid;
+    gap: 12px;
+    min-width: 0;
+    padding: 12px 14px;
+  }
+  .prose-cyber .pp-explorable-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .prose-cyber .pp-explorable-cmd {
+    padding: 5px 10px;
+    border: 1px solid var(--cyber-line);
+    background: color-mix(in srgb, var(--cyber-bg-0) 55%, transparent);
+    font-size: 12px;
+    letter-spacing: 0.04em;
+    color: var(--cyber-dim);
+    transition:
+      color 0.15s ease,
+      border-color 0.15s ease,
+      background-color 0.15s ease;
+  }
+  .prose-cyber .pp-explorable-cmd:hover:not(:disabled) {
+    color: var(--cyber-text);
+    border-color: var(--cyber-line-hi);
+  }
+  .prose-cyber .pp-explorable-cmd[aria-pressed="true"] {
+    color: var(--cyber-cyan);
+    border-color: var(--cyber-cyan);
+    background: color-mix(in srgb, var(--cyber-cyan) 10%, transparent);
+  }
+  .prose-cyber .pp-explorable-cmd:disabled {
+    opacity: 0.4;
+  }
+  .prose-cyber .pp-explorable-row {
+    --pp-explorable-accent: var(--cyber-cyan);
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    column-gap: 10px;
+    row-gap: 2px;
+    align-items: baseline;
+    padding: 8px 10px;
+    text-align: left;
+    border: 1px solid
+      color-mix(in srgb, var(--pp-explorable-accent) 40%, transparent);
+    border-left: 4px solid var(--pp-explorable-accent);
+    background: color-mix(in srgb, var(--pp-explorable-accent) 8%, transparent);
+    color: var(--cyber-text);
+    transition:
+      background-color 0.25s ease,
+      border-color 0.25s ease,
+      color 0.25s ease;
+  }
+  .prose-cyber .pp-explorable-row:hover {
+    border-color: var(--pp-explorable-accent);
+  }
+  .prose-cyber .pp-explorable-row[data-state="changed"] {
+    --pp-explorable-accent: var(--cyber-amber);
+  }
+  .prose-cyber .pp-explorable-row[data-state="rerun"] {
+    --pp-explorable-accent: var(--cyber-red);
+  }
+  .prose-cyber .pp-explorable-cmdtext {
+    font-size: 13px;
+    overflow-wrap: anywhere;
+  }
+  .prose-cyber .pp-explorable-note {
+    font-family: var(--blog-font-sans);
+    font-size: 12px;
+    line-height: 1.6;
+    color: var(--cyber-dim);
+  }
+  /* inside a step row the note takes the whole width under the command */
+  .prose-cyber .pp-explorable-row .pp-explorable-note {
+    grid-column: 1 / -1;
+  }
+  .prose-cyber .pp-explorable-badge {
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    white-space: nowrap;
+    color: var(--pp-explorable-accent, var(--cyber-dim));
+    transition: color 0.25s ease;
+  }
+  .prose-cyber .pp-explorable-total {
+    --pp-explorable-accent: var(--cyber-amber);
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    column-gap: 10px;
+    row-gap: 6px;
+    align-items: baseline;
+  }
+  .prose-cyber .pp-explorable-bar {
+    grid-column: 1 / -1;
+    position: relative;
+    height: 6px;
+    background: var(--cyber-line);
+  }
+  .prose-cyber .pp-explorable-bar::before {
+    content: "";
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: var(--pp-explorable-bar, 0%);
+    background: var(--cyber-amber);
+    transition: width 0.35s ease;
+  }
+  .prose-cyber .pp-explorable-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 14px;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    color: var(--cyber-dim);
+  }
+  .prose-cyber .pp-explorable-legend > span {
+    --pp-explorable-accent: var(--cyber-cyan);
+  }
+  .prose-cyber .pp-explorable-legend > span::before {
+    content: "";
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    margin-right: 6px;
+    vertical-align: middle;
+    background: var(--pp-explorable-accent);
+  }
+  .prose-cyber .pp-explorable-legend > [data-state="changed"] {
+    --pp-explorable-accent: var(--cyber-amber);
+  }
+  .prose-cyber .pp-explorable-legend > [data-state="rerun"] {
+    --pp-explorable-accent: var(--cyber-red);
   }
   .prose-cyber pre code {
     background: transparent;
@@ -1769,6 +1973,7 @@
   .pp-lightbox[open]::backdrop,
   .prose-cyber .pp-code-title::after,
   .prose-cyber .pp-tabs-list::after,
+  .prose-cyber .pp-explorable-head::after,
   .pp-tg:active .pp-tg-ripple,
   .pp-copy[data-copied]::after,
   .animate-shimmer {
