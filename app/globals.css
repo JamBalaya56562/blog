@@ -46,8 +46,7 @@
      Latin font; Japanese glyphs fall through to the matching JP font in
      the same family below. */
   --blog-font-sans:
-    var(--font-sans-loaded), "Noto Sans JP", "Space Grotesk", system-ui,
-    sans-serif;
+    var(--font-sans-loaded), "Noto Sans JP", system-ui, sans-serif;
   /* Headline JP fallback: when Orbitron / Syne / Space Grotesk lack a
      glyph (true for any kana/kanji), drop into Noto Sans JP at heavy
      weight so the hero headline doesn't fall to MS Gothic. */
@@ -952,13 +951,32 @@
   }
 
   /* MDX prose tweaks (post detail) */
+  /* The body copy takes `--blog-font-sans` rather than restating the families,
+     so an article is set in the same face as the rest of the site. The stack it
+     replaced named "Noto Sans JP" literally — which does reach the loaded font,
+     since next/font declares that family under its real name — but then fell
+     through "Space Grotesk", which nothing here loads, into the *mono* token.
+     A missed webfont therefore set the prose in JetBrains Mono. */
   .prose-cyber {
     color: color-mix(in srgb, var(--cyber-text) 88%, transparent);
-    font-family:
-      "Noto Sans JP", "Space Grotesk", var(--blog-font-mono), system-ui,
-      sans-serif;
+    font-family: var(--blog-font-sans);
     font-size: 16px;
     line-height: 1.85;
+  }
+  /* Japanese writes no spaces between words, so the engine may break a line at
+     almost any character: `デ / ィレクトリ` strands a small kana at the start of
+     a line, and `揃わな / い` leaves one kana behind. `line-break: strict`
+     asks for the full kinsoku rules, and `word-break: auto-phrase` lets the
+     engine find phrase boundaries and break there instead.
+
+     Both properties are defined over CJK text and behave as `normal`
+     elsewhere, so `:lang(ja)` states the intent rather than guarding anything —
+     `lang` comes from `app/[locale]/layout.tsx`. `auto-phrase` is Chrome-only
+     for now and the rest fall back to exactly today's breaking, so this costs
+     nothing where it is unsupported. */
+  .prose-cyber:lang(ja) {
+    line-break: strict;
+    word-break: auto-phrase;
   }
   .prose-cyber h1,
   .prose-cyber h2,
