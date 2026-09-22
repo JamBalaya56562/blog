@@ -35,6 +35,7 @@ const REQUIRED_ELEMENTS = [
  */
 const REQUIRED_COMPONENTS = [
   "BookmarkGraph",
+  "BuildContext",
   "CodeTabs",
   "CommitGraph",
   "CommitLint",

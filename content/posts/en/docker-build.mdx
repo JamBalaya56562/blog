@@ -174,7 +174,34 @@ slidev
 Locally installed dependencies, build output, Git history, CI configuration. All of it is either
 rebuilt inside the image or not needed at all.
 
-![Figure: "The build context is sent to the engine". On the left, the local directory (Dockerfile, index.html, node_modules, .git). An arrow labelled "docker build ." leads to the Docker engine inside the Linux VM, with .dockerignore acting as a filter that drops node_modules and .git. Only Dockerfile and index.html arrive on the engine side, captioned "COPY can only take files from here"](docker-build-context.svg)
+<BuildContext
+  title="docker build ."
+  hint="Press a .dockerignore line to switch it off, and what it was keeping out goes on the wire."
+  entries={[
+    { name: "Dockerfile" },
+    { name: "index.html" },
+    { name: "node_modules", note: "Dependencies installed here. Hundreds of MB" },
+    { name: "packages/core/node_modules", note: "The workspace has its own" },
+    { name: "dist" },
+    { name: ".git", note: "History. The image does not need it" },
+  ]}
+  ignore={[
+    "node_modules",
+    "**/node_modules",
+    "**/dist",
+    ".git",
+    ".github",
+  ]}
+  labels={{
+    directory: "Your directory",
+    ignore: ".dockerignore",
+    sent: "What reaches the engine",
+    sentState: "sent",
+    excludedState: "kept out by {pattern}",
+  }}
+  status="{sent} of {total} entries are sent to the engine"
+  caption="COPY can only reach what arrived, and .dockerignore is what keeps it small"
+/>
 
 ## Building EmDash
 
