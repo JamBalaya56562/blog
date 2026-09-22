@@ -1626,6 +1626,19 @@
     width: 24px;
     height: 36px;
   }
+  /* A graph with a fork needs the second lane's width; one without would
+     only gain an indent from it. */
+  .prose-cyber
+    .pp-explorable-graph[data-forked="true"]
+    .pp-explorable-graph-row {
+    grid-template-columns: 40px minmax(0, 1fr);
+  }
+  .prose-cyber
+    .pp-explorable-graph[data-forked="true"]
+    .pp-explorable-glyph
+    svg {
+    width: 40px;
+  }
   .prose-cyber .pp-explorable-glyph[data-kind="at"] {
     color: var(--cyber-cyan);
   }
@@ -1764,6 +1777,67 @@
   }
   .prose-cyber .pp-explorable-volume .pp-explorable-items {
     justify-content: center;
+  }
+  /* A graph the reader steps through: back, a slider, forward, then the
+     command that produced the step and the rows it left behind. A row that
+     changed since the step before takes an accent, the same three-colour
+     vocabulary the cache figure uses. */
+  .prose-cyber .pp-explorable-steps {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 8px;
+  }
+  .prose-cyber .pp-explorable-range {
+    width: 100%;
+    accent-color: var(--cyber-cyan);
+  }
+  .prose-cyber .pp-explorable-command {
+    margin: 0;
+    padding: 6px 10px;
+    border-left: 3px solid var(--cyber-cyan);
+    background: color-mix(in srgb, var(--cyber-cyan) 8%, transparent);
+    font-size: 13px;
+    overflow-wrap: anywhere;
+  }
+  .prose-cyber .pp-explorable-command::before {
+    content: "❯ ";
+    color: var(--cyber-cyan);
+  }
+  .prose-cyber .pp-explorable-commitid,
+  .prose-cyber .pp-explorable-graph-note {
+    margin-left: 6px;
+    font-size: 11px;
+    color: var(--cyber-dim);
+  }
+  .prose-cyber .pp-explorable-graph-row[data-mark="rewritten"] {
+    --pp-explorable-accent: var(--cyber-amber);
+  }
+  .prose-cyber .pp-explorable-graph-row[data-mark="added"] {
+    --pp-explorable-accent: var(--cyber-lime);
+  }
+  .prose-cyber
+    .pp-explorable-graph-row[data-mark="rewritten"]
+    .pp-explorable-commitid,
+  .prose-cyber
+    .pp-explorable-graph-row[data-mark="added"]
+    .pp-explorable-commitid {
+    color: var(--pp-explorable-accent);
+  }
+  .prose-cyber
+    .pp-explorable-graph-row[data-mark="rewritten"]
+    .pp-explorable-graph-desc,
+  .prose-cyber
+    .pp-explorable-graph-row[data-mark="added"]
+    .pp-explorable-graph-desc {
+    box-shadow: -4px 0 0 var(--pp-explorable-accent);
+    padding-left: 6px;
+  }
+  .prose-cyber .pp-explorable-legend > [data-mark="rewritten"] {
+    --pp-explorable-accent: var(--cyber-amber);
+  }
+  .prose-cyber .pp-explorable-legend > [data-mark="added"] {
+    --pp-explorable-accent: var(--cyber-lime);
   }
   .prose-cyber pre code {
     background: transparent;
