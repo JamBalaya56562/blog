@@ -9,10 +9,12 @@
  * each step is written out from the transcript the article already prints,
  * and the marks on the rows are computed here rather than authored: a row
  * whose commit ID differs from the step before is rewritten, one that was
- * not there is added. The article cannot label the wrong row.
+ * not there is added. Where the article stated a rewrite in prose without
+ * printing a hash, the row says so with `rewritten`, and that is the only
+ * label it may set.
  */
 
-import type { GraphRowView, RefKind, RowKind } from "./graph"
+import type { GraphRowView, RefKind, RowKind, RowMark } from "./graph"
 
 export type SceneRow = Readonly<{
   /** Follows the commit across steps, the way a jj change ID does. */
@@ -23,6 +25,13 @@ export type SceneRow = Readonly<{
   commitId?: string
   /** An aside about this row, e.g. that it was carried along. */
   note?: string
+  /**
+   * Set when the article says in prose that this row was rewritten but
+   * printed no hash to prove it — the descendants a rebase carries along.
+   * Without it such a row would go unmarked, which is the one thing these
+   * figures exist to show.
+   */
+  rewritten?: boolean
   lane?: 0 | 1
   rejoins?: boolean
   refs?: readonly Readonly<{ label: string; kind: RefKind }>[]
@@ -125,13 +134,17 @@ export function rowsOf(
 
   return scene.rows.map((row): GraphRowView => {
     const previous = before?.rows.find((old) => old.changeId === row.changeId)
-    const mark = !before
+    // A hash that appeared, changed or was declared changed all mean the
+    // same thing to the reader: this commit is not the one that was there.
+    const hashMoved =
+      previous !== undefined &&
+      row.commitId !== undefined &&
+      previous.commitId !== row.commitId
+    const mark: RowMark = !before
       ? "same"
       : previous === undefined
         ? "added"
-        : previous.commitId !== undefined &&
-            row.commitId !== undefined &&
-            previous.commitId !== row.commitId
+        : hashMoved || row.rewritten === true
           ? "rewritten"
           : "same"
 
@@ -142,6 +155,12 @@ export function rowsOf(
       kind: row.kind,
       lane: row.lane,
       mark,
+      markLabel:
+        mark === "rewritten"
+          ? content.labels.rewritten
+          : mark === "added"
+            ? content.labels.added
+            : undefined,
       note: row.note,
       refs: row.refs ?? [],
       rejoins: row.rejoins,

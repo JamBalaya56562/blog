@@ -1,7 +1,6 @@
 import { expect, test } from "@playwright/test"
 
 const POST = "/ja/blog/docker-build"
-const _FIGURE = "figure.pp-explorable"
 
 /**
  * The figure whose strip carries this title. Posts gain figures — the
@@ -374,7 +373,7 @@ test.describe("Explorable figures — prefers-reduced-motion", () => {
   // transition; a reader who asked for less motion gets neither.
   test("neither the strip nor the bar moves", async ({ page }) => {
     await page.goto(POST)
-    const figure = figureNamed(page, "jj squash README.md")
+    const figure = figureNamed(page, "Dockerfile")
     await figure.scrollIntoViewIfNeeded()
 
     const motion = await figure.evaluate((el) => {

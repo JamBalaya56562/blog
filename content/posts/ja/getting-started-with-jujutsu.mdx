@@ -281,7 +281,7 @@ Parent commit (@-)      : oklvxylu 901a7c31 Greet the world
       command: "jj squash README.md",
       caption: "README.md だけが親に移った。oklvxylu は同じ変更 ID のままコミット ID が変わっている",
       rows: [
-        { changeId: "ovvvnnor", desc: "Add a licence note", commitId: "5e6ce646", kind: "at", note: "LICENSE は残ったまま、自動で載せ替えられた" },
+        { changeId: "ovvvnnor", desc: "Add a licence note", commitId: "5e6ce646", kind: "at", rewritten: true, note: "LICENSE は残ったまま、自動で載せ替えられた" },
         { changeId: "oklvxylu", desc: "Greet the world", commitId: "901a7c31", kind: "commit" },
         { changeId: "tturtmot", desc: "Add README", commitId: "4bb47a91", kind: "commit" },
         { changeId: "zzzzzzzz", desc: "root()", commitId: "00000000", kind: "immutable" },
@@ -336,8 +336,8 @@ Parent commit (@-): zzzzzzzz 00000000 (empty) (no description set)
       command: "jj edit tturtmot && echo node_modules/ > .gitignore",
       caption: "tturtmot に移って .gitignore を置いた。中身が変わったので、子孫 2 つが載せ替えられた",
       rows: [
-        { changeId: "ovvvnnor", desc: "Add a licence note", kind: "commit", note: "Rebased 2 descendant commits" },
-        { changeId: "oklvxylu", desc: "Greet the world", kind: "commit" },
+        { changeId: "ovvvnnor", desc: "Add a licence note", kind: "commit", rewritten: true, note: "Rebased 2 descendant commits" },
+        { changeId: "oklvxylu", desc: "Greet the world", kind: "commit", rewritten: true },
         { changeId: "tturtmot", desc: "Add README", commitId: "2610b68f", kind: "at", note: ".gitignore と README.md" },
         { changeId: "zzzzzzzz", desc: "root()", commitId: "00000000", kind: "immutable" },
       ],
@@ -503,7 +503,7 @@ Parent commit (@-)      : zumzptvl eccc91c7 main | Add the copyright line
 
 <CommitGraph
   title="jj git fetch → jj rebase -d main"
-  hint="fetch では @ が動かないこと、rebase で初めて動くことを見てください。"
+  hint="1 枚目は fetch した直後です。@ が古い main の上に残っていること、rebase で初めて動くことを見てください。"
   scenes={[
     {
       command: "jj git fetch",

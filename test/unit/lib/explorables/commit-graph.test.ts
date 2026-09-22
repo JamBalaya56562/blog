@@ -185,10 +185,56 @@ describe("commit graph", () => {
     expect(
       rowsOf(content, 1).map((row) => [row.desc, row.mark, row.commitId]),
     ).toEqual([
-      ["Add a licence note", "same", "5e6ce646"],
+      // A hash that was not printed before and is printed now is a hash
+      // that moved: the reader is looking at a different commit.
+      ["Add a licence note", "rewritten", "5e6ce646"],
       ["Greet the world", "rewritten", "901a7c31"],
       ["Add README", "same", "4bb47a91"],
     ])
+  })
+
+  /**
+   * Some rewrites the article states in prose without printing a hash — the
+   * descendants a rebase carries along. Those rows say so themselves, and it
+   * is the only label the article is allowed to set.
+   */
+  test("marks a row the scene declares rewritten", () => {
+    const declared: CommitGraphContent = {
+      ...content,
+      scenes: [
+        {
+          caption: "before",
+          command: "jj log",
+          rows: [{ changeId: "a", desc: "carried along", kind: "commit" }],
+        },
+        {
+          caption: "after",
+          command: "jj edit b",
+          rows: [
+            {
+              changeId: "a",
+              desc: "carried along",
+              kind: "commit",
+              rewritten: true,
+            },
+          ],
+        },
+      ],
+    }
+    expect(rowsOf(declared, 1)[0].mark).toBe("rewritten")
+    expect(rowsOf(declared, 0)[0].mark).toBe("same")
+  })
+
+  /** The mark is also words, for a reader who does not get the colour. */
+  test("gives each mark its label", () => {
+    expect(rowsOf(content, 1).map((row) => row.markLabel)).toEqual([
+      "new commit ID",
+      "new commit ID",
+      undefined,
+    ])
+    expect(
+      rowsOf(content, 2).find((row) => row.mark === "added")?.markLabel,
+    ).toBe("new")
   })
 
   test("marks a row that was not in the step before", () => {
@@ -238,6 +284,7 @@ describe("commit graph", () => {
       kind: "immutable",
       lane: 1,
       mark: "added",
+      markLabel: "new",
       note: undefined,
       refs: [{ kind: "bookmark", label: "main" }],
       rejoins: true,

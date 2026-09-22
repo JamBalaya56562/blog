@@ -26,6 +26,8 @@ export type GraphRowView = Readonly<{
   /** A word about this row in particular, e.g. that it was restacked. */
   note?: string
   mark?: RowMark
+  /** The mark in words, for a reader who does not get the colour. */
+  markLabel?: string
   /**
    * Which column the node sits in. Graphs here are linear or a single fork,
    * so there are two: 0 is the trunk and 1 is the side a change sits on

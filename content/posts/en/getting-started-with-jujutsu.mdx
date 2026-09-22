@@ -321,7 +321,7 @@ commits.`). In Git terms that is an amend and a rebase at once, from one command
       command: "jj squash README.md",
       caption: "Only README.md moved to the parent; oklvxylu keeps its change ID and takes a new commit ID",
       rows: [
-        { changeId: "ovvvnnor", desc: "Add a licence note", commitId: "5e6ce646", kind: "at", note: "LICENSE stayed; the change was rebased for you" },
+        { changeId: "ovvvnnor", desc: "Add a licence note", commitId: "5e6ce646", kind: "at", rewritten: true, note: "LICENSE stayed; the change was rebased for you" },
         { changeId: "oklvxylu", desc: "Greet the world", commitId: "901a7c31", kind: "commit" },
         { changeId: "tturtmot", desc: "Add README", commitId: "4bb47a91", kind: "commit" },
         { changeId: "zzzzzzzz", desc: "root()", commitId: "00000000", kind: "immutable" },
@@ -378,8 +378,8 @@ again.
       command: "jj edit tturtmot && echo node_modules/ > .gitignore",
       caption: "Moved to tturtmot and put .gitignore there; its two descendants were rebased",
       rows: [
-        { changeId: "ovvvnnor", desc: "Add a licence note", kind: "commit", note: "Rebased 2 descendant commits" },
-        { changeId: "oklvxylu", desc: "Greet the world", kind: "commit" },
+        { changeId: "ovvvnnor", desc: "Add a licence note", kind: "commit", rewritten: true, note: "Rebased 2 descendant commits" },
+        { changeId: "oklvxylu", desc: "Greet the world", kind: "commit", rewritten: true },
         { changeId: "tturtmot", desc: "Add README", commitId: "2610b68f", kind: "at", note: ".gitignore and README.md" },
         { changeId: "zzzzzzzz", desc: "root()", commitId: "00000000", kind: "immutable" },
       ],
@@ -560,7 +560,7 @@ moves, so day to day this one line is enough.
 
 <CommitGraph
   title="jj git fetch → jj rebase -d main"
-  hint="Watch @ stay where it is through the fetch, and move only on the rebase."
+  hint="The first step is just after the fetch: @ is still on the old main, and only the rebase moves it."
   scenes={[
     {
       command: "jj git fetch",

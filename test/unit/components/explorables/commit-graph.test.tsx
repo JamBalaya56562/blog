@@ -86,10 +86,15 @@ describe("CommitGraph", () => {
 
     fireEvent.click(getByRole("button", { name: "forward" }))
 
+    // The mark is in the row's words as well as its colour: "new commit ID"
+    // between the description and the hash is the visually-hidden label.
     expect(rows(container)).toEqual([
       { mark: "same", text: "Add a licence noterestacked" },
-      { mark: "rewritten", text: "Greet the world901a7c31" },
+      { mark: "rewritten", text: "Greet the worldnew commit ID901a7c31" },
     ])
+    expect(
+      container.querySelector("[data-mark=rewritten] .sr-only")?.textContent,
+    ).toBe("new commit ID")
     expect(
       getByText(
         "2/2 · jj squash README.md — the commit ID moved; the change ID did not",

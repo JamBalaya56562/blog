@@ -1,6 +1,6 @@
 "use client"
 
-import { useId, useReducer } from "react"
+import { useId, useReducer, useRef } from "react"
 import {
   type CommitGraphAction,
   type CommitGraphContent,
@@ -60,9 +60,22 @@ export function CommitGraph({ title, hint, caption, ...content }: Props) {
     initialState,
   )
   const id = useId()
+  const range = useRef<HTMLInputElement>(null)
   const last = content.scenes.length - 1
   const scene = content.scenes[state.step]
   const rows = rowsOf(content, state.step)
+
+  /**
+   * The button at the end of the sequence disables itself under the reader's
+   * finger, which would drop focus to the document. The slider is the same
+   * control by other means, and it is always there, so focus goes to it.
+   */
+  function move(action: CommitGraphAction, willEnd: boolean) {
+    dispatch(action)
+    if (willEnd) {
+      range.current?.focus()
+    }
+  }
 
   return (
     <Explorable
@@ -82,7 +95,7 @@ export function CommitGraph({ title, hint, caption, ...content }: Props) {
         <button
           className="pp-explorable-cmd"
           disabled={state.step === 0}
-          onClick={() => dispatch({ type: "previous" })}
+          onClick={() => move({ type: "previous" }, state.step === 1)}
           type="button"
         >
           {content.labels.previous}
@@ -94,6 +107,7 @@ export function CommitGraph({ title, hint, caption, ...content }: Props) {
           aria-valuetext={`${state.step + 1}/${content.scenes.length} ${scene.command}`}
           className="pp-explorable-range"
           id={id}
+          ref={range}
           max={last}
           min={0}
           onChange={(event) =>
@@ -106,7 +120,7 @@ export function CommitGraph({ title, hint, caption, ...content }: Props) {
         <button
           className="pp-explorable-cmd"
           disabled={state.step === last}
-          onClick={() => dispatch({ type: "next" })}
+          onClick={() => move({ type: "next" }, state.step === last - 1)}
           type="button"
         >
           {content.labels.next}
@@ -116,10 +130,18 @@ export function CommitGraph({ title, hint, caption, ...content }: Props) {
       <p className="pp-explorable-command">{scene.command}</p>
       <GraphRows label={content.labels.graph} rows={rows} />
 
-      <div className="pp-explorable-legend">
-        <span data-mark="rewritten">{content.labels.rewritten}</span>
-        <span data-mark="added">{content.labels.added}</span>
-      </div>
+      {/* A swatch for a colour nothing on screen is wearing explains
+          nothing, so the legend says only what this step shows. */}
+      {rows.some((row) => row.mark !== "same") && (
+        <div className="pp-explorable-legend">
+          {rows.some((row) => row.mark === "rewritten") && (
+            <span data-mark="rewritten">{content.labels.rewritten}</span>
+          )}
+          {rows.some((row) => row.mark === "added") && (
+            <span data-mark="added">{content.labels.added}</span>
+          )}
+        </div>
+      )}
     </Explorable>
   )
 }

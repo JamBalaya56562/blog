@@ -4,7 +4,8 @@ import type { GraphRowView } from "@/lib/explorables/graph"
 
 /** Where a lane's node sits across the row. */
 const LANE_X = [12, 28] as const
-const WIDTH = 40
+/** A graph with one lane is 24 wide; the second lane needs the rest. */
+const WIDTH = [24, 40] as const
 
 /**
  * One column of a commit graph: a node per commit, newest at the top, with
@@ -29,15 +30,27 @@ export function GraphRows({
   const forked = rows.some((row) => row.lane === 1)
 
   return (
-    <ol aria-label={label} className="pp-explorable-graph" data-forked={forked}>
+    <ol
+      aria-label={label}
+      className="pp-explorable-graph"
+      data-forked={forked}
+      // Redundant to the spec, not to Safari: `list-style: none` takes the
+      // list semantics away there, and the name on this element is only
+      // useful with them.
+      // biome-ignore lint/a11y/noRedundantRoles: see the comment above
+      role="list"
+    >
       {rows.map((row, index) => {
         const lane = row.lane ?? 0
         const x = LANE_X[lane]
         const below = rows[index + 1]
-        // The trunk runs on behind a row that sits off to the side, so what
-        // is under the fork stays joined to what is above it.
-        const trunkRunsOn =
-          below !== undefined && (lane === 1 || (below.lane ?? 0) === 0)
+        // The trunk is one line drawn a row at a time. A row on it joins
+        // upwards to the row above and downwards to the row below; a row
+        // off to the side lets the trunk run past behind it, which is the
+        // `│` beside a forked commit in `jj log`.
+        const trunkAbove = lane === 0 && index > 0
+        const trunkBelow = lane === 0 && below !== undefined
+        const trunkPasses = lane === 1
 
         return (
           <li
@@ -49,22 +62,22 @@ export function GraphRows({
               <svg
                 aria-hidden="true"
                 focusable="false"
-                viewBox={`0 0 ${WIDTH} 36`}
+                viewBox={`0 0 ${WIDTH[forked ? 1 : 0]} 36`}
               >
-                <title>{row.kind}</title>
-                {trunkRunsOn && (
+                {(trunkAbove || trunkBelow || trunkPasses) && (
                   <line
                     stroke="currentColor"
                     strokeWidth="1.5"
-                    x1="12"
-                    x2="12"
-                    y1={lane === 1 ? 0 : 18}
-                    y2="36"
+                    x1={LANE_X[0]}
+                    x2={LANE_X[0]}
+                    y1={trunkAbove || trunkPasses ? 0 : 18}
+                    y2={trunkBelow || trunkPasses ? 36 : 18}
                   />
                 )}
-                {row.rejoins ? (
+                {row.rejoins && below !== undefined ? (
+                  // The side lane bends back into the trunk, as `├─╯` does.
                   <path
-                    d={`M${x} 18 L${x} 26 Q${x} 36 ${x - 8} 36`}
+                    d={`M${x} 18 L${x} 26 Q${x} 36 ${LANE_X[0]} 36`}
                     fill="none"
                     stroke="currentColor"
                     strokeWidth="1.5"
@@ -113,6 +126,11 @@ export function GraphRows({
             </span>
             <span className="pp-explorable-graph-desc">
               {row.desc}
+              {/* The accent says which row changed; this says it in words,
+                  for a reader who does not get the colour. */}
+              {row.markLabel && (
+                <span className="sr-only">{row.markLabel}</span>
+              )}
               {row.commitId && (
                 <span className="pp-explorable-commitid">{row.commitId}</span>
               )}
