@@ -330,6 +330,27 @@ fix(auth): keep the session alive across a token refresh
 ✔   found 0 problems, 0 warnings
 ```
 
+You can try it here before installing commitlint. It is the rules that look at the first line,
+ported to run in the browser, and the output is what commitlint prints in a terminal.
+
+<CommitLint
+  title="commitlint"
+  hint="Edit the message and it is checked as you type. The buttons load the three messages above."
+  label="First line of the commit message"
+  presets={[
+    "update stuff",
+    "Fix: Login Button.",
+    "fix(auth): keep the session alive across a token refresh",
+  ]}
+  initial={1}
+  parts={{ type: "type", scope: "scope", breaking: "!", subject: "subject" }}
+  status={{
+    ok: "No problems: the type, scope and subject all came out",
+    problems: "{n} problems. The name in brackets is the rule",
+  }}
+  caption="The list of types sits in the type-enum rule as it is. A capital in the scope or a trailing space is caught too"
+/>
+
 ## Checking at commit time with lefthook
 
 On its own, commitlint only runs when you pipe something into it. Wired to Git's `commit-msg`

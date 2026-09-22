@@ -288,6 +288,26 @@ fix(auth): keep the session alive across a token refresh
 ✔   found 0 problems, 0 warnings
 ```
 
+手元に commitlint を入れる前に、ここで試せます。1 行目に使われるルールだけをブラウザで動くように移したもので、出力は commitlint がターミナルに出すものと同じです。
+
+<CommitLint
+  title="commitlint"
+  hint="メッセージを書き換えると、その場で検査されます。下のボタンで上の 3 つを呼び出せます。"
+  label="コミットメッセージの 1 行目"
+  presets={[
+    "update stuff",
+    "Fix: Login Button.",
+    "fix(auth): keep the session alive across a token refresh",
+  ]}
+  initial={1}
+  parts={{ type: "type", scope: "scope", breaking: "!", subject: "subject" }}
+  status={{
+    ok: "問題無し。type、scope、subject がそれぞれ取り出せている",
+    problems: "{n} 個の問題。角括弧の中がルールの名前",
+  }}
+  caption="type の一覧は type-enum のルールにそのまま入っている。scope に大文字を入れたり、末尾に空白を足したりしても引っかかる"
+/>
+
 ## lefthook でコミット時に検査する
 
 commitlint 単体では、自分で流し込まないと動きません。Git の `commit-msg` フックに繋ぐと、`git commit` のたびに自動で走ります。フックの管理には [lefthook](https://lefthook.dev/) を使います。Go 製の単体バイナリで、[mise](/ja/blog/getting-started-with-mise) から入れられます。
