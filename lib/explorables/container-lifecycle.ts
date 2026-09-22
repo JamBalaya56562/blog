@@ -174,11 +174,13 @@ export function reduce(
       return { ...state, container: "running", last: "started" }
     case "rm":
       // The writable layer goes with the container. The volume is not part
-      // of it and is not touched.
+      // of it and is not touched — so what the figure says afterwards turns
+      // on whether a volume is there at all, not on what is in it. The
+      // chips show the contents; the sentence only has to be true.
       return {
         ...state,
         container: "none",
-        last: state.volume.rows.length > 0 ? "removedKept" : "removed",
+        last: state.volume.exists ? "removedKept" : "removed",
         withVolume: false,
         written: [],
       }

@@ -234,13 +234,26 @@ describe("container lifecycle", () => {
     })
   })
 
-  test("removing a container says whether anything was kept", () => {
+  /**
+   * What the figure says after `rm` turns on whether a volume is there at
+   * all. An empty volume is still a volume that outlived the container, and
+   * the chips beside the sentence are what show its contents.
+   */
+  test("removing a container says whether a volume was left behind", () => {
     expect(reduce(initialState(base), { type: "rm" }, base).last).toBe(
       "removedKept",
     )
     expect(reduce(initialState(plain), { type: "rm" }, plain).last).toBe(
       "removed",
     )
+
+    // A volume created empty and never written to still survives the rm.
+    const emptyVolume = ["rm", "runVolume", "rm"].reduce(
+      (state, type) => reduce(state, { type } as ContainerAction, plain),
+      initialState(plain),
+    )
+    expect(emptyVolume.volume).toEqual({ exists: true, rows: [] })
+    expect(emptyVolume.last).toBe("removedKept")
   })
 
   test("rejects content it cannot draw", () => {

@@ -38,7 +38,7 @@ function renderFigure(initial: "plain" | "volume" = "volume") {
         ran: "started without a volume",
         ranVolume: "started with {volume}",
         removed: "the writable layer is gone",
-        removedKept: "the container is gone; {volume} still holds its rows",
+        removedKept: "the container is gone; {volume} is still here",
         started: "running again",
         stopped: "stopped, and everything is still here",
         volumeInUse: "{volume} is in use by db",
@@ -99,6 +99,13 @@ describe("ContainerLifecycle", () => {
     expect(getByText("db is running with nothing mounted")).toBeDefined()
   })
 
+  /** The stack is the image's, so the figure says which image it is. */
+  test("names the image above its layers", () => {
+    const { getByText } = renderFigure("plain")
+
+    expect(getByText("image (read-only) · postgres:18-alpine")).toBeDefined()
+  })
+
   /** "docker stop はプロセスを止めるだけで、書き込み層もボリュームも残り". */
   test("stop keeps everything and start picks it up again", () => {
     const { container, getByText } = renderFigure("plain")
@@ -121,7 +128,7 @@ describe("ContainerLifecycle", () => {
     expect(layer(container)).toEqual(["—"])
     expect(volume(container)).toEqual(["notes"])
     expect(
-      getByText("the container is gone; pgdata still holds its rows"),
+      getByText("the container is gone; pgdata is still here"),
     ).toBeDefined()
   })
 

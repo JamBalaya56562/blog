@@ -131,7 +131,11 @@ export function ContainerLifecycle({
               )}
             </div>
           </div>
-          <p className="pp-explorable-note">{content.labels.image}</p>
+          <p className="pp-explorable-note">
+            {content.labels.image}
+            {" · "}
+            {content.image.name}
+          </p>
           <div className="pp-explorable-layers">
             {content.image.layers.map((layer) => (
               <span className="pp-explorable-layer" key={layer}>
