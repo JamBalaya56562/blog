@@ -40,6 +40,7 @@ const REQUIRED_COMPONENTS = [
   "CommitLint",
   "ContainerLifecycle",
   "LayerCache",
+  "OrderedRun",
   "SemverBump",
 ] as const
 

@@ -9,6 +9,7 @@ import { CommitGraph } from "@/components/explorables/commit-graph"
 import { CommitLint } from "@/components/explorables/commit-lint"
 import { ContainerLifecycle } from "@/components/explorables/container-lifecycle"
 import { LayerCache } from "@/components/explorables/layer-cache"
+import { OrderedRun } from "@/components/explorables/ordered-run"
 import { SemverBump } from "@/components/explorables/semver-bump"
 import { ZoomableImage } from "@/components/zoomable-image"
 import { externalHost, faviconPath } from "@/lib/favicon"
@@ -159,6 +160,7 @@ const staticComponents: MDXComponents = {
   },
   LayerCache,
   li: (props) => <li className="my-1" {...props} />,
+  OrderedRun,
   ol: (props) => (
     <ol className="my-4 ml-6 list-decimal text-foreground" {...props} />
   ),
