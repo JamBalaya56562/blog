@@ -257,3 +257,48 @@ describe("failure reporting", () => {
     ])
   })
 })
+
+/**
+ * The quiet time is what keeps a cause from being silenced forever: an
+ * outage that returns next week should be reported again, not swallowed by
+ * one from today. The clock is the only way to reach that branch.
+ */
+describe("failure reporting over time", () => {
+  let logged: string[] = []
+  let restore = () => {}
+  let now = 0
+
+  beforeEach(() => {
+    logged = []
+    now = 1_000_000
+    const originalError = console.error
+    const originalNow = Date.now
+    console.error = (...args: unknown[]) => {
+      logged.push(args.join(" "))
+    }
+    Date.now = () => now
+    restore = () => {
+      console.error = originalError
+      Date.now = originalNow
+    }
+  })
+
+  afterEach(() => restore())
+
+  test("a cause reports again once its quiet time has passed", async () => {
+    mockGetDocClient.mockReturnValue({
+      send: mock(() => Promise.reject(new Error("an outage"))),
+    })
+
+    await getViewCount("a")
+    now += 4 * 60 * 1000
+    await getViewCount("b")
+    now += 61 * 1000
+    await getViewCount("c")
+
+    expect(logged).toEqual([
+      "[getViewCount] failed for slug a: Error: an outage",
+      "[getViewCount] failed for slug c: Error: an outage",
+    ])
+  })
+})

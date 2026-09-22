@@ -46,10 +46,20 @@ const lastReported = new Map<string, number>()
  */
 function report(where: string, e: unknown, subject?: string): void {
   const message = describe(e)
-  const key = `${where}: ${message}`
   const now = Date.now()
-  const last = lastReported.get(key)
-  if (last !== undefined && now - last < REPORT_INTERVAL_MS) {
+
+  // Forget the causes whose quiet time has run out, so the map holds what is
+  // still being suppressed rather than every message the process has ever
+  // seen: an error that names the item it choked on is a new string each
+  // time, and this runs for the life of the server.
+  for (const [seen, at] of lastReported) {
+    if (now - at >= REPORT_INTERVAL_MS) {
+      lastReported.delete(seen)
+    }
+  }
+
+  const key = `${where}: ${message}`
+  if (lastReported.has(key)) {
     return
   }
 
