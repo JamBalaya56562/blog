@@ -211,6 +211,78 @@ test.describe("Bookmark figure", () => {
   })
 })
 
+/**
+ * The Docker introduction carries two instances of the same figure: one
+ * without a volume, where a write dies with the container, and one with it,
+ * where the write outlives every container.
+ */
+test.describe("Container figure", () => {
+  const POST = "/ja/blog/getting-started-with-docker"
+  const press = (
+    figure: ReturnType<import("@playwright/test").Page["locator"]>,
+    text: string,
+  ) => figure.locator(".pp-explorable-cmd", { hasText: text }).click()
+
+  test("the served HTML carries both instances", async ({ request }) => {
+    const html = await (await request.get(POST)).text()
+    expect(html).toContain("pp-explorable-volume")
+    expect(html).toContain("pp-explorable-layer")
+    expect(html).toContain("index.html")
+    expect(html).toContain("pgdata")
+  })
+
+  test("rm takes the writable layer and leaves the volume", async ({
+    page,
+  }) => {
+    await page.goto(POST)
+    // The second figure is the one with a volume mounted.
+    const figure = page.locator(FIGURE).nth(1)
+    await figure.scrollIntoViewIfNeeded()
+    const volume = figure.locator(".pp-explorable-volume")
+    const layer = figure.locator(".pp-explorable-box")
+
+    await expect(volume).toContainText("notes")
+
+    await press(figure, "docker rm -f db")
+    await expect(layer).toHaveAttribute("data-on", "false")
+    await expect(volume).toContainText("notes")
+    await expect(volume).toHaveAttribute("data-on", "true")
+  })
+
+  // "使っているものは消せない": the button stays pressable so the refusal
+  // can be read, which is the opposite of the other disabled commands.
+  test("a volume in use refuses to be removed", async ({ page }) => {
+    await page.goto(POST)
+    const figure = page.locator(FIGURE).nth(1)
+    await figure.scrollIntoViewIfNeeded()
+
+    const remove = figure.locator(".pp-explorable-cmd", {
+      hasText: "docker volume rm",
+    })
+    await expect(remove).toBeEnabled()
+    await remove.click()
+
+    await expect(figure.locator(".pp-explorable-status")).toContainText(
+      "使っている",
+    )
+    await expect(figure.locator(".pp-explorable-volume")).toContainText("notes")
+  })
+
+  test("a write without a volume does not survive the container", async ({
+    page,
+  }) => {
+    await page.goto(POST)
+    const figure = page.locator(FIGURE).first()
+    await figure.scrollIntoViewIfNeeded()
+    const layer = figure.locator(".pp-explorable-box")
+
+    await expect(layer).toContainText("index.html")
+    await press(figure, "docker rm -f web")
+    await press(figure, "docker run -d --name web")
+    await expect(layer).not.toContainText("index.html")
+  })
+})
+
 test.describe("Explorable figures — prefers-reduced-motion", () => {
   test.use({ reducedMotion: "reduce" })
 
