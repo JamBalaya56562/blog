@@ -374,6 +374,36 @@ Parent commit (@-)      : ovvvnnor ab228dc9 main | Add a licence note
 
 push した瞬間に、今いた変更が immutable（`◆`）になり、新しい空の変更が上に作られました。リモートの `main` に載ったコミットは、もう手元で直すものではない、という jj の判断です。「あとから直せる」のは、まだ push していない範囲だけだと覚えておくと安全です。
 
+同じ 3 つの操作を Git と jj で並べると、こうなります。
+
+<BookmarkGraph
+  title="git / jj"
+  hint="ボタンを押すと、左右のグラフが同時に動きます。どちらの main が付いてくるかを見てください。"
+  descs={["Add README", "Greet the world", "Add a licence note"]}
+  empty="(empty) (no description set)"
+  commands={{
+    commit: { git: "git commit", jj: "jj describe → jj new" },
+    bookmark: { git: "（自動で動く）", jj: "jj bookmark set main -r @-" },
+    push: { git: "git push", jj: "jj git push --bookmark main" },
+  }}
+  labels={{
+    git: "Git",
+    jj: "jj",
+    head: "HEAD",
+    at: "@",
+    main: "main",
+    remote: "origin/main",
+  }}
+  status={{
+    initial: "どちらも Add README が 1 つ。jj では空の @ がその上にいる",
+    commit: "{desc} をコミット。Git の main は付いてきて、jj の main は置いた場所に残っている",
+    bookmark: "jj の main を、いま書いたコミットまで動かした。Git 側には対応する操作が無い",
+    push: "push した範囲が immutable（◆）になった。@ はまだ直せる",
+    pushGitOnly: "Git は送れたが、jj は bookmark が後ろのままなので送るものが無い",
+  }}
+  caption="Git のブランチはコミットに付いてくる。jj の bookmark は置いた場所に留まり、動かすのは自分"
+/>
+
 ### リモートの変更を取り込む
 
 同僚が `main` に push したあと、手元で取り込むには `jj git fetch` です。取ってきたあとの様子を `jj log` で見ます。

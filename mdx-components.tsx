@@ -4,6 +4,7 @@ import { Children, isValidElement } from "react"
 import { resolveImagePath } from "@/app/api/images/[...path]/route"
 import { CodeTabs } from "@/components/code-tabs"
 import { CopyButton } from "@/components/copy-button"
+import { BookmarkGraph } from "@/components/explorables/bookmark-graph"
 import { CommitLint } from "@/components/explorables/commit-lint"
 import { LayerCache } from "@/components/explorables/layer-cache"
 import { ZoomableImage } from "@/components/zoomable-image"
@@ -98,6 +99,7 @@ const staticComponents: MDXComponents = {
       </a>
     )
   },
+  BookmarkGraph,
   blockquote: ({
     "data-alert": alert,
     children,

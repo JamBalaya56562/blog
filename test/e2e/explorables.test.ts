@@ -135,6 +135,82 @@ test.describe("Commit message figure", () => {
   })
 })
 
+/**
+ * The Jujutsu post runs the same three commands against Git and against jj
+ * side by side. The claim the section makes is a difference between the two
+ * columns, so the assertions are about both at once.
+ */
+test.describe("Bookmark figure", () => {
+  const POST = "/ja/blog/getting-started-with-jujutsu"
+  const rows = (figure: ReturnType<typeof figureOn>, column: string) =>
+    figure.locator(`ol[aria-label="${column}"] .pp-explorable-graph-row`)
+
+  function figureOn(page: import("@playwright/test").Page) {
+    return page.locator(FIGURE).first()
+  }
+
+  test("the served HTML carries both histories", async ({ request }) => {
+    const html = await (await request.get(POST)).text()
+    expect(html).toContain('aria-label="Git"')
+    expect(html).toContain('aria-label="jj"')
+    expect(html).toContain('data-kind="at"')
+    expect(html).toContain('data-ref="bookmark"')
+  })
+
+  test("a commit carries Git's branch and leaves jj's bookmark", async ({
+    page,
+  }) => {
+    await page.goto(POST)
+    const figure = figureOn(page)
+    await figure.scrollIntoViewIfNeeded()
+    await expect(rows(figure, "Git")).toHaveCount(1)
+
+    await figure
+      .locator(".pp-explorable-cmd", { hasText: "git commit" })
+      .click()
+
+    // Git: the branch is on the new tip, beside HEAD.
+    await expect(rows(figure, "Git").first()).toContainText("main")
+    // jj: the working copy is on top, and the bookmark is two rows down,
+    // still on the commit it was put on.
+    await expect(rows(figure, "jj")).toHaveCount(3)
+    await expect(rows(figure, "jj").nth(1)).not.toContainText("main")
+    await expect(rows(figure, "jj").nth(2)).toContainText("main")
+  })
+
+  test("pushing marks what the remote holds", async ({ page }) => {
+    await page.goto(POST)
+    const figure = figureOn(page)
+    await figure.scrollIntoViewIfNeeded()
+
+    await figure
+      .locator(".pp-explorable-cmd", { hasText: "git commit" })
+      .click()
+    await figure
+      .locator(".pp-explorable-cmd", { hasText: "jj bookmark set" })
+      .click()
+    await figure
+      .locator(".pp-explorable-cmd", { hasText: "jj git push" })
+      .click()
+
+    await expect(
+      rows(figure, "jj").nth(1).locator(".pp-explorable-glyph"),
+    ).toHaveAttribute("data-kind", "immutable")
+    // The working copy is still the reader's to rewrite.
+    await expect(
+      rows(figure, "jj").first().locator(".pp-explorable-glyph"),
+    ).toHaveAttribute("data-kind", "at")
+  })
+
+  test("both columns fit the phone's article width", async ({ page }) => {
+    await page.goto(POST)
+    const figure = figureOn(page)
+    await figure.scrollIntoViewIfNeeded()
+    const fits = await figure.evaluate((el) => el.scrollWidth <= el.clientWidth)
+    expect(fits).toBe(true)
+  })
+})
+
 test.describe("Explorable figures — prefers-reduced-motion", () => {
   test.use({ reducedMotion: "reduce" })
 
