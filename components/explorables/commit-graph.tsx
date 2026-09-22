@@ -47,10 +47,12 @@ type Props = CommitGraphContent &
  *       status="{n}/{total} · {command} — {caption}"
  *     />
  *
- * Write the rows from the transcript, newest first. A row keeps its place
- * across steps by its change ID, so use the real one; the commit IDs are
- * what the marks are computed from, so give them where the article printed
- * them and leave them out where it did not.
+ * Write the rows from the transcript, newest first. `changeId` is what keeps
+ * a row in its place across steps: jj prints one, and for a tool that does
+ * not — Sapling rewrites the hash on every amend — any stable word will do,
+ * since it is never shown. The commit IDs are what the marks are computed
+ * from, so give them where the article printed them and leave them out
+ * where it did not.
  */
 export function CommitGraph({ title, hint, caption, ...content }: Props) {
   const [state, dispatch] = useReducer(

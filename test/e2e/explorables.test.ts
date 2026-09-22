@@ -366,6 +366,55 @@ test.describe("Stepped graph figure", () => {
   })
 })
 
+/**
+ * The Sapling post uses the same figure for a tool with no change ID: the
+ * hash is the identity there, so an amend rewrites it and the rows still
+ * have to line up across the steps.
+ */
+test.describe("Stacked graph figure", () => {
+  const POST = "/ja/blog/getting-started-with-sapling"
+
+  test("an amend marks the commit and the one stacked on it", async ({
+    page,
+  }) => {
+    await page.goto(POST)
+    const figure = figureNamed(page, "sl amend")
+    await figure.scrollIntoViewIfNeeded()
+    const rows = figure.locator(".pp-explorable-graph-row")
+
+    await expect(rows.first()).toHaveAttribute("data-mark", "same")
+    await figure.locator(".pp-explorable-cmd", { hasText: "進む" }).click()
+
+    // Both the amended commit and the one restacked onto it take new hashes.
+    await expect(rows.nth(0)).toHaveAttribute("data-mark", "rewritten")
+    await expect(rows.nth(1)).toHaveAttribute("data-mark", "rewritten")
+    // The two below it were not touched.
+    await expect(rows.nth(2)).toHaveAttribute("data-mark", "same")
+    await expect(rows.nth(3)).toHaveAttribute("data-mark", "same")
+  })
+
+  // The submit step rewrites nothing, so the figure marks nothing and drops
+  // the legend rather than showing a swatch for a colour that is not there.
+  test("a step that rewrites nothing shows no legend", async ({ page }) => {
+    await page.goto(POST)
+    const figure = figureNamed(page, "sl pr submit")
+    await figure.scrollIntoViewIfNeeded()
+    const range = figure.locator("input[type=range]")
+
+    await range.fill("2")
+    await expect(figure.locator(".pp-explorable-command")).toHaveText(
+      "sl pr submit",
+    )
+    await expect(
+      figure.locator(".pp-explorable-graph-row[data-mark=rewritten]"),
+    ).toHaveCount(0)
+    await expect(figure.locator(".pp-explorable-legend")).toHaveCount(0)
+
+    await range.fill("1")
+    await expect(figure.locator(".pp-explorable-legend")).toHaveCount(1)
+  })
+})
+
 test.describe("Explorable figures — prefers-reduced-motion", () => {
   test.use({ reducedMotion: "reduce" })
 

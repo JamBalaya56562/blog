@@ -327,7 +327,42 @@ The three lines from `restacking children automatically` are that. In Git this i
 fix, `--continue`; here it is one `amend`. It stops only when there is a conflict, and then `sl restack`
 finishes the job.
 
-![Before and after sl prev → sl amend: Greet the world in the middle is amended to a8fc4a1a60 and Add a licence above it is restacked to feb42b2732 on its own](sapling-restack.svg)
+<CommitGraph
+  title="sl amend"
+  hint="Fix the middle one and watch what happens above it."
+  scenes={[
+    {
+      command: "sl prev",
+      caption: "Down on Greet the world, in the middle of the stack",
+      rows: [
+        { changeId: "licence", desc: "Add a licence", commitId: "c448d1b12f", kind: "commit" },
+        { changeId: "greet", desc: "Greet the world", commitId: "a7a69177b9", kind: "at" },
+        { changeId: "hello", desc: "Add hello.txt", commitId: "a0a3d365a6", kind: "commit" },
+        { changeId: "initial", desc: "Initial commit", commitId: "9d729f9329", kind: "commit", refs: [{ label: "remote/main", kind: "remote" }] },
+      ],
+    },
+    {
+      command: "sl amend",
+      caption: "The commit you fixed is rewritten, and the one above it is restacked for you",
+      rows: [
+        { changeId: "licence", desc: "Add a licence", commitId: "feb42b2732", kind: "commit", note: "restacking children automatically" },
+        { changeId: "greet", desc: "Greet the world", commitId: "a8fc4a1a60", kind: "at" },
+        { changeId: "hello", desc: "Add hello.txt", commitId: "a0a3d365a6", kind: "commit" },
+        { changeId: "initial", desc: "Initial commit", commitId: "9d729f9329", kind: "commit", refs: [{ label: "remote/main", kind: "remote" }] },
+      ],
+    },
+  ]}
+  labels={{
+    step: "Step",
+    previous: "Back",
+    next: "Forward",
+    rewritten: "new hash",
+    added: "new",
+    graph: "sl",
+  }}
+  status="{n}/{total} · {command} — {caption}"
+  caption="One amend rewrites the commit you fixed and everything stacked on it"
+/>
 
 `sl next` goes back up.
 
@@ -468,7 +503,62 @@ Three things to read here.
   above was left alone. `sl pr submit` covers "the commit you are on and the ones below it"
 - `sl next` back to the top and run it again, and now `#16`'s commit is pushed and all three bodies line up
 
-![sl pr submit covers @ and below: run from the middle, #15 alone is pushed, #14 is up-to-date and #16 above is untouched; sl next to the top and run again pushes #16](sapling-submit-scope.svg)
+<CommitGraph
+  title="sl pr submit"
+  hint="Where you run it from decides what gets pushed."
+  scenes={[
+    {
+      command: "sl ssl",
+      caption: "Three PRs stacked up, @ at the top",
+      rows: [
+        { changeId: "licence", desc: "Add a licence", commitId: "9181b8da46", kind: "at", refs: [{ label: "#16", kind: "bookmark" }] },
+        { changeId: "greet", desc: "Greet the world", commitId: "a8fc4a1a60", kind: "commit", refs: [{ label: "#15", kind: "bookmark" }] },
+        { changeId: "hello", desc: "Add hello.txt", commitId: "a0a3d365a6", kind: "commit", refs: [{ label: "#14", kind: "bookmark" }] },
+        { changeId: "initial", desc: "Initial commit", commitId: "9d729f9329", kind: "commit", refs: [{ label: "remote/main", kind: "remote" }] },
+      ],
+    },
+    {
+      command: "sl prev && sl amend",
+      caption: "The middle one is fixed, and #16 above it has been restacked",
+      rows: [
+        { changeId: "licence", desc: "Add a licence", commitId: "f719fbb60f", kind: "commit", refs: [{ label: "#16", kind: "bookmark" }] },
+        { changeId: "greet", desc: "Greet the world", commitId: "9cb3be1e59", kind: "at", refs: [{ label: "#15", kind: "bookmark" }] },
+        { changeId: "hello", desc: "Add hello.txt", commitId: "a0a3d365a6", kind: "commit", refs: [{ label: "#14", kind: "bookmark" }] },
+        { changeId: "initial", desc: "Initial commit", commitId: "9d729f9329", kind: "commit", refs: [{ label: "remote/main", kind: "remote" }] },
+      ],
+    },
+    {
+      command: "sl pr submit",
+      caption: "Run from the middle, so only #15 is pushed: #14 is up to date and #16 above is untouched",
+      rows: [
+        { changeId: "licence", desc: "Add a licence", commitId: "f719fbb60f", kind: "commit", note: "untouched", refs: [{ label: "#16", kind: "bookmark" }] },
+        { changeId: "greet", desc: "Greet the world", commitId: "9cb3be1e59", kind: "at", note: "pushing 1", refs: [{ label: "#15", kind: "bookmark" }] },
+        { changeId: "hello", desc: "Add hello.txt", commitId: "a0a3d365a6", kind: "commit", note: "#14 is up-to-date", refs: [{ label: "#14", kind: "bookmark" }] },
+        { changeId: "initial", desc: "Initial commit", commitId: "9d729f9329", kind: "commit", refs: [{ label: "remote/main", kind: "remote" }] },
+      ],
+    },
+    {
+      command: "sl next && sl pr submit",
+      caption: "Back at the top and run again, and this time #16 goes",
+      rows: [
+        { changeId: "licence", desc: "Add a licence", commitId: "f719fbb60f", kind: "at", note: "pushing 1", refs: [{ label: "#16", kind: "bookmark" }] },
+        { changeId: "greet", desc: "Greet the world", commitId: "9cb3be1e59", kind: "commit", refs: [{ label: "#15", kind: "bookmark" }] },
+        { changeId: "hello", desc: "Add hello.txt", commitId: "a0a3d365a6", kind: "commit", refs: [{ label: "#14", kind: "bookmark" }] },
+        { changeId: "initial", desc: "Initial commit", commitId: "9d729f9329", kind: "commit", refs: [{ label: "remote/main", kind: "remote" }] },
+      ],
+    },
+  ]}
+  labels={{
+    step: "Step",
+    previous: "Back",
+    next: "Forward",
+    rewritten: "new hash",
+    added: "new",
+    graph: "sl ssl",
+  }}
+  status="{n}/{total} · {command} — {caption}"
+  caption="sl pr submit covers the commit you are on and everything below it"
+/>
 
 You may have noticed that the top commit's hash differs from the earlier smartlog (`feb42b2732`). In
 between, a line was added to `LICENSE` with `sl amend` → `sl pr submit`, and that run went the same way:
