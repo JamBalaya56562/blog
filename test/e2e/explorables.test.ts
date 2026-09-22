@@ -515,6 +515,35 @@ test.describe("Ordering figures", () => {
     await expect(rows.nth(2)).toHaveAttribute("data-line-state", "failed")
   })
 
+  /**
+   * The controls sit in the row's third column whether or not the line has
+   * a note under it. Left to flow they would land at the start of the next
+   * line on the rows that have one, which is where they were.
+   */
+  test("the controls line up whatever the line has to say", async ({
+    page,
+  }) => {
+    await page.goto("/ja/blog/mise-tasks")
+    const figure = figureNamed(page, "run の配列")
+    await ready(figure)
+
+    const offsets = await figure.evaluate((el) =>
+      [...el.querySelectorAll(".pp-explorable-row")].map((row) => ({
+        note: row.querySelector(".pp-explorable-note") !== null,
+        right: Math.round(
+          row.getBoundingClientRect().right -
+            (
+              row.querySelector(".pp-explorable-moves") as Element
+            ).getBoundingClientRect().right,
+        ),
+      })),
+    )
+
+    expect(offsets.some((row) => row.note)).toBe(true)
+    expect(offsets.some((row) => !row.note)).toBe(true)
+    expect(new Set(offsets.map((row) => row.right)).size).toBe(1)
+  })
+
   // The row moves out from under the pointer, so the button that moved it
   // has to keep the focus rather than dropping it to the document.
   test("focus follows the line that moved", async ({ page }) => {

@@ -144,6 +144,20 @@ describe("OrderedRun", () => {
     )
   })
 
+  /**
+   * The CSS tells the two list figures apart by this: only a list whose
+   * rows carry controls gives its third column away to them.
+   */
+  test("marks itself as a list that can be reordered", () => {
+    const { container } = renderFigure()
+
+    expect(
+      container
+        .querySelector(".pp-explorable-lines")
+        ?.getAttribute("data-reorder"),
+    ).toBe("true")
+  })
+
   test("the ends of the list disable the move that would fall off", () => {
     const { container } = renderFigure(run)
     const all = container.querySelectorAll(".pp-explorable-row")
