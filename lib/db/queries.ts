@@ -24,6 +24,43 @@ function describe(e: unknown): string {
   return e instanceof Error ? `${e.name}: ${e.message}` : String(e)
 }
 
+/** How long one cause stays quiet after it has been reported. */
+const REPORT_INTERVAL_MS = 5 * 60 * 1000
+
+const lastReported = new Map<string, number>()
+
+/**
+ * Reports a failure once per cause, then keeps quiet about it for a while.
+ *
+ * Every query below swallows its error and falls back to an empty count: a
+ * view counter is not worth a broken page. That leaves the log as the only
+ * trace, and a log nobody can read is no trace at all — with no database
+ * configured, as in the end-to-end run, the same refused connection arrives
+ * on every request and buries whatever else the run had to say.
+ *
+ * The cause is the function and the error's own description, so the first
+ * report of each carries its slug and the rest of the same cause are
+ * dropped; a different failure still gets through at once. After the
+ * interval a cause reports again, so an outage that returns next week is not
+ * silenced by one from today.
+ */
+function report(where: string, e: unknown, subject?: string): void {
+  const message = describe(e)
+  const key = `${where}: ${message}`
+  const now = Date.now()
+  const last = lastReported.get(key)
+  if (last !== undefined && now - last < REPORT_INTERVAL_MS) {
+    return
+  }
+
+  lastReported.set(key, now)
+  console.error(
+    subject === undefined
+      ? `[${where}] failed: ${message}`
+      : `[${where}] failed for ${subject}: ${message}`,
+  )
+}
+
 export async function getViewCount(slug: string): Promise<number> {
   const client = getDocClient()
   if (!client) {
@@ -37,7 +74,7 @@ export async function getViewCount(slug: string): Promise<number> {
 
     return (result.Item as PageViewItem | undefined)?.count ?? 0
   } catch (e) {
-    console.error("[getViewCount] failed for slug:", slug, describe(e))
+    report("getViewCount", e, `slug ${slug}`)
     return 0
   }
 }
@@ -66,7 +103,7 @@ export async function incrementViewCount(slug: string): Promise<number | null> {
     const count = result.Attributes?.count
     return typeof count === "number" ? count : null
   } catch (e) {
-    console.error("[incrementViewCount] failed for slug:", slug, describe(e))
+    report("incrementViewCount", e, `slug ${slug}`)
     return null
   }
 }
@@ -112,7 +149,7 @@ export async function getViewCounts(
 
     return counts
   } catch (e) {
-    console.error("[getViewCounts] failed for slugs:", slugs, describe(e))
+    report("getViewCounts", e, `slugs ${slugs.join(", ")}`)
     return new Map()
   }
 }
@@ -151,7 +188,7 @@ export async function getAllViewCounts(): Promise<
         updatedAt: new Date(item.updatedAt),
       }))
   } catch (e) {
-    console.error("[getAllViewCounts] failed:", describe(e))
+    report("getAllViewCounts", e)
     return []
   }
 }
