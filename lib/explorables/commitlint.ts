@@ -93,70 +93,87 @@ function isLowerCase(value: string): boolean {
   const cleaned = value.replace(/`.*?`|".*?"|'.*?'/g, "").trim()
   return cleaned === "" || cleaned === cleaned.toLowerCase()
 }
+type Rule = Readonly<{
+  id: RuleId
+  /** The message when the rule is broken, or nothing when it holds. */
+  check: (header: string, parsed: Parsed) => string | null
+}>
 
 /**
- * Every rule the header breaks, sorted by rule id — the order commitlint
- * prints them, and the order the article's transcripts show.
+ * One entry per rule, in rule-id order — which is the order commitlint
+ * prints them, and the order the article's transcripts show, so `lint`
+ * needs no sort.
  */
+const RULES: readonly Rule[] = [
+  {
+    check: (header) =>
+      header.length > HEADER_MAX_LENGTH
+        ? `header must not be longer than ${HEADER_MAX_LENGTH} characters, current length is ${header.length}`
+        : null,
+    id: "header-max-length",
+  },
+  {
+    check: (header) => {
+      const start = header !== header.trimStart()
+      const end = header !== header.trimEnd()
+      if (start && end) {
+        return "header must not be surrounded by whitespace"
+      }
+      if (start) {
+        return "header must not start with whitespace"
+      }
+      return end ? "header must not end with whitespace" : null
+    },
+    id: "header-trim",
+  },
+  {
+    check: (_, { scope }) =>
+      scope && !scope.split(/[/,]/).every(isLowerCase)
+        ? "scope must be lower-case"
+        : null,
+    id: "scope-case",
+  },
+  {
+    check: (_, { subject }) =>
+      subject && /^[a-z]/i.test(subject) && startsCapitalised(subject)
+        ? "subject must not be sentence-case, start-case, pascal-case, upper-case"
+        : null,
+    id: "subject-case",
+  },
+  {
+    check: (_, { subject }) => (subject ? null : "subject may not be empty"),
+    id: "subject-empty",
+  },
+  {
+    check: (_, { subject }) =>
+      subject?.endsWith(".") ? "subject may not end with full stop" : null,
+    id: "subject-full-stop",
+  },
+  {
+    check: (_, { type }) =>
+      type && /^[a-z]/i.test(type) && !isLowerCase(type)
+        ? "type must be lower-case"
+        : null,
+    id: "type-case",
+  },
+  {
+    check: (_, { type }) => (type ? null : "type may not be empty"),
+    id: "type-empty",
+  },
+  {
+    check: (_, { type }) =>
+      type && !(TYPES as readonly string[]).includes(type)
+        ? `type must be one of [${TYPES.join(", ")}]`
+        : null,
+    id: "type-enum",
+  },
+]
+
+/** Every rule the header breaks, in the order commitlint prints them. */
 export function lint(header: string): readonly Finding[] {
-  const { type, scope, subject } = parseHeader(header)
-  const findings: Finding[] = []
-
-  if (header.length > HEADER_MAX_LENGTH) {
-    findings.push({
-      message: `header must not be longer than ${HEADER_MAX_LENGTH} characters, current length is ${header.length}`,
-      rule: "header-max-length",
-    })
-  }
-  if (header !== header.trim()) {
-    const start = header !== header.trimStart()
-    const end = header !== header.trimEnd()
-    findings.push({
-      message:
-        start && end
-          ? "header must not be surrounded by whitespace"
-          : start
-            ? "header must not start with whitespace"
-            : "header must not end with whitespace",
-      rule: "header-trim",
-    })
-  }
-  if (scope && !scope.split(/[/\\,]/).every(isLowerCase)) {
-    findings.push({ message: "scope must be lower-case", rule: "scope-case" })
-  }
-  if (subject && /^[a-z]/i.test(subject) && startsCapitalised(subject)) {
-    findings.push({
-      message:
-        "subject must not be sentence-case, start-case, pascal-case, upper-case",
-      rule: "subject-case",
-    })
-  }
-  if (!subject) {
-    findings.push({
-      message: "subject may not be empty",
-      rule: "subject-empty",
-    })
-  }
-  if (subject?.endsWith(".")) {
-    findings.push({
-      message: "subject may not end with full stop",
-      rule: "subject-full-stop",
-    })
-  }
-  if (type && /^[a-z]/i.test(type) && !isLowerCase(type)) {
-    findings.push({ message: "type must be lower-case", rule: "type-case" })
-  }
-  if (!type) {
-    findings.push({ message: "type may not be empty", rule: "type-empty" })
-  }
-  if (type && !(TYPES as readonly string[]).includes(type)) {
-    findings.push({
-      message: `type must be one of [${TYPES.join(", ")}]`,
-      rule: "type-enum",
-    })
-  }
-
-  return findings.sort((a, b) =>
-    a.rule < b.rule ? -1 : a.rule > b.rule ? 1 : 0,
-  )
+  const parsed = parseHeader(header)
+  return RULES.flatMap(({ id, check }) => {
+    const message = check(header, parsed)
+    return message === null ? [] : [{ message, rule: id }]
+  })
 }
