@@ -156,14 +156,14 @@ export function CommitLint({
             key={finding.rule}
           >
             {finding.message}{" "}
-            <span className="pp-explorable-rule">[{finding.rule}]</span>
+            <span className="pp-explorable-rule">{`[${finding.rule}]`}</span>
           </div>
         ))}
         <div
           className="pp-explorable-line"
           data-level={count === 0 ? "ok" : "error"}
         >
-          found {count} problems, 0 warnings
+          {`found ${count} problems, 0 warnings`}
         </div>
       </div>
     </Explorable>
