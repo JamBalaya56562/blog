@@ -35,7 +35,7 @@ test.describe("Explorable figures", () => {
   }) => {
     await page.goto(POST)
     const figure = figureNamed(page, "Dockerfile")
-    await figure.scrollIntoViewIfNeeded()
+    await expect(figure).toBeVisible()
     const rows = figure.locator(".pp-explorable-row")
     const reset = figure.locator(".pp-explorable-reset")
 
@@ -61,7 +61,7 @@ test.describe("Explorable figures", () => {
   test("a step can be pressed from the keyboard", async ({ page }) => {
     await page.goto(POST)
     const figure = figureNamed(page, "Dockerfile")
-    await figure.scrollIntoViewIfNeeded()
+    await expect(figure).toBeVisible()
     const first = figure.locator(".pp-explorable-row").first()
 
     await first.focus()
@@ -80,7 +80,7 @@ test.describe("Explorable figures", () => {
   }) => {
     await page.goto(POST)
     const figure = figureNamed(page, "Dockerfile")
-    await figure.scrollIntoViewIfNeeded()
+    await expect(figure).toBeVisible()
     const overflow = await figure.evaluate((el) => ({
       clientWidth: el.clientWidth,
       scrollWidth: el.scrollWidth,
@@ -122,7 +122,7 @@ test.describe("Commit message figure", () => {
   }) => {
     await page.goto(POST)
     const figure = figureNamed(page, "commitlint")
-    await figure.scrollIntoViewIfNeeded()
+    await expect(figure).toBeVisible()
     const field = figure.locator("input.pp-explorable-input")
 
     await field.fill("feat(blog): add a figure the reader can touch")
@@ -170,7 +170,7 @@ test.describe("Bookmark figure", () => {
   }) => {
     await page.goto(POST)
     const figure = figureOn(page)
-    await figure.scrollIntoViewIfNeeded()
+    await expect(figure).toBeVisible()
     await expect(rows(figure, "Git")).toHaveCount(1)
 
     await figure
@@ -189,7 +189,7 @@ test.describe("Bookmark figure", () => {
   test("pushing marks what the remote holds", async ({ page }) => {
     await page.goto(POST)
     const figure = figureOn(page)
-    await figure.scrollIntoViewIfNeeded()
+    await expect(figure).toBeVisible()
 
     await figure
       .locator(".pp-explorable-cmd", { hasText: "git commit" })
@@ -213,7 +213,7 @@ test.describe("Bookmark figure", () => {
   test("both columns fit the phone's article width", async ({ page }) => {
     await page.goto(POST)
     const figure = figureOn(page)
-    await figure.scrollIntoViewIfNeeded()
+    await expect(figure).toBeVisible()
     const fits = await figure.evaluate((el) => el.scrollWidth <= el.clientWidth)
     expect(fits).toBe(true)
   })
@@ -245,7 +245,7 @@ test.describe("Container figure", () => {
     await page.goto(POST)
     // The second figure is the one with a volume mounted.
     const figure = figureNamed(page, "postgres:18-alpine")
-    await figure.scrollIntoViewIfNeeded()
+    await expect(figure).toBeVisible()
     const volume = figure.locator(".pp-explorable-volume")
     const layer = figure.locator(".pp-explorable-box")
 
@@ -262,7 +262,7 @@ test.describe("Container figure", () => {
   test("a volume in use refuses to be removed", async ({ page }) => {
     await page.goto(POST)
     const figure = figureNamed(page, "postgres:18-alpine")
-    await figure.scrollIntoViewIfNeeded()
+    await expect(figure).toBeVisible()
 
     const remove = figure.locator(".pp-explorable-cmd", {
       hasText: "docker volume rm",
@@ -281,7 +281,7 @@ test.describe("Container figure", () => {
   }) => {
     await page.goto(POST)
     const figure = figureNamed(page, "nginx:1.29-alpine")
-    await figure.scrollIntoViewIfNeeded()
+    await expect(figure).toBeVisible()
     const layer = figure.locator(".pp-explorable-box")
 
     await expect(layer).toContainText("index.html")
@@ -320,7 +320,7 @@ test.describe("Stepped graph figure", () => {
   test("stepping forward marks the rewritten commit", async ({ page }) => {
     await page.goto(POST)
     const figure = squash(page)
-    await figure.scrollIntoViewIfNeeded()
+    await expect(figure).toBeVisible()
     const rows = figure.locator(".pp-explorable-graph-row")
 
     await expect(figure.locator(".pp-explorable-command")).toHaveText("jj log")
@@ -343,7 +343,7 @@ test.describe("Stepped graph figure", () => {
   test("the fork closes when the change is rebased", async ({ page }) => {
     await page.goto(POST)
     const figure = figureNamed(page, "jj git fetch → jj rebase -d main")
-    await figure.scrollIntoViewIfNeeded()
+    await expect(figure).toBeVisible()
     const graph = figure.locator(".pp-explorable-graph")
 
     await expect(graph).toHaveAttribute("data-forked", "true")
@@ -354,7 +354,7 @@ test.describe("Stepped graph figure", () => {
   test("the slider moves the step too", async ({ page }) => {
     await page.goto(POST)
     const figure = squash(page)
-    await figure.scrollIntoViewIfNeeded()
+    await expect(figure).toBeVisible()
     const range = figure.locator("input[type=range]")
 
     await range.focus()
@@ -379,7 +379,7 @@ test.describe("Stacked graph figure", () => {
   }) => {
     await page.goto(POST)
     const figure = figureNamed(page, "sl amend")
-    await figure.scrollIntoViewIfNeeded()
+    await expect(figure).toBeVisible()
     const rows = figure.locator(".pp-explorable-graph-row")
 
     await expect(rows.first()).toHaveAttribute("data-mark", "same")
@@ -398,7 +398,7 @@ test.describe("Stacked graph figure", () => {
   test("a step that rewrites nothing shows no legend", async ({ page }) => {
     await page.goto(POST)
     const figure = figureNamed(page, "sl pr submit")
-    await figure.scrollIntoViewIfNeeded()
+    await expect(figure).toBeVisible()
     const range = figure.locator("input[type=range]")
 
     await range.fill("2")
@@ -442,7 +442,7 @@ test.describe("Release figure", () => {
   }) => {
     await page.goto(POST)
     const figure = figureNamed(page, "git cliff")
-    await figure.scrollIntoViewIfNeeded()
+    await expect(figure).toBeVisible()
     const version = figure.locator(".pp-explorable-version")
 
     await expect(version).toHaveText("1.2.3 → 1.3.0")
@@ -473,7 +473,7 @@ test.describe("Ordering figures", () => {
   test("swapping the env lines swaps the exported value", async ({ page }) => {
     await page.goto("/ja/blog/mise-environment-variables")
     const figure = figureNamed(page, "mise.toml の [env]")
-    await figure.scrollIntoViewIfNeeded()
+    await expect(figure).toBeVisible()
     const outcome = figure.locator(".pp-explorable-outcome")
 
     await expect(outcome).toHaveText("from-dotenv")
@@ -484,7 +484,7 @@ test.describe("Ordering figures", () => {
   test("moving the failing step down lets the rest run", async ({ page }) => {
     await page.goto("/ja/blog/mise-tasks")
     const figure = figureNamed(page, "run の配列")
-    await figure.scrollIntoViewIfNeeded()
+    await expect(figure).toBeVisible()
     const rows = figure.locator(".pp-explorable-row")
 
     await expect(rows.nth(2)).toHaveAttribute("data-line-state", "skipped")
@@ -498,7 +498,7 @@ test.describe("Ordering figures", () => {
   test("focus follows the line that moved", async ({ page }) => {
     await page.goto("/ja/blog/mise-tasks")
     const figure = figureNamed(page, "run の配列")
-    await figure.scrollIntoViewIfNeeded()
+    await expect(figure).toBeVisible()
 
     await moveDown(figure, 0)
     await expect(
@@ -517,7 +517,7 @@ test.describe("Build context figure", () => {
   test("switching both node_modules lines off sends them", async ({ page }) => {
     await page.goto(POST)
     const figure = figureNamed(page, "docker build .")
-    await figure.scrollIntoViewIfNeeded()
+    await expect(figure).toBeVisible()
     const dependencies = figure
       .locator(".pp-explorable-row", { hasText: "node_modules" })
       .first()
@@ -548,7 +548,7 @@ test.describe("Explorable figures — prefers-reduced-motion", () => {
   test("neither the strip nor the bar moves", async ({ page }) => {
     await page.goto(POST)
     const figure = figureNamed(page, "Dockerfile")
-    await figure.scrollIntoViewIfNeeded()
+    await expect(figure).toBeVisible()
 
     const motion = await figure.evaluate((el) => {
       const head = el.querySelector(".pp-explorable-head") as Element

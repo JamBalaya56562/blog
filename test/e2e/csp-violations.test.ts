@@ -95,8 +95,13 @@ test.describe("Content Security Policy", () => {
     })
 
     await page.goto("/ja/blog/docker-build")
-    const row = page.locator("figure.pp-explorable .pp-explorable-row").first()
-    await row.scrollIntoViewIfNeeded()
+    // The figure is named, because that post has more than one and the bar
+    // whose width travels belongs to this one.
+    const row = page
+      .locator('figure.pp-explorable[aria-label="Dockerfile"]')
+      .locator(".pp-explorable-row")
+      .first()
+    await expect(row).toBeVisible()
     await row.click()
     await expect(row).toHaveAttribute("data-state", "changed")
 
