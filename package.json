@@ -45,7 +45,7 @@
     "@shikijs/themes": "^4.4.3",
     "@types/mdx": "^2.0.14",
     "lucide-react": "^1.47.0",
-    "next": "canary",
+    "next": "^16.3.6",
     "next-mdx-remote-client": "^2.1.12",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
