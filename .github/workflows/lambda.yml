@@ -63,3 +63,17 @@ jobs:
         package-type: Image
         image-uri: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }}
         architectures: arm64
+
+    # The deploy action returns as soon as the code update is accepted, not
+    # once it is done. Clearing the cache before the new code serves would let
+    # CloudFront fetch the old pages again and keep them.
+    - name: ⏳ Wait for the new code to serve
+      run: aws lambda wait function-updated-v2 --function-name "$LAMBDA_FUNCTION_NAME"
+
+    # CloudFront keeps each page for as long as its Cache-Control allows, and
+    # nothing tells it the function behind it has changed. Without this, the
+    # first reader of each page after a deploy is handed the build before.
+    - name: 🧹 Clear the CDN cache
+      run: aws cloudfront create-invalidation --distribution-id "$DISTRIBUTION_ID" --paths "/*"
+      env:
+        DISTRIBUTION_ID: ${{ vars.CLOUDFRONT_DISTRIBUTION_ID }}
