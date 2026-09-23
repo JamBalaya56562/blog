@@ -182,3 +182,27 @@ export function derive(
     })),
   }
 }
+
+/**
+ * How far to send a row back so it starts its travel where the reader sees
+ * it. All three are measured against the top of the list.
+ *
+ * `from` is where the row was laid out before the change and `to` is where
+ * it is laid out now. `seen` is where it is drawn now, which is `to` plus
+ * whatever is left of a travel still running: a line pressed again before it
+ * has arrived is still on its way, and starting the next travel from its
+ * layout rather than from where it is drawn makes it jump by what was left.
+ *
+ * Null when there is nothing to travel, or nothing to travel from.
+ */
+export function travel(
+  from: number | undefined,
+  seen: number,
+  to: number,
+): number | null {
+  if (from === undefined) {
+    return null
+  }
+  const offset = from + (seen - to) - to
+  return offset === 0 ? null : offset
+}

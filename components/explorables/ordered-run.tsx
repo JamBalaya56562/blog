@@ -10,9 +10,13 @@ import {
   type OrderedRunContent,
   type OrderedRunState,
   reduce,
+  travel,
 } from "@/lib/explorables/ordered-run"
 import { Explorable } from "./explorable"
 import { Frame } from "./frame"
+
+/** Names this figure's own animation, so it cancels nothing else on a row. */
+const TRAVEL = "pp-explorable-travel"
 
 type Props = OrderedRunContent &
   Readonly<{
@@ -91,6 +95,12 @@ export function OrderedRun({ title, hint, caption, ...content }: Props) {
    * frame of reference and this one in another: a line moved after scrolling
    * down to the figure would be sent back that far and fly in from off
    * screen, and so would the lines that had not moved at all.
+   *
+   * A line can be pressed again before it has arrived. Where it is drawn
+   * then is not where it is laid out, so each row is read twice: once as
+   * drawn, and once with its travel stopped, which is the layout. The
+   * layout is what is kept for next time, and the next travel starts from
+   * where the row was drawn rather than jumping by what was left.
    */
   useLayoutEffect(() => {
     const rows = [
@@ -98,13 +108,19 @@ export function OrderedRun({ title, hint, caption, ...content }: Props) {
     ]
     const top = list.current?.getBoundingClientRect().top ?? 0
     const before = places.current
-    const after = new Map(
-      rows.map((row) => [
-        row.dataset.line ?? "",
-        row.getBoundingClientRect().top - top,
-      ]),
+    const moves = rows.map((row) => {
+      const seen = row.getBoundingClientRect().top - top
+      for (const running of row.getAnimations()) {
+        if (running.id === TRAVEL) {
+          running.cancel()
+        }
+      }
+      const to = row.getBoundingClientRect().top - top
+      return { from: before.get(row.dataset.line ?? ""), row, seen, to }
+    })
+    places.current = new Map(
+      moves.map(({ row, to }) => [row.dataset.line ?? "", to]),
     )
-    places.current = after
 
     if (
       before.size === 0 ||
@@ -112,15 +128,18 @@ export function OrderedRun({ title, hint, caption, ...content }: Props) {
     ) {
       return
     }
-    for (const row of rows) {
-      const from = before.get(row.dataset.line ?? "")
-      const to = after.get(row.dataset.line ?? "")
-      if (from === undefined || to === undefined || from === to) {
+    for (const { from, row, seen, to } of moves) {
+      const offset = travel(from, seen, to)
+      if (offset === null) {
         continue
       }
       row.animate(
-        [{ transform: `translateY(${from - to}px)` }, { transform: "none" }],
-        { duration: 220, easing: "cubic-bezier(0.2, 0.7, 0.3, 1)" },
+        [{ transform: `translateY(${offset}px)` }, { transform: "none" }],
+        {
+          duration: 220,
+          easing: "cubic-bezier(0.2, 0.7, 0.3, 1)",
+          id: TRAVEL,
+        },
       )
     }
   })
