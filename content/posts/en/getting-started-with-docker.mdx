@@ -343,6 +343,7 @@ The default page is back. A new container starts clean from the image's baked st
 <ContainerLifecycle
   title="nginx:1.29-alpine"
   hint="Press a command and watch what survives. Volumes come in the next section; read this one unmounted."
+  track
   image={{
     name: "nginx:1.29-alpine",
     layers: ["alpine", "nginx", "conf", "entrypoint"],
@@ -359,6 +360,25 @@ The default page is back. A new container starts clean from the image's baked st
     rm: "docker rm -f web",
     volumeRm: "docker volume rm site",
   }}
+  short={{
+    run: "run -d",
+    runVolume: "run -d -v site",
+    write: "cp index.html",
+    stop: "stop",
+    start: "start",
+    rm: "rm -f",
+    volumeRm: "volume rm site",
+  }}
+  echo={{
+    run: "docker run -d --name web -p 8080:80 nginx:1.29-alpine",
+    runVolume:
+      "docker run -d --name web -p 8080:80 -v site:/usr/share/nginx/html nginx:1.29-alpine",
+    write: "docker cp site/index.html web:/usr/share/nginx/html/index.html",
+    stop: "docker stop web",
+    start: "docker start web",
+    rm: "docker rm -f web",
+    volumeRm: "docker volume rm site",
+  }}
   labels={{
     image: "Image (read-only)",
     writable: "Writable layer",
@@ -367,6 +387,12 @@ The default page is back. A new container starts clean from the image's baked st
     stopped: "Exited (0)",
     none: "removed",
     volume: "Volume",
+    groups: {
+      create: "Run",
+      write: "Write",
+      pause: "Stop / start",
+      destroy: "Remove",
+    },
   }}
   status={{
     initialPlain: "web is running with {item} in its writable layer",
@@ -579,6 +605,7 @@ volume pgdata -> /var/lib/postgresql
 <ContainerLifecycle
   title="postgres:18-alpine"
   hint="Remove it and start it again. Starting without -v shows where the same write goes instead."
+  track
   image={{
     name: "postgres:18-alpine",
     layers: ["alpine", "postgres", "initdb", "entrypoint"],
@@ -595,6 +622,25 @@ volume pgdata -> /var/lib/postgresql
     rm: "docker rm -f db",
     volumeRm: "docker volume rm pgdata",
   }}
+  short={{
+    run: "run -d",
+    runVolume: "run -d -v pgdata",
+    write: "psql -c INSERT",
+    stop: "stop",
+    start: "start",
+    rm: "rm -f",
+    volumeRm: "volume rm pgdata",
+  }}
+  echo={{
+    run: "docker run -d --name db -e POSTGRES_PASSWORD=secret postgres:18-alpine",
+    runVolume:
+      "docker run -d --name db -e POSTGRES_PASSWORD=secret -v pgdata:/var/lib/postgresql postgres:18-alpine",
+    write: 'docker exec db psql -U postgres -c "INSERT INTO notes VALUES (\'written inside a container\')"',
+    stop: "docker stop db",
+    start: "docker start db",
+    rm: "docker rm -f db",
+    volumeRm: "docker volume rm pgdata",
+  }}
   labels={{
     image: "Image (read-only)",
     writable: "Writable layer",
@@ -603,6 +649,12 @@ volume pgdata -> /var/lib/postgresql
     stopped: "Exited (0)",
     none: "removed",
     volume: "Volume",
+    groups: {
+      create: "Run",
+      write: "Write",
+      pause: "Stop / start",
+      destroy: "Remove",
+    },
   }}
   status={{
     initialPlain: "db is running with nothing mounted",
