@@ -21,6 +21,19 @@ type Props = OrderedRunContent &
     caption?: string
   }>
 
+/** Every order a list of lines can be put in. */
+function orders(indices: readonly number[]): readonly (readonly number[])[] {
+  if (indices.length <= 1) {
+    return [indices]
+  }
+  return indices.flatMap((index, at) =>
+    orders([...indices.slice(0, at), ...indices.slice(at + 1)]).map((rest) => [
+      index,
+      ...rest,
+    ]),
+  )
+}
+
 /**
  * A few lines of a file, in an order the reader can change, and what that
  * order does.
@@ -48,19 +61,6 @@ type Props = OrderedRunContent &
  * reader can press it again; when the line reaches the end and the button
  * disables itself, focus goes to the other one.
  */
-/** Every order a list of lines can be put in. */
-function orders(indices: readonly number[]): readonly (readonly number[])[] {
-  if (indices.length <= 1) {
-    return [indices]
-  }
-  return indices.flatMap((index, at) =>
-    orders([...indices.slice(0, at), ...indices.slice(at + 1)]).map((rest) => [
-      index,
-      ...rest,
-    ]),
-  )
-}
-
 export function OrderedRun({ title, hint, caption, ...content }: Props) {
   const [state, dispatch] = useReducer(
     (current: OrderedRunState, action: OrderedRunAction) =>
