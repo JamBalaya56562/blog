@@ -30,14 +30,28 @@ function renderFigure() {
   )
 }
 
+/**
+ * What a row says right now. Every reading its badge can take is in the
+ * markup beside the live one and hidden — which is what keeps the row from
+ * gaining a line when a longer pattern name takes over — so the query has
+ * to ask for the reading that is showing.
+ */
+const badge = (row: HTMLElement) =>
+  row.querySelector(
+    '.pp-explorable-pane[data-active="true"] .pp-explorable-badge',
+  )?.textContent
+
 const rows = (container: HTMLElement) =>
   [...container.querySelectorAll<HTMLElement>(".pp-explorable-row")].map(
     (row) =>
-      `${row.dataset.lineState}:${row.querySelector(".pp-explorable-cmdtext")?.textContent}:${row.querySelector(".pp-explorable-badge")?.textContent}`,
+      `${row.dataset.lineState}:${row.querySelector(".pp-explorable-cmdtext")?.textContent}:${badge(row)}`,
   )
 
+/** The same for the line of what reaches the engine. */
 const sent = (container: HTMLElement) =>
-  container.querySelector(".pp-explorable-outcome")?.textContent
+  container.querySelector(
+    '.pp-explorable-pane[data-active="true"] .pp-explorable-outcome',
+  )?.textContent
 
 const toggle = (container: HTMLElement, pattern: string) => {
   const button = [

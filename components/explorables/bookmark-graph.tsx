@@ -12,7 +12,9 @@ import {
   rowsOf,
 } from "@/lib/explorables/bookmark-graph"
 import { fill } from "@/lib/explorables/format"
+import type { GraphRowView } from "@/lib/explorables/graph"
 import { Explorable } from "./explorable"
+import { Frame } from "./frame"
 import { GraphRows } from "./graph-rows"
 
 type Props = BookmarkContent &
@@ -60,6 +62,66 @@ export function BookmarkGraph({ title, hint, caption, ...content }: Props) {
   )
   const lastDesc = content.descs[Math.max(0, state.next - 1)]
 
+  /**
+   * Every drawing each column can be put into, by any run of the three
+   * commands.
+   *
+   * Committing is not the only thing that changes a column's height: a name
+   * sits on the row it points at, so pushing before the last commits leaves
+   * origin/main on an old row while main is on a new one, and the column
+   * takes a line for each of them instead of one line for both. Which
+   * arrangement is tallest is a question about wrapping at a width nobody
+   * here knows, so the drawings are not weighed against each other — all of
+   * them are laid into the column, and the grid answers it.
+   *
+   * The columns are walked apart and deduped by what they draw: the states
+   * number a couple of dozen, and most of them draw a column that another
+   * one already drew.
+   */
+  const drawings = (() => {
+    const git = new Map<string, readonly GraphRowView[]>()
+    const jj = new Map<string, readonly GraphRowView[]>()
+    const seen = new Set<string>()
+    const queue: BookmarkState[] = [initialState(content)]
+    while (queue.length > 0) {
+      const at = queue.shift() as BookmarkState
+      const key = JSON.stringify(at)
+      if (seen.has(key)) {
+        continue
+      }
+      seen.add(key)
+      const here = {
+        git: rowsOf(at.git, content, false),
+        jj: rowsOf(at.jj, content, true),
+      }
+      git.set(JSON.stringify(here.git), here.git)
+      jj.set(JSON.stringify(here.jj), here.jj)
+      for (const type of ACTIONS) {
+        if (allowed(at, { type }, content)) {
+          queue.push(reduce(at, { type }, content))
+        }
+      }
+    }
+    return { git, jj }
+  })()
+
+  /** The column as it is now, then every other way it can be drawn. */
+  function column(side: "git" | "jj") {
+    const live = rowsOf(state[side], content, side === "jj")
+    const key = JSON.stringify(live)
+    return [
+      live,
+      ...[...drawings[side]].flatMap(([at, rows]) =>
+        at === key ? [] : [rows],
+      ),
+    ]
+  }
+
+  /** Every sentence the figure can say, for each commit it can name. */
+  const statuses = Object.values(content.status).flatMap((sentence) =>
+    content.descs.map((desc) => fill(sentence, { desc })),
+  )
+
   return (
     <Explorable
       caption={caption}
@@ -67,6 +129,7 @@ export function BookmarkGraph({ title, hint, caption, ...content }: Props) {
       onReset={() => dispatch({ type: "reset" })}
       pristine={isInitial(state, content)}
       status={fill(content.status[state.last], { desc: lastDesc })}
+      statuses={statuses}
       title={title}
     >
       <div className="pp-explorable-controls">
@@ -84,20 +147,21 @@ export function BookmarkGraph({ title, hint, caption, ...content }: Props) {
         ))}
       </div>
       <div className="pp-explorable-columns">
-        <div>
-          <p className="pp-explorable-column-head">{content.labels.git}</p>
-          <GraphRows
-            label={content.labels.git}
-            rows={rowsOf(state.git, content, false)}
-          />
-        </div>
-        <div>
-          <p className="pp-explorable-column-head">{content.labels.jj}</p>
-          <GraphRows
-            label={content.labels.jj}
-            rows={rowsOf(state.jj, content, true)}
-          />
-        </div>
+        {(["git", "jj"] as const).map((side) => (
+          <div key={side}>
+            <p className="pp-explorable-column-head">{content.labels[side]}</p>
+            <Frame
+              active={0}
+              panes={column(side).map((rows) => (
+                <GraphRows
+                  key={JSON.stringify(rows)}
+                  label={content.labels[side]}
+                  rows={rows}
+                />
+              ))}
+            />
+          </div>
+        ))}
       </div>
     </Explorable>
   )

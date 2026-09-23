@@ -74,6 +74,40 @@ export function LayerCache({ title, hint, caption, ...content }: Props) {
   const share =
     view.totalSeconds === 0 ? 0 : (view.seconds / view.totalSeconds) * 100
 
+  /**
+   * What the figure can say: nothing changed, or one of the steps did, in
+   * each of the orders. The sentence names the step, so its length changes
+   * with the step, and on a phone that is a line more or less under a
+   * figure the reader is in the middle of.
+   */
+  const statuses = [
+    content.status.none,
+    ...content.orders.flatMap((_, order) =>
+      content.steps.map((_step, step) => {
+        const marked = derive(
+          reduce(
+            reduce(
+              initialState(content),
+              { index: order, type: "order" },
+              content,
+            ),
+            { step, type: "toggle" },
+            content,
+          ),
+          content,
+        )
+        const changed = marked.rows.find((row) => row.state === "changed")
+        return changed
+          ? fill(content.status.some, {
+              cmd: changed.cmd,
+              rerun: marked.rerunCount,
+              time: formatSeconds(marked.seconds),
+            })
+          : content.status.none
+      }),
+    ),
+  ]
+
   return (
     <Explorable
       caption={caption}
@@ -81,6 +115,7 @@ export function LayerCache({ title, hint, caption, ...content }: Props) {
       onReset={() => dispatch({ type: "reset" })}
       pristine={isInitial(state, content)}
       status={status}
+      statuses={statuses}
       title={title}
     >
       {content.orders.length > 1 && (

@@ -15,6 +15,7 @@ import {
 } from "@/lib/explorables/container-lifecycle"
 import { fill } from "@/lib/explorables/format"
 import { Explorable } from "./explorable"
+import { Frame } from "./frame"
 
 type Props = ContainerLifecycleContent &
   Readonly<{
@@ -109,6 +110,18 @@ export function ContainerLifecycle({
         ? content.labels.running
         : content.labels.stopped
   const echoed = content.echo?.[lastCommand(state)]
+  /**
+   * The sentences and the shell lines this figure can show. Both change
+   * length with the command behind them, and on a phone a longer one wraps
+   * — which used to move everything under the figure by a line.
+   */
+  const statuses = Object.values(content.status).map((sentence) =>
+    fill(sentence, {
+      item: content.write.item,
+      volume: content.volume?.name ?? "",
+    }),
+  )
+  const echoes = content.echo ? Object.values(content.echo) : []
 
   return (
     <Explorable
@@ -117,6 +130,7 @@ export function ContainerLifecycle({
       onReset={() => dispatch({ type: "reset" })}
       pristine={isInitial(state, content)}
       status={statusText}
+      statuses={statuses}
       title={title}
     >
       {/* The rule behind the disabled buttons, drawn rather than explained:
@@ -264,14 +278,26 @@ export function ContainerLifecycle({
           A refused command is marked as one rather than printed as if it
           had run. */}
       {echoed && (
-        <div className="pp-explorable-term pp-explorable-echo">
-          <div
-            className="pp-explorable-line"
-            data-level={state.last === "volumeInUse" ? "error" : "echo"}
-          >
-            {echoed}
-          </div>
-        </div>
+        <Frame
+          active={Math.max(0, echoes.indexOf(echoed))}
+          panes={echoes.map((command) => (
+            <div
+              className="pp-explorable-term pp-explorable-echo"
+              key={command}
+            >
+              <div
+                className="pp-explorable-line"
+                data-level={
+                  command === echoed && state.last === "volumeInUse"
+                    ? "error"
+                    : "echo"
+                }
+              >
+                {command}
+              </div>
+            </div>
+          ))}
+        />
       )}
     </Explorable>
   )

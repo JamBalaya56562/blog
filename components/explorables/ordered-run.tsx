@@ -12,6 +12,7 @@ import {
   reduce,
 } from "@/lib/explorables/ordered-run"
 import { Explorable } from "./explorable"
+import { Frame } from "./frame"
 
 type Props = OrderedRunContent &
   Readonly<{
@@ -47,6 +48,19 @@ type Props = OrderedRunContent &
  * reader can press it again; when the line reaches the end and the button
  * disables itself, focus goes to the other one.
  */
+/** Every order a list of lines can be put in. */
+function orders(indices: readonly number[]): readonly (readonly number[])[] {
+  if (indices.length <= 1) {
+    return [indices]
+  }
+  return indices.flatMap((index, at) =>
+    orders([...indices.slice(0, at), ...indices.slice(at + 1)]).map((rest) => [
+      index,
+      ...rest,
+    ]),
+  )
+}
+
 export function OrderedRun({ title, hint, caption, ...content }: Props) {
   const [state, dispatch] = useReducer(
     (current: OrderedRunState, action: OrderedRunAction) =>
@@ -56,6 +70,19 @@ export function OrderedRun({ title, hint, caption, ...content }: Props) {
   )
   const list = useRef<HTMLOListElement>(null)
   const view = derive(state, content)
+  /**
+   * Every answer these lines can come to, in any order they can be put in.
+   * The lists are three or four lines long, so walking the orders is a
+   * handful of pure calls, and it is what lets the answer keep its height
+   * whichever line ends up on top.
+   */
+  const outcomes = [
+    ...new Set(
+      orders(content.lines.map((_, index) => index)).map(
+        (order) => derive({ order }, content).outcome ?? "—",
+      ),
+    ),
+  ]
   const last = state.order.length - 1
 
   /**
@@ -80,6 +107,7 @@ export function OrderedRun({ title, hint, caption, ...content }: Props) {
       onReset={() => dispatch({ type: "reset" })}
       pristine={isInitial(state, content)}
       status={fill(content.status, { outcome: view.outcome ?? "—" })}
+      statuses={outcomes.map((outcome) => fill(content.status, { outcome }))}
       title={title}
     >
       <p className="pp-explorable-column-head">{content.labels.lines}</p>
@@ -91,9 +119,23 @@ export function OrderedRun({ title, hint, caption, ...content }: Props) {
             key={row.line}
           >
             <span className="pp-explorable-cmdtext">{row.text}</span>
-            <span className="pp-explorable-badge">
-              {content.labels.state[row.state]}
-            </span>
+            {/* A line's state is one of three words, and the longest of
+                them wraps where the shortest does not. All three are laid
+                into the badge's cell, so moving a line never makes the row
+                it moved past a line taller. */}
+            <Frame
+              active={0}
+              panes={[
+                content.labels.state[row.state],
+                ...Object.values(content.labels.state).filter(
+                  (word) => word !== content.labels.state[row.state],
+                ),
+              ].map((word) => (
+                <span className="pp-explorable-badge" key={word}>
+                  {word}
+                </span>
+              ))}
+            />
             {row.note && <span className="pp-explorable-note">{row.note}</span>}
             <span className="pp-explorable-moves">
               <button
@@ -125,10 +167,22 @@ export function OrderedRun({ title, hint, caption, ...content }: Props) {
         ))}
       </ol>
 
-      <div className="pp-explorable-release">
-        <p className="pp-explorable-column-head">{content.labels.outcome}</p>
-        <p className="pp-explorable-outcome">{view.outcome ?? "—"}</p>
-      </div>
+      {/* Every answer the lines can come to, so the line that prints it
+          keeps its height however long that answer is. */}
+      <Frame
+        active={0}
+        panes={[
+          view.outcome ?? "—",
+          ...outcomes.filter((outcome) => outcome !== (view.outcome ?? "—")),
+        ].map((outcome) => (
+          <div className="pp-explorable-release" key={outcome}>
+            <p className="pp-explorable-column-head">
+              {content.labels.outcome}
+            </p>
+            <p className="pp-explorable-outcome">{outcome}</p>
+          </div>
+        ))}
+      />
     </Explorable>
   )
 }
