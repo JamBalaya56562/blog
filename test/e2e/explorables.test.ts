@@ -317,12 +317,21 @@ test.describe("Container figure", () => {
       "止める",
       "消す",
     ])
+    // The volume is the next section's, so this figure has none to touch:
+    // no cylinder, and no command that lands on one.
+    await expect(figure.locator(".pp-explorable-volume")).toHaveCount(0)
     await expect(
-      figure.locator('.pp-explorable-cmd[data-target="volume"]'),
-    ).toHaveText("volume rm site")
+      figure.locator('.pp-explorable-cmd:not([data-target="container"])'),
+    ).toHaveCount(0)
+
+    const database = figureNamed(page, "postgres:18-alpine")
+    await ready(database)
     await expect(
-      figure.locator('.pp-explorable-cmd[data-target="mount"]'),
-    ).toHaveText("run -d -v site")
+      database.locator('.pp-explorable-cmd[data-target="volume"]'),
+    ).toHaveText("volume rm pgdata")
+    await expect(
+      database.locator('.pp-explorable-cmd[data-target="mount"]'),
+    ).toHaveText("run -d -v pgdata")
   })
 
   /** The image under the container is one line, not a stack taller than it. */
