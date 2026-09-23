@@ -4,6 +4,7 @@ import { useId, useState } from "react"
 import { lint, parseHeader } from "@/lib/explorables/commitlint"
 import { fill } from "@/lib/explorables/format"
 import { Explorable } from "./explorable"
+import { Frame } from "./frame"
 
 type Props = Readonly<{
   title: string
@@ -29,6 +30,65 @@ type Props = Readonly<{
     problems: string
   }>
 }>
+
+/**
+ * What one header comes to: the parts it parses into, and the findings
+ * printed as commitlint prints them. Both change size with the header, so
+ * both belong to the pane that reserves the room for them.
+ */
+function Reading({
+  header,
+  parts,
+}: Readonly<{ header: string; parts: Props["parts"] }>) {
+  const findings = lint(header)
+  const parsed = parseHeader(header)
+  const breakdown = [
+    { name: parts.type, value: parsed.type },
+    { name: parts.scope, value: parsed.scope },
+    { name: parts.breaking, value: parsed.breaking ? "!" : null },
+    { name: parts.subject, value: parsed.subject },
+  ]
+  return (
+    <>
+      <div className="pp-explorable-parts">
+        {breakdown.map((part) => (
+          <span
+            className="pp-explorable-part"
+            data-on={part.value !== null}
+            key={part.name}
+          >
+            <span className="pp-explorable-part-name">{part.name}</span>
+            <span>{part.value ?? "—"}</span>
+          </span>
+        ))}
+      </div>
+      <div className="pp-explorable-term">
+        <div className="pp-explorable-line" data-level="input">
+          --- input ---
+        </div>
+        <div className="pp-explorable-line" data-level="echo">
+          {header}
+        </div>
+        {findings.map((finding) => (
+          <div
+            className="pp-explorable-line"
+            data-level="error"
+            key={finding.rule}
+          >
+            {finding.message}{" "}
+            <span className="pp-explorable-rule">{`[${finding.rule}]`}</span>
+          </div>
+        ))}
+        <div
+          className="pp-explorable-line"
+          data-level={findings.length === 0 ? "ok" : "error"}
+        >
+          {`found ${findings.length} problems, 0 warnings`}
+        </div>
+      </div>
+    </>
+  )
+}
 
 /**
  * A commit message checked as the reader types it.
@@ -83,16 +143,12 @@ export function CommitLint({
   }
   const [input, setInput] = useState(presets[initial])
   const id = useId()
-  const parsed = parseHeader(input)
-  const findings = lint(input)
-  const count = findings.length
 
-  const breakdown = [
-    { name: parts.type, value: parsed.type },
-    { name: parts.scope, value: parsed.scope },
-    { name: parts.breaking, value: parsed.breaking ? "!" : null },
-    { name: parts.subject, value: parsed.subject },
-  ]
+  /** What the figure says about one header; each preset's is reserved for. */
+  function sentence(header: string): string {
+    const count = lint(header).length
+    return count === 0 ? status.ok : fill(status.problems, { n: count })
+  }
 
   return (
     <Explorable
@@ -100,7 +156,8 @@ export function CommitLint({
       hint={hint}
       onReset={() => setInput(presets[initial])}
       pristine={input === presets[initial]}
-      status={count === 0 ? status.ok : fill(status.problems, { n: count })}
+      status={sentence(input)}
+      statuses={presets.map(sentence)}
       title={title}
     >
       <div className="grid gap-1">
@@ -130,42 +187,17 @@ export function CommitLint({
           </button>
         ))}
       </div>
-      <div className="pp-explorable-parts">
-        {breakdown.map((part) => (
-          <span
-            className="pp-explorable-part"
-            data-on={part.value !== null}
-            key={part.name}
-          >
-            <span className="pp-explorable-part-name">{part.name}</span>
-            <span>{part.value ?? "—"}</span>
-          </span>
-        ))}
-      </div>
-      <div className="pp-explorable-term">
-        <div className="pp-explorable-line" data-level="input">
-          --- input ---
-        </div>
-        <div className="pp-explorable-line" data-level="echo">
-          {input}
-        </div>
-        {findings.map((finding) => (
-          <div
-            className="pp-explorable-line"
-            data-level="error"
-            key={finding.rule}
-          >
-            {finding.message}{" "}
-            <span className="pp-explorable-rule">{`[${finding.rule}]`}</span>
-          </div>
-        ))}
-        <div
-          className="pp-explorable-line"
-          data-level={count === 0 ? "ok" : "error"}
-        >
-          {`found ${count} problems, 0 warnings`}
-        </div>
-      </div>
+      {/* The panel is as tall as the wordiest preset from the first render,
+          so pressing one of the three does not move the article under it.
+          A message typed by hand can still outgrow them — but then the
+          reader is looking at the field they are typing in, not at the line
+          they were reading. */}
+      <Frame
+        active={0}
+        panes={[input, ...presets.filter((preset) => preset !== input)].map(
+          (header) => <Reading header={header} key={header} parts={parts} />,
+        )}
+      />
     </Explorable>
   )
 }

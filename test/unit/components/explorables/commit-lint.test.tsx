@@ -29,13 +29,23 @@ function renderFigure(initial = 1) {
   )
 }
 
+/**
+ * The panel the reader sees. The presets are printed beside it and hidden,
+ * which is what keeps the figure from growing and shrinking as they are
+ * pressed, so a query has to say which panel it means.
+ */
+const shown = (container: HTMLElement) =>
+  container.querySelector(
+    '.pp-explorable-pane[data-active="true"]',
+  ) as HTMLElement
+
 const lines = (container: HTMLElement) =>
-  [...container.querySelectorAll(".pp-explorable-line")].map(
+  [...shown(container).querySelectorAll(".pp-explorable-line")].map(
     (line) => `${line.getAttribute("data-level")}:${line.textContent}`,
   )
 
 const parts = (container: HTMLElement) =>
-  [...container.querySelectorAll(".pp-explorable-part")].map(
+  [...shown(container).querySelectorAll(".pp-explorable-part")].map(
     (part) => `${part.getAttribute("data-on")}:${part.textContent}`,
   )
 

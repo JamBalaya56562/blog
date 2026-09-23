@@ -47,12 +47,25 @@ const rows = (container: HTMLElement) =>
     (row) => `${row.dataset.state}:${row.textContent}`,
   )
 
+/**
+ * The panel the reader sees. Each kind of release, and the changelog of the
+ * whole release, are in the markup beside it and hidden — which is what
+ * keeps the figure's height still as commits are taken out and put back.
+ */
+const shown = (container: HTMLElement) => [
+  ...container.querySelectorAll<HTMLElement>(
+    '.pp-explorable-pane[data-active="true"]',
+  ),
+]
+
 const version = (container: HTMLElement) =>
-  container.querySelector(".pp-explorable-version")?.textContent
+  shown(container)
+    .flatMap((pane) => [...pane.querySelectorAll(".pp-explorable-version")])
+    .at(0)?.textContent
 
 const changelog = (container: HTMLElement) =>
   [
-    ...container.querySelectorAll(
+    ...shown(container)[1].querySelectorAll(
       ".pp-explorable-changelog-head, .pp-explorable-changelog-entry",
     ),
   ].map((node) => node.textContent)

@@ -12,6 +12,15 @@ function figureNamed(page: import("@playwright/test").Page, title: string) {
 }
 
 /**
+ * The pane the reader is looking at. A stepped figure keeps every step in
+ * the markup so its height cannot move, so a query that does not say which
+ * step it means would answer for all of them at once.
+ */
+function shown(figure: ReturnType<typeof figureNamed>) {
+  return figure.locator('.pp-explorable-pane[data-active="true"]')
+}
+
+/**
  * Waits until React owns the figure, not just until it is on screen.
  *
  * The markup is server-rendered, so a figure is visible — and typable into —
@@ -148,20 +157,20 @@ test.describe("Commit message figure", () => {
     const field = figure.locator("input.pp-explorable-input")
 
     await field.fill("feat(blog): add a figure the reader can touch")
-    await expect(figure.locator(".pp-explorable-line").last()).toHaveText(
-      "found 0 problems, 0 warnings",
-    )
     await expect(
-      figure.locator(".pp-explorable-line[data-level=error]"),
+      shown(figure).locator(".pp-explorable-line").last(),
+    ).toHaveText("found 0 problems, 0 warnings")
+    await expect(
+      shown(figure).locator(".pp-explorable-line[data-level=error]"),
     ).toHaveCount(0)
 
     await field.fill("Feat: Add a figure.")
     await expect(
-      figure.locator(".pp-explorable-line[data-level=error]"),
+      shown(figure).locator(".pp-explorable-line[data-level=error]"),
     ).toHaveCount(5)
-    await expect(figure.locator(".pp-explorable-line").last()).toHaveText(
-      "found 4 problems, 0 warnings",
-    )
+    await expect(
+      shown(figure).locator(".pp-explorable-line").last(),
+    ).toHaveText("found 4 problems, 0 warnings")
   })
 })
 
@@ -389,7 +398,7 @@ test.describe("Stepped graph figure", () => {
 
   // The article's own prose quotes both hashes a few lines above the figure,
   // so the assertions read the figure's markup rather than the page's.
-  test("the served HTML is the first step of the first figure", async ({
+  test("the served HTML carries every step, showing the first", async ({
     request,
   }) => {
     const html = await (await request.get(POST)).text()
@@ -398,23 +407,33 @@ test.describe("Stepped graph figure", () => {
     const figure = html.slice(start, html.indexOf("</figure>", start))
 
     expect(figure).toContain('class="pp-explorable-command">jj log<')
+    // Both steps are served, which is what lets the figure take the room for
+    // its tallest one before the reader touches it.
     expect(figure).toContain("bf873b9b")
-    // The second step is not in the markup until the reader asks for it.
-    expect(figure).not.toContain("901a7c31")
+    expect(figure).toContain("901a7c31")
+
+    // The first step is the one showing and the second is beside it, held
+    // in the layout and hidden.
+    const panes = [...figure.matchAll(/data-active="(true|false)"/g)].map(
+      (match) => match[1],
+    )
+    expect(panes.slice(0, 2)).toEqual(["true", "false"])
   })
 
   test("stepping forward marks the rewritten commit", async ({ page }) => {
     await page.goto(POST)
     const figure = squash(page)
     await ready(figure)
-    const rows = figure.locator(".pp-explorable-graph-row")
+    const rows = shown(figure).locator(".pp-explorable-graph-row")
 
-    await expect(figure.locator(".pp-explorable-command")).toHaveText("jj log")
+    await expect(shown(figure).locator(".pp-explorable-command")).toHaveText(
+      "jj log",
+    )
     await expect(rows.nth(1)).toHaveAttribute("data-mark", "same")
 
     await figure.locator(".pp-explorable-cmd", { hasText: "進む" }).click()
 
-    await expect(figure.locator(".pp-explorable-command")).toHaveText(
+    await expect(shown(figure).locator(".pp-explorable-command")).toHaveText(
       "jj squash README.md",
     )
     await expect(rows.nth(1)).toHaveAttribute("data-mark", "rewritten")
@@ -430,7 +449,7 @@ test.describe("Stepped graph figure", () => {
     await page.goto(POST)
     const figure = figureNamed(page, "jj git fetch → jj rebase -d main")
     await ready(figure)
-    const graph = figure.locator(".pp-explorable-graph")
+    const graph = shown(figure).locator(".pp-explorable-graph")
 
     await expect(graph).toHaveAttribute("data-forked", "true")
     await figure.locator(".pp-explorable-cmd", { hasText: "進む" }).click()
@@ -446,7 +465,7 @@ test.describe("Stepped graph figure", () => {
     await range.focus()
     await page.keyboard.press("ArrowRight")
     await expect(range).toHaveValue("1")
-    await expect(figure.locator(".pp-explorable-command")).toHaveText(
+    await expect(shown(figure).locator(".pp-explorable-command")).toHaveText(
       "jj squash README.md",
     )
   })
@@ -466,7 +485,7 @@ test.describe("Stacked graph figure", () => {
     await page.goto(POST)
     const figure = figureNamed(page, "sl amend")
     await ready(figure)
-    const rows = figure.locator(".pp-explorable-graph-row")
+    const rows = shown(figure).locator(".pp-explorable-graph-row")
 
     await expect(rows.first()).toHaveAttribute("data-mark", "same")
     await figure.locator(".pp-explorable-cmd", { hasText: "進む" }).click()
@@ -488,16 +507,16 @@ test.describe("Stacked graph figure", () => {
     const range = figure.locator("input[type=range]")
 
     await range.fill("2")
-    await expect(figure.locator(".pp-explorable-command")).toHaveText(
+    await expect(shown(figure).locator(".pp-explorable-command")).toHaveText(
       "sl pr submit",
     )
     await expect(
-      figure.locator(".pp-explorable-graph-row[data-mark=rewritten]"),
+      shown(figure).locator(".pp-explorable-graph-row[data-mark=rewritten]"),
     ).toHaveCount(0)
-    await expect(figure.locator(".pp-explorable-legend")).toHaveCount(0)
+    await expect(shown(figure).locator(".pp-explorable-legend")).toHaveCount(0)
 
     await range.fill("1")
-    await expect(figure.locator(".pp-explorable-legend")).toHaveCount(1)
+    await expect(shown(figure).locator(".pp-explorable-legend")).toHaveCount(1)
   })
 })
 
@@ -519,8 +538,26 @@ test.describe("Release figure", () => {
 
     expect(figure).toContain("1.3.0")
     expect(figure).toContain("🚀 Features")
-    // The breaking change is out of the release, so its entry is not there.
-    expect(figure).not.toContain("[**breaking**]")
+  })
+
+  // The breaking change is out of the release, so its entry is not on the
+  // panel the reader sees — it is in the one beside it that reserves the
+  // room for the whole release.
+  test("the changelog on screen leaves the breaking change out", async ({
+    page,
+  }) => {
+    await page.goto(POST)
+    const figure = figureNamed(page, "git cliff")
+    await ready(figure)
+
+    await expect(
+      shown(figure).locator(
+        ".pp-explorable-changelog-entry[data-breaking=true]",
+      ),
+    ).toHaveCount(0)
+    await expect(
+      figure.locator(".pp-explorable-changelog-entry[data-breaking=true]"),
+    ).toHaveCount(1)
   })
 
   test("adding the breaking change makes it a major release", async ({
@@ -529,7 +566,7 @@ test.describe("Release figure", () => {
     await page.goto(POST)
     const figure = figureNamed(page, "git cliff")
     await ready(figure)
-    const version = figure.locator(".pp-explorable-version")
+    const version = shown(figure).locator(".pp-explorable-version")
 
     await expect(version).toHaveText("1.2.3 → 1.3.0")
 
@@ -539,7 +576,9 @@ test.describe("Release figure", () => {
 
     await expect(version).toHaveText("1.2.3 → 2.0.0")
     await expect(
-      figure.locator(".pp-explorable-changelog-entry[data-breaking=true]"),
+      shown(figure).locator(
+        ".pp-explorable-changelog-entry[data-breaking=true]",
+      ),
     ).toHaveCount(1)
   })
 })
@@ -678,6 +717,78 @@ test.describe("Build context figure", () => {
       expect(reasons.some((reason) => reason.startsWith(`${line} `))).toBe(true)
     }
   })
+})
+
+/**
+ * A figure that grows a row when a control is pressed pushes the article
+ * under it down the page, and the reader loses the line they were on. These
+ * ones take the room for their tallest state up front, so using them moves
+ * nothing. The list grows as the rest are given the same treatment.
+ *
+ * The phone projects run this too, which is where it matters most: a figure
+ * that holds its height at 1440px can still grow two lines at 412px.
+ */
+test.describe("Figures that keep their height", () => {
+  const STILL = [
+    {
+      post: "/ja/blog/getting-started-with-jujutsu",
+      title: "jj squash README.md",
+    },
+    {
+      post: "/ja/blog/getting-started-with-jujutsu",
+      title: "jj edit tturtmot",
+    },
+    {
+      post: "/ja/blog/getting-started-with-jujutsu",
+      title: "jj git fetch → jj rebase -d main",
+    },
+    { post: "/ja/blog/getting-started-with-sapling", title: "sl amend" },
+    { post: "/ja/blog/getting-started-with-sapling", title: "sl pr submit" },
+    {
+      post: "/ja/blog/getting-started-with-conventional-commits",
+      title: "git cliff",
+    },
+    {
+      post: "/ja/blog/getting-started-with-conventional-commits",
+      title: "commitlint",
+    },
+  ] as const
+
+  for (const { post, title } of STILL) {
+    test(`${title} is the same height whatever is pressed`, async ({
+      page,
+    }) => {
+      await page.goto(post)
+      const figure = figureNamed(page, title)
+      await ready(figure)
+      const height = () =>
+        figure.evaluate((el) => Math.round(el.getBoundingClientRect().height))
+      const served = await height()
+      expect(served).toBeGreaterThan(0)
+
+      const controls = figure.locator(
+        ".pp-explorable-cmd, .pp-explorable-row[aria-pressed]",
+      )
+      for (let i = 0; i < (await controls.count()); i++) {
+        const control = controls.nth(i)
+        if (await control.isDisabled()) {
+          continue
+        }
+        await control.click()
+        expect(await height()).toBe(served)
+      }
+
+      // The stepped figures are driven by a slider as well as by buttons.
+      const range = figure.locator("input[type=range]")
+      if (await range.count()) {
+        const last = Number(await range.first().getAttribute("max"))
+        for (let step = 0; step <= last; step++) {
+          await range.first().fill(String(step))
+          expect(await height()).toBe(served)
+        }
+      }
+    })
+  }
 })
 
 test.describe("Explorable figures — prefers-reduced-motion", () => {
