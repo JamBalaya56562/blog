@@ -862,8 +862,75 @@ test.describe("Figures that keep their height", () => {
   })
 })
 
+/**
+ * Nothing outside a figure moves now, so what moves inside it is free to
+ * say something: the pane that arrives fades in over the room already taken
+ * for it, and a line that is moved travels to where it landed.
+ */
+test.describe("Figures that move on purpose", () => {
+  test("a line that is moved travels to its new place", async ({ page }) => {
+    await page.goto("/ja/blog/mise-tasks")
+    const figure = figureNamed(page, "run の配列")
+    await ready(figure)
+    const rows = figure.locator(".pp-explorable-row")
+    const first = await rows.first().getAttribute("data-line")
+
+    await rows.first().locator('[data-move="down"]').click()
+
+    // The row is in its new place in the layout and on its way there on
+    // screen, which is the whole of the animation.
+    const moved = figure.locator(`.pp-explorable-row[data-line="${first}"]`)
+    expect(
+      await moved.evaluate((el) =>
+        el.getAnimations().map((animation) => animation.playState),
+      ),
+    ).not.toHaveLength(0)
+  })
+
+  test("the pane that arrives fades in", async ({ page }) => {
+    await page.goto("/ja/blog/getting-started-with-jujutsu")
+    const figure = figureNamed(page, "jj squash README.md")
+    await ready(figure)
+
+    await figure.locator(".pp-explorable-cmd", { hasText: "進む" }).click()
+    const fading = await shown(figure)
+      .first()
+      .evaluate((el) => window.getComputedStyle(el).transitionProperty)
+    expect(fading).toContain("opacity")
+  })
+})
+
 test.describe("Explorable figures — prefers-reduced-motion", () => {
   test.use({ reducedMotion: "reduce" })
+
+  /** The new order arrives; the travel to it does not. */
+  test("a line that is moved does not travel", async ({ page }) => {
+    await page.goto("/ja/blog/mise-tasks")
+    const figure = figureNamed(page, "run の配列")
+    await ready(figure)
+    const rows = figure.locator(".pp-explorable-row")
+    const first = await rows.first().getAttribute("data-line")
+
+    await rows.first().locator('[data-move="down"]').click()
+
+    const moved = figure.locator(`.pp-explorable-row[data-line="${first}"]`)
+    expect(await moved.evaluate((el) => el.getAnimations().length)).toBe(0)
+    // The line did move; it is the second row now.
+    expect(await rows.nth(1).getAttribute("data-line")).toBe(first)
+  })
+
+  /** A chip arrives with a nudge in its fade, and the nudge is motion. */
+  test("a chip written into the layer does not slide in", async ({ page }) => {
+    await page.goto("/ja/blog/getting-started-with-docker")
+    const figure = figureNamed(page, "nginx:1.29-alpine")
+    await ready(figure)
+
+    const animation = await figure
+      .locator(".pp-explorable-item")
+      .first()
+      .evaluate((el) => window.getComputedStyle(el).animationName)
+    expect(animation).toBe("none")
+  })
 
   // The strip's scan band is an animation and the bar's growth is a width
   // transition; a reader who asked for less motion gets neither.

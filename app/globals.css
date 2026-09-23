@@ -1488,6 +1488,10 @@
     font-size: 11px;
     letter-spacing: 0.06em;
     color: var(--cyber-dimmer);
+    transition:
+      border-color 0.25s ease,
+      background-color 0.25s ease,
+      color 0.25s ease;
   }
   .prose-cyber
     .pp-explorable-track
@@ -1824,7 +1828,16 @@
     gap: 4px;
     margin-top: 4px;
   }
+  /* A thing written into the layer or the volume arrives; the fade is what
+     says it arrived rather than having been there all along. */
+  @keyframes ppExplorableItemIn {
+    from {
+      opacity: 0;
+      transform: translateY(-2px);
+    }
+  }
   .prose-cyber .pp-explorable-item {
+    animation: ppExplorableItemIn 0.22s ease-out;
     padding: 1px 6px;
     border: 1px solid var(--cyber-line-hi);
     background: var(--cyber-code-bg);
@@ -1915,9 +1928,17 @@
     min-width: 0;
   }
   /* `visibility` rather than `display`, so the pane keeps holding its space;
-     it also takes the pane out of the tab order and the accessibility tree. */
+     it also takes the pane out of the tab order and the accessibility tree.
+     The one arriving fades in over the room that was already taken for it;
+     the one leaving goes at once, since two half-lit panes in the same cell
+     is two readings of the same rows on top of each other. */
+  .prose-cyber .pp-explorable-pane {
+    transition: opacity 0.18s ease;
+  }
   .prose-cyber .pp-explorable-pane[data-active="false"] {
     visibility: hidden;
+    opacity: 0;
+    transition: none;
   }
   /* A graph the reader steps through: back, a slider, forward, then the
      command that produced the step and the rows it left behind. A row that
@@ -2583,6 +2604,12 @@
   /* the alert panel's hover lift is motion too */
   .prose-cyber .pp-alert:hover {
     transform: none;
+  }
+  /* The chip's arrival is a fade with a nudge in it; the nudge is the part
+     a reader who asked for less motion did not ask for, and the chip has to
+     be left visible rather than at its 0% frame. */
+  .prose-cyber .pp-explorable-item {
+    animation: none;
   }
   /* `.pp-split-char` starts at `opacity: 0` and is carried to 1 by the
      animation's `forwards` fill. Dropping the animation alone would leave
