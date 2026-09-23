@@ -803,8 +803,63 @@ test.describe("Figures that keep their height", () => {
           expect(await height()).toBe(served)
         }
       }
+
+      // The order the commands come in is a state of its own: a figure can
+      // reach a taller arrangement by one route than by another. Pressing
+      // them back to front covers the other way round.
+      const reset = figure.locator(".pp-explorable-reset")
+      if (await reset.isEnabled()) {
+        await reset.click()
+      }
+      for (let i = (await controls.count()) - 1; i >= 0; i--) {
+        const control = controls.nth(i)
+        if (await control.isDisabled()) {
+          continue
+        }
+        await control.click()
+        expect(await height()).toBe(served)
+      }
     })
   }
+
+  /**
+   * The route matters here and it was missed: pushing before the last
+   * commits leaves origin/main on an old row while main moves to a new one,
+   * and the column takes a line for each name instead of one line for both.
+   */
+  test("the bookmark figure holds its height whichever route is taken", async ({
+    page,
+  }) => {
+    await page.goto("/ja/blog/getting-started-with-jujutsu")
+    const figure = figureNamed(page, "git / jj")
+    await ready(figure)
+    const height = () =>
+      figure.evaluate((el) => Math.round(el.getBoundingClientRect().height))
+    const served = await height()
+    // A route can reach a state where the next command has nothing to do;
+    // the height still has to hold across the rest of it.
+    const press = async (command: string) => {
+      const button = figure.locator(".pp-explorable-cmd", { hasText: command })
+      if (await button.isEnabled()) {
+        await button.click()
+      }
+    }
+
+    for (const route of [
+      ["jj git push", "jj describe", "jj describe", "jj bookmark set"],
+      ["jj describe", "jj git push", "jj describe", "jj bookmark set"],
+      ["jj git push", "jj describe", "jj bookmark set", "jj describe"],
+    ]) {
+      const reset = figure.locator(".pp-explorable-reset")
+      if (await reset.isEnabled()) {
+        await reset.click()
+      }
+      for (const command of route) {
+        await press(command)
+        expect(await height()).toBe(served)
+      }
+    }
+  })
 })
 
 test.describe("Explorable figures — prefers-reduced-motion", () => {
