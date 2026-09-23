@@ -1897,6 +1897,28 @@
   .prose-cyber .pp-explorable-volume .pp-explorable-items {
     justify-content: center;
   }
+  /* A region that keeps its height while its contents change: every state
+     is laid into the same grid cell, so the cell is as tall as the tallest
+     of them at whatever width it is read at, and switching between them
+     moves nothing on the page under the figure. */
+  .prose-cyber .pp-explorable-frame {
+    display: grid;
+    min-width: 0;
+  }
+  .prose-cyber .pp-explorable-pane {
+    grid-area: 1 / 1;
+    display: grid;
+    gap: 12px;
+    /* The short states sit at the top of the room the tall one takes,
+       rather than stretching to fill it. */
+    align-content: start;
+    min-width: 0;
+  }
+  /* `visibility` rather than `display`, so the pane keeps holding its space;
+     it also takes the pane out of the tab order and the accessibility tree. */
+  .prose-cyber .pp-explorable-pane[data-active="false"] {
+    visibility: hidden;
+  }
   /* A graph the reader steps through: back, a slider, forward, then the
      command that produced the step and the rows it left behind. A row that
      changed since the step before takes an accent, the same three-colour

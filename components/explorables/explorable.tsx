@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation"
 import { useRef } from "react"
 import { isValidLocale } from "@/lib/i18n/config"
 import { getDictionary } from "@/lib/i18n/get-dictionary"
+import { Frame } from "./frame"
 
 type Props = Readonly<{
   /** What the figure is about, in the strip: "Dockerfile", "commitlint". */
@@ -12,6 +13,12 @@ type Props = Readonly<{
   hint?: string
   /** One sentence describing the current state; read out when it changes. */
   status: string
+  /**
+   * Every sentence this figure can say, so the line keeps the height of the
+   * longest of them. A figure whose sentences are all one line needs none of
+   * this; one whose sentences wrap differently moves the page without it.
+   */
+  statuses?: readonly string[]
   /** The takeaway, under the figure — what the old alt text used to say. */
   caption?: string
   /** True while the figure is in the state it was served with. */
@@ -44,6 +51,7 @@ export function Explorable({
   title,
   hint,
   status,
+  statuses,
   caption,
   pristine,
   onReset,
@@ -95,9 +103,36 @@ export function Explorable({
       </div>
       {hint && <p className="pp-explorable-hint">{hint}</p>}
       <div className="pp-explorable-body">{children}</div>
-      <p aria-atomic="true" aria-live="polite" className="pp-explorable-status">
-        {status}
-      </p>
+      {statuses === undefined ? (
+        <p
+          aria-atomic="true"
+          aria-live="polite"
+          className="pp-explorable-status"
+        >
+          {status}
+        </p>
+      ) : (
+        <Frame
+          active={0}
+          panes={[
+            <p
+              aria-atomic="true"
+              aria-live="polite"
+              className="pp-explorable-status"
+              key="live"
+            >
+              {status}
+            </p>,
+            ...statuses
+              .filter((sentence) => sentence !== status)
+              .map((sentence) => (
+                <p className="pp-explorable-status" key={sentence}>
+                  {sentence}
+                </p>
+              )),
+          ]}
+        />
+      )}
       {caption && (
         <figcaption className="pp-explorable-caption">{caption}</figcaption>
       )}

@@ -6,12 +6,14 @@ import {
   derive,
   initialState,
   isInitial,
+  nextVersion,
   reduce,
   type SemverBumpAction,
   type SemverBumpContent,
   type SemverBumpState,
 } from "@/lib/explorables/semver-bump"
 import { Explorable } from "./explorable"
+import { Frame } from "./frame"
 
 type Props = SemverBumpContent &
   Readonly<{
@@ -52,6 +54,24 @@ export function SemverBump({ title, hint, caption, ...content }: Props) {
     initialState,
   )
   const view = derive(state, content)
+  /**
+   * The longest this figure can get: every commit in the release. Both of
+   * its panels are given the room for it up front, so taking a commit out
+   * and putting it back does not move the article under the figure.
+   */
+  const whole = derive({ included: content.commits.map(() => true) }, content)
+  const bumps = ["major", "minor", "patch", "none"] as const
+
+  /** What the figure says of one kind of release; all four are reserved for. */
+  function sentence(bump: (typeof bumps)[number]): string {
+    return fill(content.status, {
+      reason: content.labels.reason[bump],
+      version:
+        (bump === view.bump
+          ? view.version
+          : nextVersion(content.current, bump)) ?? content.labels.none,
+    })
+  }
 
   return (
     <Explorable
@@ -59,10 +79,8 @@ export function SemverBump({ title, hint, caption, ...content }: Props) {
       hint={hint}
       onReset={() => dispatch({ type: "reset" })}
       pristine={isInitial(state, content)}
-      status={fill(content.status, {
-        reason: content.labels.reason[view.bump],
-        version: view.version ?? content.labels.none,
-      })}
+      status={sentence(view.bump)}
+      statuses={bumps.map(sentence)}
       title={title}
     >
       <div className="grid gap-2">
@@ -81,39 +99,64 @@ export function SemverBump({ title, hint, caption, ...content }: Props) {
         ))}
       </div>
 
-      <div className="pp-explorable-release">
-        <p className="pp-explorable-column-head">{content.labels.version}</p>
-        <p className="pp-explorable-version">
-          <span className="pp-explorable-version-from">{content.current}</span>
-          {" → "}
-          <span data-bump={view.bump}>
-            {view.version ?? content.labels.none}
-          </span>
-        </p>
-        <p className="pp-explorable-note">{content.labels.reason[view.bump]}</p>
-      </div>
+      {/* One pane per kind of release, so the line that says which one this
+          is keeps its height however long that sentence is. */}
+      <Frame
+        active={bumps.indexOf(view.bump)}
+        panes={bumps.map((bump) => (
+          <div className="pp-explorable-release" key={bump}>
+            <p className="pp-explorable-column-head">
+              {content.labels.version}
+            </p>
+            <p className="pp-explorable-version">
+              <span className="pp-explorable-version-from">
+                {content.current}
+              </span>
+              {" → "}
+              <span data-bump={bump}>
+                {(bump === view.bump ? view.version : null) ??
+                  nextVersion(content.current, bump) ??
+                  content.labels.none}
+              </span>
+            </p>
+            <p className="pp-explorable-note">{content.labels.reason[bump]}</p>
+          </div>
+        ))}
+      />
 
-      <div className="pp-explorable-term">
-        <p className="pp-explorable-column-head">{content.labels.changelog}</p>
-        {view.changelog.length === 0 ? (
-          <p className="pp-explorable-note">—</p>
-        ) : (
-          view.changelog.map((group) => (
-            <div key={group.label}>
-              <p className="pp-explorable-changelog-head">{group.label}</p>
-              {group.entries.map((entry) => (
-                <p
-                  className="pp-explorable-changelog-entry"
-                  data-breaking={entry.breaking}
-                  key={entry.text}
-                >
-                  {entry.text}
-                </p>
-              ))}
-            </div>
-          ))
-        )}
-      </div>
+      <Frame
+        active={0}
+        panes={[view.changelog, whole.changelog].map((changelog, index) => (
+          <div
+            className="pp-explorable-term"
+            // The live panel and the whole release, in that order.
+            // biome-ignore lint/suspicious/noArrayIndexKey: two fixed panels
+            key={index}
+          >
+            <p className="pp-explorable-column-head">
+              {content.labels.changelog}
+            </p>
+            {changelog.length === 0 ? (
+              <p className="pp-explorable-note">—</p>
+            ) : (
+              changelog.map((group) => (
+                <div key={group.label}>
+                  <p className="pp-explorable-changelog-head">{group.label}</p>
+                  {group.entries.map((entry) => (
+                    <p
+                      className="pp-explorable-changelog-entry"
+                      data-breaking={entry.breaking}
+                      key={entry.text}
+                    >
+                      {entry.text}
+                    </p>
+                  ))}
+                </div>
+              ))
+            )}
+          </div>
+        ))}
+      />
     </Explorable>
   )
 }

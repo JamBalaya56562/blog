@@ -12,6 +12,7 @@ import {
 } from "@/lib/explorables/commit-graph"
 import { fill } from "@/lib/explorables/format"
 import { Explorable } from "./explorable"
+import { Frame } from "./frame"
 import { GraphRows } from "./graph-rows"
 
 type Props = CommitGraphContent &
@@ -65,7 +66,17 @@ export function CommitGraph({ title, hint, caption, ...content }: Props) {
   const range = useRef<HTMLInputElement>(null)
   const last = content.scenes.length - 1
   const scene = content.scenes[state.step]
-  const rows = rowsOf(content, state.step)
+
+  /** What the figure says at one step; every step's is reserved for. */
+  function sentence(step: number): string {
+    const at = content.scenes[step]
+    return fill(content.status, {
+      caption: at.caption,
+      command: at.command,
+      n: step + 1,
+      total: content.scenes.length,
+    })
+  }
 
   /**
    * The button at the end of the sequence disables itself under the reader's
@@ -85,12 +96,8 @@ export function CommitGraph({ title, hint, caption, ...content }: Props) {
       hint={hint}
       onReset={() => dispatch({ type: "reset" })}
       pristine={isInitial(state)}
-      status={fill(content.status, {
-        caption: scene.caption,
-        command: scene.command,
-        n: state.step + 1,
-        total: content.scenes.length,
-      })}
+      status={sentence(state.step)}
+      statuses={content.scenes.map((_, index) => sentence(index))}
       title={title}
     >
       <div className="pp-explorable-steps">
@@ -129,21 +136,36 @@ export function CommitGraph({ title, hint, caption, ...content }: Props) {
         </button>
       </div>
 
-      <p className="pp-explorable-command">{scene.command}</p>
-      <GraphRows label={content.labels.graph} rows={rows} />
+      {/* Every step is laid out on top of the others, so the figure is as
+          tall as its longest graph from the first render and stepping
+          through it moves nothing under it. */}
+      <Frame
+        active={state.step}
+        panes={content.scenes.map((step, index) => {
+          const stepRows = rowsOf(content, index)
+          return (
+            <>
+              <p className="pp-explorable-command">{step.command}</p>
+              <GraphRows label={content.labels.graph} rows={stepRows} />
 
-      {/* A swatch for a colour nothing on screen is wearing explains
-          nothing, so the legend says only what this step shows. */}
-      {rows.some((row) => row.mark !== "same") && (
-        <div className="pp-explorable-legend">
-          {rows.some((row) => row.mark === "rewritten") && (
-            <span data-mark="rewritten">{content.labels.rewritten}</span>
-          )}
-          {rows.some((row) => row.mark === "added") && (
-            <span data-mark="added">{content.labels.added}</span>
-          )}
-        </div>
-      )}
+              {/* A swatch for a colour nothing on screen is wearing explains
+                  nothing, so the legend says only what this step shows. */}
+              {stepRows.some((row) => row.mark !== "same") && (
+                <div className="pp-explorable-legend">
+                  {stepRows.some((row) => row.mark === "rewritten") && (
+                    <span data-mark="rewritten">
+                      {content.labels.rewritten}
+                    </span>
+                  )}
+                  {stepRows.some((row) => row.mark === "added") && (
+                    <span data-mark="added">{content.labels.added}</span>
+                  )}
+                </div>
+              )}
+            </>
+          )
+        })}
+      />
     </Explorable>
   )
 }

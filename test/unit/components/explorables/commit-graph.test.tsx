@@ -59,11 +59,23 @@ function renderFigure(list: readonly Scene[] = scenes) {
   )
 }
 
+/**
+ * The step the reader is on. Every step is in the markup at once — that is
+ * what keeps the figure's height still — so a query that does not say which
+ * one it means would answer for the first.
+ */
+const shown = (container: HTMLElement) =>
+  container.querySelector(
+    '.pp-explorable-pane[data-active="true"]',
+  ) as HTMLElement
+
 const rows = (container: HTMLElement) =>
-  [...container.querySelectorAll(".pp-explorable-graph-row")].map((row) => ({
-    mark: row.getAttribute("data-mark"),
-    text: row.querySelector(".pp-explorable-graph-desc")?.textContent,
-  }))
+  [...shown(container).querySelectorAll(".pp-explorable-graph-row")].map(
+    (row) => ({
+      mark: row.getAttribute("data-mark"),
+      text: row.querySelector(".pp-explorable-graph-desc")?.textContent,
+    }),
+  )
 
 const slider = (container: HTMLElement) =>
   container.querySelector("input[type=range]") as HTMLInputElement
@@ -93,7 +105,8 @@ describe("CommitGraph", () => {
       { mark: "rewritten", text: "Greet the worldnew commit ID901a7c31" },
     ])
     expect(
-      container.querySelector("[data-mark=rewritten] .sr-only")?.textContent,
+      shown(container).querySelector("[data-mark=rewritten] .sr-only")
+        ?.textContent,
     ).toBe("new commit ID")
     expect(
       getByText(
@@ -149,7 +162,7 @@ describe("CommitGraph", () => {
   test("widens the glyph column only when a scene forks", () => {
     const { container } = renderFigure()
     expect(
-      container
+      shown(container)
         .querySelector(".pp-explorable-graph")
         ?.getAttribute("data-forked"),
     ).toBe("false")
@@ -167,7 +180,7 @@ describe("CommitGraph", () => {
     ])
     fireEvent.click(forked.getByRole("button", { name: "forward" }))
     expect(
-      forked.container
+      shown(forked.container)
         .querySelector(".pp-explorable-graph")
         ?.getAttribute("data-forked"),
     ).toBe("true")
