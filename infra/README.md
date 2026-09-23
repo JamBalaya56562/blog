@@ -154,8 +154,3 @@ an accident inside the blast radius of this stack.
 
 The role ARNs come from the repository variables `AWS_TOFU_PLAN_ROLE_ARN` and
 `AWS_TOFU_APPLY_ROLE_ARN`.
-
-The deploy in [lambda.yml](../.github/workflows/lambda.yml) ends by clearing
-the CloudFront cache, which it finds through the repository variable
-`CLOUDFRONT_DISTRIBUTION_ID`. Its value is the `cloudfront_distribution_id`
-output, printed at the end of every apply.
