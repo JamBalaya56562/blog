@@ -129,3 +129,8 @@ resource "aws_cloudfront_cache_policy" "blog" {
     }
   }
 }
+
+output "cloudfront_distribution_id" {
+  description = "The value for the CLOUDFRONT_DISTRIBUTION_ID repository variable"
+  value       = aws_cloudfront_distribution.blog.id
+}

@@ -110,6 +110,10 @@ resource "aws_iam_role_policy" "github_actions_deploy" {
       Action   = ["lambda:GetFunction", "lambda:GetFunctionConfiguration", "lambda:UpdateFunctionCode", "lambda:UpdateFunctionConfiguration"]
       Effect   = "Allow"
       Resource = aws_lambda_function.blog.arn
+      }, {
+      Action   = "cloudfront:CreateInvalidation"
+      Effect   = "Allow"
+      Resource = aws_cloudfront_distribution.blog.arn
     }]
     Version = "2012-10-17"
   })
