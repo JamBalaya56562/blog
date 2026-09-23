@@ -130,10 +130,6 @@ resource "aws_cloudfront_cache_policy" "blog" {
   }
 }
 
-# The deploy workflow needs the distribution's ID to clear its cache, and reads
-# it from the repository variable `CLOUDFRONT_DISTRIBUTION_ID`. The ID is made
-# when the distribution is, so it is printed here rather than written down
-# anywhere by hand: an apply ends by showing it.
 output "cloudfront_distribution_id" {
   description = "The value for the CLOUDFRONT_DISTRIBUTION_ID repository variable"
   value       = aws_cloudfront_distribution.blog.id
