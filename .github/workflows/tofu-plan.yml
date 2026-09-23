@@ -80,13 +80,23 @@ jobs:
         if: always() && steps.plan.outcome != 'skipped'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PLAN_EXIT: ${{ steps.plan.outputs.exit_code }}
         run: |
           # The one line worth reading goes in the summary; the hundreds of
-          # lines behind it go in the fold. A failed plan has no such line, so
-          # it says so rather than showing an empty heading.
-          summary=$(grep -E '^(Plan:|No changes\.)' infra/plan.txt | tail -1)
-          if [ -z "$summary" ]; then
+          # lines behind it go in the fold. Whether the plan failed is the exit
+          # code's to say, not the text's: a plan that changes only outputs
+          # prints neither "Plan:" nor "No changes.", and reading the text
+          # alone called that a failure.
+          if [ "$PLAN_EXIT" != "0" ]; then
             summary="Plan failed — see the output"
+          else
+            summary=$(grep -E '^(Plan:|No changes\.)' infra/plan.txt | tail -1 || true)
+            if [ -z "$summary" ] && grep -q '^Changes to Outputs:' infra/plan.txt; then
+              summary="Only outputs change — see the output"
+            fi
+            if [ -z "$summary" ]; then
+              summary="Plan succeeded — see the output"
+            fi
           fi
           {
             # Invisible in the rendered comment, and the only way to find this
