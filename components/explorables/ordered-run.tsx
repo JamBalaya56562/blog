@@ -1,6 +1,6 @@
 "use client"
 
-import { useReducer, useRef } from "react"
+import { useLayoutEffect, useReducer, useRef } from "react"
 import { fill } from "@/lib/explorables/format"
 import {
   derive,
@@ -69,6 +69,61 @@ export function OrderedRun({ title, hint, caption, ...content }: Props) {
     initialState,
   )
   const list = useRef<HTMLOListElement>(null)
+  const places = useRef(new Map<string, number>())
+
+  /**
+   * A line that moves, moves.
+   *
+   * The list is the one figure here whose point is a thing changing places,
+   * and a row that is simply drawn somewhere else leaves the reader to work
+   * out which row went where. So each row is put back where it was and let
+   * go: the browser has already laid the new order out, so the travel is
+   * only what the reader watches, and the layout it lands in is the one
+   * that was measured.
+   *
+   * It runs after layout and before paint, so no frame is drawn with the
+   * rows in their new places before they are sent back to their old ones.
+   * A reader who asked for less motion gets the new order and no travel.
+   *
+   * A row is placed against the top of the list rather than the top of the
+   * window. The window's top moves when the reader scrolls, and scrolling
+   * does not re-render, so the reading kept from last time would be in one
+   * frame of reference and this one in another: a line moved after scrolling
+   * down to the figure would be sent back that far and fly in from off
+   * screen, and so would the lines that had not moved at all.
+   */
+  useLayoutEffect(() => {
+    const rows = [
+      ...(list.current?.querySelectorAll<HTMLElement>("li[data-line]") ?? []),
+    ]
+    const top = list.current?.getBoundingClientRect().top ?? 0
+    const before = places.current
+    const after = new Map(
+      rows.map((row) => [
+        row.dataset.line ?? "",
+        row.getBoundingClientRect().top - top,
+      ]),
+    )
+    places.current = after
+
+    if (
+      before.size === 0 ||
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    ) {
+      return
+    }
+    for (const row of rows) {
+      const from = before.get(row.dataset.line ?? "")
+      const to = after.get(row.dataset.line ?? "")
+      if (from === undefined || to === undefined || from === to) {
+        continue
+      }
+      row.animate(
+        [{ transform: `translateY(${from - to}px)` }, { transform: "none" }],
+        { duration: 220, easing: "cubic-bezier(0.2, 0.7, 0.3, 1)" },
+      )
+    }
+  })
   const view = derive(state, content)
   /**
    * Every answer these lines can come to, in any order they can be put in.
@@ -115,6 +170,7 @@ export function OrderedRun({ title, hint, caption, ...content }: Props) {
         {view.rows.map((row, position) => (
           <li
             className="pp-explorable-row"
+            data-line={row.line}
             data-line-state={row.state}
             key={row.line}
           >

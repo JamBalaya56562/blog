@@ -12,6 +12,31 @@ function figureNamed(page: import("@playwright/test").Page, title: string) {
 }
 
 /**
+ * Records what a row was sent back by, at the moment it was sent.
+ *
+ * Asking the running animation is a race the assertion loses on a slow
+ * machine: a 220ms travel can be over before a round trip to the browser
+ * can ask about it. Install this before the page loads.
+ */
+async function recordTravel(page: import("@playwright/test").Page) {
+  await page.addInitScript(() => {
+    const animate = Element.prototype.animate
+    Element.prototype.animate = function patched(
+      this: Element,
+      keyframes: Keyframe[] | PropertyIndexedKeyframes | null,
+      options?: number | KeyframeAnimationOptions,
+    ) {
+      const first = Array.isArray(keyframes) ? keyframes[0] : keyframes
+      const transform = (first as Keyframe | null)?.transform
+      if (typeof transform === "string" && this instanceof HTMLElement) {
+        this.dataset.travelled = transform
+      }
+      return animate.call(this, keyframes, options)
+    }
+  })
+}
+
+/**
  * The pane the reader is looking at. A stepped figure keeps every step in
  * the markup so its height cannot move, so a query that does not say which
  * step it means would answer for all of them at once.
@@ -30,6 +55,10 @@ function shown(figure: ReturnType<typeof figureNamed>) {
  * has taken over, so that tag is what "ready" means here.
  */
 async function ready(figure: ReturnType<typeof figureNamed>) {
+  // The post page is partially prerendered, so the shell and the streamed
+  // content can both hold the figure for a moment. Waiting for one is what
+  // keeps the strict locator below from resolving to both.
+  await expect(figure).toHaveCount(1)
   await expect(figure).toBeVisible()
   await figure.evaluate(
     (el) =>
@@ -862,8 +891,114 @@ test.describe("Figures that keep their height", () => {
   })
 })
 
+/**
+ * Nothing outside a figure moves now, so what moves inside it is free to
+ * say something: the pane that arrives fades in over the room already taken
+ * for it, and a line that is moved travels to where it landed.
+ */
+test.describe("Figures that move on purpose", () => {
+  test("a line that is moved travels to its new place", async ({ page }) => {
+    await recordTravel(page)
+    await page.goto("/ja/blog/mise-tasks")
+    const figure = figureNamed(page, "run の配列")
+    await ready(figure)
+    const rows = figure.locator(".pp-explorable-row")
+    const first = await rows.first().getAttribute("data-line")
+
+    await rows.first().locator('[data-move="down"]').click()
+
+    // The row is in its new place in the layout and was sent back to where
+    // it came from to get there, which is the whole of the animation.
+    const moved = figure.locator(`.pp-explorable-row[data-line="${first}"]`)
+    await expect(moved).toHaveAttribute("data-travelled", /translateY/)
+    expect(await rows.nth(1).getAttribute("data-line")).toBe(first)
+  })
+
+  /**
+   * The travel is worked out from where the rows were last time, and the
+   * reader can scroll between one press and the next. Read against the
+   * window, scrolling down to the figure would be counted as travel: the
+   * lines would fly in from off screen, the ones that had not moved along
+   * with the one that had.
+   */
+  test("a line moved after scrolling travels only as far as it moved", async ({
+    page,
+  }) => {
+    await recordTravel(page)
+    await page.goto("/ja/blog/mise-tasks")
+    const figure = figureNamed(page, "run の配列")
+    await ready(figure)
+
+    const scrolled = await figure.evaluate((el) => {
+      el.scrollIntoView()
+      return window.scrollY
+    })
+    expect(scrolled).toBeGreaterThan(400)
+
+    const rows = figure.locator(".pp-explorable-row")
+    const line = await rows.first().getAttribute("data-line")
+    const height = await rows.first().evaluate((el) => el.clientHeight)
+    await rows.first().locator('[data-move="down"]').click()
+
+    // How far the row was sent back before it was let go.
+    const travelled = await figure
+      .locator(`.pp-explorable-row[data-line="${line}"]`)
+      .getAttribute("data-travelled")
+    const travel = Number(
+      /translateY\((-?[\d.]+)px\)/.exec(travelled ?? "")?.[1] ?? 0,
+    )
+
+    expect(travel).not.toBe(0)
+    // The row it swapped with is the whole of the distance; the page it was
+    // scrolled down by is not.
+    expect(Math.abs(travel)).toBeLessThan(height * 3)
+  })
+
+  test("the pane that arrives fades in", async ({ page }) => {
+    await page.goto("/ja/blog/getting-started-with-jujutsu")
+    const figure = figureNamed(page, "jj squash README.md")
+    await ready(figure)
+
+    await figure.locator(".pp-explorable-cmd", { hasText: "進む" }).click()
+    const fading = await shown(figure)
+      .first()
+      .evaluate((el) => window.getComputedStyle(el).transitionProperty)
+    expect(fading).toContain("opacity")
+  })
+})
+
 test.describe("Explorable figures — prefers-reduced-motion", () => {
   test.use({ reducedMotion: "reduce" })
+
+  /** The new order arrives; the travel to it does not. */
+  test("a line that is moved does not travel", async ({ page }) => {
+    await recordTravel(page)
+    await page.goto("/ja/blog/mise-tasks")
+    const figure = figureNamed(page, "run の配列")
+    await ready(figure)
+    const rows = figure.locator(".pp-explorable-row")
+    const first = await rows.first().getAttribute("data-line")
+
+    await rows.first().locator('[data-move="down"]').click()
+
+    const moved = figure.locator(`.pp-explorable-row[data-line="${first}"]`)
+    expect(await moved.getAttribute("data-travelled")).toBeNull()
+    // The line did move; it is the second row now.
+    expect(await rows.nth(1).getAttribute("data-line")).toBe(first)
+  })
+
+  /** A chip arrives with a nudge in its fade, and the nudge is motion. */
+  test("a chip written into the layer does not slide in", async ({ page }) => {
+    await page.goto("/ja/blog/getting-started-with-docker")
+    const figure = figureNamed(page, "nginx:1.29-alpine")
+    await ready(figure)
+
+    const animation = await figure
+      .locator(".pp-explorable-item")
+      .first()
+      .evaluate((el) => window.getComputedStyle(el).animationName)
+    expect(animation).toBe("none")
+  })
 
   // The strip's scan band is an animation and the bar's growth is a width
   // transition; a reader who asked for less motion gets neither.
