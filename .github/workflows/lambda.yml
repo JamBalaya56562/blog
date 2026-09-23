@@ -63,3 +63,11 @@ jobs:
         package-type: Image
         image-uri: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }}
         architectures: arm64
+
+    - name: ⏳ Wait for the new code to serve
+      run: aws lambda wait function-updated-v2 --function-name "$LAMBDA_FUNCTION_NAME"
+
+    - name: 🧹 Clear the CDN cache
+      run: aws cloudfront create-invalidation --distribution-id "$DISTRIBUTION_ID" --paths "/*"
+      env:
+        DISTRIBUTION_ID: ${{ vars.CLOUDFRONT_DISTRIBUTION_ID }}
