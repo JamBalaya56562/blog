@@ -100,9 +100,20 @@ export function isInitial(
  * and `**\/name`, so it is enough to compare the name with the pattern's
  * last component — and the figure says as much rather than pretending to be
  * the whole of the format.
+ *
+ * A plain name is anchored at the context root: `node_modules` keeps out the
+ * one beside the Dockerfile and reaches no further. That is the whole reason
+ * the file this figure is drawn from carries `**\/node_modules` as well, so
+ * a matcher that let the bare line reach a nested directory would answer the
+ * question the figure exists to ask.
  */
 export function excludes(pattern: string, name: string): boolean {
-  const bare = pattern.replace(/^\*\*\//, "")
+  if (!pattern.startsWith("**/")) {
+    return name === pattern
+  }
+  // `**` matches no directories as happily as it matches several, so the
+  // globstar line covers the one at the root too.
+  const bare = pattern.slice(3)
   return name === bare || name.endsWith(`/${bare}`)
 }
 
