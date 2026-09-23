@@ -342,42 +342,34 @@ The default page is back. A new container starts clean from the image's baked st
 
 <ContainerLifecycle
   title="nginx:1.29-alpine"
-  hint="Press a command and watch what survives. Volumes come in the next section; read this one unmounted."
+  hint="Press a command and watch what survives."
   track
   image={{
     name: "nginx:1.29-alpine",
     layers: ["alpine", "nginx", "conf", "entrypoint"],
   }}
-  volume={{ name: "site", path: "/usr/share/nginx/html" }}
   write={{ item: "index.html" }}
   initial="plain"
   commands={{
     run: "docker run -d --name web",
-    runVolume: "docker run -d -v site:/usr/share/nginx/html",
     write: "docker cp index.html web:/...",
     stop: "docker stop web",
     start: "docker start web",
     rm: "docker rm -f web",
-    volumeRm: "docker volume rm site",
   }}
   short={{
     run: "run -d",
-    runVolume: "run -d -v site",
     write: "cp index.html",
     stop: "stop",
     start: "start",
     rm: "rm -f",
-    volumeRm: "volume rm site",
   }}
   echo={{
     run: "docker run -d --name web -p 8080:80 nginx:1.29-alpine",
-    runVolume:
-      "docker run -d --name web -p 8080:80 -v site:/usr/share/nginx/html nginx:1.29-alpine",
     write: "docker cp site/index.html web:/usr/share/nginx/html/index.html",
     stop: "docker stop web",
     start: "docker start web",
     rm: "docker rm -f web",
-    volumeRm: "docker volume rm site",
   }}
   labels={{
     image: "Image (read-only)",
@@ -386,7 +378,6 @@ The default page is back. A new container starts clean from the image's baked st
     running: "Up",
     stopped: "Exited (0)",
     none: "removed",
-    volume: "Volume",
     groups: {
       create: "Run",
       write: "Write",
@@ -396,17 +387,11 @@ The default page is back. A new container starts clean from the image's baked st
   }}
   status={{
     initialPlain: "web is running with {item} in its writable layer",
-    initialVolume: "web is running with {volume} mounted",
     ran: "Started again with an empty layer: the default page is back",
-    ranVolume: "Started with {volume} mounted",
     wrote: "{item} went into the writable layer, and goes with the container",
-    wroteVolume: "{item} went into {volume}",
     stopped: "Only stopped: the writable layer is still there",
     started: "Running again, {item} and all",
     removed: "Gone, writable layer and all",
-    removedKept: "The container is gone; {volume} is still here",
-    volumeRemoved: "{volume} removed",
-    volumeInUse: "{volume} is in use by web and cannot be removed",
   }}
   caption="docker diff shows this one layer. stop keeps it, rm removes it"
 />

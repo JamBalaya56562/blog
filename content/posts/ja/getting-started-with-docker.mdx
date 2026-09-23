@@ -280,42 +280,34 @@ c31743f6370df987b8d0cecadba91e250969249c4e70637bc17dfa88ab02fa87
 
 <ContainerLifecycle
   title="nginx:1.29-alpine"
-  hint="コマンドを押すと、何が残って何が消えるかが分かります。ボリュームは次の節の話なので、ここでは繋がずに読んでください。"
+  hint="コマンドを押すと、何が残って何が消えるかが分かります。"
   track
   image={{
     name: "nginx:1.29-alpine",
     layers: ["alpine", "nginx", "conf", "entrypoint"],
   }}
-  volume={{ name: "site", path: "/usr/share/nginx/html" }}
   write={{ item: "index.html" }}
   initial="plain"
   commands={{
     run: "docker run -d --name web",
-    runVolume: "docker run -d -v site:/usr/share/nginx/html",
     write: "docker cp index.html web:/...",
     stop: "docker stop web",
     start: "docker start web",
     rm: "docker rm -f web",
-    volumeRm: "docker volume rm site",
   }}
   short={{
     run: "run -d",
-    runVolume: "run -d -v site",
     write: "cp index.html",
     stop: "stop",
     start: "start",
     rm: "rm -f",
-    volumeRm: "volume rm site",
   }}
   echo={{
     run: "docker run -d --name web -p 8080:80 nginx:1.29-alpine",
-    runVolume:
-      "docker run -d --name web -p 8080:80 -v site:/usr/share/nginx/html nginx:1.29-alpine",
     write: "docker cp site/index.html web:/usr/share/nginx/html/index.html",
     stop: "docker stop web",
     start: "docker start web",
     rm: "docker rm -f web",
-    volumeRm: "docker volume rm site",
   }}
   labels={{
     image: "イメージ（読み取り専用）",
@@ -324,7 +316,6 @@ c31743f6370df987b8d0cecadba91e250969249c4e70637bc17dfa88ab02fa87
     running: "Up",
     stopped: "Exited (0)",
     none: "消えている",
-    volume: "ボリューム",
     groups: {
       create: "起こす",
       write: "書く",
@@ -334,17 +325,11 @@ c31743f6370df987b8d0cecadba91e250969249c4e70637bc17dfa88ab02fa87
   }}
   status={{
     initialPlain: "web が動いていて、書き込み層に {item} がある",
-    initialVolume: "web が動いていて、{volume} が繋がっている",
     ran: "起こし直した。書き込み層は真っさらで、既定のページに戻っている",
-    ranVolume: "{volume} を繋いで起こした",
     wrote: "{item} は書き込み層に入った。コンテナを消せば一緒に消える",
-    wroteVolume: "{item} は {volume} に入った",
     stopped: "止めただけ。書き込み層はそのまま残っている",
     started: "続きから動き出した。{item} もそのまま",
     removed: "書き込み層ごと消えた",
-    removedKept: "コンテナは消えたが、{volume} は残っている",
-    volumeRemoved: "{volume} を消した",
-    volumeInUse: "{volume} は web が使っているので消せない",
   }}
   caption="docker diff が見せているのはこの 1 枚。stop では残る、rm で消える"
 />
