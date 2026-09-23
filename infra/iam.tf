@@ -110,6 +110,14 @@ resource "aws_iam_role_policy" "github_actions_deploy" {
       Action   = ["lambda:GetFunction", "lambda:GetFunctionConfiguration", "lambda:UpdateFunctionCode", "lambda:UpdateFunctionConfiguration"]
       Effect   = "Allow"
       Resource = aws_lambda_function.blog.arn
+      }, {
+      # The pages are cached at the edge for as long as the origin allows, and
+      # nothing tells CloudFront that the function behind it has changed. The
+      # deploy clears the cache itself once the new code is live, so the first
+      # reader after it is not handed HTML from the build before.
+      Action   = "cloudfront:CreateInvalidation"
+      Effect   = "Allow"
+      Resource = aws_cloudfront_distribution.blog.arn
     }]
     Version = "2012-10-17"
   })
