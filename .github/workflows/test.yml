@@ -32,7 +32,7 @@ jobs:
           install_args: bun
 
       - name: 📦 Install dependencies
-        run: bun i
+        run: bun i --frozen-lockfile
 
       - name: 🧪 Test app
         id: test
