@@ -98,7 +98,7 @@ test.describe("Explorable figures", () => {
     await first.focus()
     await page.keyboard.press("Enter")
     await expect(first).toHaveAttribute("data-state", "changed")
-    await expect(figure.locator(".pp-explorable-status")).toContainText(
+    await expect(shown(figure).locator(".pp-explorable-status")).toContainText(
       "COPY pnpm-lock.yaml",
     )
   })
@@ -182,7 +182,7 @@ test.describe("Commit message figure", () => {
 test.describe("Bookmark figure", () => {
   const POST = "/ja/blog/getting-started-with-jujutsu"
   const rows = (figure: ReturnType<typeof figureOn>, column: string) =>
-    figure.locator(`ol[aria-label="${column}"] .pp-explorable-graph-row`)
+    shown(figure).locator(`ol[aria-label="${column}"] .pp-explorable-graph-row`)
 
   function figureOn(page: import("@playwright/test").Page) {
     return figureNamed(page, "git / jj")
@@ -356,11 +356,11 @@ test.describe("Container figure", () => {
     await expect(remove).toBeEnabled()
     await remove.click()
 
-    await expect(figure.locator(".pp-explorable-status")).toContainText(
+    await expect(shown(figure).locator(".pp-explorable-status")).toContainText(
       "使っている",
     )
     // The refusal is printed as one rather than as a command that ran.
-    await expect(figure.locator(".pp-explorable-line")).toHaveAttribute(
+    await expect(shown(figure).locator(".pp-explorable-line")).toHaveAttribute(
       "data-level",
       "error",
     )
@@ -380,7 +380,7 @@ test.describe("Container figure", () => {
     await figure.locator(".pp-explorable-cmd", { hasText: /^run -d$/ }).click()
     await expect(layer).not.toContainText("index.html")
     // The line under the figure prints the whole of what the button ran.
-    await expect(figure.locator(".pp-explorable-line")).toHaveText(
+    await expect(shown(figure).locator(".pp-explorable-line")).toHaveText(
       "docker run -d --name web -p 8080:80 nginx:1.29-alpine",
     )
   })
@@ -599,7 +599,7 @@ test.describe("Ordering figures", () => {
     await page.goto("/ja/blog/mise-environment-variables")
     const figure = figureNamed(page, "mise.toml の [env]")
     await ready(figure)
-    const outcome = figure.locator(".pp-explorable-outcome")
+    const outcome = shown(figure).locator(".pp-explorable-outcome")
 
     await expect(outcome).toHaveText("from-dotenv")
     await moveDown(figure, 0)
@@ -722,14 +722,30 @@ test.describe("Build context figure", () => {
 /**
  * A figure that grows a row when a control is pressed pushes the article
  * under it down the page, and the reader loses the line they were on. These
- * ones take the room for their tallest state up front, so using them moves
- * nothing. The list grows as the rest are given the same treatment.
+ * figures take the room for their tallest state up front, so using them
+ * moves nothing — every figure the site has.
  *
  * The phone projects run this too, which is where it matters most: a figure
  * that holds its height at 1440px can still grow two lines at 412px.
  */
 test.describe("Figures that keep their height", () => {
   const STILL = [
+    { post: "/ja/blog/docker-build", title: "docker build ." },
+    { post: "/ja/blog/docker-build", title: "Dockerfile" },
+    {
+      post: "/ja/blog/getting-started-with-docker",
+      title: "nginx:1.29-alpine",
+    },
+    {
+      post: "/ja/blog/getting-started-with-docker",
+      title: "postgres:18-alpine",
+    },
+    { post: "/ja/blog/getting-started-with-jujutsu", title: "git / jj" },
+    {
+      post: "/ja/blog/mise-environment-variables",
+      title: "mise.toml の [env]",
+    },
+    { post: "/ja/blog/mise-tasks", title: "run の配列" },
     {
       post: "/ja/blog/getting-started-with-jujutsu",
       title: "jj squash README.md",
@@ -767,7 +783,7 @@ test.describe("Figures that keep their height", () => {
       expect(served).toBeGreaterThan(0)
 
       const controls = figure.locator(
-        ".pp-explorable-cmd, .pp-explorable-row[aria-pressed]",
+        ".pp-explorable-cmd, .pp-explorable-row[aria-pressed], [data-move]",
       )
       for (let i = 0; i < (await controls.count()); i++) {
         const control = controls.nth(i)

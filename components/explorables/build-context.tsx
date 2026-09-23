@@ -6,12 +6,14 @@ import {
   type BuildContextContent,
   type BuildContextState,
   derive,
+  excludes,
   initialState,
   isInitial,
   reduce,
 } from "@/lib/explorables/build-context"
 import { fill } from "@/lib/explorables/format"
 import { Explorable } from "./explorable"
+import { Frame } from "./frame"
 
 type Props = BuildContextContent &
   Readonly<{
@@ -61,6 +63,9 @@ export function BuildContext({ title, hint, caption, ...content }: Props) {
         sent: view.sent,
         total: view.total,
       })}
+      statuses={Array.from({ length: view.total + 1 }, (_, sent) =>
+        fill(content.status, { sent, total: view.total }),
+      )}
       title={title}
     >
       <div>
@@ -83,37 +88,74 @@ export function BuildContext({ title, hint, caption, ...content }: Props) {
       <div>
         <p className="pp-explorable-column-head">{content.labels.directory}</p>
         <ul className="pp-explorable-lines">
-          {view.rows.map((row) => (
-            <li
-              className="pp-explorable-row"
-              data-line-state={row.excludedBy === null ? "ran" : "skipped"}
-              key={row.name}
-            >
-              <span className="pp-explorable-cmdtext">{row.name}</span>
-              <span className="pp-explorable-badge">
-                {row.excludedBy === null
-                  ? content.labels.sentState
-                  : fill(content.labels.excludedState, {
-                      pattern: row.excludedBy,
-                    })}
-              </span>
-              {row.note && (
-                <span className="pp-explorable-note">{row.note}</span>
-              )}
-            </li>
-          ))}
+          {view.rows.map((row) => {
+            // What this row's badge can say: that it was sent, or the name
+            // of one of the lines that can actually keep it out. Laying
+            // those readings into the badge's own cell makes the cell as
+            // tall as its longest one, so a row never gains a line while
+            // the reader is looking at it.
+            const said =
+              row.excludedBy === null
+                ? content.labels.sentState
+                : fill(content.labels.excludedState, {
+                    pattern: row.excludedBy,
+                  })
+            const readings = [
+              content.labels.sentState,
+              ...content.ignore
+                .filter((pattern) => excludes(pattern, row.name))
+                .map((pattern) =>
+                  fill(content.labels.excludedState, { pattern }),
+                ),
+            ]
+            return (
+              <li
+                className="pp-explorable-row"
+                data-line-state={row.excludedBy === null ? "ran" : "skipped"}
+                key={row.name}
+              >
+                <span className="pp-explorable-cmdtext">{row.name}</span>
+                <Frame
+                  active={0}
+                  panes={[
+                    said,
+                    ...readings.filter((reading) => reading !== said),
+                  ].map((reading) => (
+                    <span className="pp-explorable-badge" key={reading}>
+                      {reading}
+                    </span>
+                  ))}
+                />
+                {row.note && (
+                  <span className="pp-explorable-note">{row.note}</span>
+                )}
+              </li>
+            )
+          })}
         </ul>
       </div>
 
-      <div className="pp-explorable-release">
-        <p className="pp-explorable-column-head">{content.labels.sent}</p>
-        <p className="pp-explorable-outcome">
-          {view.rows
-            .filter((row) => row.excludedBy === null)
-            .map((row) => row.name)
-            .join("  ") || "—"}
-        </p>
-      </div>
+      {/* The line of what reaches the engine is longest when nothing is
+          kept out, so that is the room it takes from the start. */}
+      <Frame
+        active={0}
+        panes={[
+          view.rows.filter((row) => row.excludedBy === null),
+          view.rows,
+        ].map((rows, index) => (
+          <div
+            className="pp-explorable-release"
+            // The live line, then the whole directory behind it.
+            // biome-ignore lint/suspicious/noArrayIndexKey: two fixed panels
+            key={index}
+          >
+            <p className="pp-explorable-column-head">{content.labels.sent}</p>
+            <p className="pp-explorable-outcome">
+              {rows.map((row) => row.name).join("  ") || "—"}
+            </p>
+          </div>
+        ))}
+      />
     </Explorable>
   )
 }

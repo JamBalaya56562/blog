@@ -129,6 +129,16 @@ function renderPlain() {
   )
 }
 
+/**
+ * The shell line the reader sees. Every command the figure can print is in
+ * the markup beside it and hidden, which is what keeps the panel from
+ * growing a line when a longer command is pressed.
+ */
+const shownLine = (container: HTMLElement) =>
+  container.querySelector(
+    '.pp-explorable-pane[data-active="true"] .pp-explorable-line',
+  )
+
 const commands = (container: HTMLElement) =>
   [...container.querySelectorAll(".pp-explorable-cmd")].map(
     (button) => button.textContent,
@@ -339,7 +349,7 @@ describe("ContainerLifecycle", () => {
   /** A short button is only readable next to the whole command. */
   test("the shell line prints what was pressed", () => {
     const { container } = renderPlain()
-    const line = () => container.querySelector(".pp-explorable-line")
+    const line = () => shownLine(container)
 
     expect(line()?.textContent).toBe(
       "docker cp site/index.html web:/usr/share/nginx/html/index.html",
@@ -355,7 +365,7 @@ describe("ContainerLifecycle", () => {
     const { container } = renderFigure("volume", true)
 
     fireEvent.click(button(container, "docker volume rm pgdata"))
-    const line = container.querySelector(".pp-explorable-line")
+    const line = shownLine(container)
     expect(line?.getAttribute("data-level")).toBe("error")
     expect(line?.textContent).toBe("docker volume rm pgdata")
   })
@@ -365,6 +375,15 @@ describe("ContainerLifecycle", () => {
     const { container } = renderFigure("volume")
 
     expect(container.querySelector(".pp-explorable-line")).toBeNull()
+  })
+
+  /** Every command it can print is held in the layout from the first render. */
+  test("the shell panel reserves every command it can print", () => {
+    const { container } = renderPlain()
+
+    expect([...container.querySelectorAll(".pp-explorable-echo")].length).toBe(
+      5,
+    )
   })
 
   test("the state track marks where the container is", () => {

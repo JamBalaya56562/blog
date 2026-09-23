@@ -13,6 +13,7 @@ import {
 } from "@/lib/explorables/bookmark-graph"
 import { fill } from "@/lib/explorables/format"
 import { Explorable } from "./explorable"
+import { Frame } from "./frame"
 import { GraphRows } from "./graph-rows"
 
 type Props = BookmarkContent &
@@ -60,6 +61,41 @@ export function BookmarkGraph({ title, hint, caption, ...content }: Props) {
   )
   const lastDesc = content.descs[Math.max(0, state.next - 1)]
 
+  /**
+   * The deepest the two graphs can get: every description committed. Only a
+   * commit adds a row, so this is the tallest the figure has to be, and it
+   * is laid out from the start so that pressing a command moves nothing
+   * under the figure.
+   */
+  let deepest = initialState(content)
+  while (allowed(deepest, { type: "commit" }, content)) {
+    deepest = reduce(deepest, { type: "commit" }, content)
+  }
+
+  /** Every sentence the figure can say, for each commit it can name. */
+  const statuses = Object.values(content.status).flatMap((sentence) =>
+    content.descs.map((desc) => fill(sentence, { desc })),
+  )
+
+  const columns = (at: BookmarkState) => (
+    <div className="pp-explorable-columns">
+      <div>
+        <p className="pp-explorable-column-head">{content.labels.git}</p>
+        <GraphRows
+          label={content.labels.git}
+          rows={rowsOf(at.git, content, false)}
+        />
+      </div>
+      <div>
+        <p className="pp-explorable-column-head">{content.labels.jj}</p>
+        <GraphRows
+          label={content.labels.jj}
+          rows={rowsOf(at.jj, content, true)}
+        />
+      </div>
+    </div>
+  )
+
   return (
     <Explorable
       caption={caption}
@@ -67,6 +103,7 @@ export function BookmarkGraph({ title, hint, caption, ...content }: Props) {
       onReset={() => dispatch({ type: "reset" })}
       pristine={isInitial(state, content)}
       status={fill(content.status[state.last], { desc: lastDesc })}
+      statuses={statuses}
       title={title}
     >
       <div className="pp-explorable-controls">
@@ -83,22 +120,7 @@ export function BookmarkGraph({ title, hint, caption, ...content }: Props) {
           </button>
         ))}
       </div>
-      <div className="pp-explorable-columns">
-        <div>
-          <p className="pp-explorable-column-head">{content.labels.git}</p>
-          <GraphRows
-            label={content.labels.git}
-            rows={rowsOf(state.git, content, false)}
-          />
-        </div>
-        <div>
-          <p className="pp-explorable-column-head">{content.labels.jj}</p>
-          <GraphRows
-            label={content.labels.jj}
-            rows={rowsOf(state.jj, content, true)}
-          />
-        </div>
-      </div>
+      <Frame active={0} panes={[columns(state), columns(deepest)]} />
     </Explorable>
   )
 }

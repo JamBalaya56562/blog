@@ -123,7 +123,7 @@ export function Explorable({
             >
               {status}
             </p>,
-            ...statuses
+            ...[...new Set(statuses)]
               .filter((sentence) => sentence !== status)
               .map((sentence) => (
                 <p className="pp-explorable-status" key={sentence}>
