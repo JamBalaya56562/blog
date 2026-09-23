@@ -108,16 +108,23 @@ export function OrderedRun({ title, hint, caption, ...content }: Props) {
     ]
     const top = list.current?.getBoundingClientRect().top ?? 0
     const before = places.current
-    const moves = rows.map((row) => {
-      const seen = row.getBoundingClientRect().top - top
+    // Every row is read, then every travel stopped, then every row read
+    // again: reading after each stop would have the browser work the page's
+    // style out again once per row rather than once for the list.
+    const drawn = rows.map((row) => row.getBoundingClientRect().top - top)
+    for (const row of rows) {
       for (const running of row.getAnimations()) {
         if (running.id === TRAVEL) {
           running.cancel()
         }
       }
-      const to = row.getBoundingClientRect().top - top
-      return { from: before.get(row.dataset.line ?? ""), row, seen, to }
-    })
+    }
+    const moves = rows.map((row, index) => ({
+      from: before.get(row.dataset.line ?? ""),
+      row,
+      seen: drawn[index],
+      to: row.getBoundingClientRect().top - top,
+    }))
     places.current = new Map(
       moves.map(({ row, to }) => [row.dataset.line ?? "", to]),
     )
