@@ -12,6 +12,31 @@ function figureNamed(page: import("@playwright/test").Page, title: string) {
 }
 
 /**
+ * Records what a row was sent back by, at the moment it was sent.
+ *
+ * Asking the running animation is a race the assertion loses on a slow
+ * machine: a 220ms travel can be over before a round trip to the browser
+ * can ask about it. Install this before the page loads.
+ */
+async function recordTravel(page: import("@playwright/test").Page) {
+  await page.addInitScript(() => {
+    const animate = Element.prototype.animate
+    Element.prototype.animate = function patched(
+      this: Element,
+      keyframes: Keyframe[] | PropertyIndexedKeyframes | null,
+      options?: number | KeyframeAnimationOptions,
+    ) {
+      const first = Array.isArray(keyframes) ? keyframes[0] : keyframes
+      const transform = (first as Keyframe | null)?.transform
+      if (typeof transform === "string" && this instanceof HTMLElement) {
+        this.dataset.travelled = transform
+      }
+      return animate.call(this, keyframes, options)
+    }
+  })
+}
+
+/**
  * The pane the reader is looking at. A stepped figure keeps every step in
  * the markup so its height cannot move, so a query that does not say which
  * step it means would answer for all of them at once.
@@ -30,6 +55,10 @@ function shown(figure: ReturnType<typeof figureNamed>) {
  * has taken over, so that tag is what "ready" means here.
  */
 async function ready(figure: ReturnType<typeof figureNamed>) {
+  // The post page is partially prerendered, so the shell and the streamed
+  // content can both hold the figure for a moment. Waiting for one is what
+  // keeps the strict locator below from resolving to both.
+  await expect(figure).toHaveCount(1)
   await expect(figure).toBeVisible()
   await figure.evaluate(
     (el) =>
@@ -869,6 +898,7 @@ test.describe("Figures that keep their height", () => {
  */
 test.describe("Figures that move on purpose", () => {
   test("a line that is moved travels to its new place", async ({ page }) => {
+    await recordTravel(page)
     await page.goto("/ja/blog/mise-tasks")
     const figure = figureNamed(page, "run の配列")
     await ready(figure)
@@ -877,14 +907,11 @@ test.describe("Figures that move on purpose", () => {
 
     await rows.first().locator('[data-move="down"]').click()
 
-    // The row is in its new place in the layout and on its way there on
-    // screen, which is the whole of the animation.
+    // The row is in its new place in the layout and was sent back to where
+    // it came from to get there, which is the whole of the animation.
     const moved = figure.locator(`.pp-explorable-row[data-line="${first}"]`)
-    expect(
-      await moved.evaluate((el) =>
-        el.getAnimations().map((animation) => animation.playState),
-      ),
-    ).not.toHaveLength(0)
+    await expect(moved).toHaveAttribute("data-travelled", /translateY/)
+    expect(await rows.nth(1).getAttribute("data-line")).toBe(first)
   })
 
   /**
@@ -897,6 +924,7 @@ test.describe("Figures that move on purpose", () => {
   test("a line moved after scrolling travels only as far as it moved", async ({
     page,
   }) => {
+    await recordTravel(page)
     await page.goto("/ja/blog/mise-tasks")
     const figure = figureNamed(page, "run の配列")
     await ready(figure)
@@ -912,17 +940,13 @@ test.describe("Figures that move on purpose", () => {
     const height = await rows.first().evaluate((el) => el.clientHeight)
     await rows.first().locator('[data-move="down"]').click()
 
-    // The first frame of the row's own animation says how far it was sent
-    // back before it was let go.
-    const travel = await figure
+    // How far the row was sent back before it was let go.
+    const travelled = await figure
       .locator(`.pp-explorable-row[data-line="${line}"]`)
-      .evaluate((el) => {
-        const effect = el.getAnimations()[0]?.effect as
-          | KeyframeEffect
-          | undefined
-        const transform = String(effect?.getKeyframes()[0]?.transform ?? "")
-        return Number(/translateY\((-?[\d.]+)px\)/.exec(transform)?.[1] ?? 0)
-      })
+      .getAttribute("data-travelled")
+    const travel = Number(
+      /translateY\((-?[\d.]+)px\)/.exec(travelled ?? "")?.[1] ?? 0,
+    )
 
     expect(travel).not.toBe(0)
     // The row it swapped with is the whole of the distance; the page it was
@@ -948,6 +972,7 @@ test.describe("Explorable figures — prefers-reduced-motion", () => {
 
   /** The new order arrives; the travel to it does not. */
   test("a line that is moved does not travel", async ({ page }) => {
+    await recordTravel(page)
     await page.goto("/ja/blog/mise-tasks")
     const figure = figureNamed(page, "run の配列")
     await ready(figure)
@@ -957,7 +982,7 @@ test.describe("Explorable figures — prefers-reduced-motion", () => {
     await rows.first().locator('[data-move="down"]').click()
 
     const moved = figure.locator(`.pp-explorable-row[data-line="${first}"]`)
-    expect(await moved.evaluate((el) => el.getAnimations().length)).toBe(0)
+    expect(await moved.getAttribute("data-travelled")).toBeNull()
     // The line did move; it is the second row now.
     expect(await rows.nth(1).getAttribute("data-line")).toBe(first)
   })
