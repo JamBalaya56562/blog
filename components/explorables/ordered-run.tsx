@@ -84,16 +84,24 @@ export function OrderedRun({ title, hint, caption, ...content }: Props) {
    * It runs after layout and before paint, so no frame is drawn with the
    * rows in their new places before they are sent back to their old ones.
    * A reader who asked for less motion gets the new order and no travel.
+   *
+   * A row is placed against the top of the list rather than the top of the
+   * window. The window's top moves when the reader scrolls, and scrolling
+   * does not re-render, so the reading kept from last time would be in one
+   * frame of reference and this one in another: a line moved after scrolling
+   * down to the figure would be sent back that far and fly in from off
+   * screen, and so would the lines that had not moved at all.
    */
   useLayoutEffect(() => {
     const rows = [
       ...(list.current?.querySelectorAll<HTMLElement>("li[data-line]") ?? []),
     ]
+    const top = list.current?.getBoundingClientRect().top ?? 0
     const before = places.current
     const after = new Map(
       rows.map((row) => [
         row.dataset.line ?? "",
-        row.getBoundingClientRect().top,
+        row.getBoundingClientRect().top - top,
       ]),
     )
     places.current = after

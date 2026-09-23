@@ -1926,15 +1926,14 @@
        rather than stretching to fill it. */
     align-content: start;
     min-width: 0;
+    /* The pane arriving fades in over the room that was already taken for
+       it. The one leaving goes at once — see below. */
+    transition: opacity 0.18s ease;
   }
   /* `visibility` rather than `display`, so the pane keeps holding its space;
      it also takes the pane out of the tab order and the accessibility tree.
-     The one arriving fades in over the room that was already taken for it;
-     the one leaving goes at once, since two half-lit panes in the same cell
+     It leaves without a fade of its own: two half-lit panes in the same cell
      is two readings of the same rows on top of each other. */
-  .prose-cyber .pp-explorable-pane {
-    transition: opacity 0.18s ease;
-  }
   .prose-cyber .pp-explorable-pane[data-active="false"] {
     visibility: hidden;
     opacity: 0;

@@ -887,6 +887,49 @@ test.describe("Figures that move on purpose", () => {
     ).not.toHaveLength(0)
   })
 
+  /**
+   * The travel is worked out from where the rows were last time, and the
+   * reader can scroll between one press and the next. Read against the
+   * window, scrolling down to the figure would be counted as travel: the
+   * lines would fly in from off screen, the ones that had not moved along
+   * with the one that had.
+   */
+  test("a line moved after scrolling travels only as far as it moved", async ({
+    page,
+  }) => {
+    await page.goto("/ja/blog/mise-tasks")
+    const figure = figureNamed(page, "run の配列")
+    await ready(figure)
+
+    const scrolled = await figure.evaluate((el) => {
+      el.scrollIntoView()
+      return window.scrollY
+    })
+    expect(scrolled).toBeGreaterThan(400)
+
+    const rows = figure.locator(".pp-explorable-row")
+    const line = await rows.first().getAttribute("data-line")
+    const height = await rows.first().evaluate((el) => el.clientHeight)
+    await rows.first().locator('[data-move="down"]').click()
+
+    // The first frame of the row's own animation says how far it was sent
+    // back before it was let go.
+    const travel = await figure
+      .locator(`.pp-explorable-row[data-line="${line}"]`)
+      .evaluate((el) => {
+        const effect = el.getAnimations()[0]?.effect as
+          | KeyframeEffect
+          | undefined
+        const transform = String(effect?.getKeyframes()[0]?.transform ?? "")
+        return Number(/translateY\((-?[\d.]+)px\)/.exec(transform)?.[1] ?? 0)
+      })
+
+    expect(travel).not.toBe(0)
+    // The row it swapped with is the whole of the distance; the page it was
+    // scrolled down by is not.
+    expect(Math.abs(travel)).toBeLessThan(height * 3)
+  })
+
   test("the pane that arrives fades in", async ({ page }) => {
     await page.goto("/ja/blog/getting-started-with-jujutsu")
     const figure = figureNamed(page, "jj squash README.md")
