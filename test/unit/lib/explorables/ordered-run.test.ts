@@ -7,6 +7,7 @@ import {
   type OrderedRunAction,
   type OrderedRunContent,
   reduce,
+  travel,
 } from "@/lib/explorables/ordered-run"
 
 const labels = {
@@ -201,5 +202,44 @@ describe("ordered run", () => {
         lines: [{ text: "a" }, { text: "b" }],
       }),
     ).toThrow("stopOnFail needs a line that fails")
+  })
+
+  describe("travel", () => {
+    const place = fc.integer({ max: 400, min: -400 })
+
+    /**
+     * Where a row starts its travel is where the reader saw it: its old
+     * place, plus whatever was left of a travel still running when the
+     * line was pressed again.
+     */
+    test("Property 7: a travel starts where the row was drawn", () => {
+      fc.assert(
+        fc.property(place, place, place, (from, left, to) => {
+          const offset = travel(from, to + left, to)
+          expect(to + (offset ?? 0)).toBe(from + left)
+        }),
+        { numRuns: 300 },
+      )
+    })
+
+    test("a row with no travel running is sent back to its old place", () => {
+      expect(travel(0, 50, 50)).toBe(-50)
+      expect(travel(50, 0, 0)).toBe(50)
+    })
+
+    /**
+     * Measured on the published figure: a line on its way up to 0, pressed
+     * down again 6.4px short of it, started its travel back to 71.2px at
+     * -6.4px — a 12.8px jump — when it should have started where it was.
+     */
+    test("a line pressed again before it arrives does not jump", () => {
+      const offset = travel(0, 71.2 + 6.4, 71.2)
+      expect(71.2 + (offset ?? 0)).toBeCloseTo(6.4)
+    })
+
+    test("nothing to travel from, or nowhere to go, is no travel", () => {
+      expect(travel(undefined, 10, 10)).toBeNull()
+      expect(travel(30, 30, 30)).toBeNull()
+    })
   })
 })

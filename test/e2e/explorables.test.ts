@@ -954,6 +954,80 @@ test.describe("Figures that move on purpose", () => {
     expect(Math.abs(travel)).toBeLessThan(height * 3)
   })
 
+  /**
+   * A line can be pressed again before it has arrived. The next travel has
+   * to start where the row is drawn, not where it is laid out: the
+   * difference is what was left of the first travel, and starting from the
+   * layout makes the row jump by it.
+   */
+  test("a line pressed again on its way starts from where it is drawn", async ({
+    page,
+  }) => {
+    await recordTravel(page)
+    // Slow the travel down, so it is still running when it is held below
+    // however slow the machine is.
+    await page.addInitScript(() => {
+      const animate = Element.prototype.animate
+      Element.prototype.animate = function slowed(
+        this: Element,
+        keyframes: Keyframe[] | PropertyIndexedKeyframes | null,
+        options?: number | KeyframeAnimationOptions,
+      ) {
+        return animate.call(
+          this,
+          keyframes,
+          typeof options === "object"
+            ? { ...options, duration: 60_000 }
+            : options,
+        )
+      }
+    })
+    await page.goto("/ja/blog/mise-tasks")
+    const figure = figureNamed(page, "run の配列")
+    await ready(figure)
+    const line = await figure
+      .locator(".pp-explorable-row")
+      .first()
+      .getAttribute("data-line")
+    const row = figure.locator(`.pp-explorable-row[data-line="${line}"]`)
+
+    await row.locator('[data-move="down"]').click()
+    // Hold every travel a quarter of the way, and note where the row is
+    // drawn there and how much of its travel is left.
+    const held = await row.evaluate((el) => {
+      const list = el.closest("ol") as HTMLElement
+      for (const running of list.getAnimations({ subtree: true })) {
+        running.pause()
+        running.currentTime = 15_000
+      }
+      return {
+        drawn:
+          el.getBoundingClientRect().top - list.getBoundingClientRect().top,
+        left: new DOMMatrixReadOnly(getComputedStyle(el).transform).m42,
+      }
+    })
+    // Otherwise there is nothing on its way to catch.
+    expect(Math.abs(held.left)).toBeGreaterThan(1)
+
+    await row.locator('[data-move="up"]').click()
+
+    // Where the second travel starts: the row's new layout, sent back by
+    // what it recorded as it was let go.
+    const sentBack = Number(
+      /translateY\((-?[\d.]+)px\)/.exec(
+        (await row.getAttribute("data-travelled")) ?? "",
+      )?.[1],
+    )
+    const laidOut = await row.evaluate((el) => {
+      const list = el.closest("ol") as HTMLElement
+      for (const running of list.getAnimations({ subtree: true })) {
+        running.finish()
+      }
+      return el.getBoundingClientRect().top - list.getBoundingClientRect().top
+    })
+    expect(Math.abs(laidOut + sentBack - held.drawn)).toBeLessThan(1)
+  })
+
   test("the pane that arrives fades in", async ({ page }) => {
     await page.goto("/ja/blog/getting-started-with-jujutsu")
     const figure = figureNamed(page, "jj squash README.md")
