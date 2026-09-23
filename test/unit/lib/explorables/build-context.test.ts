@@ -117,7 +117,7 @@ describe("build context", () => {
       "Dockerfile:sent",
       "index.html:sent",
       "node_modules:node_modules",
-      "packages/core/node_modules:node_modules",
+      "packages/core/node_modules:**/node_modules",
       ".git:.git",
     ])
     expect(view.sent).toBe(2)
@@ -127,8 +127,9 @@ describe("build context", () => {
   /**
    * A globstar matches no directories as happily as it matches several, so
    * `**` + `/node_modules` covers the one at the top too: switching the bare
-   * line off changes nothing while the other is still on. The two lines in
-   * that file overlap, and the figure shows which one did the work.
+   * line off changes nothing while the other is still on. The overlap runs
+   * one way only — the bare line never reaches the workspace's own — and the
+   * figure shows which line did the work.
    */
   test("a line that another line covers keeps its entry out anyway", () => {
     const one = reduce(
@@ -188,7 +189,18 @@ describe("build context", () => {
       expect(excludes("**/node_modules", "packages/core/node_modules")).toBe(
         true,
       )
-      expect(excludes("node_modules", "packages/core/node_modules")).toBe(true)
+      // A globstar reaches the root as well as the directories under it.
+      expect(excludes("**/node_modules", "node_modules")).toBe(true)
+    })
+
+    /**
+     * A plain line is anchored at the context root. This is the distinction
+     * the figure is about: it is why the file it is drawn from carries both
+     * `node_modules` and `**\/node_modules`.
+     */
+    test("a plain name does not reach a nested directory", () => {
+      expect(excludes("node_modules", "packages/core/node_modules")).toBe(false)
+      expect(excludes("dist", "packages/core/dist")).toBe(false)
     })
 
     test("does not match a name that merely contains it", () => {

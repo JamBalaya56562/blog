@@ -653,6 +653,31 @@ test.describe("Build context figure", () => {
     await globstar.click()
     await expect(dependencies).toHaveAttribute("data-line-state", "ran")
   })
+
+  /**
+   * Every line the figure lists is a line the directory beside it has
+   * something for. A line that matches no entry is a button that does
+   * nothing when pressed, which is what the `.github` line was: the
+   * article's own `.dockerignore` has it, the sample directory did not.
+   */
+  test("every line in the figure keeps something out", async ({ page }) => {
+    await page.goto(POST)
+    const figure = figureNamed(page, "docker build .")
+    await ready(figure)
+
+    const lines = await figure.locator(".pp-explorable-cmd").allTextContents()
+    const reasons = await figure
+      .locator(".pp-explorable-badge")
+      .allTextContents()
+
+    expect(lines.length).toBeGreaterThan(0)
+    for (const line of lines) {
+      // The badge names the line that excluded the entry, so a line with
+      // no badge of its own excluded nothing. Matching on the start keeps
+      // `node_modules` from being answered by `**/node_modules`.
+      expect(reasons.some((reason) => reason.startsWith(`${line} `))).toBe(true)
+    }
+  })
 })
 
 test.describe("Explorable figures — prefers-reduced-motion", () => {

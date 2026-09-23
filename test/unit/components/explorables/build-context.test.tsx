@@ -58,7 +58,7 @@ describe("BuildContext", () => {
       "ran:Dockerfile:送られる",
       "ran:index.html:送られる",
       "skipped:node_modules:node_modules で除外",
-      "skipped:packages/core/node_modules:node_modules で除外",
+      "skipped:packages/core/node_modules:**/node_modules で除外",
       "skipped:.git:.git で除外",
     ])
     expect(sent(container)).toBe("Dockerfile  index.html")
