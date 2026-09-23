@@ -1,12 +1,18 @@
 /**
  * The state behind the container figure: an image, a container on top of it,
- * and a volume beside it — and what each command does to the three.
+ * and — when the figure has one — a volume beside it, and what each command
+ * does to them.
  *
  * The rule the article states is a rule about where a write lands. A write
  * into the container goes to its writable layer and dies with it; a write
  * into a path that has a volume mounted goes to the volume and outlives
  * every container. `stop` keeps both, `rm` takes the layer only, and a
  * volume in use cannot be removed at all.
+ *
+ * A figure without a volume is the first half of that rule on its own: the
+ * article introduces volumes a section later, so the instance that comes
+ * before it leaves the volume, its two commands and its column out entirely
+ * rather than showing a picture it has to tell the reader to ignore.
  */
 
 export type ContainerStatus = "none" | "running" | "stopped"
@@ -18,13 +24,21 @@ export type ContainerLifecycleContent = Readonly<{
     /** Layer names, bottom first; the read-only part of the picture. */
     layers: readonly string[]
   }>
-  volume: Readonly<{ name: string; path: string }>
+  /** Omitted by a figure that is about the writable layer alone. */
+  volume?: Readonly<{ name: string; path: string }>
   /** What one press of the write command puts down. */
   write: Readonly<{ item: string }>
   /** Which picture this instance starts as. */
   initial: "plain" | "volume"
   /** Button labels: the commands as the reader would type them. */
-  commands: Readonly<Record<CommandType, string>>
+  commands: Commands
+  /**
+   * Shorter labels for the same buttons, used only when `echo` is there to
+   * print the whole command underneath.
+   */
+  short?: Partial<Record<CommandType, string>>
+  /** The command each button stands for, printed as a shell line. */
+  echo?: Partial<Record<CommandType, string>>
   labels: Readonly<{
     image: string
     writable: string
@@ -32,10 +46,12 @@ export type ContainerLifecycleContent = Readonly<{
     running: string
     stopped: string
     none: string
-    volume: string
+    volume?: string
+    /** The word in front of each row of commands. */
+    groups: Readonly<Record<CommandGroup, string>>
   }>
   /** Spoken after each command; may use `{item}` and `{volume}`. */
-  status: Readonly<Record<StatusKey, string>>
+  status: Status
 }>
 
 export type CommandType =
@@ -47,21 +63,40 @@ export type CommandType =
   | "rm"
   | "volumeRm"
 
+/** The two commands a figure without a volume does not have. */
+export type VolumeCommand = Extract<CommandType, "runVolume" | "volumeRm">
+
+export type Commands = Readonly<
+  Record<Exclude<CommandType, VolumeCommand>, string> &
+    Partial<Record<VolumeCommand, string>>
+>
+
+/** Which row of the control block a command is on. */
+export type CommandGroup = "create" | "write" | "pause" | "destroy"
+
 export type ContainerAction = { type: CommandType } | { type: "reset" }
 
-export type StatusKey =
+export type StatusKey = PlainStatusKey | VolumeStatusKey
+
+type PlainStatusKey =
   | "initialPlain"
-  | "initialVolume"
   | "ran"
-  | "ranVolume"
   | "wrote"
-  | "wroteVolume"
   | "stopped"
   | "started"
   | "removed"
+
+type VolumeStatusKey =
+  | "initialVolume"
+  | "ranVolume"
+  | "wroteVolume"
   | "removedKept"
   | "volumeRemoved"
   | "volumeInUse"
+
+export type Status = Readonly<
+  Record<PlainStatusKey, string> & Partial<Record<VolumeStatusKey, string>>
+>
 
 export type ContainerState = Readonly<{
   container: ContainerStatus
@@ -81,6 +116,9 @@ export function initialState(
   }
   if (content.initial !== "plain" && content.initial !== "volume") {
     throw new Error(`ContainerLifecycle: unknown initial ${content.initial}`)
+  }
+  if (content.initial === "volume" && content.volume === undefined) {
+    throw new Error("ContainerLifecycle: initial volume without a volume")
   }
 
   const withVolume = content.initial === "volume"
@@ -127,6 +165,12 @@ export function reduce(
 ): ContainerState {
   if (action.type === "reset") {
     return initialState(content)
+  }
+  // A command the figure does not offer cannot have been pressed on it. The
+  // instance without a volume has no button for the two that touch one, and
+  // this is what keeps that true of the state as well as of the markup.
+  if (content.commands[action.type] === undefined) {
+    return state
   }
   if (!allowed(state, action.type)) {
     return state
@@ -195,6 +239,35 @@ export function reduce(
         last: "volumeRemoved",
         volume: { exists: false, rows: [] },
       }
+  }
+}
+
+/**
+ * The command the figure got here by, so the shell line under it can print
+ * what the reader just pressed. The served state has no press behind it; the
+ * write is what put the pictured item where it is, so that is what it shows.
+ */
+export function lastCommand(state: ContainerState): CommandType {
+  switch (state.last) {
+    case "initialPlain":
+    case "initialVolume":
+    case "wrote":
+    case "wroteVolume":
+      return "write"
+    case "ran":
+      return "run"
+    case "ranVolume":
+      return "runVolume"
+    case "stopped":
+      return "stop"
+    case "started":
+      return "start"
+    case "removed":
+    case "removedKept":
+      return "rm"
+    case "volumeRemoved":
+    case "volumeInUse":
+      return "volumeRm"
   }
 }
 

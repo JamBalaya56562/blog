@@ -281,6 +281,7 @@ c31743f6370df987b8d0cecadba91e250969249c4e70637bc17dfa88ab02fa87
 <ContainerLifecycle
   title="nginx:1.29-alpine"
   hint="コマンドを押すと、何が残って何が消えるかが分かります。ボリュームは次の節の話なので、ここでは繋がずに読んでください。"
+  track
   image={{
     name: "nginx:1.29-alpine",
     layers: ["alpine", "nginx", "conf", "entrypoint"],
@@ -297,6 +298,25 @@ c31743f6370df987b8d0cecadba91e250969249c4e70637bc17dfa88ab02fa87
     rm: "docker rm -f web",
     volumeRm: "docker volume rm site",
   }}
+  short={{
+    run: "run -d",
+    runVolume: "run -d -v site",
+    write: "cp index.html",
+    stop: "stop",
+    start: "start",
+    rm: "rm -f",
+    volumeRm: "volume rm site",
+  }}
+  echo={{
+    run: "docker run -d --name web -p 8080:80 nginx:1.29-alpine",
+    runVolume:
+      "docker run -d --name web -p 8080:80 -v site:/usr/share/nginx/html nginx:1.29-alpine",
+    write: "docker cp site/index.html web:/usr/share/nginx/html/index.html",
+    stop: "docker stop web",
+    start: "docker start web",
+    rm: "docker rm -f web",
+    volumeRm: "docker volume rm site",
+  }}
   labels={{
     image: "イメージ（読み取り専用）",
     writable: "書き込み層",
@@ -305,6 +325,12 @@ c31743f6370df987b8d0cecadba91e250969249c4e70637bc17dfa88ab02fa87
     stopped: "Exited (0)",
     none: "消えている",
     volume: "ボリューム",
+    groups: {
+      create: "起こす",
+      write: "書く",
+      pause: "止める",
+      destroy: "消す",
+    },
   }}
   status={{
     initialPlain: "web が動いていて、書き込み層に {item} がある",
@@ -485,6 +511,7 @@ volume pgdata -> /var/lib/postgresql
 <ContainerLifecycle
   title="postgres:18-alpine"
   hint="消して起こし直してみてください。-v を付けずに起こすと、同じ書き込みがどこへ行くかも比べられます。"
+  track
   image={{
     name: "postgres:18-alpine",
     layers: ["alpine", "postgres", "initdb", "entrypoint"],
@@ -501,6 +528,25 @@ volume pgdata -> /var/lib/postgresql
     rm: "docker rm -f db",
     volumeRm: "docker volume rm pgdata",
   }}
+  short={{
+    run: "run -d",
+    runVolume: "run -d -v pgdata",
+    write: "psql -c INSERT",
+    stop: "stop",
+    start: "start",
+    rm: "rm -f",
+    volumeRm: "volume rm pgdata",
+  }}
+  echo={{
+    run: "docker run -d --name db -e POSTGRES_PASSWORD=secret postgres:18-alpine",
+    runVolume:
+      "docker run -d --name db -e POSTGRES_PASSWORD=secret -v pgdata:/var/lib/postgresql postgres:18-alpine",
+    write: 'docker exec db psql -U postgres -c "INSERT INTO notes VALUES (\'written inside a container\')"',
+    stop: "docker stop db",
+    start: "docker start db",
+    rm: "docker rm -f db",
+    volumeRm: "docker volume rm pgdata",
+  }}
   labels={{
     image: "イメージ（読み取り専用）",
     writable: "書き込み層",
@@ -509,6 +555,12 @@ volume pgdata -> /var/lib/postgresql
     stopped: "Exited (0)",
     none: "消えている",
     volume: "ボリューム",
+    groups: {
+      create: "起こす",
+      write: "書く",
+      pause: "止める",
+      destroy: "消す",
+    },
   }}
   status={{
     initialPlain: "db が動いているが、ボリュームは繋がっていない",

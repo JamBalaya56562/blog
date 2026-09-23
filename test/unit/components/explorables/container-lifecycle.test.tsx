@@ -4,10 +4,24 @@ import { ContainerLifecycle } from "@/components/explorables/container-lifecycle
 
 afterEach(cleanup)
 
-function renderFigure(initial: "plain" | "volume" = "volume") {
+function renderFigure(initial: "plain" | "volume" = "volume", echo = false) {
   return render(
     <ContainerLifecycle
       caption="Containers are disposable; data lives in volumes"
+      echo={
+        echo
+          ? {
+              rm: "docker rm -f db",
+              run: "docker run -d --name db postgres:18-alpine",
+              runVolume:
+                "docker run -d -v pgdata:/var/lib/postgresql postgres:18-alpine",
+              start: "docker start db",
+              stop: "docker stop db",
+              volumeRm: "docker volume rm pgdata",
+              write: 'docker exec db psql -c "INSERT INTO notes …"',
+            }
+          : undefined
+      }
       commands={{
         rm: "docker rm -f db",
         run: "docker run -d --name db",
@@ -25,6 +39,12 @@ function renderFigure(initial: "plain" | "volume" = "volume") {
       initial={initial}
       labels={{
         container: "container db",
+        groups: {
+          create: "start",
+          destroy: "remove",
+          pause: "pause",
+          write: "write",
+        },
         image: "image (read-only)",
         none: "no container",
         running: "Up",
@@ -52,6 +72,67 @@ function renderFigure(initial: "plain" | "volume" = "volume") {
     />,
   )
 }
+
+/** The nginx instance: no volume, short buttons, and a line printing them. */
+function renderPlain() {
+  return render(
+    <ContainerLifecycle
+      commands={{
+        rm: "docker rm -f web",
+        run: "docker run -d --name web",
+        start: "docker start web",
+        stop: "docker stop web",
+        write: "docker cp index.html web:/...",
+      }}
+      echo={{
+        rm: "docker rm -f web",
+        run: "docker run -d --name web -p 8080:80 nginx:1.29-alpine",
+        start: "docker start web",
+        stop: "docker stop web",
+        write: "docker cp site/index.html web:/usr/share/nginx/html/index.html",
+      }}
+      image={{ layers: ["alpine", "nginx"], name: "nginx:1.29-alpine" }}
+      initial="plain"
+      labels={{
+        container: "container web",
+        groups: {
+          create: "start",
+          destroy: "remove",
+          pause: "pause",
+          write: "write",
+        },
+        image: "image (read-only)",
+        none: "removed",
+        running: "Up",
+        stopped: "Exited (0)",
+        writable: "writable layer",
+      }}
+      short={{
+        rm: "rm -f",
+        run: "run -d",
+        start: "start",
+        stop: "stop",
+        write: "cp index.html",
+      }}
+      status={{
+        initialPlain: "web is running with {item} in its layer",
+        ran: "started again with an empty layer",
+        removed: "gone, writable layer and all",
+        started: "running again",
+        stopped: "only stopped",
+        wrote: "wrote {item} into the writable layer",
+      }}
+      title="nginx:1.29-alpine"
+      track
+      write={{ item: "index.html" }}
+    />,
+  )
+}
+
+const commands = (container: HTMLElement) =>
+  [...container.querySelectorAll(".pp-explorable-cmd")].map(
+    (button) => button.textContent,
+  )
 
 const items = (container: HTMLElement, selector: string) =>
   [...container.querySelectorAll(`${selector} .pp-explorable-item`)].map(
@@ -209,6 +290,97 @@ describe("ContainerLifecycle", () => {
     expect(reset.disabled).toBe(true)
   })
 
+  /**
+   * The instance before the article has introduced volumes: one idea, and
+   * no cylinder to tell the reader to ignore.
+   */
+  test("a figure without a volume has neither the column nor its commands", () => {
+    const { container, getByText } = renderPlain()
+
+    expect(container.querySelector(".pp-explorable-volume")).toBeNull()
+    expect(container.querySelector(".pp-explorable-link")).toBeNull()
+    expect(
+      container
+        .querySelector(".pp-explorable-stack")
+        ?.getAttribute("data-volume"),
+    ).toBe("false")
+    expect(commands(container)).toEqual([
+      "run -d",
+      "cp index.html",
+      "stop",
+      "start",
+      "rm -f",
+    ])
+    expect(
+      getByText("web is running with index.html in its layer"),
+    ).toBeDefined()
+  })
+
+  /** The rows are what makes seven commands readable, so they are labelled. */
+  test("the commands are in labelled rows", () => {
+    const { container } = renderFigure("volume")
+
+    expect(
+      [...container.querySelectorAll(".pp-explorable-group-head")].map(
+        (head) => head.textContent,
+      ),
+    ).toEqual(["start", "write", "pause", "remove"])
+    // The two that touch the volume take its colour, the rest the container's.
+    expect(button(container, "docker volume rm pgdata").dataset.target).toBe(
+      "volume",
+    )
+    expect(
+      button(container, "docker run -d -v pgdata:/var/lib/postgresql").dataset
+        .target,
+    ).toBe("mount")
+    expect(button(container, "docker stop db").dataset.target).toBe("container")
+  })
+
+  /** A short button is only readable next to the whole command. */
+  test("the shell line prints what was pressed", () => {
+    const { container } = renderPlain()
+    const line = () => container.querySelector(".pp-explorable-line")
+
+    expect(line()?.textContent).toBe(
+      "docker cp site/index.html web:/usr/share/nginx/html/index.html",
+    )
+
+    press(container, "rm -f")
+    expect(line()?.textContent).toBe("docker rm -f web")
+    expect(line()?.getAttribute("data-level")).toBe("echo")
+  })
+
+  /** The refusal is printed as one, not as a command that ran. */
+  test("a refused command is marked in the shell line", () => {
+    const { container } = renderFigure("volume", true)
+
+    fireEvent.click(button(container, "docker volume rm pgdata"))
+    const line = container.querySelector(".pp-explorable-line")
+    expect(line?.getAttribute("data-level")).toBe("error")
+    expect(line?.textContent).toBe("docker volume rm pgdata")
+  })
+
+  /** A figure given no commands to print prints no line at all. */
+  test("without the commands spelled out there is no shell line", () => {
+    const { container } = renderFigure("volume")
+
+    expect(container.querySelector(".pp-explorable-line")).toBeNull()
+  })
+
+  test("the state track marks where the container is", () => {
+    const { container } = renderPlain()
+    const at = () =>
+      [...container.querySelectorAll(".pp-explorable-track li")].findIndex(
+        (item) => item.getAttribute("data-at") === "true",
+      )
+
+    expect(at()).toBe(0)
+    press(container, "stop")
+    expect(at()).toBe(1)
+    press(container, "rm -f")
+    expect(at()).toBe(2)
+  })
+
   test("throws on an image with no layers", () => {
     expect(() =>
       render(
@@ -226,6 +398,7 @@ describe("ContainerLifecycle", () => {
           initial="plain"
           labels={{
             container: "c",
+            groups: { create: "c", destroy: "d", pause: "p", write: "w" },
             image: "i",
             none: "n",
             running: "r",

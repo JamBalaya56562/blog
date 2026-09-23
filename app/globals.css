@@ -1405,6 +1405,99 @@
   .prose-cyber .pp-explorable-cmd:disabled {
     opacity: 0.4;
   }
+  /* The container figure's commands, in rows by what they do. The label
+     column is what makes seven of them readable: the row says what kind of
+     command it holds, so a reader looking for "how do I get rid of this"
+     reads a word rather than every button. Nothing reorders as the state
+     changes — a command that cannot act now is dim where it was, not gone. */
+  .prose-cyber .pp-explorable-groups {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: start;
+    gap: 6px 10px;
+    min-width: 0;
+  }
+  .prose-cyber .pp-explorable-group-head {
+    margin: 0;
+    padding-top: 6px;
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    color: var(--cyber-dimmer);
+  }
+  /* Cyan is the container and magenta the volume — the two colours the
+     picture below already uses — so a button says which of them it lands
+     on before it is read. A mount is the one command that is both: the
+     container's border, the volume's edge. */
+  .prose-cyber .pp-explorable-groups .pp-explorable-cmd {
+    --pp-explorable-accent: var(--cyber-cyan);
+    border-color: color-mix(
+      in srgb,
+      var(--pp-explorable-accent) 45%,
+      transparent
+    );
+  }
+  .prose-cyber .pp-explorable-groups .pp-explorable-cmd[data-target="volume"] {
+    --pp-explorable-accent: var(--cyber-magenta);
+  }
+  .prose-cyber .pp-explorable-groups .pp-explorable-cmd[data-target="mount"] {
+    padding-left: 13px;
+    box-shadow: inset 3px 0 0 var(--cyber-magenta);
+  }
+  .prose-cyber .pp-explorable-groups .pp-explorable-cmd:hover:not(:disabled) {
+    border-color: var(--pp-explorable-accent);
+  }
+  /* Not now, rather than not there: the dashed border says the same thing
+     here that it says around an empty box in the picture. */
+  .prose-cyber .pp-explorable-groups .pp-explorable-cmd:disabled {
+    border-style: dashed;
+    border-color: var(--cyber-line);
+    box-shadow: none;
+    opacity: 0.55;
+  }
+  /* The three states a container moves between, with the one it is at lit:
+     the rule behind every disabled button, in one line. The status sentence
+     says the same thing for a screen reader, so this is hidden from one. */
+  .prose-cyber .pp-explorable-track {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .prose-cyber .pp-explorable-track li {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0;
+    padding: 0;
+  }
+  .prose-cyber .pp-explorable-track li::before {
+    content: "▸";
+    color: var(--cyber-line-hi);
+  }
+  .prose-cyber .pp-explorable-track li:first-child::before {
+    content: none;
+  }
+  .prose-cyber .pp-explorable-track-state {
+    padding: 2px 8px;
+    border: 1px dashed var(--cyber-line);
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    color: var(--cyber-dimmer);
+  }
+  .prose-cyber
+    .pp-explorable-track
+    li[data-at="true"]
+    .pp-explorable-track-state {
+    border-style: solid;
+    border-color: var(--cyber-cyan);
+    background: color-mix(in srgb, var(--cyber-cyan) 10%, transparent);
+    color: var(--cyber-cyan);
+  }
   .prose-cyber .pp-explorable-row {
     --pp-explorable-accent: var(--cyber-cyan);
     display: grid;
@@ -1581,6 +1674,18 @@
     content: "✔";
     color: inherit;
   }
+  /* What the reader just pressed, in the shell's own words, under the
+     buttons that can stay short because this is here. The prompt is the
+     site's own — the same one the code panels and the transcripts carry. */
+  .prose-cyber .pp-explorable-echo {
+    font-family: var(--blog-font-mono);
+  }
+  .prose-cyber
+    .pp-explorable-echo
+    .pp-explorable-line[data-level="echo"]::before {
+    content: "❯";
+    color: var(--cyber-cyan);
+  }
   .prose-cyber .pp-explorable-rule {
     color: var(--cyber-dim);
   }
@@ -1695,7 +1800,7 @@
     min-width: 0;
   }
   @media (width >= 34rem) {
-    .prose-cyber .pp-explorable-stack {
+    .prose-cyber .pp-explorable-stack[data-volume="true"] {
       grid-template-columns: minmax(0, 1fr) 24px minmax(0, 1fr);
       align-items: center;
     }
@@ -1730,10 +1835,24 @@
     border-style: dashed;
     color: var(--cyber-dimmer);
   }
+  /* The image under the container, on one line. Its layers never change in
+     this figure — the build article is where they do — so a four-bar stack
+     taller than the container sitting on it would be spending the reader's
+     screen on the one part of the picture that never moves. */
+  .prose-cyber .pp-explorable-base {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 8px;
+    margin-top: 6px;
+  }
+  .prose-cyber .pp-explorable-base .pp-explorable-note {
+    margin: 0;
+  }
   .prose-cyber .pp-explorable-layers {
-    display: grid;
+    display: flex;
+    flex-wrap: wrap;
     gap: 2px;
-    margin-top: 4px;
   }
   .prose-cyber .pp-explorable-layer {
     padding: 2px 8px;

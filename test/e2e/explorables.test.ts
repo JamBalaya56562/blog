@@ -261,6 +261,61 @@ test.describe("Container figure", () => {
     expect(html).toContain("pgdata")
   })
 
+  /**
+   * Seven commands are readable because they are in rows by what they do,
+   * and a button says which half of the picture it lands on before it is
+   * read: the container, the volume, or the mount that is both.
+   */
+  test("the commands are in labelled rows, coloured by what they touch", async ({
+    page,
+  }) => {
+    await page.goto(POST)
+    const figure = figureNamed(page, "nginx:1.29-alpine")
+    await ready(figure)
+
+    await expect(figure.locator(".pp-explorable-group-head")).toHaveText([
+      "起こす",
+      "書く",
+      "止める",
+      "消す",
+    ])
+    await expect(
+      figure.locator('.pp-explorable-cmd[data-target="volume"]'),
+    ).toHaveText("volume rm site")
+    await expect(
+      figure.locator('.pp-explorable-cmd[data-target="mount"]'),
+    ).toHaveText("run -d -v site")
+  })
+
+  /** The image under the container is one line, not a stack taller than it. */
+  test("the image layers sit on one line under the container", async ({
+    page,
+  }) => {
+    await page.goto(POST)
+    const figure = figureNamed(page, "nginx:1.29-alpine")
+    await ready(figure)
+
+    const tops = await figure
+      .locator(".pp-explorable-layer")
+      .evaluateAll((layers) =>
+        layers.map((layer) => Math.round(layer.getBoundingClientRect().top)),
+      )
+    expect(tops).toHaveLength(4)
+    expect(new Set(tops).size).toBe(1)
+  })
+
+  /** The three states, with the one the container is at lit. */
+  test("the track follows the container", async ({ page }) => {
+    await page.goto(POST)
+    const figure = figureNamed(page, "nginx:1.29-alpine")
+    await ready(figure)
+    const at = figure.locator('.pp-explorable-track li[data-at="true"]')
+
+    await expect(at).toHaveText("Up")
+    await press(figure, "stop")
+    await expect(at).toHaveText("Exited (0)")
+  })
+
   test("rm takes the writable layer and leaves the volume", async ({
     page,
   }) => {
@@ -273,7 +328,7 @@ test.describe("Container figure", () => {
 
     await expect(volume).toContainText("notes")
 
-    await press(figure, "docker rm -f db")
+    await press(figure, "rm -f")
     await expect(layer).toHaveAttribute("data-on", "false")
     await expect(volume).toContainText("notes")
     await expect(volume).toHaveAttribute("data-on", "true")
@@ -287,13 +342,18 @@ test.describe("Container figure", () => {
     await ready(figure)
 
     const remove = figure.locator(".pp-explorable-cmd", {
-      hasText: "docker volume rm",
+      hasText: "volume rm",
     })
     await expect(remove).toBeEnabled()
     await remove.click()
 
     await expect(figure.locator(".pp-explorable-status")).toContainText(
       "使っている",
+    )
+    // The refusal is printed as one rather than as a command that ran.
+    await expect(figure.locator(".pp-explorable-line")).toHaveAttribute(
+      "data-level",
+      "error",
     )
     await expect(figure.locator(".pp-explorable-volume")).toContainText("notes")
   })
@@ -307,9 +367,13 @@ test.describe("Container figure", () => {
     const layer = figure.locator(".pp-explorable-box")
 
     await expect(layer).toContainText("index.html")
-    await press(figure, "docker rm -f web")
-    await press(figure, "docker run -d --name web")
+    await press(figure, "rm -f")
+    await figure.locator(".pp-explorable-cmd", { hasText: /^run -d$/ }).click()
     await expect(layer).not.toContainText("index.html")
+    // The line under the figure prints the whole of what the button ran.
+    await expect(figure.locator(".pp-explorable-line")).toHaveText(
+      "docker run -d --name web -p 8080:80 nginx:1.29-alpine",
+    )
   })
 })
 

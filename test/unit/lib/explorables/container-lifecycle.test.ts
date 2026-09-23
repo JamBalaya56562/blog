@@ -8,6 +8,7 @@ import {
   type ContainerState,
   initialState,
   isInitial,
+  lastCommand,
   reduce,
 } from "@/lib/explorables/container-lifecycle"
 
@@ -28,6 +29,12 @@ const base: ContainerLifecycleContent = {
   initial: "volume",
   labels: {
     container: "container db",
+    groups: {
+      create: "start",
+      destroy: "remove",
+      pause: "pause",
+      write: "write",
+    },
     image: "image",
     none: "no container",
     running: "Up",
@@ -53,6 +60,18 @@ const base: ContainerLifecycleContent = {
   write: { item: "notes" },
 }
 const plain: ContainerLifecycleContent = { ...base, initial: "plain" }
+/** The nginx instance: a writable layer, and no volume anywhere. */
+const noVolume: ContainerLifecycleContent = {
+  ...plain,
+  commands: {
+    rm: base.commands.rm,
+    run: base.commands.run,
+    start: base.commands.start,
+    stop: base.commands.stop,
+    write: base.commands.write,
+  },
+  volume: undefined,
+}
 
 const COMMANDS: readonly CommandType[] = [
   "run",
@@ -266,5 +285,55 @@ describe("container lifecycle", () => {
         initial: "sideways" as ContainerLifecycleContent["initial"],
       }),
     ).toThrow("unknown initial sideways")
+    // A figure with no volume cannot be served with one mounted.
+    expect(() => initialState({ ...noVolume, initial: "volume" })).toThrow(
+      "initial volume without a volume",
+    )
+  })
+
+  /**
+   * The first of the two instances is about the writable layer alone. Its
+   * two volume commands are not there to press, and nothing it can do
+   * brings a volume into being.
+   */
+  test("a figure without a volume never grows one", () => {
+    fc.assert(
+      fc.property(actions, (list) => {
+        const state = run(list, noVolume)
+        expect(state.volume).toEqual({ exists: false, rows: [] })
+        expect(state.withVolume).toBe(false)
+      }),
+      { numRuns: 300 },
+    )
+  })
+
+  /** The shell line under the figure prints what the reader just pressed. */
+  test("every state names the command that reached it", () => {
+    expect(lastCommand(initialState(plain))).toBe("write")
+    expect(lastCommand(initialState(base))).toBe("write")
+
+    const cases: readonly [ContainerAction["type"], CommandType][] = [
+      ["rm", "rm"],
+      ["run", "run"],
+      ["stop", "stop"],
+      ["start", "start"],
+      ["write", "write"],
+      ["runVolume", "runVolume"],
+      ["volumeRm", "volumeRm"],
+    ]
+    for (const [pressed, printed] of cases) {
+      // Reach a state where the command can act, press it, and read it back.
+      const reachable = [
+        { type: "rm" },
+        { type: "run" },
+        { type: "stop" },
+        { type: "start" },
+        { type: pressed },
+      ] as readonly ContainerAction[]
+      const state = run(reachable, base)
+      if (allowed(run(reachable.slice(0, -1), base), pressed as CommandType)) {
+        expect(lastCommand(state)).toBe(printed)
+      }
+    }
   })
 })
