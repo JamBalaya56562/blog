@@ -974,7 +974,8 @@ test.describe("Figures that move on purpose", () => {
   }) => {
     await recordTravel(page)
     // Slow the travel down, so it is still running when it is held below
-    // however slow the machine is.
+    // however slow the machine is. Only the figure's own travel: anything
+    // else on the page that animates keeps its own pace.
     await page.addInitScript(() => {
       const animate = Element.prototype.animate
       Element.prototype.animate = function slowed(
@@ -985,7 +986,7 @@ test.describe("Figures that move on purpose", () => {
         return animate.call(
           this,
           keyframes,
-          typeof options === "object"
+          typeof options === "object" && options.id === "pp-explorable-travel"
             ? { ...options, duration: 60_000 }
             : options,
         )
