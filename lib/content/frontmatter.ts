@@ -98,3 +98,22 @@ export function parseFrontmatter(raw: string): {
   const parsed = parse(match[1])
   return { content: match[2].trim(), frontmatter: validateFrontmatter(parsed) }
 }
+
+/**
+ * `parseFrontmatter` for a post a loader has found, with the post named in the
+ * error. A missing post is a loader's null; a post that is there but does not
+ * parse is a mistake in it, and throws, so the build that prerenders it fails
+ * on the file to fix. Swallowed as a missing post, it used to drop out of
+ * every list without a word while the build passed.
+ */
+export function parsePost(
+  source: string,
+  raw: string,
+): ReturnType<typeof parseFrontmatter> {
+  try {
+    return parseFrontmatter(raw)
+  } catch (e) {
+    const reason = e instanceof Error ? e.message : String(e)
+    throw new Error(`${source}: ${reason}`, { cause: e })
+  }
+}
