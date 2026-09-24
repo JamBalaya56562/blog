@@ -39,8 +39,12 @@ export function ViewCountsProvider({
   )
 }
 
+export function useFetchedViewCount(slug: string): number | undefined {
+  return useContext(ViewCountsContext)?.[slug]
+}
+
 function useViewCount(slug: string, fallback: number | undefined) {
-  return useContext(ViewCountsContext)?.[slug] ?? fallback ?? 0
+  return useFetchedViewCount(slug) ?? fallback ?? 0
 }
 
 export function ViewStat({

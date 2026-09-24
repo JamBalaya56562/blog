@@ -5,11 +5,13 @@ import { cleanup, render, waitFor } from "@testing-library/react"
 // is what the counter shows once the effect resolves.
 let actionResult: number | null = null
 const incrementMock = mock(() => Promise.resolve(actionResult))
+// What the page's read returns, for a counter rendered inside the provider.
+let readResult: Record<string, number> = {}
 // Both exports are stubbed even though this file only needs one: bun applies
 // mock.module globally for the run, so a partial mock makes the missing export
 // disappear for every other test file too.
 mock.module("@/lib/actions/view-count", () => ({
-  getViewCountsAction: mock(() => Promise.resolve({})),
+  getViewCountsAction: mock(() => Promise.resolve(readResult)),
   incrementViewCountAction: incrementMock,
 }))
 
@@ -17,6 +19,7 @@ afterEach(() => {
   cleanup()
   incrementMock.mockClear()
   actionResult = null
+  readResult = {}
   // The counter records what it has counted, and the record outlives a render.
   try {
     localStorage.clear()
@@ -24,6 +27,7 @@ afterEach(() => {
 })
 
 const { ViewCounter } = await import("@/components/view-counter")
+const { ViewCountsProvider } = await import("@/components/view-counts")
 
 describe("ViewCounter", () => {
   test("renders view count immediately from prop", () => {
@@ -113,6 +117,38 @@ describe("ViewCounter", () => {
       render(<ViewCounter slug="second" count={1} label="VIEWS" />)
       await waitFor(() => expect(incrementMock).toHaveBeenCalledTimes(2))
       expect(incrementMock).toHaveBeenLastCalledWith("second")
+    })
+
+    // Not writing again also means the write no longer reports a figure, and
+    // the prop is frozen into the cache entry. The page's read is what keeps
+    // a returning reader from seeing that frozen number.
+    test("a second visit shows the count the page reads", async () => {
+      localStorage.setItem("blog:viewed:repeat", "1")
+      readResult = { repeat: 12 }
+      const { container } = render(
+        <ViewCountsProvider slugs={["repeat"]}>
+          <ViewCounter slug="repeat" count={0} label="VIEWS" />
+        </ViewCountsProvider>,
+      )
+
+      await waitFor(() => expect(container.textContent).toContain("12"))
+      expect(incrementMock).not.toHaveBeenCalled()
+    })
+
+    // Both requests go out together on a first visit, and the read may have
+    // been answered before the write landed.
+    test("the recorded count wins over the page's read", async () => {
+      actionResult = 13
+      readResult = { fresh: 12 }
+      const { container } = render(
+        <ViewCountsProvider slugs={["fresh"]}>
+          <ViewCounter slug="fresh" count={0} label="VIEWS" />
+        </ViewCountsProvider>,
+      )
+
+      await waitFor(() => expect(container.textContent).toContain("13"))
+      await Promise.resolve()
+      expect(container.textContent).toContain("13")
     })
 
     // Private browsing, or a browser set to block site data: the accessor
