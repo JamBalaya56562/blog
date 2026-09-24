@@ -106,7 +106,7 @@ describe("post card stays prerenderable", () => {
  * description, as a 200. Anyone could mint one per made-up slug, and each was
  * rendered from scratch, since only the real slugs are prerendered.
  */
-describe("post card for a path that names no post", () => {
+describe("post card responses", () => {
   async function card(locale: string, slug: string): Promise<Response> {
     const mod = await import(postRoute)
     return mod.default({ params: Promise.resolve({ locale, slug }) })
@@ -124,7 +124,16 @@ describe("post card for a path that names no post", () => {
     expect(res.status).toBe(404)
   })
 
-  // A real post's card is not drawn here: rendering one through `next/og`
-  // leaves Bun crashing on exit (SIGSEGV after every test has passed), which
-  // fails the run. The build prerenders every real card, one per post.
+  test("a real post returns a complete PNG", async () => {
+    const res = await card("en", "docker-build")
+    expect(res.status).toBe(200)
+    expect(res.headers.get("Content-Type")).toBe("image/png")
+
+    const bytes = new Uint8Array(await res.arrayBuffer())
+    expect([...bytes.slice(0, 8)]).toEqual([137, 80, 78, 71, 13, 10, 26, 10])
+    // The final IEND chunk confirms that the PNG stream reached its end.
+    expect([...bytes.slice(-12)]).toEqual([
+      0, 0, 0, 0, 73, 69, 78, 68, 174, 66, 96, 130,
+    ])
+  }, 30000)
 })
