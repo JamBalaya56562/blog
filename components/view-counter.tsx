@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { GlitchCount } from "@/components/glitch-count"
 import { useFetchedViewCount } from "@/components/view-counts"
 import { recordView } from "@/lib/views/client"
@@ -28,17 +28,35 @@ export function ViewCounter({ slug, label }: { slug: string; label: string }) {
   const [writeDone, setWriteDone] = useState(false)
   const [gaveUp, setGaveUp] = useState(false)
   const fetched = useFetchedViewCount(slug)
+  // The write this counter has sent, kept across the effect running twice for
+  // one mount, as it does in development. The record is only made once the
+  // write has landed, so it cannot be what stops the second run sending again.
+  const writeRef = useRef<{
+    readonly slug: string
+    readonly result: Promise<number | null>
+  } | null>(null)
 
   useEffect(() => {
-    const now = Date.now()
-    if (countedRecently(slug, now)) {
-      setWriteDone(true)
-      return
+    if (writeRef.current?.slug !== slug) {
+      const now = Date.now()
+      if (countedRecently(slug, now)) {
+        setWriteDone(true)
+        return
+      }
+      // Recorded only when the write reports a count. Recording before it
+      // went out meant a POST that failed still held the post as counted for
+      // a day, and the reader's visit was never counted at all.
+      const result = recordView(slug).then((updated) => {
+        if (updated !== null) {
+          markCounted(slug, now)
+        }
+        return updated
+      })
+      writeRef.current = { result, slug }
     }
-    markCounted(slug, now)
 
     let active = true
-    recordView(slug).then((updated) => {
+    writeRef.current.result.then((updated) => {
       if (!active) {
         return
       }
