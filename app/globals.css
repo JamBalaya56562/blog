@@ -2976,3 +2976,107 @@
     opacity: 0.22;
   }
 }
+
+/* ──────────────────────────────────────────────
+   View count — scrambles while the figure loads
+   Two ghost copies of the digits, torn apart by `clip-path`, jitter while the
+   number is unknown; the digits lock in left to right, and the ghosts snap
+   back into the base once the last one lands.
+   ──────────────────────────────────────────── */
+
+@layer components {
+  .pp-glitch-count {
+    position: relative;
+    display: inline-block;
+    white-space: nowrap;
+  }
+  .pp-glitch-count > span {
+    opacity: 0.55;
+    transition: opacity 120ms;
+  }
+  .pp-glitch-count > span[data-locked] {
+    opacity: 1;
+  }
+  .pp-glitch-count::before,
+  .pp-glitch-count::after {
+    content: attr(data-text);
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0;
+  }
+  .pp-glitch-count::before {
+    color: var(--cyber-magenta);
+    transform: translateX(-2px);
+    clip-path: inset(0 0 55% 0);
+  }
+  .pp-glitch-count::after {
+    color: var(--cyber-amber);
+    transform: translateX(2px);
+    clip-path: inset(50% 0 0 0);
+  }
+  .pp-glitch-count[data-state="loading"],
+  .pp-glitch-count[data-state="settling"] {
+    animation: glitchCountJitter 0.18s steps(2, end) infinite;
+  }
+  .pp-glitch-count[data-state="loading"]::before,
+  .pp-glitch-count[data-state="loading"]::after,
+  .pp-glitch-count[data-state="settling"]::before,
+  .pp-glitch-count[data-state="settling"]::after {
+    opacity: 0.8;
+  }
+  .pp-glitch-count[data-state="settled"] {
+    animation: glitchCountSnap 0.35s ease-out;
+  }
+  .pp-glitch-count[data-state="settled"]::before,
+  .pp-glitch-count[data-state="settled"]::after {
+    animation: glitchCountFade 0.35s ease-out;
+  }
+}
+
+@keyframes glitchCountJitter {
+  0% {
+    transform: translate(0, 0);
+  }
+  50% {
+    transform: translate(1px, -1px);
+  }
+  100% {
+    transform: translate(-1px, 1px);
+  }
+}
+@keyframes glitchCountSnap {
+  0% {
+    transform: translateX(3px) skewX(-8deg);
+  }
+  60% {
+    transform: translateX(-1px);
+  }
+  100% {
+    transform: none;
+  }
+}
+@keyframes glitchCountFade {
+  from {
+    opacity: 0.8;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* The component stops scrambling on its own; this stills the jitter and
+     drops the ghosts, which only make sense while they move. */
+  .pp-glitch-count[data-state="loading"],
+  .pp-glitch-count[data-state="settling"],
+  .pp-glitch-count[data-state="settled"],
+  .pp-glitch-count[data-state="settled"]::before,
+  .pp-glitch-count[data-state="settled"]::after {
+    animation: none;
+  }
+  .pp-glitch-count::before,
+  .pp-glitch-count::after {
+    display: none;
+  }
+}

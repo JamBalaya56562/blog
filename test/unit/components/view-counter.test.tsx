@@ -1,25 +1,36 @@
-import { afterEach, describe, expect, mock, test } from "bun:test"
+import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test"
 import { cleanup, render, waitFor } from "@testing-library/react"
+import { matchMediaStub, stubGlobals } from "../stub-global"
 
-// Mock the server action. It returns the count recorded by the write, which
-// is what the counter shows once the effect resolves.
-let actionResult: number | null = null
-const incrementMock = mock(() => Promise.resolve(actionResult))
-// What the page's read returns, for a counter rendered inside the provider.
-let readResult: Record<string, number> = {}
-// Both exports are stubbed even though this file only needs one: bun applies
-// mock.module globally for the run, so a partial mock makes the missing export
-// disappear for every other test file too.
+// Mock the server actions. The write returns the count it recorded; the read
+// is what the page's provider makes for this post and its related cards.
+let actionResult: Promise<number | null> = Promise.resolve(null)
+let readResult: Promise<Record<string, number>> = Promise.resolve({})
+const incrementMock = mock(() => actionResult)
+const readMock = mock(() => readResult)
+// Both exports are stubbed: bun applies mock.module globally for the run, so
+// a partial mock makes the missing export disappear for every other test file
+// too.
 mock.module("@/lib/actions/view-count", () => ({
-  getViewCountsAction: mock(() => Promise.resolve(readResult)),
+  getViewCountsAction: readMock,
   incrementViewCountAction: incrementMock,
 }))
 
+let restore: () => void = () => {}
+
+beforeEach(() => {
+  // Most cases are about which figure wins, not how it arrives, so they run
+  // with the scramble switched off and the figure lands at once.
+  restore = stubGlobals({ matchMedia: matchMediaStub(true) })
+})
+
 afterEach(() => {
   cleanup()
+  restore()
   incrementMock.mockClear()
-  actionResult = null
-  readResult = {}
+  readMock.mockClear()
+  actionResult = Promise.resolve(null)
+  readResult = Promise.resolve({})
   // The counter records what it has counted, and the record outlives a render.
   try {
     localStorage.clear()
@@ -29,65 +40,103 @@ afterEach(() => {
 const { ViewCounter } = await import("@/components/view-counter")
 const { ViewCountsProvider } = await import("@/components/view-counts")
 
+function renderCounter(slug: string, count: number) {
+  return render(
+    <ViewCountsProvider slugs={[slug]}>
+      <ViewCounter slug={slug} count={count} label="VIEWS" />
+    </ViewCountsProvider>,
+  )
+}
+
+function shown(container: HTMLElement): string {
+  return container.querySelector(".pp-glitch-count")?.textContent ?? ""
+}
+
+function settled(container: HTMLElement): boolean {
+  return (
+    container.querySelector(".pp-glitch-count")?.getAttribute("data-state") ===
+    "settled"
+  )
+}
+
+function deferred<T>() {
+  let resolve: (value: T) => void = () => {}
+  const promise = new Promise<T>((r) => {
+    resolve = r
+  })
+  return { promise, resolve }
+}
+
 describe("ViewCounter", () => {
-  test("renders view count immediately from prop", () => {
-    const { container } = render(
-      <ViewCounter slug="test-post" count={42} label="VIEWS" />,
-    )
-    expect(container.textContent).toContain("42")
+  // The only figure the server has is the one frozen into the page's cache
+  // entry, zero on a cold start. Showing it until the browser knows better
+  // is the bug this counter was rebuilt around.
+  test("shows dashes, not the cached figure, until something answers", () => {
+    readResult = new Promise(() => {})
+    actionResult = new Promise(() => {})
+    const { container } = renderCounter("test-post", 42)
+
+    expect(shown(container)).toBe("----")
     expect(container.textContent).toContain("VIEWS")
+    expect(container.textContent).not.toContain("42")
   })
 
   test("calls incrementViewCountAction on mount", async () => {
-    render(<ViewCounter slug="my-slug" count={10} label="VIEWS" />)
+    renderCounter("my-slug", 10)
 
     await waitFor(() => expect(incrementMock).toHaveBeenCalledTimes(1))
     expect(incrementMock).toHaveBeenCalledWith("my-slug")
   })
 
-  test("formats large numbers with locale separators", () => {
-    const { container } = render(
-      <ViewCounter slug="popular" count={1234567} label="VIEWS" />,
-    )
-    expect(container.textContent).toContain("VIEWS")
-    // toLocaleString() formats differently by locale, just check it's not raw digits
-    expect(container.textContent).not.toContain("1234567")
+  test("formats large numbers with locale separators", async () => {
+    actionResult = Promise.resolve(1234567)
+    const { container } = renderCounter("popular", 0)
+
+    await waitFor(() => expect(settled(container)).toBe(true))
+    expect(shown(container)).toBe((1234567).toLocaleString())
+    expect(shown(container)).not.toBe("1234567")
   })
 
-  test("renders 0 views when count is 0", () => {
-    const { container } = render(
-      <ViewCounter slug="new-post" count={0} label="VIEWS" />,
-    )
-    expect(container.textContent).toContain("0")
-    expect(container.textContent).toContain("VIEWS")
+  test("shows the count the write recorded", async () => {
+    actionResult = Promise.resolve(43)
+    const { container } = renderCounter("test-post", 42)
+
+    await waitFor(() => expect(shown(container)).toBe("43"))
   })
 
-  // The pages that render this are `"use cache"` components and nothing
-  // revalidates them, so the prop is always a stale figure. The count the
-  // write returns is the only live one.
-  test("replaces the server-rendered figure with the recorded count", async () => {
-    actionResult = 43
-    const { container } = render(
-      <ViewCounter slug="test-post" count={42} label="VIEWS" />,
-    )
-    expect(container.textContent).toContain("42")
+  test("falls back to the rendered figure when nothing reports a count", async () => {
+    // No database configured, or the write failed. The rendered figure is
+    // stale, but it is the only one there is.
+    const { container } = renderCounter("test-post", 42)
 
-    await waitFor(() => expect(container.textContent).toContain("43"))
-    expect(container.textContent).not.toContain("42")
+    await waitFor(() => expect(settled(container)).toBe(true))
+    expect(shown(container)).toBe("42")
   })
 
-  test("keeps the rendered figure when the write reports nothing", async () => {
-    // No database configured, or the write failed. Showing a zero here would
-    // be worse than showing a stale number.
-    actionResult = null
-    const { container } = render(
-      <ViewCounter slug="test-post" count={42} label="VIEWS" />,
-    )
+  test("a failed read does not leave the number scrambling", async () => {
+    readResult = Promise.reject(new Error("offline"))
+    const { container } = renderCounter("test-post", 42)
 
-    // Nothing to wait for here: the point is that the figure never changes.
-    // Waiting on the call the effect makes is what proves the effect ran.
-    await waitFor(() => expect(incrementMock).toHaveBeenCalled())
-    expect(container.textContent).toContain("42")
+    await waitFor(() => expect(settled(container)).toBe(true))
+    expect(shown(container)).toBe("42")
+  })
+
+  // The digits are hidden from assistive technology because they change
+  // many times a second; the settled figure is announced on its own.
+  test("announces the figure only once it has settled", async () => {
+    const write = deferred<number | null>()
+    actionResult = write.promise
+    const { container } = renderCounter("test-post", 0)
+
+    expect(container.querySelector(".sr-only")).toBeNull()
+    expect(
+      container.querySelector(".pp-glitch-count")?.getAttribute("aria-hidden"),
+    ).toBe("true")
+
+    write.resolve(7)
+    await waitFor(() =>
+      expect(container.querySelector(".sr-only")?.textContent).toBe("7"),
+    )
   })
 
   /**
@@ -97,24 +146,22 @@ describe("ViewCounter", () => {
    */
   describe("counting once", () => {
     test("a second visit does not write again", async () => {
-      const { unmount } = render(
-        <ViewCounter slug="repeat" count={7} label="VIEWS" />,
-      )
+      const { unmount } = renderCounter("repeat", 7)
       await waitFor(() => expect(incrementMock).toHaveBeenCalledTimes(1))
       unmount()
 
-      render(<ViewCounter slug="repeat" count={8} label="VIEWS" />)
+      renderCounter("repeat", 8)
       await Promise.resolve()
 
       expect(incrementMock).toHaveBeenCalledTimes(1)
     })
 
     test("another post is still counted", async () => {
-      render(<ViewCounter slug="first" count={1} label="VIEWS" />)
+      renderCounter("first", 1)
       await waitFor(() => expect(incrementMock).toHaveBeenCalledTimes(1))
       cleanup()
 
-      render(<ViewCounter slug="second" count={1} label="VIEWS" />)
+      renderCounter("second", 1)
       await waitFor(() => expect(incrementMock).toHaveBeenCalledTimes(2))
       expect(incrementMock).toHaveBeenLastCalledWith("second")
     })
@@ -124,31 +171,27 @@ describe("ViewCounter", () => {
     // a returning reader from seeing that frozen number.
     test("a second visit shows the count the page reads", async () => {
       localStorage.setItem("blog:viewed:repeat", "1")
-      readResult = { repeat: 12 }
-      const { container } = render(
-        <ViewCountsProvider slugs={["repeat"]}>
-          <ViewCounter slug="repeat" count={0} label="VIEWS" />
-        </ViewCountsProvider>,
-      )
+      readResult = Promise.resolve({ repeat: 12 })
+      const { container } = renderCounter("repeat", 0)
 
-      await waitFor(() => expect(container.textContent).toContain("12"))
+      await waitFor(() => expect(shown(container)).toBe("12"))
       expect(incrementMock).not.toHaveBeenCalled()
     })
 
     // Both requests go out together on a first visit, and the read may have
-    // been answered before the write landed.
-    test("the recorded count wins over the page's read", async () => {
-      actionResult = 13
-      readResult = { fresh: 12 }
-      const { container } = render(
-        <ViewCountsProvider slugs={["fresh"]}>
-          <ViewCounter slug="fresh" count={0} label="VIEWS" />
-        </ViewCountsProvider>,
-      )
+    // been answered before the write landed, so it is not enough to settle.
+    test("a first visit waits for the write rather than settling on the read", async () => {
+      const write = deferred<number | null>()
+      actionResult = write.promise
+      readResult = Promise.resolve({ fresh: 12 })
+      const { container } = renderCounter("fresh", 0)
 
-      await waitFor(() => expect(container.textContent).toContain("13"))
+      await waitFor(() => expect(readMock).toHaveBeenCalled())
       await Promise.resolve()
-      expect(container.textContent).toContain("13")
+      expect(settled(container)).toBe(false)
+
+      write.resolve(13)
+      await waitFor(() => expect(shown(container)).toBe("13"))
     })
 
     // Private browsing, or a browser set to block site data: the accessor
@@ -167,13 +210,50 @@ describe("ViewCounter", () => {
       })
 
       try {
-        render(<ViewCounter slug="private" count={3} label="VIEWS" />)
+        renderCounter("private", 3)
         await waitFor(() => expect(incrementMock).toHaveBeenCalledTimes(1))
       } finally {
         if (original) {
           Object.defineProperty(globalThis, "localStorage", original)
         }
       }
+    })
+  })
+
+  describe("the scramble", () => {
+    beforeEach(() => {
+      restore()
+      restore = stubGlobals({ matchMedia: matchMediaStub(false) })
+    })
+
+    test("cycles digits while the figure is unknown", async () => {
+      readResult = new Promise(() => {})
+      actionResult = new Promise(() => {})
+      const { container } = renderCounter("spin", 0)
+
+      await waitFor(() => expect(shown(container)).toMatch(/^\d{4}$/))
+      expect(settled(container)).toBe(false)
+    })
+
+    test("locks in on the figure once it arrives", async () => {
+      actionResult = Promise.resolve(1284)
+      const { container } = renderCounter("lock", 0)
+
+      await waitFor(() => expect(settled(container)).toBe(true), {
+        timeout: 3000,
+      })
+      expect(shown(container)).toBe((1284).toLocaleString())
+    })
+  })
+
+  describe("reduced motion", () => {
+    test("holds still on the dashes instead of cycling digits", async () => {
+      readResult = new Promise(() => {})
+      actionResult = new Promise(() => {})
+      const { container } = renderCounter("still", 0)
+
+      await new Promise((r) => setTimeout(r, 150))
+      expect(shown(container)).toBe("----")
     })
   })
 })

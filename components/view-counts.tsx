@@ -22,11 +22,20 @@ export function ViewCountsProvider({
 
   useEffect(() => {
     let active = true
-    getViewCountsAction(key ? key.split(",") : []).then((result) => {
-      if (active) {
-        setCounts(result)
-      }
-    })
+    getViewCountsAction(key ? key.split(",") : []).then(
+      (result) => {
+        if (active) {
+          setCounts(result)
+        }
+      },
+      () => {
+        // Settled with nothing, so a counter waiting on the read stops
+        // waiting and every figure falls back to the one it rendered with.
+        if (active) {
+          setCounts({})
+        }
+      },
+    )
     return () => {
       active = false
     }
@@ -39,12 +48,16 @@ export function ViewCountsProvider({
   )
 }
 
-export function useFetchedViewCount(slug: string): number | undefined {
-  return useContext(ViewCountsContext)?.[slug]
+export function useFetchedViewCount(slug: string): {
+  readonly count: number | undefined
+  readonly settled: boolean
+} {
+  const counts = useContext(ViewCountsContext)
+  return { count: counts?.[slug], settled: counts !== null }
 }
 
 function useViewCount(slug: string, fallback: number | undefined) {
-  return useFetchedViewCount(slug) ?? fallback ?? 0
+  return useContext(ViewCountsContext)?.[slug] ?? fallback ?? 0
 }
 
 export function ViewStat({
