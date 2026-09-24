@@ -71,7 +71,15 @@ test.describe("View count", () => {
   // a billed DynamoDB write. The record lives in localStorage, so this holds
   // within one browser — which is the whole claim. The read still happens:
   // it is what shows a returning reader the current count.
+  //
+  // The record is only kept once a write reports a count, and this run has no
+  // database, so the write is answered here with one.
   test("a second visit in the same browser only reads", async ({ page }) => {
+    await page.route("**/api/views", (route) =>
+      route.request().method() === "POST"
+        ? route.fulfill({ json: { count: 7 } })
+        : route.fallback(),
+    )
     const calls = watchViews(page)
 
     await page.goto(POST)
@@ -86,6 +94,31 @@ test.describe("View count", () => {
 
     expect(calls.map((call) => call.method)).toEqual(["GET"])
     expect(calls.every((call) => call.status === 200)).toBe(true)
+  })
+
+  // A write that records nothing — a failed request, no database — used to
+  // leave the record anyway, so the visit was never counted. It is tried
+  // again on the next visit.
+  test("a visit whose write recorded nothing writes again", async ({
+    page,
+  }) => {
+    await page.route("**/api/views", (route) =>
+      route.request().method() === "POST"
+        ? route.fulfill({ json: { count: null } })
+        : route.fallback(),
+    )
+    const calls = watchViews(page)
+
+    await page.goto(POST)
+    await expect
+      .poll(() => calls.map((call) => call.method).sort(), { timeout: 10_000 })
+      .toEqual(["GET", "POST"])
+
+    calls.length = 0
+    await page.goto(POST)
+    await expect
+      .poll(() => calls.map((call) => call.method).sort(), { timeout: 10_000 })
+      .toEqual(["GET", "POST"])
   })
 
   // The record holds for a day, not for good: a reader who comes back the

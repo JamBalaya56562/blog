@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test"
 import { cleanup, render, waitFor } from "@testing-library/react"
+import { StrictMode } from "react"
 import { matchMediaStub, stubGlobals } from "../stub-global"
 
 // Mock the calls to /api/views. The write returns the count it recorded; the
@@ -147,6 +148,7 @@ describe("ViewCounter", () => {
    */
   describe("counting once a day", () => {
     test("a second visit the same day does not write again", async () => {
+      actionResult = Promise.resolve(1)
       const { unmount } = renderCounter("repeat")
       await waitFor(() => expect(incrementMock).toHaveBeenCalledTimes(1))
       unmount()
@@ -179,9 +181,12 @@ describe("ViewCounter", () => {
     })
 
     test("records the time it counted", async () => {
+      actionResult = Promise.resolve(1)
       const before = Date.now()
       renderCounter("stamped")
-      await waitFor(() => expect(incrementMock).toHaveBeenCalledTimes(1))
+      await waitFor(() =>
+        expect(localStorage.getItem("blog:viewed:stamped")).not.toBeNull(),
+      )
 
       const stored = Number(localStorage.getItem("blog:viewed:stamped"))
       expect(stored).toBeGreaterThanOrEqual(before)
@@ -203,14 +208,54 @@ describe("ViewCounter", () => {
     // once more, and is then rewritten with a time like any other.
     test("a record without a time is counted once more, then holds", async () => {
       localStorage.setItem("blog:viewed:legacy", "1")
+      actionResult = Promise.resolve(1)
       const { unmount } = renderCounter("legacy")
-      await waitFor(() => expect(incrementMock).toHaveBeenCalledTimes(1))
+      await waitFor(() =>
+        expect(localStorage.getItem("blog:viewed:legacy")).not.toBe("1"),
+      )
       unmount()
 
       renderCounter("legacy")
       await Promise.resolve()
       expect(incrementMock).toHaveBeenCalledTimes(1)
       expect(localStorage.getItem("blog:viewed:legacy")).not.toBe("1")
+    })
+
+    // The record was written before the POST went out, so a write that
+    // failed held the post as counted for a day and the visit was never
+    // counted. Nothing is recorded until the write reports a count.
+    test("a write that records nothing is not remembered", async () => {
+      const write = deferred<number | null>()
+      actionResult = write.promise
+      const { unmount } = renderCounter("failed")
+      await waitFor(() => expect(incrementMock).toHaveBeenCalledTimes(1))
+      expect(localStorage.getItem("blog:viewed:failed")).toBeNull()
+
+      write.resolve(null)
+      await write.promise
+      await Promise.resolve()
+      expect(localStorage.getItem("blog:viewed:failed")).toBeNull()
+      unmount()
+
+      renderCounter("failed")
+      await waitFor(() => expect(incrementMock).toHaveBeenCalledTimes(2))
+    })
+
+    // Development runs every effect twice for one mount. With the record no
+    // longer written up front, the second run must reuse the first run's
+    // write rather than send its own.
+    test("an effect run twice for one mount sends one write", async () => {
+      actionResult = Promise.resolve(8)
+      const { container } = render(
+        <StrictMode>
+          <ViewCountsProvider slugs={["strict"]}>
+            <ViewCounter slug="strict" label="VIEWS" />
+          </ViewCountsProvider>
+        </StrictMode>,
+      )
+
+      await waitFor(() => expect(shown(container)).toBe("8"))
+      expect(incrementMock).toHaveBeenCalledTimes(1)
     })
 
     // Both requests go out together on a first visit, and the read may have
