@@ -1,0 +1,890 @@
+---
+title: Docker Compose で複数のコンテナをまとめて動かす
+date: "2026-09-25"
+description: 長い docker run を compose.yaml に書き下ろし、EmDash の隣に PostgreSQL を足して 2 つのコンテナをまとめて動かす。プロジェクト名とボリュームの罠、.env、healthcheck、down と down -v の違いまで、実際に踏んで確かめた記録
+image: /thumbnails/docker-compose.avif
+tags:
+  - docker
+  - docker-compose
+  - emdash
+  - devtools
+---
+
+## 前回のおさらい
+
+[前回](/ja/blog/docker-build)は、EmDash を公式の `Dockerfile` からビルドして、こう起こしました。
+
+```console
+❯ docker volume create emdash-data
+emdash-data
+❯ docker volume create emdash-uploads
+emdash-uploads
+❯ docker run -d --name emdash -p 4321:4321 -e EMDASH_ENCRYPTION_KEY=emdash_enc_v1_... \
+    -v emdash-data:/app/data -v emdash-uploads:/app/uploads emdash
+88254b6d6c18065376170dd50289e3b110739f69ccf369048dd64835c9ff4193
+```
+
+動きはしますが、この 1 行を毎回打つ人はいません。どこかにメモしておき、コピーして貼ることになります。そしてデータベースを別のコンテナに分けたくなった瞬間、`docker run` が 2 本、ネットワークを作る 1 本、起こす順番の約束、と覚えることが一気に増えます。
+
+それを 1 つの設定ファイルに書いておき、`docker compose up` の 1 コマンドでまとめて動かすのが **Docker Compose** です。今回は、EmDash のリポジトリに同梱されている `compose.yaml` から始めて、前回の `docker run` を置き換え、そこに PostgreSQL を足して 2 つのコンテナを動かします。
+
+この記事は Docker Desktop（Engine 29.8.0、Compose v5.5.1）で確かめています。Compose は Docker Desktop に最初から入っていて、`docker compose` というサブコマンドとして使えます。
+
+## compose.yaml を読む
+
+EmDash のリポジトリの直下に、`compose.yaml` があります。
+
+```yaml title="compose.yaml"
+services:
+  emdash:
+    build: .
+    ports:
+      - "4321:4321"
+    volumes:
+      - emdash-data:/app/data
+      - emdash-uploads:/app/uploads
+    restart: unless-stopped
+
+volumes:
+  emdash-data:
+  emdash-uploads:
+```
+
+`services` の下に並ぶのが、起こすコンテナの設計図です。ここでは `emdash` という名前の**サービス**が 1 つだけあります。前回の `docker run` と並べると、ほとんど 1 対 1 で対応しています。
+
+| `docker run` / `docker volume` | `compose.yaml` |
+| --- | --- |
+| `docker build -t emdash .` してから `emdash` を起こす | `build: .`（`up` のときにビルドする） |
+| `-p 4321:4321` | `ports: ["4321:4321"]` |
+| `-e KEY=value` | `environment:` |
+| `-v emdash-data:/app/data` | `volumes:`（サービスの下） |
+| `docker volume create emdash-data` | `volumes:`（トップレベル） |
+| `--restart unless-stopped` | `restart: unless-stopped` |
+| `--name emdash` | サービス名 `emdash`（コンテナ名は Compose が付ける。後述） |
+| `-d` | `docker compose up -d` |
+
+`restart: unless-stopped` は、前回使わなかったオプションです。コンテナが落ちたときや Docker 自体が再起動したときに、エンジンがコンテナを起こし直してくれます。ただし自分で `stop` したものは起こしません。これが後で効いてきます。
+
+## 起こす
+
+`compose.yaml` のあるディレクトリで `docker compose up -d` を打ちます。`-d` は `docker run -d` と同じで、裏で動かすという意味です。
+
+```console
+❯ docker compose up -d
+ Image emdash-emdash Building
+...
+#19 [deps 10/10] RUN pnpm install --frozen-lockfile
+#19 CACHED
+#20 [build 1/8] COPY . .
+#20 DONE 210.3s
+...
+#23 [build 4/8] RUN pnpm build && pnpm --filter @emdash-cms/template-blog build
+#23 DONE 982.7s
+#24 [build 5/8] RUN NODE_OPTIONS=--max-old-space-size=4096 pnpm --filter @emdash-cms/template-blog deploy /deploy --prod --legacy
+#24 DONE 157.6s
+...
+ Image emdash-emdash Built
+ Network emdash_default Creating
+ Volume emdash_emdash-uploads Creating
+ Volume emdash_emdash-data Creating
+ Volume emdash_emdash-data Created
+ Volume emdash_emdash-uploads Created
+ Network emdash_default Created
+ Container emdash-emdash-1 Creating
+ Container emdash-emdash-1 Created
+ Container emdash-emdash-1 Starting
+ Container emdash-emdash-1 Started
+```
+
+`build: .` があるので、まずイメージをビルドしています。中身は前回の `docker build` そのもので、`[deps 10/10]` の `pnpm install` は `CACHED` です。イメージの名前は違っても、ビルドキャッシュは同じエンジンの中で共有されています。それでも `COPY . .` から下はやり直しになり、全体で 27 分半かかりました。
+
+ビルドが終わると、ネットワーク、ボリューム、コンテナの順に作って起こしています。どれも `docker run` のときには自分で名前を付けていたものですが、ここでは Compose が名前を付けています。`docker compose ps` と `docker compose logs` で見ます。
+
+```console
+❯ docker compose ps
+NAME              IMAGE           COMMAND                   SERVICE   CREATED          STATUS          PORTS
+emdash-emdash-1   emdash-emdash   "docker-entrypoint.s…"   emdash    33 seconds ago   Up 29 seconds   0.0.0.0:4321->4321/tcp, [::]:4321->4321/tcp
+❯ docker compose logs
+emdash-1  | 22:26:18 [@astrojs/node] Server listening on
+emdash-1  |   local: http://localhost:4321
+emdash-1  |   network: http://172.18.0.2:4321
+```
+
+`docker ps` や `docker logs` と同じものですが、`compose.yaml` に書いたサービスだけが対象です。`logs` の各行の頭には、どのサービスの出力かが付きます。サービスが増えたときに、全部のログを 1 か所で見られるのが便利です。
+
+`network:` のアドレスが、前回の `172.17.0.2` から `172.18.0.2` に変わっています。Compose は、プロジェクトごとに専用のネットワーク（`emdash_default`）を作って、そこにコンテナを繋ぐからです。これが後で PostgreSQL を足すときに効いてきます。
+
+### 前回の記事が消えている
+
+では、前回書いた記事を開きます。
+
+```console
+❯ curl -s -o /dev/null -w '%{http_code}\n' http://localhost:4321/posts/hello-from-a-container
+302
+❯ curl -s -o /dev/null -w '%{http_code} %{redirect_url}\n' http://localhost:4321/_emdash/admin/
+302 http://localhost:4321/_emdash/admin/setup
+```
+
+記事は無く、管理画面はセットアップウィザードに転送されます。つまり、**まっさらな EmDash** です。前回の記事もアカウントも、`emdash-data` ボリュームの中にあるはずでした。ボリュームの一覧を見ると、理由が分かります。
+
+```console
+❯ docker volume ls
+DRIVER    VOLUME NAME
+local     emdash-data
+local     emdash-uploads
+local     emdash_emdash-data
+local     emdash_emdash-uploads
+```
+
+`emdash_emdash-data` という、新しい空のボリュームができています。Compose は、`compose.yaml` に書いた名前の頭に**プロジェクト名**を付けて、ボリュームやネットワークを作ります。プロジェクト名は、既定では `compose.yaml` のあるディレクトリの名前で、ここでは `emdash` です。さっきの出力に並んでいた名前は、全部このルールで説明がつきます。
+
+| もの | `compose.yaml` での名前 | 実際の名前 |
+| --- | --- | --- |
+| イメージ | `emdash`（サービス） | `emdash-emdash` |
+| コンテナ | `emdash`（サービス） | `emdash-emdash-1` |
+| ネットワーク | （書いていない） | `emdash_default` |
+| ボリューム | `emdash-data` | `emdash_emdash-data` |
+
+プロジェクト名で区切るのは、同じマシンで別々のプロジェクトを動かしたときに、`db` や `data` のようなありふれた名前がぶつからないようにするためです。ありがたい仕組みですが、`docker run` で作った既存のボリュームを使うつもりで書くと、今回のように**黙って空のボリュームを新しく作ります**。エラーも警告も出ません。
+
+### 既存のボリュームを使う
+
+`compose.yaml` の外で作ったボリュームを使うときは、`external: true` を付けます。「これは Compose が作るものではない。この名前のものがすでにある」という宣言です。
+
+```diff title="compose.yaml"
+ volumes:
+   emdash-data:
++    external: true
+   emdash-uploads:
++    external: true
+```
+
+いったん `docker compose down` でコンテナを消してから、起こし直します。
+
+```console
+❯ docker compose down
+ Container emdash-emdash-1 Stopping
+ Container emdash-emdash-1 Stopped
+ Container emdash-emdash-1 Removing
+ Container emdash-emdash-1 Removed
+ Network emdash_default Removing
+ Network emdash_default Removed
+❯ docker compose up -d
+time="2026-09-24T07:27:37+09:00" level=warning msg="volume \"emdash_emdash-data\" carries the compose label \"emdash-data\" but does not match the compose file (using \"emdash-data\"); it is left untouched — remove it manually if it is no longer needed"
+time="2026-09-24T07:27:37+09:00" level=warning msg="volume \"emdash_emdash-uploads\" carries the compose label \"emdash-uploads\" but does not match the compose file (using \"emdash-uploads\"); it is left untouched — remove it manually if it is no longer needed"
+ Network emdash_default Creating
+ Network emdash_default Created
+ Container emdash-emdash-1 Creating
+ Container emdash-emdash-1 Created
+ Container emdash-emdash-1 Starting
+ Container emdash-emdash-1 Started
+❯ curl -s -o /dev/null -w '%{http_code}\n' http://localhost:4321/posts/hello-from-a-container
+200
+```
+
+今度はビルドが無く、3.3 秒で起きました。イメージはもうあるからです。そして前回の記事が `200` で返ってきます。管理画面も、セットアップではなくログイン画面に転送されるようになりました。
+
+警告は、さっき間違って作った `emdash_emdash-*` の 2 つについてです。「もう `compose.yaml` のどれとも合わないが、触らずに残しておく。要らないなら自分で消してくれ」と言っています。中身は空なので、消します。
+
+```console
+❯ docker volume rm emdash_emdash-data emdash_emdash-uploads
+emdash_emdash-data
+emdash_emdash-uploads
+```
+
+> [!TIP]
+> 最初から Compose で始めるなら、`external` は要りません。Compose に作らせたボリュームは、Compose が名前を管理してくれます。`external: true` は、`docker run` の時代から使っているボリュームを引き継ぐときや、プロジェクトをまたいで同じボリュームを使うときのためのものです。
+
+## 秘密は .env に置く
+
+前回の `docker run` には `-e EMDASH_ENCRYPTION_KEY=...` がありましたが、同梱の `compose.yaml` にはありません。無くても EmDash は動きますが、プラグインの秘密情報を保存しようとした時点で失敗します。
+
+鍵を作るのに、前回は `docker run --rm emdash ...` でイメージの中の CLI を呼びました。Compose にも同じものがあり、`docker compose run --rm サービス名 コマンド` です。サービスの設定（イメージ、ボリューム、ネットワーク）をそのまま使って、使い捨てのコンテナを 1 つ起こします。
+
+```console
+❯ docker compose run --rm emdash node_modules/.bin/emdash secrets generate
+ Container emdash-emdash-run-a1715c69eafa Creating
+ Container emdash-emdash-run-a1715c69eafa Created
+emdash_enc_v1_...
+
+EmDash encryption key generated.
+
+Set EMDASH_ENCRYPTION_KEY in your environment.
+For Cloudflare deployments, push it to your Worker's secrets.
+For Node deployments, add it to your process environment or .env file.
+
+Keep this value secret. Losing it means losing every secret encrypted with it.
+```
+
+この鍵を `compose.yaml` に直接書くと、`compose.yaml` をコミットした瞬間に鍵もリポジトリに入ります。そこで、`compose.yaml` と同じディレクトリに `.env` というファイルを作り、そちらに置きます。
+
+```text title=".env"
+EMDASH_ENCRYPTION_KEY=emdash_enc_v1_...
+```
+
+`compose.yaml` には、値の代わりに `${変数名}` と書きます。
+
+```yaml title="compose.yaml"
+services:
+  emdash:
+    environment:
+      EMDASH_ENCRYPTION_KEY: ${EMDASH_ENCRYPTION_KEY}
+```
+
+Compose は、`compose.yaml` を読むときに同じディレクトリの `.env` も読んで、`${...}` を置き換えます。置き換えた結果は `docker compose config` で見られます。
+
+```console
+❯ docker compose config
+...
+    environment:
+      EMDASH_ENCRYPTION_KEY: emdash_enc_v1_...
+...
+```
+
+ここでは伏せましたが、実際には**鍵がそのまま表示されます**。`config` の出力を Issue やチャットに貼るときは気をつけてください。
+
+`up -d` し直すと、Compose は `compose.yaml` が変わったサービスだけを作り直します。
+
+```console
+❯ docker compose up -d
+ Container emdash-emdash-1 Recreate
+ Container emdash-emdash-1 Recreated
+ Container emdash-emdash-1 Starting
+ Container emdash-emdash-1 Started
+```
+
+EmDash のリポジトリの `.gitignore` には、最初から `.env` が入っています。
+
+> [!WARNING]
+> `.dockerignore` には `.env` が入っていません。つまり `.env` はビルドコンテキストに入り、`build` ステージの `COPY . .` でイメージの中にコピーされます。最終イメージに `/app/.env` が無いことは確かめました（マルチステージビルドで `build` ステージごと捨てられるからです）が、ビルドキャッシュの中には残ります。自分のプロジェクトでは、`.dockerignore` にも `.env` を書いてください。
+
+## PostgreSQL を足す
+
+ここからが Compose の本領です。EmDash は SQLite で動いていますが、PostgreSQL にも対応しています。データベースを別のコンテナに分けて、2 つのコンテナをまとめて動かします。
+
+まず、EmDash 側の設定を PostgreSQL に切り替えます。ブログのテンプレートの `astro.config.mjs` を、[EmDash のドキュメント](https://docs.emdashcms.com/deployment/database/#postgresql)の例のとおりに書き換えます。
+
+```diff title="templates/blog/astro.config.mjs"
+-import { sqlite } from "emdash/db";
++import { postgres } from "emdash/db";
+...
+-			database: sqlite({ url: "file:./data.db" }),
++			database: postgres({ connectionString: process.env.DATABASE_URL }),
+```
+
+`compose.yaml` には、`db` というサービスを足します。イメージは第 1 回で使った `postgres:18-alpine` です。
+
+```yaml title="compose.yaml"
+services:
+  emdash:
+    build: .
+    ports:
+      - "4321:4321"
+    environment:
+      EMDASH_ENCRYPTION_KEY: ${EMDASH_ENCRYPTION_KEY}
+      DATABASE_URL: postgres://emdash:${POSTGRES_PASSWORD}@db:5432/emdash
+    volumes:
+      - emdash-uploads:/app/uploads
+    depends_on:
+      - db
+    restart: unless-stopped
+
+  db:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_USER: emdash
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: emdash
+    volumes:
+      - pgdata:/var/lib/postgresql
+
+volumes:
+  emdash-uploads:
+    external: true
+  pgdata:
+```
+
+ポイントは 3 つです。
+
+- **`DATABASE_URL` のホスト名が `db`** です。Compose が作ったネットワークの中では、**サービス名がそのままホスト名**になります。IP アドレスを調べて書く必要はありません
+- `db` には `ports` がありません。PostgreSQL に話しかけるのは同じネットワークの EmDash だけなので、ホストに公開する必要が無いからです
+- `depends_on: [db]` で、「`emdash` は `db` の後に起こす」と書いています
+
+PostgreSQL のパスワードも `.env` に 1 行足します。`pgdata` ボリュームは `external` にしていないので、Compose が `emdash_pgdata` という名前で作ります。
+
+設定ファイルを書き換えたので、イメージを作り直します。`up` は、イメージがすでにあればビルドしないので、`--build` を付けます。
+
+```console
+❯ docker compose up -d --build
+...
+#19 [deps 10/10] RUN pnpm install --frozen-lockfile
+#19 DONE 215.7s
+...
+ Image emdash-emdash Built
+ Network emdash_default Creating
+ Volume emdash_pgdata Creating
+ Volume emdash_pgdata Created
+ Network emdash_default Created
+ Container emdash-db-1 Creating
+ Container emdash-db-1 Created
+ Container emdash-emdash-1 Creating
+ Container emdash-emdash-1 Created
+ Container emdash-db-1 Starting
+ Container emdash-db-1 Started
+ Container emdash-emdash-1 Starting
+ Container emdash-emdash-1 Started
+❯ docker compose ps
+NAME              IMAGE                COMMAND                   SERVICE   CREATED          STATUS          PORTS
+emdash-db-1       postgres:18-alpine   "docker-entrypoint.s…"   db        32 seconds ago   Up 30 seconds   5432/tcp
+emdash-emdash-1   emdash-emdash        "docker-entrypoint.s…"   emdash    30 seconds ago   Up 29 seconds   0.0.0.0:4321->4321/tcp, [::]:4321->4321/tcp
+```
+
+前回の話がそのまま出ています。書き換えた `astro.config.mjs` は `templates/` の下にあり、`deps` ステージが `COPY templates/ templates/` でコピーするファイルです。だから今回は `pnpm install` が `CACHED` にならず、3 分半かけてやり直しました。
+
+`db` が先に、`emdash` が後に起きています。`depends_on` の順番です。`db` の `PORTS` は `5432/tcp` だけで、`->` がありません。ホストには公開されていないということです。
+
+2 つとも `Up` です。ところが、ページを開くと `500` が返ってきます。ここから 2 つの罠を踏みました。
+
+### pg が見つからない
+
+```console
+❯ docker compose logs emdash
+...
+emdash-1  | 22:48:15 [ERROR] Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'pg' imported from /app/dist/server/chunks/dialect_CjqOFQB3.mjs
+```
+
+`pg` は、Node から PostgreSQL に繋ぐためのパッケージです。EmDash の依存には入っているので、イメージの中にあるはずです。`docker exec` の Compose 版である `docker compose exec` で、コンテナの中を見ます。コンテナ名ではなく、サービス名で指定します。まず `node_modules` の直下を一覧して `pg` を探すと、こうでした。
+
+```text
+@astrojs @emdash-cms astro emdash kysely react react-dom
+ls: cannot access 'node_modules/pg': No such file or directory
+```
+
+直下には無く、pnpm の置き場所である `node_modules/.pnpm/node_modules/` の奥にはあります。そして直下の `kysely` は、その奥へのリンクでした。
+
+```console
+❯ docker compose exec emdash sh -c 'ls -d node_modules/.pnpm/node_modules/pg node_modules/.pnpm/node_modules/kysely; readlink node_modules/kysely'
+node_modules/.pnpm/node_modules/kysely
+node_modules/.pnpm/node_modules/pg
+/app/node_modules/.pnpm/node_modules/kysely
+```
+
+Node はビルド済みのサーバーから `pg` を名前で探すので、`node_modules` の直下に無いと見つけられません。前回読んだ `Dockerfile` の実行用ステージには、同じ理由で `kysely` だけをリンクする行がすでにあり、`pg` はそこから漏れていました。SQLite のままなら `pg` を使わないので、誰も気付かなかったわけです。
+
+直し方は、その行に `pg` も足すことです。
+
+```diff title="Dockerfile"
+ RUN mkdir -p data uploads \
+-    && ln -s /app/node_modules/.pnpm/node_modules/kysely /app/node_modules/kysely
++    && ln -s /app/node_modules/.pnpm/node_modules/kysely /app/node_modules/kysely \
++    && ln -s /app/node_modules/.pnpm/node_modules/pg /app/node_modules/pg
+```
+
+この修正は [PR #3406](https://github.com/emdash-cms/emdash/pull/3406) として送ってあります。レビューで、libSQL 用のドライバーも同じ理由で見つからないと指摘されたので、PR ではそちらのリンクも足しています。
+
+> [!NOTE]
+> 先に `docker compose exec emdash ln -s ...` でコンテナの中に直接リンクを作って試しましたが、次に `compose.yaml` を変えて `up -d` したとき、コンテナが作り直されてリンクは消えました。コンテナの中で直したものは、書き込み層と一緒に消えます。第 1 回でやったことの、そのままの再現です。直すならイメージ（`Dockerfile`）です。
+
+### DATABASE_URL が読まれない
+
+`pg` が見つかると、今度はこうなりました。
+
+```console
+❯ docker compose logs emdash
+...
+emdash-1  | 22:49:26 [ERROR] Error: connect ECONNREFUSED 127.0.0.1:5432
+```
+
+`127.0.0.1` は、コンテナ自身です。`DATABASE_URL` に `db` と書いたのに、そこを見ていません。環境変数はちゃんと入っています（パスワードは `sed` で伏せています）。
+
+```console
+❯ docker compose exec emdash sh -c 'printenv DATABASE_URL | sed "s#//emdash:[^@]*@#//emdash:***@#"'
+postgres://emdash:***@db:5432/emdash
+```
+
+原因は、ビルドしたサーバーの中にありました。
+
+```console
+❯ docker compose exec emdash sh -c 'grep -n -A8 "\"database\": {" dist/server/chunks/config_B4S-UmlO.mjs'
+3:	"database": {
+4-		"entrypoint": "emdash/db/postgres",
+5-		"config": {},
+6-		"type": "postgres",
+...
+```
+
+`"config": {}` です。`astro.config.mjs` の `process.env.DATABASE_URL` は、コンテナを起こしたときではなく、**イメージをビルドしたときに**評価されて、その結果がサーバーに焼き込まれます。ビルド中の `DATABASE_URL` は空なので、焼き込まれた設定も空です。コンテナに何を渡しても読まれません。
+
+設定が空のとき、`pg` は `PGHOST`、`PGUSER`、`PGPASSWORD`、`PGDATABASE` という環境変数を見に行きます（PostgreSQL のクライアントに共通の決まりです）。こちらは実行時に読まれるので、`compose.yaml` の環境変数をそちらに書き換えれば、ビルドし直さずに済みます。
+
+```diff title="compose.yaml"
+     environment:
+       EMDASH_ENCRYPTION_KEY: ${EMDASH_ENCRYPTION_KEY}
+-      DATABASE_URL: postgres://emdash:${POSTGRES_PASSWORD}@db:5432/emdash
++      PGHOST: db
++      PGUSER: emdash
++      PGPASSWORD: ${POSTGRES_PASSWORD}
++      PGDATABASE: emdash
+```
+
+`Dockerfile` を直したので、`--build` でイメージを作り直して起こします。`compose.yaml` の環境変数も変わっているので、`emdash` は作り直し（`Recreate`）になります。
+
+```console
+❯ docker compose up -d --build
+...
+#30 [stage-3 4/4] RUN mkdir -p data uploads     && ln -s /app/node_modules/.pnpm/node_modules/kysely /app/node_modules/kysely     && ln -s /app/node_modules/.pnpm/node_modules/pg /app/node_modules/pg
+#30 DONE 1.3s
+...
+ Image emdash-emdash Built
+ Container emdash-emdash-1 Recreate
+ Container emdash-emdash-1 Recreated
+ Container emdash-db-1 Starting
+ Container emdash-db-1 Started
+ Container emdash-emdash-1 Starting
+ Container emdash-emdash-1 Started
+```
+
+これで、やっと動きました。
+
+```console
+❯ curl -s -o /dev/null -w '%{http_code} %{redirect_url}\n' http://localhost:4321/_emdash/admin/
+302 http://localhost:4321/_emdash/admin/setup
+❯ docker compose exec db psql -U emdash -c "\dt"
+                           List of tables
+ Schema |                   Name                   | Type  | Owner
+--------+------------------------------------------+-------+--------
+ public | _emdash_404_log                          | table | emdash
+ public | _emdash_api_tokens                       | table | emdash
+ public | _emdash_authorization_codes              | table | emdash
+...
+```
+
+EmDash が PostgreSQL の中に 61 個のテーブルを作っています。`docker compose exec db psql` で、`db` コンテナの中の `psql` をそのまま使えます。ホストに PostgreSQL のクライアントを入れる必要はありません。
+
+### 起こしただけでは、まだ使えない
+
+動いたところで、データベースを空にして起こし直してみます。`docker compose down -v` は、コンテナと一緒にボリュームも消します（後で詳しく見ます）。
+
+```console
+❯ docker compose down -v
+ Container emdash-emdash-1 Stopping
+ Container emdash-emdash-1 Stopped
+ Container emdash-emdash-1 Removing
+ Container emdash-emdash-1 Removed
+ Container emdash-db-1 Stopping
+ Container emdash-db-1 Stopped
+ Container emdash-db-1 Removing
+ Container emdash-db-1 Removed
+ Volume emdash_pgdata Removing
+ Network emdash_default Removing
+ Volume emdash_pgdata Removed
+ Network emdash_default Removed
+❯ docker compose up -d
+ Network emdash_default Creating
+ Volume emdash_pgdata Creating
+ Volume emdash_pgdata Created
+ Network emdash_default Created
+ Container emdash-db-1 Creating
+ Container emdash-db-1 Created
+ Container emdash-emdash-1 Creating
+ Container emdash-emdash-1 Created
+ Container emdash-db-1 Starting
+ Container emdash-db-1 Started
+ Container emdash-emdash-1 Starting
+ Container emdash-emdash-1 Started
+```
+
+`Volume emdash_pgdata Removed` でデータベースが消え、`up` で空のボリュームが新しく作られています。`db` の後に `emdash` が起きていて、順番は守られています。ところが、ログにはエラーが並びました。`docker compose logs --timestamps` で時刻付きのログを出し、要所を時刻順に抜き出すとこうです。
+
+```text
+db-1      | 2026-09-24T13:17:26.718167900Z The files belonging to this database system will be owned by user "postgres".
+emdash-1  | 2026-09-24T13:17:28.192456500Z 13:17:28 [@astrojs/node] Server listening on
+emdash-1  | 2026-09-24T13:17:29.941842900Z EmDash middleware error: Error: connect ECONNREFUSED 172.18.0.2:5432
+emdash-1  | 2026-09-24T13:17:31.029192400Z EmDash middleware error: Error: Database initialization is backing off after a recent migration failure: connect ECONNREFUSED 172.18.0.2:5432
+db-1      | 2026-09-24T13:17:31.959476600Z 2026-09-24 13:17:31.959 UTC [1] LOG:  database system is ready to accept connections
+...
+emdash-1  | 2026-09-24T13:18:05.968293800Z Auto-seeded default collections
+```
+
+（`db` は初期化のあいだに一度、内部だけで起動して止まるので、実際には `ready to accept connections` が 2 回出ます。載せているのは本番の 2 回目です）
+
+`depends_on` が待つのは、`db` の**コンテナが起動するまで**です。PostgreSQL が接続を受け付けるようになるまでではありません。空のボリュームから起こした PostgreSQL は、最初にデータベースを作る初期化に 5 秒ほどかかります。そのあいだに来たリクエストで EmDash は接続に失敗し、「直前に失敗したので少し待つ」状態に入りました。そこから `backing off` のエラーを 28 回出し、PostgreSQL の準備ができてから 34 秒後に、やっとデータベースを使い始めています。
+
+しかもこのあいだ、`curl` で見た管理画面のステータスコードは `200` でした（正常なら、セットアップへの `302` です）。ステータスコードだけを見ていると、壊れていることに気付けません。
+
+「コンテナが起動した」ではなく「使える状態になった」まで待たせるのが、**healthcheck** です。`db` に「使える状態かどうか」を確かめるコマンドを持たせ、`emdash` の `depends_on` で「`db` が healthy になってから起こす」と書きます。
+
+```diff title="compose.yaml"
+     depends_on:
+-      - db
++      db:
++        condition: service_healthy
+     restart: unless-stopped
+
+   db:
+     image: postgres:18-alpine
+     ...
++    healthcheck:
++      test: ["CMD", "pg_isready", "-U", "emdash"]
++      interval: 2s
++      retries: 15
+```
+
+`pg_isready` は PostgreSQL に付いてくるコマンドで、接続を受け付けているかどうかだけを確かめます。それを 2 秒ごとに、15 回まで試します。もう一度データベースを空にして起こします。今度は `down` でコンテナを消してから、`down -v` で残ったボリュームを消しました（`down -v` はコンテナが無くても、ボリュームだけを消します）。
+
+```console
+❯ docker compose down
+ Container emdash-emdash-1 Stopping
+ Container emdash-emdash-1 Stopped
+ Container emdash-emdash-1 Removing
+ Container emdash-emdash-1 Removed
+ Container emdash-db-1 Stopping
+ Container emdash-db-1 Stopped
+ Container emdash-db-1 Removing
+ Container emdash-db-1 Removed
+ Network emdash_default Removing
+ Network emdash_default Removed
+❯ docker compose down -v
+ Volume emdash_pgdata Removing
+ Volume emdash_pgdata Removed
+❯ docker compose up -d
+ Network emdash_default Creating
+ Volume emdash_pgdata Creating
+ Volume emdash_pgdata Created
+ Network emdash_default Created
+ Container emdash-db-1 Creating
+ Container emdash-db-1 Created
+ Container emdash-emdash-1 Creating
+ Container emdash-emdash-1 Created
+ Container emdash-db-1 Starting
+ Container emdash-db-1 Started
+ Container emdash-db-1 Waiting
+ Container emdash-db-1 Healthy
+ Container emdash-emdash-1 Starting
+ Container emdash-emdash-1 Started
+```
+
+`up` の出力に `Waiting` と `Healthy` の 2 行が増えました。今度は、`emdash` は PostgreSQL が接続を受け付けるようになってから起き、エラーは 1 つも出ませんでした。2 回の起動を、同じ時間軸に並べるとこうなります。
+
+<StartupTimeline
+  title="docker compose up -d の直後"
+  hint="ボタンで起動のしかたを選び、スライダーで時刻を動かしてください。時刻は PostgreSQL が初期化を始めた瞬間を 0 秒とした実測値です。"
+  end={42}
+  scenarios={[
+    {
+      label: "depends_on だけ",
+      dbReady: 5.24,
+      appListening: 1.47,
+      appWorks: 39.25,
+      events: [
+        { at: 1.47, label: "EmDash が待ち受けを始める" },
+        { at: 3.22, label: "最初のリクエスト。DB に繋がらず失敗（ECONNREFUSED）" },
+        { at: 5.24, label: "PostgreSQL が接続を受け付け始める" },
+        { at: 39.25, label: "EmDash がやっと DB を使い始める。そのあいだ backing off のエラーが 28 回" },
+      ],
+    },
+    {
+      label: "healthcheck 付き",
+      dbReady: 1.95,
+      appListening: 5.17,
+      appWorks: 5.17,
+      events: [
+        { at: 1.95, label: "PostgreSQL が接続を受け付け始める" },
+        { at: 5.17, label: "healthy になるのを待ってから、EmDash が待ち受けを始める" },
+        { at: 7.75, label: "最初のリクエストで初期化が済む。エラーは 0 回" },
+      ],
+    },
+  ]}
+  labels={{
+    scenario: "起動のしかた",
+    time: "時刻",
+    db: "PostgreSQL",
+    app: "EmDash",
+    request: "リクエスト",
+    dbPhase: { starting: "初期化中", ready: "接続を受け付けている" },
+    appPhase: { down: "まだ待ち受けていない", up: "待ち受けている" },
+    result: { none: "応答なし", error: "エラー画面", ok: "正常なページ" },
+  }}
+  status="{t} 秒: PostgreSQL は{db}、EmDash は{app}。リクエストの結果は「{request}」"
+  caption="起動しただけでは、まだ使えない。healthcheck で「使える」まで待たせる"
+/>
+
+## 記事を書いて、消す
+
+データが本当に PostgreSQL に入っているかを、記事を 1 本書いて確かめます。
+
+`http://localhost:4321/_emdash/admin/` からセットアップウィザードを済ませたら、今回は管理画面ではなく、イメージの中の CLI から書いてみます。`emdash login` は、ブラウザで承認するデバイスフローでログインします。
+
+```console
+❯ docker compose exec emdash node_modules/.bin/emdash login --url http://localhost:4321
+◐ Connecting to http://localhost:4321...
+(node:27) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ Connected to EmDash
+
+ℹ Open your browser to:
+  http://localhost:4321/_emdash/admin/device
+
+ℹ Enter code: A74A-6BWW
+
+◐ Waiting for authorization...
+✔ Logged in as ... (admin)
+ℹ Token saved to path:/app
+```
+
+表示されたコードをブラウザで入力して承認すると、CLI がログインします。記事は `emdash content create` で作ります。本文は EmDash の形式（Portable Text）の JSON で渡します。
+
+```console
+❯ docker compose exec emdash node_modules/.bin/emdash content create posts --slug hello-from-postgresql --data '{"title":"Hello from PostgreSQL","content":[{"_type":"block","style":"normal","_key":"b0","children":[{"_type":"span","_key":"s0","text":"This post was written through Docker Compose. Its data lives in PostgreSQL, in a volume."}]}]}'
+{
+  "id": "01M39XTRVAJCD7PBS8K6N1K7P4",
+  "type": "posts",
+  "slug": "hello-from-postgresql",
+  "status": "published",
+...
+❯ curl -s -o /dev/null -w '%{http_code}\n' http://localhost:4321/posts/hello-from-postgresql
+200
+```
+
+![EmDash の公開サイトに、Hello from PostgreSQL というタイトルの記事が表示されている。本文は This post was written through Docker Compose. Its data lives in PostgreSQL, in a volume. の 1 行。左に PUBLISHED September 24, 2026 と READING TIME 1 min、右にサンプル記事のカテゴリとタグ、最近の記事一覧が並ぶ](compose-emdash-post.avif)
+
+### down はデータを残す
+
+`docker compose down` は、コンテナとネットワークを消します。
+
+```console
+❯ docker compose down
+ Container emdash-emdash-1 Stopping
+ Container emdash-emdash-1 Stopped
+ Container emdash-emdash-1 Removing
+ Container emdash-emdash-1 Removed
+ Container emdash-db-1 Stopping
+ Container emdash-db-1 Stopped
+ Container emdash-db-1 Removing
+ Container emdash-db-1 Removed
+ Network emdash_default Removing
+ Network emdash_default Removed
+❯ docker compose up -d
+ Network emdash_default Creating
+ Network emdash_default Created
+ Container emdash-db-1 Creating
+ Container emdash-db-1 Created
+ Container emdash-emdash-1 Creating
+ Container emdash-emdash-1 Created
+ Container emdash-db-1 Starting
+ Container emdash-db-1 Started
+ Container emdash-db-1 Waiting
+ Container emdash-db-1 Healthy
+ Container emdash-emdash-1 Starting
+ Container emdash-emdash-1 Started
+❯ curl -s -o /dev/null -w '%{http_code}\n' http://localhost:4321/posts/hello-from-postgresql
+200
+```
+
+止める順番が、起こす順番の逆になっています。`emdash` を先に止めてから `db` を止めるので、使っている途中でデータベースが消えることはありません。起こし直すときは `Volume` の行がありません。ボリュームは残っていて、作る必要が無かったからです。記事もそのまま `200` で出ています。コンテナは消えても、データは `emdash_pgdata` ボリュームにあるからです。
+
+### down -v はデータごと消す
+
+`-v` を付けると、ボリュームも消します。
+
+```console
+❯ docker compose down -v
+ Container emdash-emdash-1 Stopping
+ Container emdash-emdash-1 Stopped
+ Container emdash-emdash-1 Removing
+ Container emdash-emdash-1 Removed
+ Container emdash-db-1 Stopping
+ Container emdash-db-1 Stopped
+ Container emdash-db-1 Removing
+ Container emdash-db-1 Removed
+ Volume emdash_pgdata Removing
+ Network emdash_default Removing
+ Volume emdash_pgdata Removed
+ Network emdash_default Removed
+❯ docker volume ls
+DRIVER    VOLUME NAME
+local     emdash-data
+local     emdash-uploads
+❯ docker compose up -d
+ Network emdash_default Creating
+ Volume emdash_pgdata Creating
+ Volume emdash_pgdata Created
+ Network emdash_default Created
+ Container emdash-db-1 Creating
+ Container emdash-db-1 Created
+ Container emdash-emdash-1 Creating
+ Container emdash-emdash-1 Created
+ Container emdash-db-1 Starting
+ Container emdash-db-1 Started
+ Container emdash-db-1 Waiting
+ Container emdash-db-1 Healthy
+ Container emdash-emdash-1 Starting
+ Container emdash-emdash-1 Started
+❯ curl -s -o /dev/null -w '%{http_code}\n' http://localhost:4321/posts/hello-from-postgresql
+302
+```
+
+今度は `up` が `Volume emdash_pgdata Creating` から始まり、空のボリュームを作り直しています。記事は消え、EmDash はまたセットアップからやり直しです。`ec_posts` テーブルも 0 行でした。一方で、`external: true` にした `emdash-data` と `emdash-uploads` は残っています。**Compose が作ったものは Compose が消し、Compose が作っていないものには手を出しません。** 最初に `external` を付けたのは、この意味でも正解でした。
+
+`stop`、`start`、`down`、`down -v` で何が残って何が消えるかを、実際の出力と一緒に触って確かめられるようにしました。
+
+<ComposeLifecycle
+  title="docker compose"
+  hint="コマンドを押すと、プロジェクトの何が残って何が消えるかが変わります。下には、そのとき Compose が実際に出力した行が出ます。"
+  prefix="docker compose"
+  commands={{
+    up: "up -d",
+    stop: "stop",
+    start: "start",
+    down: "down",
+    downVolumes: "down -v",
+  }}
+  containers={{ app: "emdash-emdash-1", db: "emdash-db-1" }}
+  network="emdash_default"
+  volume={{ name: "emdash_pgdata", item: "Hello from PostgreSQL" }}
+  external="emdash-uploads"
+  image="emdash-emdash"
+  labels={{
+    running: "Up",
+    stopped: "Exited",
+    absent: "なし",
+    network: "ネットワーク",
+    volume: "ボリューム",
+    image: "イメージ",
+    externalTag: "external",
+    empty: "空",
+  }}
+  status={{
+    initial: "2 つのコンテナが動いていて、{volume} に記事「{item}」がある",
+    created: "ネットワークとコンテナを作り直した。{volume} は残っていたので、記事もそのまま",
+    createdVolume: "{volume} も新しく作った。中身は空で、記事はもうない",
+    resumed: "止めていたコンテナを起こした。中身はそのまま",
+    noop: "もう動いているので、何も作り直さない",
+    stopped: "コンテナを止めただけ。ネットワークもボリュームも残っている",
+    started: "止めていたコンテナを起こした",
+    down: "コンテナとネットワークは消えたが、{volume} と記事は残っている",
+    downVolumes: "{volume} ごと消えて、記事も消えた。external の {external} とイメージは残る",
+    volumeOnly: "残っていた {volume} を消した",
+  }}
+  caption="down はデータを残し、down -v はデータごと消す。external のボリュームとイメージはどちらでも残る"
+/>
+
+`stop` はコンテナを止めるだけで、`start` で続きから動きます。第 1 回の `docker stop` と `docker rm` の違いが、そのまま `stop` と `down` の違いです。そして `down -v` は、第 1 回の `docker volume rm` まで一度にやります。開発中にデータベースを作り直したいときには便利ですが、本番のデータがあるところで打つと取り返しがつきません。
+
+## Docker ごと再起動したとき
+
+最後に、`restart: unless-stopped` の話です。同梱の `compose.yaml` では `emdash` にだけ付いていて、足した `db` には付けていませんでした。
+
+イメージのビルド中に Docker Desktop が落ちて再起動したことがあり、そのあとの状態がこうでした。
+
+```console
+❯ docker ps -a --format '{{.Names}} {{.Status}}' | grep emdash
+emdash-emdash-1 Up 44 seconds
+emdash-db-1 Exited (255) 46 seconds ago
+emdash Exited (137) 3 days ago
+emdash-check Exited (137) 4 days ago
+```
+
+下の 2 つは前回の記事で使ったコンテナなので、ここでは関係ありません。`restart` の付いた `emdash` だけが起き直り、`db` は止まったままです。EmDash だけが動いていても、データベースが無ければ何もできません。`db` にも同じ 1 行を足します。
+
+```diff title="compose.yaml"
+   db:
+     image: postgres:18-alpine
++    restart: unless-stopped
+```
+
+`up -d` すると、設定の変わった `db` だけが作り直されます。
+
+```console
+❯ docker compose up -d
+ Container emdash-emdash-1 Running
+ Container emdash-db-1 Recreate
+ Container emdash-db-1 Recreated
+ Container emdash-db-1 Starting
+ Container emdash-db-1 Started
+ Container emdash-db-1 Waiting
+ Container emdash-db-1 Healthy
+```
+
+この状態で Docker Desktop を再起動すると、今度は 2 つとも戻ってきました。
+
+```console
+❯ docker compose ps -a
+NAME              IMAGE                COMMAND                   SERVICE   CREATED         STATUS                   PORTS
+emdash-db-1       postgres:18-alpine   "docker-entrypoint.s…"   db        5 minutes ago   Up 2 minutes (healthy)   5432/tcp
+emdash-emdash-1   emdash-emdash        "docker-entrypoint.s…"   emdash    7 hours ago     Up 2 minutes             0.0.0.0:4321->4321/tcp, [::]:4321->4321/tcp
+❯ for c in emdash-db-1 emdash-emdash-1; do docker inspect $c --format '{{.Name}} status={{.State.Status}} restarts={{.RestartCount}} started={{.State.StartedAt}} health={{if .State.Health}}{{.State.Health.Status}}{{end}}'; done
+/emdash-db-1 status=running restarts=0 started=2026-09-24T22:01:51.1812861Z health=healthy
+/emdash-emdash-1 status=running restarts=0 started=2026-09-24T22:01:51.1818878Z health=
+```
+
+ここで起動時刻を見てください。2 つのコンテナは、0.6 ミリ秒差で**同時に**起きています。`depends_on` も healthcheck も待っていません。`restart` でコンテナを起こし直すのは Docker エンジンで、エンジンは `compose.yaml` の順番を知らないからです。
+
+今回はそれでも問題は起きませんでした。データベースがすでにあるので PostgreSQL は 0.5 秒で準備でき、EmDash は最初のリクエストが来るまでデータベースに繋ぎに行かないからです。ただ、それは運が良かっただけで、Compose が守ってくれたわけではありません。**healthcheck が効くのは `docker compose up` で起こしたときだけ**、と覚えておいてください。
+
+## 実際に踏んだ罠
+
+### EmDash の stop は、毎回強制終了になる
+
+`docker compose stop` の後で `ps -a` を見ると、終了コードが `137` になっていました。PostgreSQL を足す前、EmDash だけを動かしていたときの記録です。
+
+```console
+❯ docker compose stop
+ Container emdash-emdash-1 Stopping
+ Container emdash-emdash-1 Stopped
+❯ docker compose ps -a
+NAME              IMAGE           COMMAND                   SERVICE   CREATED          STATUS                      PORTS
+emdash-emdash-1   emdash-emdash   "docker-entrypoint.s…"   emdash    19 seconds ago   Exited (137) 1 second ago
+```
+
+`137` は 128 + 9 で、`SIGKILL`（強制終了）で殺されたという意味です。`stop` はまず `SIGTERM`（終了してください、というお願い）を送り、それで終わらなければ `SIGKILL` を送ります。試しに `docker kill -s TERM emdash-emdash-1` で `SIGTERM` だけを送り、コンテナが止まるまでを測りました。
+
+```console
+❯ s=$(date +%s%N); docker kill -s TERM emdash-emdash-1 >/dev/null; until [ "$(docker inspect emdash-emdash-1 --format '{{.State.Running}}')" = false ]; do sleep 0.2; done; echo "SIGTERM -> exit after $(( ($(date +%s%N)-s)/1000000 )) ms, code $(docker inspect emdash-emdash-1 --format '{{.State.ExitCode}}')"
+SIGTERM -> exit after 74503 ms, code 137
+```
+
+74 秒経っても止まらず、止まったのは、こちらが改めて `docker stop` したときでした。終了コードも `137` です。
+
+ログの `(node:1)` が示すとおり、コンテナの中では Node が PID 1 で動いています。Linux では PID 1 のプロセスに届いたシグナルは、そのプロセスが自分で処理を書いていない限り無視されます。対照的に PostgreSQL は、`SIGTERM` を受けて `received fast shutdown request` とログに残し、きれいに止まっていました。
+
+EmDash の場合、止まって困るのは書きかけのリクエストくらいで、データは PostgreSQL 側にあります。ただ、自分のアプリで同じことが起きていたら、`stop` のたびに後始末の処理が飛ばされていることになります。Compose には、PID 1 に小さな init プロセスを置く `init: true` という設定がありますが、この記事では試していません。
+
+### Git Bash がパスを書き換える
+
+[第 1 回](/ja/blog/getting-started-with-docker#git-bash-がパスを書き換える)で書いた罠を、`docker compose exec` でも踏みました。
+
+```console
+❯ docker compose exec emdash ln -s /app/node_modules/.pnpm/node_modules/pg /app/node_modules/pg
+ln: failed to create symbolic link 'C:/Program Files/Git/app/node_modules/pg': No such file or directory
+```
+
+`docker compose` になっても、引数を書き換えているのは Git Bash なので、同じく `MSYS_NO_PATHCONV=1` で止まります。
+
+## よく使うコマンド
+
+| コマンド | 何をするか |
+| --- | --- |
+| `docker compose up -d` | 足りないものを作って、全部のサービスを裏で起こす。変わったサービスだけ作り直す |
+| `docker compose up -d --build` | イメージをビルドし直してから起こす |
+| `docker compose ps` / `ps -a` | このプロジェクトのコンテナの一覧 / 止まったものも含めて |
+| `docker compose logs` / `logs -f SERVICE` | 全サービスのログ / そのサービスのログを追いかける |
+| `docker compose exec SERVICE CMD` | 動いているサービスのコンテナでコマンドを実行する |
+| `docker compose run --rm SERVICE CMD` | サービスの設定で使い捨てのコンテナを起こして CMD を実行する |
+| `docker compose stop` / `start` | 止める / 起こし直す（コンテナは残る） |
+| `docker compose down` | コンテナとネットワークを消す（ボリュームは残る） |
+| `docker compose down -v` | ボリュームも消す（`external` のものは残る） |
+| `docker compose config` | `.env` を読み込んで置き換えた後の設定を表示する（秘密も表示される） |
+
+## まとめ
+
+- Docker Compose は、`docker run` の長い 1 行とボリュームやネットワークの準備を `compose.yaml` に書き下ろして、`docker compose up` でまとめて動かすもの
+- Compose は名前の頭に**プロジェクト名**を付ける。`docker run` で作った既存のボリュームを使うなら `external: true`。書き忘れると、黙って空のボリュームができる
+- 秘密は `.env` に置いて `${VAR}` で参照する。`.gitignore` と `.dockerignore` の両方に `.env` を書く
+- サービス名がそのままホスト名になる。データベースは `ports` で公開しなくても、同じプロジェクトのコンテナからは繋がる
+- `depends_on` が待つのはコンテナの起動まで。「使える」まで待たせるには healthcheck と `condition: service_healthy`
+- `down` はデータを残し、`down -v` はデータごと消す
+- `restart` で起こし直すのはエンジンで、`depends_on` の順番は守られない
+- `astro.config.mjs` の `process.env` はビルドのときに焼き込まれる。コンテナに渡す環境変数が効くとは限らない
+
+前回と今回で、EmDash の公式の `Dockerfile` に 2 本の PR を送ることになりました。どれも、誰かが実際にその構成でビルドして動かすまで、表に出なかった壊れ方です。動かない公式の設定を見つけたら、ログを読んで、どのコンテナから何が見えていないのかを辿れば、たいてい直せます。
