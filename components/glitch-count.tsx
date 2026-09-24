@@ -1,6 +1,8 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
+import type { Locale } from "@/lib/i18n/config"
+import { formatCount } from "@/lib/i18n/format-number"
 
 const PLACEHOLDER = "----"
 const LOADING_DIGITS = "0000"
@@ -32,13 +34,19 @@ type State = "loading" | "settling" | "settled"
  * replaces. Random digits cannot be rendered there either, since the client
  * would hydrate with different ones.
  */
-export function GlitchCount({ value }: { readonly value: number | null }) {
+export function GlitchCount({
+  locale,
+  value,
+}: {
+  readonly locale: Locale
+  readonly value: number | null
+}) {
   const [text, setText] = useState(PLACEHOLDER)
   const [state, setState] = useState<State>("loading")
   const [locked, setLocked] = useState(0)
   const lockedRef = useRef(0)
 
-  const target = value === null ? null : value.toLocaleString()
+  const target = value === null ? null : formatCount(locale, value)
 
   useEffect(() => {
     if (prefersReducedMotion()) {

@@ -193,7 +193,11 @@ async function BlogPostContent({
                       {dictionary.blog.minRead}
                     </span>
                     <span className="text-cyber-line-hi">·</span>
-                    <ViewCounter slug={slug} label={dictionary.blog.views} />
+                    <ViewCounter
+                      slug={slug}
+                      locale={locale}
+                      label={dictionary.blog.views}
+                    />
                   </span>
                 </div>
               </ViewTransition>

@@ -12,6 +12,7 @@ import { TagLink } from "@/components/home/tag-link"
 import { PostDate } from "@/components/post-date"
 import type { Post } from "@/lib/content/types"
 import type { Locale } from "@/lib/i18n/config"
+import { formatCount } from "@/lib/i18n/format-number"
 import { getBlogPostPath } from "@/lib/routes"
 
 interface BlogListRowProps {
@@ -156,7 +157,7 @@ function DesktopRow({
       </div>
       <div className="text-right">
         <div className="pp-num text-lg text-cyber-cyan">
-          {viewCount.toLocaleString()}
+          {formatCount(locale, viewCount)}
         </div>
         <div className="pp-tick">
           {readMin} {minReadLabel}
