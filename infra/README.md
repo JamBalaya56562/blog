@@ -16,7 +16,7 @@ account, not that the account needs correcting.
 | [lambda.tf](lambda.tf) | The function, its URL, its log group and the four statements on its resource policy |
 | [storage.tf](storage.tf) | The DynamoDB table for page views, the ECR repository and its lifecycle policy |
 | [iam.tf](iam.tf) | The function's execution role, the GitHub Actions deploy role and the OIDC provider behind it |
-| [cdn.tf](cdn.tf) | The CloudFront distribution and its origin access control |
+| [cdn.tf](cdn.tf) | The CloudFront distribution and its origin access control, which is the only way to the function URL |
 | [dns.tf](dns.tf) | The hosted zone, its records and the ACM certificate |
 
 Two things are deliberately absent.
