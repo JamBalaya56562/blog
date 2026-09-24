@@ -115,6 +115,19 @@ test.describe("Blog list page", () => {
     ).toBeVisible()
   })
 
+  // A repeated key reaches the page as an array. `q` was passed straight to
+  // the keyword filter, which called `.trim()` on it and took the page down
+  // to the error boundary. The first value wins, as it does in the search box.
+  test("a repeated query parameter searches for its first value", async ({
+    page,
+  }) => {
+    const response = await page.goto("/en/blog?q=mise&q=docker&sort=x&sort=y")
+    expect(response?.status()).toBe(200)
+    await expect(page.getByRole("heading", { name: /^Blog/ })).toBeVisible()
+    await expect(page.getByRole("searchbox")).toHaveValue("mise")
+    await expect(page.locator("a[href*='/en/blog/']").first()).toBeVisible()
+  })
+
   test("clear filter returns to unfiltered list", async ({ page }) => {
     await page.goto("/en/blog?tag=mise")
     const allChip = page

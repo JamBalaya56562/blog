@@ -22,6 +22,7 @@ import { isValidLocale } from "@/lib/i18n/config"
 import { getDictionary } from "@/lib/i18n/get-dictionary"
 import { localePageMetadata } from "@/lib/metadata"
 import { POSTS_PER_PAGE, paginate } from "@/lib/pagination"
+import { firstParam, type SearchParams } from "@/lib/search-params"
 
 async function getCachedPosts(locale: Locale) {
   "use cache"
@@ -36,14 +37,13 @@ async function BlogListContent({
   searchParams,
 }: {
   locale: Locale
-  searchParams: Promise<{
-    tag?: string
-    page?: string
-    q?: string
-    sort?: string
-  }>
+  searchParams: Promise<SearchParams>
 }) {
-  const { tag, page: pageParam, q, sort } = await searchParams
+  const params = await searchParams
+  const tag = firstParam(params.tag)
+  const pageParam = firstParam(params.page)
+  const q = firstParam(params.q)
+  const sort = firstParam(params.sort)
   const dictionary = getDictionary(locale)
   const allPosts = await getCachedPosts(locale)
   let posts = allPosts
@@ -227,12 +227,7 @@ export default async function BlogListPage({
   searchParams,
 }: {
   params: Promise<{ locale: string }>
-  searchParams: Promise<{
-    tag?: string
-    page?: string
-    q?: string
-    sort?: string
-  }>
+  searchParams: Promise<SearchParams>
 }) {
   const { locale } = await params
   if (!isValidLocale(locale)) {
