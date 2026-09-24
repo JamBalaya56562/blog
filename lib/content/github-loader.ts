@@ -1,6 +1,6 @@
 import type { Locale } from "@/lib/i18n/config"
 import { BaseContentLoader } from "./base-loader"
-import { parseFrontmatter } from "./frontmatter"
+import { parsePost } from "./frontmatter"
 import type { Post } from "./types"
 
 export class GitHubContentLoader extends BaseContentLoader {
@@ -47,6 +47,7 @@ export class GitHubContentLoader extends BaseContentLoader {
 
   async getPost(locale: Locale, slug: string): Promise<Post | null> {
     const url = this.rawUrl(`${this.contentPath}/posts/${locale}/${slug}.mdx`)
+    let raw: string
     try {
       const res = await fetch(url, {
         next: { revalidate: 3600 },
@@ -55,12 +56,12 @@ export class GitHubContentLoader extends BaseContentLoader {
         console.error(`GitHub raw fetch error: ${res.status} for ${url}`)
         return null
       }
-      const raw = await res.text()
-      const { frontmatter, content } = parseFrontmatter(raw)
-      return { content, frontmatter, locale, slug }
+      raw = await res.text()
     } catch (e) {
       console.error("GitHub raw fetch failed:", e)
       return null
     }
+    const { frontmatter, content } = parsePost(url, raw)
+    return { content, frontmatter, locale, slug }
   }
 }

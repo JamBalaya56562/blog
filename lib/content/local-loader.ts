@@ -2,7 +2,7 @@ import { readdir, readFile } from "node:fs/promises"
 import { join } from "node:path"
 import type { Locale } from "@/lib/i18n/config"
 import { BaseContentLoader } from "./base-loader"
-import { parseFrontmatter } from "./frontmatter"
+import { parsePost } from "./frontmatter"
 import type { Post } from "./types"
 
 export class LocalContentLoader extends BaseContentLoader {
@@ -31,12 +31,13 @@ export class LocalContentLoader extends BaseContentLoader {
 
   async getPost(locale: Locale, slug: string): Promise<Post | null> {
     const filePath = join(process.cwd(), this.basePath, locale, `${slug}.mdx`)
+    let raw: string
     try {
-      const raw = await readFile(filePath, "utf-8")
-      const { frontmatter, content } = parseFrontmatter(raw)
-      return { content, frontmatter, locale, slug }
+      raw = await readFile(filePath, "utf-8")
     } catch {
       return null
     }
+    const { frontmatter, content } = parsePost(filePath, raw)
+    return { content, frontmatter, locale, slug }
   }
 }
