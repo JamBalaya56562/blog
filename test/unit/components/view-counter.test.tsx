@@ -2,8 +2,8 @@ import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test"
 import { cleanup, render, waitFor } from "@testing-library/react"
 import { matchMediaStub, stubGlobals } from "../stub-global"
 
-// Mock the server actions. The write returns the count it recorded; the read
-// is what the page's provider makes for this post and its related cards.
+// Mock the calls to /api/views. The write returns the count it recorded; the
+// read is what the page's provider makes for this post and its related cards.
 let actionResult: Promise<number | null> = Promise.resolve(null)
 let readResult: Promise<Record<string, number>> = Promise.resolve({})
 const incrementMock = mock(() => actionResult)
@@ -11,9 +11,9 @@ const readMock = mock(() => readResult)
 // Both exports are stubbed: bun applies mock.module globally for the run, so
 // a partial mock makes the missing export disappear for every other test file
 // too.
-mock.module("@/lib/actions/view-count", () => ({
-  getViewCountsAction: readMock,
-  incrementViewCountAction: incrementMock,
+mock.module("@/lib/views/client", () => ({
+  fetchViewCounts: readMock,
+  recordView: incrementMock,
 }))
 
 let restore: () => void = () => {}
@@ -81,7 +81,7 @@ describe("ViewCounter", () => {
     expect(container.textContent).not.toContain("42")
   })
 
-  test("calls incrementViewCountAction on mount", async () => {
+  test("records a view on mount", async () => {
     renderCounter("my-slug", 10)
 
     await waitFor(() => expect(incrementMock).toHaveBeenCalledTimes(1))

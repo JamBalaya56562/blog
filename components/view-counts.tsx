@@ -1,7 +1,7 @@
 "use client"
 
 import { createContext, useContext, useEffect, useState } from "react"
-import { getViewCountsAction } from "@/lib/actions/view-count"
+import { fetchViewCounts } from "@/lib/views/client"
 
 const ViewCountsContext = createContext<Readonly<
   Record<string, number>
@@ -22,7 +22,7 @@ export function ViewCountsProvider({
 
   useEffect(() => {
     let active = true
-    getViewCountsAction(key ? key.split(",") : []).then(
+    fetchViewCounts(key ? key.split(",") : []).then(
       (result) => {
         if (active) {
           setCounts(result)
