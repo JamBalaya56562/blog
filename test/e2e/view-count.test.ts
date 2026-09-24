@@ -87,4 +87,23 @@ test.describe("View count", () => {
     expect(calls.map((call) => call.method)).toEqual(["GET"])
     expect(calls.every((call) => call.status === 200)).toBe(true)
   })
+
+  // The record holds for a day, not for good: a reader who comes back the
+  // next day is another view. The day is stood in for by a record written
+  // just over a day ago, placed before the page's scripts run.
+  test("a visit a day after the last count records again", async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem(
+        "blog:viewed:getting-started-with-mise",
+        String(Date.now() - 24 * 60 * 60 * 1000 - 60_000),
+      )
+    })
+    const calls = watchViews(page)
+
+    await page.goto(POST)
+    await expect
+      .poll(() => calls.map((call) => call.method).sort(), { timeout: 10_000 })
+      .toEqual(["GET", "POST"])
+    expect(calls.every((call) => call.status === 200)).toBe(true)
+  })
 })

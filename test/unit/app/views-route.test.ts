@@ -16,7 +16,6 @@ const getViewCounts = mock(async (slugs: string[]) => {
 const incrementViewCount = mock(async (_slug: string) => recorded)
 mock.module("@/lib/db/queries", () => ({
   getAllViewCounts: mock(async () => []),
-  getViewCount: mock(async () => 0),
   getViewCounts,
   incrementViewCount,
 }))
