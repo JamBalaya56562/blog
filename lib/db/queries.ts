@@ -1,6 +1,5 @@
 import {
   BatchGetCommand,
-  GetCommand,
   QueryCommand,
   UpdateCommand,
 } from "@aws-sdk/lib-dynamodb"
@@ -69,24 +68,6 @@ function report(where: string, e: unknown, subject?: string): void {
       ? `[${where}] failed: ${message}`
       : `[${where}] failed for ${subject}: ${message}`,
   )
-}
-
-export async function getViewCount(slug: string): Promise<number> {
-  const client = getDocClient()
-  if (!client) {
-    return 0
-  }
-
-  try {
-    const result = await client.send(
-      new GetCommand({ Key: pageViewKey(slug), TableName: getTableName() }),
-    )
-
-    return (result.Item as PageViewItem | undefined)?.count ?? 0
-  } catch (e) {
-    report("getViewCount", e, `slug ${slug}`)
-    return 0
-  }
 }
 
 export async function incrementViewCount(slug: string): Promise<number | null> {

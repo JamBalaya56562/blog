@@ -40,10 +40,10 @@ afterEach(() => {
 const { ViewCounter } = await import("@/components/view-counter")
 const { ViewCountsProvider } = await import("@/components/view-counts")
 
-function renderCounter(slug: string, count: number) {
+function renderCounter(slug: string) {
   return render(
     <ViewCountsProvider slugs={[slug]}>
-      <ViewCounter slug={slug} count={count} label="VIEWS" />
+      <ViewCounter slug={slug} label="VIEWS" />
     </ViewCountsProvider>,
   )
 }
@@ -68,21 +68,20 @@ function deferred<T>() {
 }
 
 describe("ViewCounter", () => {
-  // The only figure the server has is the one frozen into the page's cache
-  // entry, zero on a cold start. Showing it until the browser knows better
-  // is the bug this counter was rebuilt around.
-  test("shows dashes, not the cached figure, until something answers", () => {
+  // The page renders no figure: the only one the server has is frozen into
+  // the page's cache entry, zero on a cold start. Dashes until the browser
+  // knows better.
+  test("shows dashes until something answers", () => {
     readResult = new Promise(() => {})
     actionResult = new Promise(() => {})
-    const { container } = renderCounter("test-post", 42)
+    const { container } = renderCounter("test-post")
 
     expect(shown(container)).toBe("----")
     expect(container.textContent).toContain("VIEWS")
-    expect(container.textContent).not.toContain("42")
   })
 
   test("records a view on mount", async () => {
-    renderCounter("my-slug", 10)
+    renderCounter("my-slug")
 
     await waitFor(() => expect(incrementMock).toHaveBeenCalledTimes(1))
     expect(incrementMock).toHaveBeenCalledWith("my-slug")
@@ -90,7 +89,7 @@ describe("ViewCounter", () => {
 
   test("formats large numbers with locale separators", async () => {
     actionResult = Promise.resolve(1234567)
-    const { container } = renderCounter("popular", 0)
+    const { container } = renderCounter("popular")
 
     await waitFor(() => expect(settled(container)).toBe(true))
     expect(shown(container)).toBe((1234567).toLocaleString())
@@ -99,26 +98,27 @@ describe("ViewCounter", () => {
 
   test("shows the count the write recorded", async () => {
     actionResult = Promise.resolve(43)
-    const { container } = renderCounter("test-post", 42)
+    const { container } = renderCounter("test-post")
 
     await waitFor(() => expect(shown(container)).toBe("43"))
   })
 
-  test("falls back to the rendered figure when nothing reports a count", async () => {
-    // No database configured, or the write failed. The rendered figure is
-    // stale, but it is the only one there is.
-    const { container } = renderCounter("test-post", 42)
+  // No database configured, or a crawler, which the write does not count:
+  // the read answering without this post is what a post nobody has viewed
+  // looks like.
+  test("a post the read has no count for shows 0", async () => {
+    const { container } = renderCounter("test-post")
 
     await waitFor(() => expect(settled(container)).toBe(true))
-    expect(shown(container)).toBe("42")
+    expect(shown(container)).toBe("0")
   })
 
   test("a failed read does not leave the number scrambling", async () => {
     readResult = Promise.reject(new Error("offline"))
-    const { container } = renderCounter("test-post", 42)
+    const { container } = renderCounter("test-post")
 
     await waitFor(() => expect(settled(container)).toBe(true))
-    expect(shown(container)).toBe("42")
+    expect(shown(container)).toBe("0")
   })
 
   // The digits are hidden from assistive technology because they change
@@ -126,7 +126,7 @@ describe("ViewCounter", () => {
   test("announces the figure only once it has settled", async () => {
     const write = deferred<number | null>()
     actionResult = write.promise
-    const { container } = renderCounter("test-post", 0)
+    const { container } = renderCounter("test-post")
 
     expect(container.querySelector(".sr-only")).toBeNull()
     expect(
@@ -146,22 +146,22 @@ describe("ViewCounter", () => {
    */
   describe("counting once", () => {
     test("a second visit does not write again", async () => {
-      const { unmount } = renderCounter("repeat", 7)
+      const { unmount } = renderCounter("repeat")
       await waitFor(() => expect(incrementMock).toHaveBeenCalledTimes(1))
       unmount()
 
-      renderCounter("repeat", 8)
+      renderCounter("repeat")
       await Promise.resolve()
 
       expect(incrementMock).toHaveBeenCalledTimes(1)
     })
 
     test("another post is still counted", async () => {
-      renderCounter("first", 1)
+      renderCounter("first")
       await waitFor(() => expect(incrementMock).toHaveBeenCalledTimes(1))
       cleanup()
 
-      renderCounter("second", 1)
+      renderCounter("second")
       await waitFor(() => expect(incrementMock).toHaveBeenCalledTimes(2))
       expect(incrementMock).toHaveBeenLastCalledWith("second")
     })
@@ -172,7 +172,7 @@ describe("ViewCounter", () => {
     test("a second visit shows the count the page reads", async () => {
       localStorage.setItem("blog:viewed:repeat", "1")
       readResult = Promise.resolve({ repeat: 12 })
-      const { container } = renderCounter("repeat", 0)
+      const { container } = renderCounter("repeat")
 
       await waitFor(() => expect(shown(container)).toBe("12"))
       expect(incrementMock).not.toHaveBeenCalled()
@@ -184,7 +184,7 @@ describe("ViewCounter", () => {
       const write = deferred<number | null>()
       actionResult = write.promise
       readResult = Promise.resolve({ fresh: 12 })
-      const { container } = renderCounter("fresh", 0)
+      const { container } = renderCounter("fresh")
 
       await waitFor(() => expect(readMock).toHaveBeenCalled())
       await Promise.resolve()
@@ -210,7 +210,7 @@ describe("ViewCounter", () => {
       })
 
       try {
-        renderCounter("private", 3)
+        renderCounter("private")
         await waitFor(() => expect(incrementMock).toHaveBeenCalledTimes(1))
       } finally {
         if (original) {
@@ -229,7 +229,7 @@ describe("ViewCounter", () => {
     test("cycles digits while the figure is unknown", async () => {
       readResult = new Promise(() => {})
       actionResult = new Promise(() => {})
-      const { container } = renderCounter("spin", 0)
+      const { container } = renderCounter("spin")
 
       await waitFor(() => expect(shown(container)).toMatch(/^\d{4}$/))
       expect(settled(container)).toBe(false)
@@ -237,7 +237,7 @@ describe("ViewCounter", () => {
 
     test("locks in on the figure once it arrives", async () => {
       actionResult = Promise.resolve(1284)
-      const { container } = renderCounter("lock", 0)
+      const { container } = renderCounter("lock")
 
       await waitFor(() => expect(settled(container)).toBe(true), {
         timeout: 3000,
@@ -250,7 +250,7 @@ describe("ViewCounter", () => {
     test("holds still on the dashes instead of cycling digits", async () => {
       readResult = new Promise(() => {})
       actionResult = new Promise(() => {})
-      const { container } = renderCounter("still", 0)
+      const { container } = renderCounter("still")
 
       await new Promise((r) => setTimeout(r, 150))
       expect(shown(container)).toBe("----")

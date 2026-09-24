@@ -21,7 +21,6 @@ import { ViewCounter } from "@/components/view-counter"
 import { ViewCountsProvider } from "@/components/view-counts"
 import { findAdjacentPosts } from "@/lib/content/adjacent"
 import { createContentLoader } from "@/lib/content/loader"
-import { getViewCount } from "@/lib/db/queries"
 import { rehypeHighlight } from "@/lib/highlight"
 import type { Locale } from "@/lib/i18n/config"
 import { isValidLocale, locales } from "@/lib/i18n/config"
@@ -122,11 +121,10 @@ async function BlogPostContent({
   }
 
   const dictionary = getDictionary(locale)
-  const [translationLocale, tocItems, allPosts, viewCount] = await Promise.all([
+  const [translationLocale, tocItems, allPosts] = await Promise.all([
     getTranslationPair(locale, slug),
     Promise.resolve(extractToc(post.content)),
     createContentLoader().getAllPosts(locale),
-    getViewCount(slug),
   ])
   const adjacentPosts = findAdjacentPosts(allPosts, slug)
   const related = getRelatedPosts(allPosts, slug)
@@ -194,11 +192,7 @@ async function BlogPostContent({
                       {dictionary.blog.minRead}
                     </span>
                     <span className="text-cyber-line-hi">·</span>
-                    <ViewCounter
-                      slug={slug}
-                      count={viewCount}
-                      label={dictionary.blog.views}
-                    />
+                    <ViewCounter slug={slug} label={dictionary.blog.views} />
                   </span>
                 </div>
               </ViewTransition>

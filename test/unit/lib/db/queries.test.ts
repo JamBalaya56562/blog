@@ -12,8 +12,9 @@ mock.module("@/lib/db", () => ({
   getDocClient: mockGetDocClient,
 }))
 
-const { getAllViewCounts, getViewCount, getViewCounts, incrementViewCount } =
-  await import("@/lib/db/queries")
+const { getAllViewCounts, getViewCounts, incrementViewCount } = await import(
+  "@/lib/db/queries"
+)
 
 /** Stands in for the document client, resolving each `send` in order. */
 function fakeClient(...responses: unknown[]) {
@@ -36,33 +37,6 @@ function failingClient() {
 
 beforeEach(() => {
   mockGetDocClient.mockReset()
-})
-
-describe("getViewCount", () => {
-  test("returns 0 when db is unavailable", async () => {
-    mockGetDocClient.mockReturnValue(null)
-    expect(await getViewCount("test-slug")).toBe(0)
-  })
-
-  test("returns 0 when slug is not found", async () => {
-    fakeClient({})
-    expect(await getViewCount("non-existent")).toBe(0)
-  })
-
-  test("returns count when slug exists", async () => {
-    const send = fakeClient({ Item: { count: 42, slug: "popular-post" } })
-
-    expect(await getViewCount("popular-post")).toBe(42)
-    expect(inputOf(send)).toMatchObject({
-      Key: { pk: "PAGE", slug: "popular-post" },
-      TableName: "test-page-views",
-    })
-  })
-
-  test("returns 0 when the read fails", async () => {
-    failingClient()
-    expect(await getViewCount("popular-post")).toBe(0)
-  })
 })
 
 describe("incrementViewCount", () => {
@@ -216,12 +190,12 @@ describe("failure reporting", () => {
     const send = mock(() => Promise.reject(new Error("first cause")))
     mockGetDocClient.mockReturnValue({ send })
 
-    await getViewCount("a")
-    await getViewCount("b")
-    await getViewCount("c")
+    await incrementViewCount("a")
+    await incrementViewCount("b")
+    await incrementViewCount("c")
 
     expect(logged).toEqual([
-      "[getViewCount] failed for slug a: Error: first cause",
+      "[incrementViewCount] failed for slug a: Error: first cause",
     ])
   })
 
@@ -229,16 +203,16 @@ describe("failure reporting", () => {
     mockGetDocClient.mockReturnValue({
       send: mock(() => Promise.reject(new Error("cause one"))),
     })
-    await getViewCount("a")
+    await incrementViewCount("a")
 
     mockGetDocClient.mockReturnValue({
       send: mock(() => Promise.reject(new Error("cause two"))),
     })
-    await getViewCount("b")
+    await incrementViewCount("b")
 
     expect(logged).toEqual([
-      "[getViewCount] failed for slug a: Error: cause one",
-      "[getViewCount] failed for slug b: Error: cause two",
+      "[incrementViewCount] failed for slug a: Error: cause one",
+      "[incrementViewCount] failed for slug b: Error: cause two",
     ])
   })
 
@@ -246,13 +220,13 @@ describe("failure reporting", () => {
     const send = mock(() => Promise.reject(new Error("shared cause")))
     mockGetDocClient.mockReturnValue({ send })
 
-    await getViewCount("a")
     await incrementViewCount("a")
+    await getViewCounts(["a"])
     await getAllViewCounts()
 
     expect(logged).toEqual([
-      "[getViewCount] failed for slug a: Error: shared cause",
       "[incrementViewCount] failed for slug a: Error: shared cause",
+      "[getViewCounts] failed for slugs a: Error: shared cause",
       "[getAllViewCounts] failed: Error: shared cause",
     ])
   })
@@ -290,15 +264,15 @@ describe("failure reporting over time", () => {
       send: mock(() => Promise.reject(new Error("an outage"))),
     })
 
-    await getViewCount("a")
+    await incrementViewCount("a")
     now += 4 * 60 * 1000
-    await getViewCount("b")
+    await incrementViewCount("b")
     now += 61 * 1000
-    await getViewCount("c")
+    await incrementViewCount("c")
 
     expect(logged).toEqual([
-      "[getViewCount] failed for slug a: Error: an outage",
-      "[getViewCount] failed for slug c: Error: an outage",
+      "[incrementViewCount] failed for slug a: Error: an outage",
+      "[incrementViewCount] failed for slug c: Error: an outage",
     ])
   })
 })
