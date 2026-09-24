@@ -130,10 +130,12 @@ describe("post card responses", () => {
     expect(res.headers.get("Content-Type")).toBe("image/png")
 
     const bytes = new Uint8Array(await res.arrayBuffer())
-    expect([...bytes.slice(0, 8)]).toEqual([137, 80, 78, 71, 13, 10, 26, 10])
+    expect(bytes.slice(0, 8)).toEqual(
+      new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]),
+    )
     // The final IEND chunk confirms that the PNG stream reached its end.
-    expect([...bytes.slice(-12)]).toEqual([
-      0, 0, 0, 0, 73, 69, 78, 68, 174, 66, 96, 130,
-    ])
+    expect(bytes.slice(-12)).toEqual(
+      new Uint8Array([0, 0, 0, 0, 73, 69, 78, 68, 174, 66, 96, 130]),
+    )
   }, 30000)
 })
