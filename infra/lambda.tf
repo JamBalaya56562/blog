@@ -52,28 +52,11 @@ resource "aws_cloudwatch_log_group" "lambda" {
   retention_in_days = 30
 }
 
-# Four statements sit on the function's resource policy: the two public ones
-# below, which are the same rule under different names, and CloudFront's two.
-# The public pair let anyone reach the URL while its auth type was `NONE`. Both
-# are conditioned on that auth type, so under `AWS_IAM` they grant nothing; they
-# are removed in a change of their own, because an apply that removed them
-# alongside the switch could remove them first, while the URL was still `NONE`.
-resource "aws_lambda_permission" "function_url_public_access" {
-  action                 = "lambda:InvokeFunctionUrl"
-  function_name          = aws_lambda_function.blog.function_name
-  function_url_auth_type = "NONE"
-  principal              = "*"
-  statement_id           = "FunctionURLAllowPublicAccess"
-}
-
-resource "aws_lambda_permission" "function_url_invoke" {
-  action                 = "lambda:InvokeFunctionUrl"
-  function_name          = aws_lambda_function.blog.function_name
-  function_url_auth_type = "NONE"
-  principal              = "*"
-  statement_id           = "FunctionURLAllowInvokeFunction"
-}
-
+# CloudFront's two statements are all the resource policy holds: origin access
+# control needs both InvokeFunctionUrl and InvokeFunction, each for this
+# distribution only. There used to be two more, public ones for `NONE`; they
+# went once the URL switched to `AWS_IAM` had made them inert, in a change of
+# their own so that no apply could remove them while the URL was still `NONE`.
 resource "aws_lambda_permission" "cloudfront" {
   action        = "lambda:InvokeFunctionUrl"
   function_name = aws_lambda_function.blog.function_name
@@ -82,11 +65,9 @@ resource "aws_lambda_permission" "cloudfront" {
   statement_id  = "AllowCloudFrontServicePrincipal"
 }
 
-# The second half of what origin access control needs now the URL checks
-# signatures: CloudFront's documented setup grants both InvokeFunctionUrl and
-# InvokeFunction, for this distribution only. It was added while the URL was
-# still `NONE`, before the switch, because the two cannot be ordered within one
-# apply: this depends on the distribution, which depends on the URL.
+# Added while the URL was still `NONE`, before the switch, because the two
+# cannot be ordered within one apply: this depends on the distribution, which
+# depends on the URL.
 resource "aws_lambda_permission" "cloudfront_invoke_function" {
   action        = "lambda:InvokeFunction"
   function_name = aws_lambda_function.blog.function_name
