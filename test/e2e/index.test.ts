@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test"
+import { revealed } from "./post-page"
 import { listedPostCount, postDates } from "./posts"
 
 /**
@@ -259,6 +260,7 @@ test.describe("Blog post page", () => {
 
     test(`the ${locale} dates are announced as dates`, async ({ page }) => {
       await page.goto(`/${locale}/blog/getting-started-with-mise`)
+      await revealed(page)
 
       const announced = await page.evaluate(() => {
         const walk = (node: Node): string => {
@@ -288,6 +290,7 @@ test.describe("Blog post page", () => {
     // print the long date next to the short one.
     await page.setViewportSize({ height: 900, width: 1280 })
     await page.goto("/ja/blog/getting-started-with-mise")
+    await revealed(page)
 
     const hidden = page.locator("article header .sr-only").first()
     await expect(hidden).toHaveText(DATES.ja.spoken)
@@ -305,6 +308,7 @@ test.describe("Blog post page", () => {
     // row's own `gap-3`, so this stays one line at any normal width.
     await page.setViewportSize({ height: 900, width: 1280 })
     await page.goto("/en/blog/getting-started-with-mise")
+    await revealed(page)
 
     const meta = page.locator("article header .pp-tick").nth(1)
     const tops = await meta.evaluate((el) =>
