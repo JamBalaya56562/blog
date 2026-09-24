@@ -33,6 +33,7 @@ jobs:
     runs-on: ubuntu-26.04-arm
     timeout-minutes: 30
     if: github.repository_owner == 'jambalaya56562'
+    environment: lambda-deploy
     permissions:
       id-token: write
     concurrency:
