@@ -1,4 +1,5 @@
 import type { Route } from "next"
+import { cacheLife } from "next/cache"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import { Suspense } from "react"
@@ -16,7 +17,7 @@ import {
   filterPostsByTag,
   sortPostsByViews,
 } from "@/lib/content/sort-filter"
-import { getAllViewCounts, getViewCounts } from "@/lib/db/queries"
+import { getAllViewCounts } from "@/lib/db/queries"
 import type { Locale } from "@/lib/i18n/config"
 import { isValidLocale } from "@/lib/i18n/config"
 import { getDictionary } from "@/lib/i18n/get-dictionary"
@@ -28,6 +29,21 @@ async function getCachedPosts(locale: Locale) {
   "use cache"
   const loader = createContentLoader()
   return loader.getAllPosts(locale)
+}
+
+/**
+ * Every post's count, read at most once a minute on each server. The list
+ * used to read the database on every request, and sorting by views read the
+ * whole table each time. The counts are still live enough to rank by: the
+ * `minutes` profile serves an entry for a minute and then refreshes it. An
+ * earlier `"use cache"` here set no lifetime, which leaves the default
+ * profile's fifteen minutes, and a ranking that lags that far looked frozen.
+ */
+async function getCachedViewCounts(): Promise<Record<string, number>> {
+  "use cache"
+  cacheLife("minutes")
+  const rows = await getAllViewCounts()
+  return Object.fromEntries(rows.map((row) => [row.slug, row.count]))
 }
 
 const TAG_LIMIT = 12
@@ -55,10 +71,11 @@ async function BlogListContent({
     posts = filterPostsByKeyword(posts, q)
   }
 
+  const allViews = await getCachedViewCounts()
+  const viewCounts = new Map(Object.entries(allViews))
+
   if (sort === "popular") {
-    const allViews = await getAllViewCounts()
-    const allViewsMap = new Map(allViews.map((v) => [v.slug, v.count]))
-    posts = sortPostsByViews(posts, allViewsMap)
+    posts = sortPostsByViews(posts, viewCounts)
   }
 
   const page = Math.max(1, Number(pageParam) || 1)
@@ -68,9 +85,10 @@ async function BlogListContent({
     POSTS_PER_PAGE,
   )
 
-  const viewCounts = await getViewCounts(items.map((p) => p.slug))
-
-  const pageViewMax = Math.max(100, ...Array.from(viewCounts.values()))
+  const pageViewMax = Math.max(
+    100,
+    ...items.map((p) => viewCounts.get(p.slug) ?? 0),
+  )
 
   const tagCounts = new Map<string, number>()
   for (const p of allPosts) {
