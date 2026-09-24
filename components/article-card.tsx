@@ -126,7 +126,11 @@ export function ArticleCard({
                 {labels.min}
               </span>
               <span>
-                <ViewStat slug={post.slug} fallback={viewCount} />{" "}
+                <ViewStat
+                  slug={post.slug}
+                  locale={locale}
+                  fallback={viewCount}
+                />{" "}
                 {labels.views}
               </span>
             </span>

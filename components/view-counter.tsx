@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react"
 import { GlitchCount } from "@/components/glitch-count"
 import { useFetchedViewCount } from "@/components/view-counts"
+import type { Locale } from "@/lib/i18n/config"
 import { recordView } from "@/lib/views/client"
 import { stillCounted } from "@/lib/views/recount"
 
@@ -23,7 +24,15 @@ function markCounted(slug: string, now: number): void {
   } catch {}
 }
 
-export function ViewCounter({ slug, label }: { slug: string; label: string }) {
+export function ViewCounter({
+  label,
+  locale,
+  slug,
+}: {
+  readonly label: string
+  readonly locale: Locale
+  readonly slug: string
+}) {
   const [liveCount, setLiveCount] = useState<number | null>(null)
   const [writeDone, setWriteDone] = useState(false)
   const [gaveUp, setGaveUp] = useState(false)
@@ -86,7 +95,7 @@ export function ViewCounter({ slug, label }: { slug: string; label: string }) {
 
   return (
     <span className="whitespace-nowrap">
-      <GlitchCount value={value} /> {label}
+      <GlitchCount locale={locale} value={value} /> {label}
     </span>
   )
 }

@@ -1,6 +1,8 @@
 "use client"
 
 import { createContext, useContext, useEffect, useState } from "react"
+import type { Locale } from "@/lib/i18n/config"
+import { formatCount } from "@/lib/i18n/format-number"
 import { fetchViewCounts } from "@/lib/views/client"
 
 const ViewCountsContext = createContext<Readonly<
@@ -62,14 +64,16 @@ function useViewCount(slug: string, fallback: number | undefined) {
 
 export function ViewStat({
   fallback,
+  locale,
   slug,
 }: {
   readonly fallback?: number
+  readonly locale: Locale
   readonly slug: string
 }) {
   return (
     <span className="pp-num text-cyber-cyan">
-      {useViewCount(slug, fallback).toLocaleString()}
+      {formatCount(locale, useViewCount(slug, fallback))}
     </span>
   )
 }

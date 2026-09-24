@@ -45,7 +45,7 @@ const { RECOUNT_AFTER_MS } = await import("@/lib/views/recount")
 function renderCounter(slug: string) {
   return render(
     <ViewCountsProvider slugs={[slug]}>
-      <ViewCounter slug={slug} label="VIEWS" />
+      <ViewCounter slug={slug} locale="en" label="VIEWS" />
     </ViewCountsProvider>,
   )
 }
@@ -94,8 +94,30 @@ describe("ViewCounter", () => {
     const { container } = renderCounter("popular")
 
     await waitFor(() => expect(settled(container)).toBe(true))
-    expect(shown(container)).toBe((1234567).toLocaleString())
-    expect(shown(container)).not.toBe("1234567")
+    expect(shown(container)).toBe("1,234,567")
+  })
+
+  // The separators came from the browser's language, not the page's: an
+  // English page read in a German browser showed "1.234.567". The browser's
+  // default is stood in for by making toLocaleString() default to German.
+  test("groups digits the way the page's language does, not the browser's", async () => {
+    const original = Number.prototype.toLocaleString
+    Number.prototype.toLocaleString = function (
+      this: number,
+      locales?: Intl.LocalesArgument,
+      options?: Intl.NumberFormatOptions,
+    ) {
+      return original.call(this, locales ?? "de-DE", options)
+    }
+    try {
+      actionResult = Promise.resolve(1234567)
+      const { container } = renderCounter("german-browser")
+
+      await waitFor(() => expect(settled(container)).toBe(true))
+      expect(shown(container)).toBe("1,234,567")
+    } finally {
+      Number.prototype.toLocaleString = original
+    }
   })
 
   test("shows the count the write recorded", async () => {
@@ -249,7 +271,7 @@ describe("ViewCounter", () => {
       const { container } = render(
         <StrictMode>
           <ViewCountsProvider slugs={["strict"]}>
-            <ViewCounter slug="strict" label="VIEWS" />
+            <ViewCounter slug="strict" locale="en" label="VIEWS" />
           </ViewCountsProvider>
         </StrictMode>,
       )
@@ -322,7 +344,7 @@ describe("ViewCounter", () => {
       await waitFor(() => expect(settled(container)).toBe(true), {
         timeout: 3000,
       })
-      expect(shown(container)).toBe((1284).toLocaleString())
+      expect(shown(container)).toBe("1,284")
     })
   })
 
