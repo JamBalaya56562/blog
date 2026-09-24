@@ -100,3 +100,42 @@ describe("post card stays prerenderable", () => {
     expect(bodyOf(reader as string)).toContain('"use cache"')
   })
 })
+
+/**
+ * A slug that names no post got a card anyway: the site's name on a blank
+ * description, as a 200. Anyone could mint one per made-up slug, and each was
+ * rendered from scratch, since only the real slugs are prerendered.
+ */
+describe("post card responses", () => {
+  async function card(locale: string, slug: string): Promise<Response> {
+    const mod = await import(postRoute)
+    return mod.default({ params: Promise.resolve({ locale, slug }) })
+  }
+
+  test("an unknown slug is a 404, not a card", async () => {
+    const res = await card("en", "no-post-has-this-slug")
+    expect(res.status).toBe(404)
+    expect(res.headers.get("Content-Type")).not.toBe("image/png")
+  })
+
+  test("an unknown locale is a 404, even for a real slug", async () => {
+    const [slug] = await new LocalContentLoader().getPostSlugs("en")
+    const res = await card("xx", slug as string)
+    expect(res.status).toBe(404)
+  })
+
+  test("a real post returns a complete PNG", async () => {
+    const res = await card("en", "docker-build")
+    expect(res.status).toBe(200)
+    expect(res.headers.get("Content-Type")).toBe("image/png")
+
+    const bytes = new Uint8Array(await res.arrayBuffer())
+    expect(bytes.slice(0, 8)).toEqual(
+      new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]),
+    )
+    // The final IEND chunk confirms that the PNG stream reached its end.
+    expect(bytes.slice(-12)).toEqual(
+      new Uint8Array([0, 0, 0, 0, 73, 69, 78, 68, 174, 66, 96, 130]),
+    )
+  }, 30000)
+})

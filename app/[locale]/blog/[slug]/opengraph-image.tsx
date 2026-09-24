@@ -1,11 +1,6 @@
 import { ImageResponse } from "next/og"
 import { createContentLoader } from "@/lib/content/loader"
-import {
-  defaultLocale,
-  isValidLocale,
-  type Locale,
-  locales,
-} from "@/lib/i18n/config"
+import { isValidLocale, type Locale, locales } from "@/lib/i18n/config"
 import { getDictionary } from "@/lib/i18n/get-dictionary"
 import { OG_CONTENT_TYPE, OG_SIZE, OgCard, ogEyebrow } from "@/lib/og/card"
 
@@ -28,11 +23,14 @@ export async function generateStaticParams() {
 async function cardText(locale: Locale, slug: string) {
   "use cache"
   const post = await createContentLoader().getPost(locale, slug)
+  if (!post) {
+    return null
+  }
   const dictionary = getDictionary(locale)
   return {
-    description: post?.frontmatter.description ?? "",
+    description: post.frontmatter.description,
     eyebrow: ogEyebrow(dictionary.header.siteName),
-    title: post?.frontmatter.title ?? dictionary.header.siteName,
+    title: post.frontmatter.title,
   }
 }
 
@@ -42,8 +40,14 @@ export default async function Image({
   params: Promise<{ locale: string; slug: string }>
 }) {
   const { locale, slug } = await params
-  const resolved = isValidLocale(locale) ? locale : defaultLocale
-  const { title, description, eyebrow } = await cardText(resolved, slug)
+  // A path that names no post has no card. It used to get the site's name
+  // on a generic card, as a 200, rendered afresh for every slug anyone made
+  // up; the page at the same path is a 404, and so is this.
+  const text = isValidLocale(locale) ? await cardText(locale, slug) : null
+  if (!text) {
+    return new Response("Not Found", { status: 404 })
+  }
+  const { title, description, eyebrow } = text
   return new ImageResponse(
     <OgCard title={title} description={description} eyebrow={eyebrow} />,
     OG_SIZE,
