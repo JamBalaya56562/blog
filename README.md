@@ -241,5 +241,5 @@ This software uses the following open source packages:
 
 ## ⚖️ License
 
-The MIT License Copyright (c) 2026 - [JamBalaya56562](https://github.com/JamBalaya56562).
+The MIT License Copyright (c) 2023-2026 [JamBalaya56562](https://github.com/JamBalaya56562).
 Please have a look at the [LICENSE](https://github.com/JamBalaya56562/blog/blob/main/LICENSE) for more details.
