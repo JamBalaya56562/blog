@@ -72,16 +72,19 @@ resource "aws_iam_openid_connect_provider" "github" {
 resource "aws_iam_role" "github_actions" {
   name = "github-actions-blog-lambda"
 
-  # `sub` is pinned to one branch of one repository. Without that condition the
-  # trust policy would accept a token from any repository on GitHub, since the
-  # issuer is shared by all of them.
+  # `sub` is pinned to this repository. Without that condition the trust policy
+  # would accept a token from any repository on GitHub, since the issuer is
+  # shared by all of them.
   assume_role_policy = jsonencode({
     Statement = [{
       Action = "sts:AssumeRoleWithWebIdentity"
       Condition = {
         StringEquals = {
           "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
-          "token.actions.githubusercontent.com:sub" = "repo:JamBalaya56562/blog:ref:refs/heads/main"
+          "token.actions.githubusercontent.com:sub" = [
+            "repo:JamBalaya56562/blog:ref:refs/heads/main",
+            "repo:JamBalaya56562/blog:environment:lambda-deploy",
+          ]
         }
       }
       Effect = "Allow"
@@ -171,7 +174,10 @@ resource "aws_iam_role" "tofu_apply" {
       Condition = {
         StringEquals = {
           "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
-          "token.actions.githubusercontent.com:sub" = "repo:JamBalaya56562/blog:ref:refs/heads/main"
+          "token.actions.githubusercontent.com:sub" = [
+            "repo:JamBalaya56562/blog:ref:refs/heads/main",
+            "repo:JamBalaya56562/blog:environment:tofu-apply",
+          ]
         }
       }
       Effect = "Allow"
