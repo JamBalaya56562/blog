@@ -29,6 +29,7 @@ app/
     opengraph-image.tsx  # OG card (one per route, five in total)
     error.tsx            # Route error boundary, plus not-found.tsx
   api/images/[...path]/  # Image proxy API
+  api/views/             # View count API (read and record, called from the browser)
   manifest.ts            # Web app manifest, plus robots.ts and sitemap.ts
   globals.css            # Global stylesheet (see Styling)
 proxy.ts                 # Redirects unprefixed paths to a negotiated locale
@@ -37,7 +38,7 @@ components/              # Shared React components
   skeletons/             # Loading skeletons
   ui/                    # Presentational primitives
 lib/
-  actions/               # Server Actions (view count) and reader/bot detection
+  views/                 # View count client (fetch helpers) and reader/bot detection
   content/               # Content loader (local / GitHub), frontmatter, adjacent posts
   db/                    # DynamoDB page view store (client, schema, queries)
   i18n/                  # Internationalization (dictionaries, locale config, negotiation)

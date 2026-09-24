@@ -3,59 +3,88 @@ import { expect, test } from "@playwright/test"
 
 const POST = "/en/blog/getting-started-with-mise"
 
-function watchActions(page: Page): number[] {
-  const statuses: number[] = []
+type Call = { method: string; status: number; url: string }
+
+/** Every request the page makes to /api/views, with how it was answered. */
+function watchViews(page: Page): Call[] {
+  const calls: Call[] = []
   page.on("response", (response) => {
-    if (response.request().method() === "POST") {
-      statuses.push(response.status())
+    const request = response.request()
+    if (new URL(request.url()).pathname === "/api/views") {
+      calls.push({
+        method: request.method(),
+        status: response.status(),
+        url: request.url(),
+      })
     }
   })
-  return statuses
+  return calls
 }
 
 /**
- * Nothing on the page shows whether the write worked. When the action reports
- * nothing the figure rendered with the page stays, which is also what happens
- * with no database configured — as in this run — so a broken action looks
+ * Nothing on the page shows whether the write worked. When nothing reports a
+ * count the figure rendered with the page stays, which is also what happens
+ * with no database configured — as in this run — so a broken request looks
  * exactly like a working one on screen. These assertions are about the
  * requests instead.
  *
- * A load posts twice, not once: the counter writes this post's view and the
- * related-post list reads several counts. Neither the count nor the order is
- * pinned here, only that the writes succeed and that the second visit makes
- * fewer of them.
+ * A first visit makes two: a POST that records this post's view, and a GET
+ * that reads this post's count with its related posts'.
  */
 test.describe("View count", () => {
-  test("the writes a page load makes all succeed", async ({ page }) => {
-    const statuses = watchActions(page)
+  test("a first visit records the view and reads the counts", async ({
+    page,
+  }) => {
+    const calls = watchViews(page)
 
     await page.goto(POST)
     await expect
-      .poll(() => statuses.length, { timeout: 10_000 })
-      .toBeGreaterThan(0)
-    await page.waitForTimeout(500)
+      .poll(() => calls.map((call) => call.method).sort(), { timeout: 10_000 })
+      .toEqual(["GET", "POST"])
 
-    expect(statuses.every((status) => status === 200)).toBe(true)
+    expect(calls.every((call) => call.status === 200)).toBe(true)
+    const read = calls.find((call) => call.method === "GET")
+    expect(new URL(read?.url ?? "").searchParams.getAll("slug")).toContain(
+      "getting-started-with-mise",
+    )
+  })
+
+  // These were Server Actions, which post to the page's own URL with a
+  // `Next-Action` header. On a stale prerendered page that path answered 500,
+  // and a deploy changed the action IDs under any tab left open. Neither
+  // happens to a route of its own, so none should be left.
+  test("nothing posts to the page itself", async ({ page }) => {
+    const actions: string[] = []
+    page.on("request", (request) => {
+      if (request.method() === "POST" && request.headers()["next-action"]) {
+        actions.push(request.url())
+      }
+    })
+
+    await page.goto(POST)
+    await page.waitForTimeout(1500)
+
+    expect(actions).toEqual([])
   })
 
   // The reason the write is guarded at all: every mount used to be a view, and
   // a billed DynamoDB write. The record lives in localStorage, so this holds
-  // within one browser — which is the whole claim.
-  test("a second visit in the same browser posts less", async ({ page }) => {
-    const statuses = watchActions(page)
+  // within one browser — which is the whole claim. The read still happens:
+  // it is what shows a returning reader the current count.
+  test("a second visit in the same browser only reads", async ({ page }) => {
+    const calls = watchViews(page)
 
     await page.goto(POST)
     await expect
-      .poll(() => statuses.length, { timeout: 10_000 })
-      .toBeGreaterThan(0)
-    await page.waitForTimeout(1000)
-    const first = statuses.length
+      .poll(() => calls.length, { timeout: 10_000 })
+      .toBeGreaterThanOrEqual(2)
 
-    statuses.length = 0
+    calls.length = 0
     await page.goto(POST)
-    await page.waitForTimeout(1500)
+    await expect.poll(() => calls.length, { timeout: 10_000 }).toBe(1)
+    await page.waitForTimeout(1000)
 
-    expect(statuses.length).toBeLessThan(first)
-    expect(statuses.every((status) => status === 200)).toBe(true)
+    expect(calls.map((call) => call.method)).toEqual(["GET"])
+    expect(calls.every((call) => call.status === 200)).toBe(true)
   })
 })

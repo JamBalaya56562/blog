@@ -263,21 +263,19 @@ test.describe("The policy does not break the page", () => {
     expect(violations.join(" ")).toContain("script-src")
   })
 
-  test("Server Actions still reach the origin", async ({ page, baseURL }) => {
-    // The home page mounts ViewCountsProvider, which calls a Server Action from
-    // an effect. The action POSTs to the current URL. What is asserted is the
-    // round trip, not the data: a connect-src or form-action regression would
-    // stop the request before it left the browser. The status is left alone so
-    // this still passes with no database configured locally.
-    const actionResponse = page.waitForResponse(
-      (response) =>
-        response.request().method() === "POST" &&
-        response.url().startsWith(baseURL ?? "http://localhost:3000"),
+  test("the view count API still reaches the origin", async ({ page }) => {
+    // The home page mounts ViewCountsProvider, which fetches /api/views from
+    // an effect. What is asserted is the round trip, not the data: a
+    // connect-src regression would stop the request before it left the
+    // browser. The status is left alone so this still passes with no database
+    // configured locally.
+    const viewsResponse = page.waitForResponse(
+      (response) => new URL(response.url()).pathname === "/api/views",
       { timeout: 15_000 },
     )
 
     await page.goto("/en")
-    await actionResponse
+    await viewsResponse
     expect(await readViolations(page)).toEqual([])
   })
 

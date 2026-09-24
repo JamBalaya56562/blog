@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import { GlitchCount } from "@/components/glitch-count"
 import { useFetchedViewCount } from "@/components/view-counts"
-import { incrementViewCountAction } from "@/lib/actions/view-count"
+import { recordView } from "@/lib/views/client"
 
 // A request that never answers should not leave the number spinning.
 const GIVE_UP_MS = 5000
@@ -44,18 +44,15 @@ export function ViewCounter({
     markCounted(slug)
 
     let active = true
-    incrementViewCountAction(slug)
-      .then((updated) => {
-        if (active && typeof updated === "number") {
-          setLiveCount(updated)
-        }
-      })
-      .catch(() => {})
-      .finally(() => {
-        if (active) {
-          setWriteDone(true)
-        }
-      })
+    recordView(slug).then((updated) => {
+      if (!active) {
+        return
+      }
+      if (updated !== null) {
+        setLiveCount(updated)
+      }
+      setWriteDone(true)
+    })
     return () => {
       active = false
     }
