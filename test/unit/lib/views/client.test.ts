@@ -1,5 +1,7 @@
 import { afterEach, describe, expect, mock, test } from "bun:test"
+import { createHash } from "node:crypto"
 import { fetchViewCounts, recordView } from "@/lib/views/client"
+import { stubGlobals } from "../../stub-global"
 
 const realFetch = globalThis.fetch
 
@@ -30,6 +32,39 @@ describe("recordView", () => {
     expect(JSON.parse(String(calls[0].init?.body))).toEqual({
       slug: "docker-build",
     })
+  })
+
+  // CloudFront signs the request to the function with SigV4, which covers the
+  // body's hash, and it cannot hash a streamed body itself: without this
+  // header the function refuses the POST. Checked against Node's own SHA-256
+  // of the exact bytes sent, not against the code under test.
+  test("sends the SHA-256 of the exact body it posts", async () => {
+    const calls = api(() => Response.json({ count: 1 }))
+
+    await recordView("getting-started-with-mise")
+
+    const init = calls[0].init
+    const body = String(init?.body)
+    const headers = new Headers(init?.headers)
+    expect(headers.get("x-amz-content-sha256")).toBe(
+      createHash("sha256").update(body).digest("hex"),
+    )
+  })
+
+  // Plain HTTP from anything but localhost has no `crypto.subtle`. There is
+  // no CloudFront there to need the header, so the view still goes out.
+  test("without crypto.subtle it posts without the header", async () => {
+    const restore = stubGlobals({ crypto: {} })
+    try {
+      const calls = api(() => Response.json({ count: 2 }))
+
+      expect(await recordView("docker-build")).toBe(2)
+      expect(
+        new Headers(calls[0].init?.headers).has("x-amz-content-sha256"),
+      ).toBe(false)
+    } finally {
+      restore()
+    }
   })
 
   // The counter falls back to another figure in every one of these, so none
