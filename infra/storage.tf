@@ -10,6 +10,12 @@ resource "aws_dynamodb_table" "page_views" {
   read_capacity  = 5
   write_capacity = 5
 
+  deletion_protection_enabled = true
+
+  point_in_time_recovery {
+    enabled = true
+  }
+
   attribute {
     name = "pk"
     type = "S"
