@@ -1,9 +1,5 @@
 name: 🚀 Build and Deploy to AWS Lambda
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
-
 on:
   push:
     branches: main
@@ -15,19 +11,33 @@ on:
         required: false
         type: boolean
 
-permissions:
-  id-token: write
-
 env:
   AWS_REGION: ap-northeast-1
   ECR_REPOSITORY: ${{ github.event.repository.name }}
   LAMBDA_FUNCTION_NAME: ${{ github.event.repository.name }}
 
 jobs:
+  unit:
+    uses: ./.github/workflows/test.yml
+    permissions:
+      contents: read
+
+  e2e:
+    uses: ./.github/workflows/playwright.yml
+    permissions:
+      contents: read
+      pull-requests: write
+
   lambda:
+    needs: [unit, e2e]
     runs-on: ubuntu-26.04-arm
     timeout-minutes: 30
     if: github.repository_owner == 'jambalaya56562'
+    permissions:
+      id-token: write
+    concurrency:
+      group: lambda-deploy
+      cancel-in-progress: false
 
     steps:
     - name: 🪪 Configure AWS credentials
