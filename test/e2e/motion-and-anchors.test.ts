@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test"
+import { revealed } from "./post-page"
 
 const POST = "/en/blog/mise-tasks"
 
@@ -104,6 +105,7 @@ test.describe("Anchor targets clear the sticky header", () => {
     page,
   }) => {
     await page.goto(POST)
+    await revealed(page)
     const id = await page
       .locator("article h2[id], main h2[id]")
       .first()
