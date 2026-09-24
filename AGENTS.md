@@ -28,19 +28,24 @@ app/
     [...rest]/           # Catch-all for unmatched paths
     opengraph-image.tsx  # OG card (one per route, five in total)
     error.tsx            # Route error boundary, plus not-found.tsx
+  api/favicons/[host]/   # Favicon proxy for external links in posts
   api/images/[...path]/  # Image proxy API
   api/views/             # View count API (read and record, called from the browser)
+  global-error.tsx       # Error boundary for the root layout itself
   manifest.ts            # Web app manifest, plus robots.ts and sitemap.ts
   globals.css            # Global stylesheet (see Styling)
 proxy.ts                 # Redirects unprefixed paths to a negotiated locale
+mdx-components.tsx       # Components MDX posts render with (see Styling)
 components/              # Shared React components
   blog/ home/            # Components scoped to a single route
+  explorables/           # Interactive figures used inside posts
   skeletons/             # Loading skeletons
   ui/                    # Presentational primitives
 lib/
-  views/                 # View count client (fetch helpers) and reader/bot detection
+  views/                 # View count client (fetch helpers), reader/bot detection, recount window
   content/               # Content loader (local / GitHub), frontmatter, adjacent posts
   db/                    # DynamoDB page view store (client, schema, queries)
+  explorables/           # State and logic behind components/explorables, kept pure for tests
   i18n/                  # Internationalization (dictionaries, locale config, negotiation)
   og/                    # Open Graph card rendering (`next/og`)
   theme/                 # Theme provider and hook (dark/light mode)
