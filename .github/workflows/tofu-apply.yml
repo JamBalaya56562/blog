@@ -35,6 +35,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     if: github.repository_owner == 'jambalaya56562'
+    environment: tofu-apply
 
     steps:
       - name: 📥 Checkout
