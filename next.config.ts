@@ -57,9 +57,6 @@ const nextConfig: NextConfig = {
   cacheComponents: true,
   experimental: {
     isrFlushToDisk: false,
-    serverActions: {
-      allowedOrigins: ["kokohore56562wanwan.site"],
-    },
     strictRouteTypes: true,
   },
   async headers() {
