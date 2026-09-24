@@ -1,11 +1,9 @@
 import { notFound } from "next/navigation"
-import { Suspense } from "react"
 import { BENTO_GRID_POST_COUNT, BentoGrid } from "@/components/home/bento-grid"
 import { HeroSection } from "@/components/home/hero-section"
 import { RecentDispatches } from "@/components/home/recent-dispatches"
 import { JsonLd } from "@/components/json-ld"
 import { PageTransition } from "@/components/page-transition"
-import { HomeContentSkeleton } from "@/components/skeletons"
 import { ViewCountsProvider } from "@/components/view-counts"
 import { createContentLoader } from "@/lib/content/loader"
 import type { Locale } from "@/lib/i18n/config"
@@ -64,9 +62,7 @@ export default async function HomePage({
     <PageTransition>
       <JsonLd data={websiteJsonLd(locale)} />
       <div className="relative">
-        <Suspense fallback={<HomeContentSkeleton />}>
-          <HomeBody locale={locale} />
-        </Suspense>
+        <HomeBody locale={locale} />
       </div>
     </PageTransition>
   )
