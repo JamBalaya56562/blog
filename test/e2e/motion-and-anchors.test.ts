@@ -1,5 +1,4 @@
 import { expect, test } from "@playwright/test"
-import { revealed } from "./post-page"
 
 const POST = "/en/blog/mise-tasks"
 
@@ -105,7 +104,6 @@ test.describe("Anchor targets clear the sticky header", () => {
     page,
   }) => {
     await page.goto(POST)
-    await revealed(page)
     const id = await page
       .locator("article h2[id], main h2[id]")
       .first()
@@ -128,6 +126,42 @@ test.describe("Anchor targets clear the sticky header", () => {
     }, id)
 
     expect(headingTop).toBeGreaterThanOrEqual(headerBottom)
+  })
+
+  /**
+   * The test above changes the fragment within a page that has already
+   * loaded. A link to a heading from anywhere else loads the page with the
+   * fragment already in the URL, and the browser scrolls to it as the page
+   * loads — so the heading has to be in the document by then. It was not
+   * while the post's body sat behind a Suspense boundary: React held the body
+   * in a hidden `<div>` and moved it in after `load`, and the page stayed at
+   * the top on most loads.
+   */
+  test("a link straight to a heading lands on it", async ({ page }) => {
+    await page.goto(POST)
+    const id = await page.locator("main h2[id]").first().getAttribute("id")
+    if (!id) {
+      throw new Error("the post has no heading carrying an id")
+    }
+
+    const linked = await page.context().newPage()
+    await linked.goto(`${POST}#${id}`)
+    const placement = () =>
+      linked.evaluate((anchor) => {
+        const el = document.getElementById(anchor)
+        const header = document.querySelector("header")
+        if (!el || !header) {
+          return Number.NaN
+        }
+        return (
+          el.getBoundingClientRect().top - header.getBoundingClientRect().bottom
+        )
+      }, id)
+
+    // Clear of the header, and near it: a page left at the top has the
+    // heading far down the screen, which the first half alone would pass.
+    await expect.poll(placement).toBeGreaterThanOrEqual(0)
+    expect(await placement()).toBeLessThan(80)
   })
 
   test("a table-of-contents click lands below the header", async ({
