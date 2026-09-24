@@ -28,6 +28,14 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: 🔢 Check the version against package.json
+        run: |
+          PACKAGE_VERSION="v$(jq -r .version package.json)"
+          if [ "$VERSION" != "$PACKAGE_VERSION" ]; then
+            echo "::error::The release is $VERSION but package.json says $PACKAGE_VERSION."
+            exit 1
+          fi
+
       - name: ✅ Check if the release has already been created
         id: check
         env:
