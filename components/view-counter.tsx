@@ -4,21 +4,22 @@ import { useEffect, useState } from "react"
 import { GlitchCount } from "@/components/glitch-count"
 import { useFetchedViewCount } from "@/components/view-counts"
 import { recordView } from "@/lib/views/client"
+import { stillCounted } from "@/lib/views/recount"
 
 // A request that never answers should not leave the number spinning.
 const GIVE_UP_MS = 5000
 
-function alreadyCounted(slug: string): boolean {
+function countedRecently(slug: string, now: number): boolean {
   try {
-    return localStorage.getItem(`blog:viewed:${slug}`) !== null
+    return stillCounted(localStorage.getItem(`blog:viewed:${slug}`), now)
   } catch {
     return false
   }
 }
 
-function markCounted(slug: string): void {
+function markCounted(slug: string, now: number): void {
   try {
-    localStorage.setItem(`blog:viewed:${slug}`, "1")
+    localStorage.setItem(`blog:viewed:${slug}`, String(now))
   } catch {}
 }
 
@@ -29,11 +30,12 @@ export function ViewCounter({ slug, label }: { slug: string; label: string }) {
   const fetched = useFetchedViewCount(slug)
 
   useEffect(() => {
-    if (alreadyCounted(slug)) {
+    const now = Date.now()
+    if (countedRecently(slug, now)) {
       setWriteDone(true)
       return
     }
-    markCounted(slug)
+    markCounted(slug, now)
 
     let active = true
     recordView(slug).then((updated) => {

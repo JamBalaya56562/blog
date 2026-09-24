@@ -39,6 +39,7 @@ afterEach(() => {
 
 const { ViewCounter } = await import("@/components/view-counter")
 const { ViewCountsProvider } = await import("@/components/view-counts")
+const { RECOUNT_AFTER_MS } = await import("@/lib/views/recount")
 
 function renderCounter(slug: string) {
   return render(
@@ -141,11 +142,11 @@ describe("ViewCounter", () => {
 
   /**
    * The write ran on every mount, so a reader who reloaded a post five times
-   * was five views, and every DynamoDB write is billed. The record is
-   * permanent by choice: a second visit next month is not a second view.
+   * was five views, and every DynamoDB write is billed. The record holds for a
+   * day: a reload is not another view, a visit the next day is.
    */
-  describe("counting once", () => {
-    test("a second visit does not write again", async () => {
+  describe("counting once a day", () => {
+    test("a second visit the same day does not write again", async () => {
       const { unmount } = renderCounter("repeat")
       await waitFor(() => expect(incrementMock).toHaveBeenCalledTimes(1))
       unmount()
@@ -166,16 +167,50 @@ describe("ViewCounter", () => {
       expect(incrementMock).toHaveBeenLastCalledWith("second")
     })
 
-    // Not writing again also means the write no longer reports a figure, and
-    // the prop is frozen into the cache entry. The page's read is what keeps
-    // a returning reader from seeing that frozen number.
+    // Not writing again also means the write reports no figure. The page's
+    // read is what shows a returning reader the current count.
     test("a second visit shows the count the page reads", async () => {
-      localStorage.setItem("blog:viewed:repeat", "1")
+      localStorage.setItem("blog:viewed:repeat", String(Date.now() - 60_000))
       readResult = Promise.resolve({ repeat: 12 })
       const { container } = renderCounter("repeat")
 
       await waitFor(() => expect(shown(container)).toBe("12"))
       expect(incrementMock).not.toHaveBeenCalled()
+    })
+
+    test("records the time it counted", async () => {
+      const before = Date.now()
+      renderCounter("stamped")
+      await waitFor(() => expect(incrementMock).toHaveBeenCalledTimes(1))
+
+      const stored = Number(localStorage.getItem("blog:viewed:stamped"))
+      expect(stored).toBeGreaterThanOrEqual(before)
+      expect(stored).toBeLessThanOrEqual(Date.now())
+    })
+
+    test("a visit a day after the last count is counted again", async () => {
+      localStorage.setItem(
+        "blog:viewed:again",
+        String(Date.now() - RECOUNT_AFTER_MS - 1000),
+      )
+      renderCounter("again")
+
+      await waitFor(() => expect(incrementMock).toHaveBeenCalledTimes(1))
+      expect(incrementMock).toHaveBeenCalledWith("again")
+    })
+
+    // Records from before the window held "1" rather than a time. Each counts
+    // once more, and is then rewritten with a time like any other.
+    test("a record without a time is counted once more, then holds", async () => {
+      localStorage.setItem("blog:viewed:legacy", "1")
+      const { unmount } = renderCounter("legacy")
+      await waitFor(() => expect(incrementMock).toHaveBeenCalledTimes(1))
+      unmount()
+
+      renderCounter("legacy")
+      await Promise.resolve()
+      expect(incrementMock).toHaveBeenCalledTimes(1)
+      expect(localStorage.getItem("blog:viewed:legacy")).not.toBe("1")
     })
 
     // Both requests go out together on a first visit, and the read may have
