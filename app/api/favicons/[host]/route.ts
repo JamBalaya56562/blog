@@ -27,18 +27,23 @@ export async function GET(
     const res = await fetch(faviconSource(host), {
       signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
     })
-    // Only an upstream 404 means the icon is missing; anything else is the
-    // service having a bad moment, and says so rather than looking permanent.
-    if (res.status === 404) {
-      return new Response("Not Found", { status: 404 })
-    }
-    if (!res.ok) {
-      return new Response("Bad Gateway", { status: 502 })
+    const type = res.headers.get("Content-Type")
+    // A host with no icon of its own comes back as a 404 whose body is the
+    // service's globe. That globe is the icon for this host, so it is served
+    // and cached like any other; turning it into a 404 left the link with a
+    // broken image, asked again on every view. A 404 that is not a picture
+    // is still a missing icon, and anything else is the service having a bad
+    // moment, which says so rather than looking permanent.
+    const isGlobe = res.status === 404 && type?.startsWith("image/") === true
+    if (!res.ok && !isGlobe) {
+      return res.status === 404
+        ? new Response("Not Found", { status: 404 })
+        : new Response("Bad Gateway", { status: 502 })
     }
     return new Response(res.body, {
       headers: {
         "Cache-Control": CACHE_CONTROL,
-        "Content-Type": res.headers.get("Content-Type") ?? "image/png",
+        "Content-Type": type ?? "image/png",
       },
     })
   } catch (e) {
