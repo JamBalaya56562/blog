@@ -47,9 +47,30 @@ describe("GET /api/favicons/[host]", () => {
     ])
   })
 
-  test("an upstream 404 is a 404", async () => {
+  // What the service actually sends for a host with no icon: a 404 carrying
+  // its globe as image/png (checked against www.google.com, 2026-09-24). The
+  // route turned that into a text 404, so the link showed a broken image and
+  // nothing was cached to stop the next view asking again.
+  test("the service's globe is served as the icon, and cached", async () => {
+    globalThis.fetch = mock(
+      async () =>
+        new Response("globe", {
+          headers: { "Content-Type": "image/png" },
+          status: 404,
+        }),
+    ) as unknown as typeof fetch
+    const res = await get("no-icon.example")
+    expect(res.status).toBe(200)
+    expect(res.headers.get("Content-Type")).toBe("image/png")
+    expect(res.headers.get("Cache-Control")).toContain("max-age=86400")
+    expect(await res.text()).toBe("globe")
+  })
+
+  test("an upstream 404 with no picture is a 404", async () => {
     upstream(404)
-    expect((await get("github.com")).status).toBe(404)
+    const res = await get("github.com")
+    expect(res.status).toBe(404)
+    expect(res.headers.get("Cache-Control")).toBeNull()
   })
 
   test("any other upstream failure is a 502, not a missing icon", async () => {
