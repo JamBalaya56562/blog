@@ -100,3 +100,31 @@ describe("post card stays prerenderable", () => {
     expect(bodyOf(reader as string)).toContain('"use cache"')
   })
 })
+
+/**
+ * A slug that names no post got a card anyway: the site's name on a blank
+ * description, as a 200. Anyone could mint one per made-up slug, and each was
+ * rendered from scratch, since only the real slugs are prerendered.
+ */
+describe("post card for a path that names no post", () => {
+  async function card(locale: string, slug: string): Promise<Response> {
+    const mod = await import(postRoute)
+    return mod.default({ params: Promise.resolve({ locale, slug }) })
+  }
+
+  test("an unknown slug is a 404, not a card", async () => {
+    const res = await card("en", "no-post-has-this-slug")
+    expect(res.status).toBe(404)
+    expect(res.headers.get("Content-Type")).not.toBe("image/png")
+  })
+
+  test("an unknown locale is a 404, even for a real slug", async () => {
+    const [slug] = await new LocalContentLoader().getPostSlugs("en")
+    const res = await card("xx", slug as string)
+    expect(res.status).toBe(404)
+  })
+
+  // A real post's card is not drawn here: rendering one through `next/og`
+  // leaves Bun crashing on exit (SIGSEGV after every test has passed), which
+  // fails the run. The build prerenders every real card, one per post.
+})
