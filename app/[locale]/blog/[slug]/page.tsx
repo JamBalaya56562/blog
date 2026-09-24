@@ -3,7 +3,7 @@ import Image from "next/image"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import { MDXRemote } from "next-mdx-remote-client/rsc"
-import { cache, Suspense, ViewTransition } from "react"
+import { cache, ViewTransition } from "react"
 import remarkGfm from "remark-gfm"
 import {
   DEFAULT_THUMBNAIL,
@@ -15,7 +15,6 @@ import { PostDate } from "@/components/post-date"
 import { PostNavigation } from "@/components/post-navigation"
 import { getRelatedPosts, RelatedPosts } from "@/components/related-posts"
 import { ScrollProgress } from "@/components/scroll-progress"
-import { BlogPostSkeleton } from "@/components/skeletons"
 import { TableOfContents } from "@/components/table-of-contents"
 import { Brackets } from "@/components/ui/brackets"
 import { ViewCounter } from "@/components/view-counter"
@@ -299,9 +298,7 @@ export default async function BlogPostPage({
 
   return (
     <PageTransition>
-      <Suspense fallback={<BlogPostSkeleton />}>
-        <BlogPostContent locale={locale} slug={slug} />
-      </Suspense>
+      <BlogPostContent locale={locale} slug={slug} />
     </PageTransition>
   )
 }
