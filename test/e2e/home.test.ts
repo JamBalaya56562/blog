@@ -34,6 +34,27 @@ test.describe("Home page - Section visibility", () => {
   })
 })
 
+/**
+ * The body is cached and prerendered, so it is in the HTML as served. It used
+ * to sit behind a Suspense boundary, and React outlines a boundary that large:
+ * the HTML carried a skeleton in `<main>` and the body in a `<div hidden>`,
+ * moved in by an inline script. Without JavaScript that script never runs, so
+ * this is the case that shows whether the body is really in the page.
+ */
+test.describe("Home page - Without JavaScript", () => {
+  test.use({ javaScriptEnabled: false })
+
+  test("the hero and the posts are in the page as served", async ({ page }) => {
+    await page.goto("/en")
+    await expect(
+      page.locator("main").getByText("Making programming"),
+    ).toBeVisible()
+    await expect(
+      page.locator("main a[href*='/en/blog/']").first(),
+    ).toBeVisible()
+  })
+})
+
 test.describe("Home page - Responsive layout", () => {
   test("mobile viewport renders sections in single column", async ({
     page,
