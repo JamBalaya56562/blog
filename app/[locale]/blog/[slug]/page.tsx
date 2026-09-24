@@ -155,124 +155,129 @@ async function BlogPostContent({
         by it — see the track in `table-of-contents.tsx`. `relative` is what
         makes this the box it is placed against.
       */}
-      <div className="relative mx-auto max-w-3xl px-4 py-10 sm:px-6">
-        <TableOfContents items={tocItems} title={dictionary.blog.toc} />
-        <article>
-          <header className="mb-10">
-            <div className="pp-tick mb-3">
-              ◢ {dictionary.blog.dispatchLabel} / {category}
-            </div>
-            <ViewTransition name={`post-title-${slug}`} share="morph">
-              <h1 className="pp-display text-[clamp(28px,5vw,52px)] leading-[1.1] text-foreground">
-                {post.frontmatter.title}
-              </h1>
-            </ViewTransition>
-            <ViewTransition name={`post-meta-${slug}`} share="morph">
-              <div className="pp-tick mt-5 flex flex-wrap items-center gap-3">
-                <span className="flex items-center gap-3">
-                  <span>
-                    {dictionary.blog.postedOn}{" "}
-                    <PostDate date={post.frontmatter.date} locale={locale} />
-                  </span>
-                  <span className="text-cyber-line-hi">·</span>
-                </span>
-                <span className="flex items-center gap-3">
-                  <span>
-                    {dictionary.blog.updatedOn}{" "}
-                    <PostDate date={updatedOn} locale={locale} />
-                  </span>
-                  <span className="text-cyber-line-hi">·</span>
-                </span>
-                <span className="flex items-center gap-3">
-                  <span>
-                    <span className="pp-num text-cyber-cyan">{readMin}</span>{" "}
-                    {dictionary.blog.minRead}
-                  </span>
-                  <span className="text-cyber-line-hi">·</span>
-                  <ViewCounter
-                    slug={slug}
-                    count={viewCount}
-                    label={dictionary.blog.views}
-                  />
-                </span>
+      {/*
+        This post's own slug is read here too. The figure rendered above is
+        frozen into the cache entry, and a returning reader is not counted
+        again, so without this read nothing replaces it.
+      */}
+      <ViewCountsProvider slugs={[slug, ...related.map((p) => p.slug)]}>
+        <div className="relative mx-auto max-w-3xl px-4 py-10 sm:px-6">
+          <TableOfContents items={tocItems} title={dictionary.blog.toc} />
+          <article>
+            <header className="mb-10">
+              <div className="pp-tick mb-3">
+                ◢ {dictionary.blog.dispatchLabel} / {category}
               </div>
-            </ViewTransition>
-            <div className="mt-3 flex flex-wrap gap-1.5">
-              {post.frontmatter.tags.map((tag) => (
-                <Link
-                  key={tag}
-                  href={
-                    `/${locale}/blog?tag=${encodeURIComponent(tag)}` as Route
-                  }
-                  transitionTypes={["nav-back"]}
-                  className="pp-tag"
-                >
-                  {tag}
-                </Link>
-              ))}
-            </div>
-            {translationLocale && (
-              <p className="pp-tick mt-4">
-                ◢ {dictionary.blog.translationAvailable}{" "}
-                <Link
-                  href={getBlogPostPath(translationLocale, slug)}
-                  className="pp-link text-cyber-cyan transition-colors hover:text-cyber-cyan-bright"
-                >
-                  {getDictionary(translationLocale).language.current}
-                </Link>
-              </p>
-            )}
-          </header>
+              <ViewTransition name={`post-title-${slug}`} share="morph">
+                <h1 className="pp-display text-[clamp(28px,5vw,52px)] leading-[1.1] text-foreground">
+                  {post.frontmatter.title}
+                </h1>
+              </ViewTransition>
+              <ViewTransition name={`post-meta-${slug}`} share="morph">
+                <div className="pp-tick mt-5 flex flex-wrap items-center gap-3">
+                  <span className="flex items-center gap-3">
+                    <span>
+                      {dictionary.blog.postedOn}{" "}
+                      <PostDate date={post.frontmatter.date} locale={locale} />
+                    </span>
+                    <span className="text-cyber-line-hi">·</span>
+                  </span>
+                  <span className="flex items-center gap-3">
+                    <span>
+                      {dictionary.blog.updatedOn}{" "}
+                      <PostDate date={updatedOn} locale={locale} />
+                    </span>
+                    <span className="text-cyber-line-hi">·</span>
+                  </span>
+                  <span className="flex items-center gap-3">
+                    <span>
+                      <span className="pp-num text-cyber-cyan">{readMin}</span>{" "}
+                      {dictionary.blog.minRead}
+                    </span>
+                    <span className="text-cyber-line-hi">·</span>
+                    <ViewCounter
+                      slug={slug}
+                      count={viewCount}
+                      label={dictionary.blog.views}
+                    />
+                  </span>
+                </div>
+              </ViewTransition>
+              <div className="mt-3 flex flex-wrap gap-1.5">
+                {post.frontmatter.tags.map((tag) => (
+                  <Link
+                    key={tag}
+                    href={
+                      `/${locale}/blog?tag=${encodeURIComponent(tag)}` as Route
+                    }
+                    transitionTypes={["nav-back"]}
+                    className="pp-tag"
+                  >
+                    {tag}
+                  </Link>
+                ))}
+              </div>
+              {translationLocale && (
+                <p className="pp-tick mt-4">
+                  ◢ {dictionary.blog.translationAvailable}{" "}
+                  <Link
+                    href={getBlogPostPath(translationLocale, slug)}
+                    className="pp-link text-cyber-cyan transition-colors hover:text-cyber-cyan-bright"
+                  >
+                    {getDictionary(translationLocale).language.current}
+                  </Link>
+                </p>
+              )}
+            </header>
 
-          <ViewTransition name={`post-image-${slug}`} share="morph">
-            {/*
+            <ViewTransition name={`post-image-${slug}`} share="morph">
+              {/*
               16:9, the same as the cards and the list rows. It used to be
               21:9, which meant one thumbnail was cropped differently on every
               surface it appeared on — a picture that fits the card loses its
               top and bottom here. That is the site's problem to solve, not
               something each thumbnail should be drawn around.
             */}
-            <div className="relative mb-12 aspect-video overflow-hidden border border-cyber-line">
-              <Brackets />
-              <Image
-                src={post.frontmatter.image ?? DEFAULT_THUMBNAIL}
-                alt={post.frontmatter.title}
-                width={1280}
-                height={720}
-                className="h-full w-full object-cover"
-                priority
-                fetchPriority="high"
+              <div className="relative mb-12 aspect-video overflow-hidden border border-cyber-line">
+                <Brackets />
+                <Image
+                  src={post.frontmatter.image ?? DEFAULT_THUMBNAIL}
+                  alt={post.frontmatter.title}
+                  width={1280}
+                  height={720}
+                  className="h-full w-full object-cover"
+                  priority
+                  fetchPriority="high"
+                />
+              </div>
+            </ViewTransition>
+
+            <div className="prose-cyber max-w-none">
+              <MDXRemote
+                source={post.content}
+                options={{
+                  mdxOptions: {
+                    rehypePlugins: [await rehypeHighlight()],
+                    remarkPlugins: [remarkGfm, remarkAlerts],
+                  },
+                }}
+                components={useMDXComponents()}
               />
             </div>
-          </ViewTransition>
+          </article>
 
-          <div className="prose-cyber max-w-none">
-            <MDXRemote
-              source={post.content}
-              options={{
-                mdxOptions: {
-                  rehypePlugins: [await rehypeHighlight()],
-                  remarkPlugins: [remarkGfm, remarkAlerts],
-                },
-              }}
-              components={useMDXComponents()}
-            />
-          </div>
-        </article>
-
-        <ViewCountsProvider slugs={related.map((p) => p.slug)}>
           <RelatedPosts
             locale={locale}
             posts={related}
             dictionary={dictionary}
           />
-        </ViewCountsProvider>
-        <PostNavigation
-          locale={locale}
-          adjacentPosts={adjacentPosts}
-          dictionary={dictionary}
-        />
-      </div>
+          <PostNavigation
+            locale={locale}
+            adjacentPosts={adjacentPosts}
+            dictionary={dictionary}
+          />
+        </div>
+      </ViewCountsProvider>
     </>
   )
 }

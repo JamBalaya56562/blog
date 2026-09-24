@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { useFetchedViewCount } from "@/components/view-counts"
 import { incrementViewCountAction } from "@/lib/actions/view-count"
 
 function alreadyCounted(slug: string): boolean {
@@ -27,6 +28,7 @@ export function ViewCounter({
   label: string
 }) {
   const [liveCount, setLiveCount] = useState<number | null>(null)
+  const fetchedCount = useFetchedViewCount(slug)
 
   useEffect(() => {
     if (alreadyCounted(slug)) {
@@ -48,7 +50,7 @@ export function ViewCounter({
   return (
     <span>
       <span className="pp-num text-cyber-cyan">
-        {(liveCount ?? count).toLocaleString()}
+        {(liveCount ?? fetchedCount ?? count).toLocaleString()}
       </span>{" "}
       {label}
     </span>
