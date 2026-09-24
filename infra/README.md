@@ -49,14 +49,14 @@ everything.
 ```bash
 eval "$(aws configure export-credentials --format env)"
 
-id=$(gh api "repos/JamBalaya56562/blog/actions/artifacts?name=tofu-state&per_page=100" \
-  --jq '[.artifacts[] | select(.expired == false)] | sort_by(.created_at) | last | .id')
-gh api "repos/JamBalaya56562/blog/actions/artifacts/${id}/zip" > state.zip
-unzip -o state.zip
+GITHUB_REPOSITORY=JamBalaya56562/blog ../.github/scripts/fetch-tofu-state.sh .
 
 tofu init
 tofu plan
 ```
+
+Run it from `infra/`. The script is the one the workflows use, so it takes the
+same state they would — see [State](#state) for which one that is.
 
 Delete `terraform.tfstate` when you are done. A copy left behind goes stale the
 moment CI applies anything, and a stale state plans against an account that no
@@ -103,18 +103,32 @@ which is what this file has — is a separate resource from the registration.
 ## State
 
 State lives in a GitHub Actions artifact named `tofu-state`, not in this
-repository and not in S3. Each workflow asks the API for the newest unexpired
-artifact of that name rather than tracking a run id somewhere, so it does not
-matter which workflow produced it.
+repository and not in S3. Every workflow restores it through
+[fetch-tofu-state.sh](../.github/scripts/fetch-tofu-state.sh), which asks the
+API for the newest unexpired artifact of that name rather than tracking a run id
+somewhere.
+
+The name alone is not enough to trust it. Any run in the repository can upload
+an artifact called `tofu-state`, including a pull request's, which runs the
+workflow files from the pull request, and the apply role can change IAM. So the
+script takes only an artifact made by [tofu-apply.yml](../.github/workflows/tofu-apply.yml)
+or [tofu-state-backup.yml](../.github/workflows/tofu-state-backup.yml), on
+`main`, in this repository rather than a fork, from a push, schedule or dispatch
+run, and skips anything else with a warning. It extracts `terraform.tfstate`
+and nothing else, and checks that it parses as a state before writing it.
+
+A missing state is an error in all three workflows. The apply in particular
+refuses to run: against an empty state it would try to build a second copy of
+the account. The one time that is the intent — rebuilding after a deliberate
+`tofu destroy` — run the apply workflow by hand with `bootstrap` ticked.
 
 Artifacts expire, and this configuration can go months without a change.
 [tofu-state-backup.yml](../.github/workflows/tofu-state-backup.yml) downloads
 the state every Monday and uploads it again, which restarts the retention
 clock. That workflow is not optional housekeeping: without it the state
-disappears 90 days after the last apply, and an apply with no state would try
-to build a second copy of an account that already exists. Some of it would fail
-on names already taken — but a second hosted zone for the same domain, with
-different name servers, would be created quite happily.
+disappears 90 days after the last apply, and with it every way to apply at all.
+If it ever finds nothing to refresh it fails, so the loss shows up as a red run
+on a Monday rather than as a refused apply later.
 
 ## Why there are no `import` blocks
 
