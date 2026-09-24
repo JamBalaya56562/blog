@@ -9,6 +9,7 @@ on:
     paths:
       - "infra/**"
       - ".github/workflows/tofu-*.yml"
+      - ".github/scripts/fetch-tofu-state.sh"
 
 permissions:
   contents: read
@@ -43,25 +44,23 @@ jobs:
         uses: jdx/mise-action@v4.3.0
 
       # State lives in an artifact rather than a bucket, and artifacts belong to
-      # runs. Rather than tracking a run id in a repository variable, this asks
-      # for the newest unexpired artifact of that name, whichever workflow
-      # produced it — which is what lets the weekly backup keep it alive.
+      # runs. The script takes the newest one a trusted run produced — see it
+      # for what that means — and only the state file inside it.
       #
-      # Missing state is not an error here. On the first run there is none, and
-      # a plan against an empty state is exactly the import plan we want to see.
+      # Missing state is an error. A plan against an empty state lists every
+      # resource as new, which reads like the account is empty; merging on the
+      # strength of it would reach an apply that now refuses to run.
       - name: 📦 Fetch the current state
+        id: state
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: .github/scripts/fetch-tofu-state.sh infra
+
+      - name: 🛑 Refuse to plan without a state
+        if: steps.state.outputs.found != 'true'
         run: |
-          id=$(gh api "repos/${GITHUB_REPOSITORY}/actions/artifacts?name=tofu-state&per_page=100" \
-            --jq '[.artifacts[] | select(.expired == false)] | sort_by(.created_at) | last | .id // empty')
-          if [ -z "$id" ]; then
-            echo "::notice::No state artifact yet; planning against an empty state."
-            exit 0
-          fi
-          gh api "repos/${GITHUB_REPOSITORY}/actions/artifacts/${id}/zip" > state.zip
-          unzip -o state.zip -d infra/
-          echo "Restored state from artifact ${id}."
+          echo "::error::No trusted tofu-state artifact found; a plan against an empty state would describe a different account."
+          exit 1
 
       - name: 🧭 Plan
         id: plan

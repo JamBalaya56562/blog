@@ -13,7 +13,13 @@ on:
     paths:
       - "infra/**"
       - ".github/workflows/tofu-apply.yml"
+      - ".github/scripts/fetch-tofu-state.sh"
   workflow_dispatch:
+    inputs:
+      bootstrap:
+        description: Apply with no state, building the stack from nothing. Only after a deliberate `tofu destroy` — against a live account it builds a second copy.
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -45,19 +51,29 @@ jobs:
       - name: 🐣 Setup mise
         uses: jdx/mise-action@v4.3.0
 
+      # See the script for what a state has to come from to be taken. With none
+      # found the apply stops: an empty state would plan every resource as new
+      # and build a second copy of the account — including a second hosted zone
+      # for the same domain, which nothing would refuse. The one legitimate
+      # reason to apply from nothing, rebuilding after a deliberate destroy, is
+      # a dispatch with `bootstrap` ticked.
       - name: 📦 Fetch the current state
+        id: state
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: .github/scripts/fetch-tofu-state.sh infra
+
+      - name: 🛑 Refuse to apply without a state
+        if: steps.state.outputs.found != 'true'
+        env:
+          BOOTSTRAP: ${{ inputs.bootstrap }}
         run: |
-          id=$(gh api "repos/${GITHUB_REPOSITORY}/actions/artifacts?name=tofu-state&per_page=100" \
-            --jq '[.artifacts[] | select(.expired == false)] | sort_by(.created_at) | last | .id // empty')
-          if [ -z "$id" ]; then
-            echo "::notice::No state artifact yet; this run adopts the account through the import blocks."
+          if [ "$BOOTSTRAP" = "true" ]; then
+            echo "::warning::No state found; applying from nothing because bootstrap was requested."
             exit 0
           fi
-          gh api "repos/${GITHUB_REPOSITORY}/actions/artifacts/${id}/zip" > state.zip
-          unzip -o state.zip -d infra/
-          echo "Restored state from artifact ${id}."
+          echo "::error::No trusted tofu-state artifact found. Refusing to apply against an empty state. If the stack was destroyed on purpose, run this workflow by hand with bootstrap ticked."
+          exit 1
 
       - name: 🚜 Apply
         working-directory: infra
