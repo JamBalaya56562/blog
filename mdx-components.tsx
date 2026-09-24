@@ -8,10 +8,12 @@ import { BookmarkGraph } from "@/components/explorables/bookmark-graph"
 import { BuildContext } from "@/components/explorables/build-context"
 import { CommitGraph } from "@/components/explorables/commit-graph"
 import { CommitLint } from "@/components/explorables/commit-lint"
+import { ComposeLifecycle } from "@/components/explorables/compose-lifecycle"
 import { ContainerLifecycle } from "@/components/explorables/container-lifecycle"
 import { LayerCache } from "@/components/explorables/layer-cache"
 import { OrderedRun } from "@/components/explorables/ordered-run"
 import { SemverBump } from "@/components/explorables/semver-bump"
+import { StartupTimeline } from "@/components/explorables/startup-timeline"
 import { ZoomableImage } from "@/components/zoomable-image"
 import { externalHost, faviconPath } from "@/lib/favicon"
 import { createIdGenerator, extractText } from "@/lib/toc"
@@ -141,6 +143,7 @@ const staticComponents: MDXComponents = {
   CodeTabs,
   CommitGraph,
   CommitLint,
+  ComposeLifecycle,
   ContainerLifecycle,
   code: (props) => <code className="rounded" {...props} />,
   h1: (props) => <h1 className="text-4xl font-bold" {...props} />,
@@ -221,6 +224,7 @@ const staticComponents: MDXComponents = {
     )
   },
   SemverBump,
+  StartupTimeline,
   table: (props) => (
     <div className="my-4 overflow-x-auto">
       <table className="text-foreground" {...props} />

@@ -39,10 +39,12 @@ const REQUIRED_COMPONENTS = [
   "CodeTabs",
   "CommitGraph",
   "CommitLint",
+  "ComposeLifecycle",
   "ContainerLifecycle",
   "LayerCache",
   "OrderedRun",
   "SemverBump",
+  "StartupTimeline",
 ] as const
 
 describe("MDX Components", () => {

@@ -2116,6 +2116,125 @@
     color: var(--cyber-cyan);
     overflow-wrap: anywhere;
   }
+  /* A part of a Compose project: there and running, there but stopped, or
+     gone — the same three colours the ordered lines use for ran, failed and
+     skipped. */
+  .prose-cyber .pp-explorable-row[data-resource="present"] {
+    --pp-explorable-accent: var(--cyber-cyan);
+  }
+  .prose-cyber .pp-explorable-row[data-resource="stopped"] {
+    --pp-explorable-accent: var(--cyber-amber);
+  }
+  .prose-cyber .pp-explorable-row[data-resource="absent"] {
+    --pp-explorable-accent: var(--cyber-red);
+    opacity: 0.6;
+  }
+  .prose-cyber .pp-explorable-row > .pp-explorable-items {
+    grid-column: 1 / -1;
+  }
+  .prose-cyber .pp-explorable-tag {
+    margin-left: 8px;
+    padding: 0 6px;
+    border: 1px solid var(--cyber-magenta);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    color: var(--cyber-magenta);
+  }
+  /* Three lanes over one time axis, and a cursor at the moment the sentence
+     under the figure describes. The spans are placed as percentages of the
+     axis, so the drawing scales with the column rather than with a fixed
+     width that would be right on one screen only. */
+  .prose-cyber .pp-explorable-lanes {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    gap: 8px 10px;
+  }
+  .prose-cyber .pp-explorable-lane {
+    display: contents;
+  }
+  .prose-cyber .pp-explorable-lane-label {
+    font-size: 12px;
+    white-space: nowrap;
+    color: var(--cyber-dim);
+  }
+  /* Nothing yet is grey, not the pale cyan of the other tracks: a lane that
+     has not started must not read as a lane that is up. */
+  .prose-cyber .pp-explorable-lane-track {
+    position: relative;
+    height: 14px;
+    background: color-mix(in srgb, var(--cyber-dim) 22%, transparent);
+  }
+  .prose-cyber .pp-explorable-span {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: var(--pp-explorable-from);
+    width: calc(var(--pp-explorable-to) - var(--pp-explorable-from));
+    background: var(--pp-explorable-accent, transparent);
+  }
+  .prose-cyber .pp-explorable-span[data-phase="starting"] {
+    --pp-explorable-accent: var(--cyber-amber);
+  }
+  .prose-cyber .pp-explorable-span[data-phase="ready"],
+  .prose-cyber .pp-explorable-span[data-phase="up"],
+  .prose-cyber .pp-explorable-span[data-phase="ok"] {
+    --pp-explorable-accent: var(--cyber-cyan);
+  }
+  .prose-cyber .pp-explorable-span[data-phase="error"] {
+    --pp-explorable-accent: var(--cyber-red);
+  }
+  .prose-cyber .pp-explorable-cursor {
+    position: absolute;
+    top: -4px;
+    bottom: -4px;
+    left: var(--pp-explorable-at);
+    width: 2px;
+    margin-left: -1px;
+    background: var(--cyber-text);
+  }
+  .prose-cyber .pp-explorable-badge[data-result="none"] {
+    --pp-explorable-accent: var(--cyber-dim);
+  }
+  .prose-cyber .pp-explorable-badge[data-result="error"] {
+    --pp-explorable-accent: var(--cyber-red);
+  }
+  .prose-cyber .pp-explorable-badge[data-result="ok"] {
+    --pp-explorable-accent: var(--cyber-cyan);
+  }
+  .prose-cyber .pp-explorable-legend [data-phase]::before {
+    content: "";
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    margin-right: 6px;
+    background: var(--pp-explorable-accent);
+  }
+  .prose-cyber .pp-explorable-legend [data-phase="starting"] {
+    --pp-explorable-accent: var(--cyber-amber);
+  }
+  .prose-cyber .pp-explorable-legend [data-phase="error"] {
+    --pp-explorable-accent: var(--cyber-red);
+  }
+  .prose-cyber .pp-explorable-legend [data-phase="ok"] {
+    --pp-explorable-accent: var(--cyber-cyan);
+  }
+  .prose-cyber .pp-explorable-events {
+    display: grid;
+    gap: 4px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-size: 12px;
+    color: var(--cyber-dim);
+  }
+  .prose-cyber .pp-explorable-events li {
+    margin: 0;
+    padding: 0;
+  }
+  .prose-cyber .pp-explorable-events li[data-past="true"] {
+    color: var(--cyber-text);
+  }
   .prose-cyber pre code {
     background: transparent;
     border: 0;
