@@ -35,8 +35,14 @@ resource "aws_lambda_function" "blog" {
   }
 }
 
+# `AWS_IAM`, so the URL answers only requests signed by an identity allowed to
+# invoke it — which is CloudFront, through origin access control, for this one
+# distribution. With `NONE` the signature CloudFront adds was never checked, and
+# anyone who had the URL (it is in the public state artifact) could call the
+# function directly, past the cache. A POST through CloudFront has to carry
+# `x-amz-content-sha256`; see `bodyHash` in lib/views/client.ts.
 resource "aws_lambda_function_url" "blog" {
-  authorization_type = "NONE"
+  authorization_type = "AWS_IAM"
   function_name      = aws_lambda_function.blog.function_name
   invoke_mode        = "RESPONSE_STREAM"
 }
@@ -48,9 +54,10 @@ resource "aws_cloudwatch_log_group" "lambda" {
 
 # Four statements sit on the function's resource policy: the two public ones
 # below, which are the same rule under different names, and CloudFront's two.
-# The public pair is what lets anyone reach the URL while its auth type is
-# `NONE`; both are conditioned on that auth type, so they grant nothing once
-# it changes.
+# The public pair let anyone reach the URL while its auth type was `NONE`. Both
+# are conditioned on that auth type, so under `AWS_IAM` they grant nothing; they
+# are removed in a change of their own, because an apply that removed them
+# alongside the switch could remove them first, while the URL was still `NONE`.
 resource "aws_lambda_permission" "function_url_public_access" {
   action                 = "lambda:InvokeFunctionUrl"
   function_name          = aws_lambda_function.blog.function_name
@@ -75,13 +82,11 @@ resource "aws_lambda_permission" "cloudfront" {
   statement_id  = "AllowCloudFrontServicePrincipal"
 }
 
-# The second half of what origin access control needs once the URL checks
+# The second half of what origin access control needs now the URL checks
 # signatures: CloudFront's documented setup grants both InvokeFunctionUrl and
-# InvokeFunction, for this distribution only. Added while the URL is still
-# `NONE`, where it grants nothing that was not already open, so that switching
-# the auth type later has nothing left to wait for — the two cannot be ordered
-# within one apply, because this depends on the distribution, which depends on
-# the URL.
+# InvokeFunction, for this distribution only. It was added while the URL was
+# still `NONE`, before the switch, because the two cannot be ordered within one
+# apply: this depends on the distribution, which depends on the URL.
 resource "aws_lambda_permission" "cloudfront_invoke_function" {
   action        = "lambda:InvokeFunction"
   function_name = aws_lambda_function.blog.function_name
