@@ -55,6 +55,9 @@ const commonSecurityHeaders = [
 const nextConfig: NextConfig = {
   agentRules: false,
   cacheComponents: true,
+  cacheLife: {
+    default: { revalidate: Infinity },
+  },
   experimental: {
     isrFlushToDisk: false,
     strictRouteTypes: true,
