@@ -5,8 +5,9 @@ import { displayDate, spokenDate } from "@/lib/i18n/format-date"
  * The site prints `2025.03.01`, which a screen reader reads as digits and dots
  * because nothing in the markup says it is a date. Neither `<time datetime>`
  * nor `aria-label` changes that — the first is not announced, and ARIA
- * prohibits the second on the roles these elements have — so the fix is to
- * give assistive technology different text, which is what this formats.
+ * prohibits naming the `generic` role of the `<span>`s that carry the date —
+ * so the fix is to give assistive technology different text, which is what
+ * this formats.
  */
 
 describe("spokenDate", () => {

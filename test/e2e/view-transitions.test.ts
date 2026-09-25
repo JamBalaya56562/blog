@@ -88,7 +88,6 @@ async function recordTransitions(page: import("@playwright/test").Page) {
  * starts no view transition and resets the recorder. React stamps
  * `__reactProps$…` onto a host node once it has hydrated it, so waiting for
  * that on the exact link under test is a precise readiness check — unlike
- * `networkidle`, which times out on a dev server still compiling routes, or
  * `window.next.router`, which appears before hydration finishes.
  */
 async function clickHydrated(
