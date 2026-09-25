@@ -1,6 +1,7 @@
 ---
 title: Conventional Commits 入門ガイド
 date: "2026-09-17"
+updated: "2026-09-25"
 description: コミットメッセージの書き方の規約 Conventional Commits を、書式と利点から、commitlint と lefthook でのコミット時チェック、CI での検査まで
 image: /thumbnails/getting-started-with-conventional-commits.avif
 tags:
@@ -300,7 +301,7 @@ update stuff
 ❯ echo "Fix: Login Button." | bun commitlint --verbose
 ⧗   --- input ---
 Fix: Login Button.
-✖   subject must not be sentence-case, start-case, pascal-case, upper-case [subject-case]
+✖   subject must not be sentence-case [subject-case]
 ✖   subject may not end with full stop [subject-full-stop]
 ✖   type must be lower-case [type-case]
 ✖   type must be one of [build, chore, ci, docs, feat, fix, perf, refactor, revert, style, test] [type-enum]
@@ -337,7 +338,7 @@ fix(auth): keep the session alive across a token refresh
     ok: "問題無し。type、scope、subject がそれぞれ取り出せている",
     problems: "{n} 個の問題。角括弧の中がルールの名前",
   }}
-  caption="type の一覧は type-enum のルールにそのまま入っている。scope に大文字を入れたり、末尾に空白を足したりしても引っかかる"
+  caption="type の一覧は type-enum のルールにそのまま入っている。末尾に空白を足しても引っかかる"
 />
 
 ## lefthook でコミット時に検査する

@@ -1,6 +1,7 @@
 ---
 title: Getting Started with Conventional Commits
 date: "2026-09-17"
+updated: "2026-09-25"
 description: The Conventional Commits convention for commit messages — the format and what it buys you, checking messages with commitlint and lefthook at commit time, and checking them in CI
 image: /thumbnails/getting-started-with-conventional-commits.avif
 tags:
@@ -342,7 +343,7 @@ Here is a message that is closer, but not there.
 ❯ echo "Fix: Login Button." | bun commitlint --verbose
 ⧗   --- input ---
 Fix: Login Button.
-✖   subject must not be sentence-case, start-case, pascal-case, upper-case [subject-case]
+✖   subject must not be sentence-case [subject-case]
 ✖   subject may not end with full stop [subject-full-stop]
 ✖   type must be lower-case [type-case]
 ✖   type must be one of [build, chore, ci, docs, feat, fix, perf, refactor, revert, style, test] [type-enum]
@@ -381,7 +382,7 @@ ported to run in the browser, and the output is what commitlint prints in a term
     ok: "No problems: the type, scope and subject all came out",
     problems: "{n} problems. The name in brackets is the rule",
   }}
-  caption="The list of types sits in the type-enum rule as it is. A capital in the scope or a trailing space is caught too"
+  caption="The list of types sits in the type-enum rule as it is. A trailing space is caught too"
 />
 
 ## Checking at commit time with lefthook

@@ -32,8 +32,7 @@ describe("commitlint port", () => {
     expect(rules("update stuff")).toEqual(["subject-empty", "type-empty"])
     expect(lint("Fix: Login Button.")).toEqual([
       {
-        message:
-          "subject must not be sentence-case, start-case, pascal-case, upper-case",
+        message: "subject must not be sentence-case",
         rule: "subject-case",
       },
       {
@@ -156,9 +155,9 @@ describe("commitlint port", () => {
     expect(rules("fix: 2 bugs in the parser")).toEqual([])
   })
 
-  test("a capital in the scope adds scope-case", () => {
-    expect(rules("fix(Auth): keep the session")).toEqual(["scope-case"])
-    expect(rules("fix(auth/Token): keep the session")).toEqual(["scope-case"])
+  test("a capital in the scope passes: config-conventional has no scope-case", () => {
+    expect(rules("fix(Auth): keep the session")).toEqual([])
+    expect(rules("fix(auth/Token): keep the session")).toEqual([])
   })
 
   test("whitespace around the header adds header-trim", () => {
@@ -201,8 +200,42 @@ describe("commitlint port — letters beyond ASCII", () => {
   })
 })
 
-test("a scope with several parts is split on slash, backslash and comma", () => {
-  expect(rules("fix(auth,Token): keep the session")).toEqual(["scope-case"])
-  expect(rules("fix(authToken): keep the session")).toEqual(["scope-case"])
-  expect(rules("fix(auth/token,api): keep the session")).toEqual([])
+/**
+ * `subject-case` names only the cases the subject matched. Each row is what
+ * commitlint 21.2.3 printed for the header, with config-conventional.
+ */
+describe("commitlint port — the cases subject-case names", () => {
+  const rows: readonly (readonly [string, string])[] = [
+    ["fix: Login Button.", "sentence-case"],
+    ["fix: Login Button", "sentence-case, start-case"],
+    ["fix: LoginButton", "sentence-case, pascal-case"],
+    ["fix: ADD LOGIN", "sentence-case, start-case, upper-case"],
+    ["fix: A", "sentence-case, start-case, pascal-case, upper-case"],
+    ["fix: LOGIN button", "sentence-case"],
+    ["fix: Login_button", "sentence-case"],
+    ["fix: Élan vital", "sentence-case"],
+    ["fix: ΑΒΓ", "sentence-case, start-case, upper-case"],
+    ["fix: Добавить кнопку", "sentence-case"],
+  ]
+  for (const [header, cases] of rows) {
+    test(header, () => {
+      const finding = lint(header).find((f) => f.rule === "subject-case")
+      expect(finding?.message).toBe(`subject must not be ${cases}`)
+    })
+  }
+
+  test("a capitalised subject is always at least sentence-case", () => {
+    fc.assert(
+      fc.property(type, cleanSubject, (t, subj) => {
+        const capitalised = subj.charAt(0).toUpperCase() + subj.slice(1)
+        const finding = lint(header(t, null, false, capitalised)).find(
+          (f) => f.rule === "subject-case",
+        )
+        expect(finding?.message).toStartWith(
+          "subject must not be sentence-case",
+        )
+      }),
+      { numRuns: 100 },
+    )
+  })
 })

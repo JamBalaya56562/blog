@@ -1,3 +1,5 @@
+import { camelCase, startCase, upperFirst } from "es-toolkit/compat"
+
 /**
  * The header rules of `@commitlint/config-conventional`, small enough to run
  * in the reader's browser while they type.
@@ -61,7 +63,6 @@ export function parseHeader(header: string): Parsed {
 export type RuleId =
   | "header-max-length"
   | "header-trim"
-  | "scope-case"
   | "subject-case"
   | "subject-empty"
   | "subject-full-stop"
@@ -71,22 +72,45 @@ export type RuleId =
 
 export type Finding = Readonly<{ rule: RuleId; message: string }>
 
-/**
- * commitlint's case check, reduced to the cases the conventional config
- * forbids for a subject. It first drops anything in quotes, since a proper
- * name in the subject is allowed its capitals, and trims. What remains
- * counts as sentence-, start-, pascal- or upper-case when it starts with a
- * capital letter: every one of those four begins that way, and a string that
- * begins with a small letter is none of them. An empty remainder, or one that
- * starts with a digit, counts as a match too, as it does upstream.
- */
-function startsCapitalised(value: string): boolean {
-  const cleaned = value.replace(/`.*?`|".*?"|'.*?'/g, "").trim()
-  if (cleaned === "" || /^\d/.test(cleaned)) {
-    return true
+type Case =
+  | "lower-case"
+  | "sentence-case"
+  | "start-case"
+  | "pascal-case"
+  | "upper-case"
+
+/** The cases `config-conventional` forbids for a subject, in its order. */
+const SUBJECT_CASES: readonly Case[] = [
+  "sentence-case",
+  "start-case",
+  "pascal-case",
+  "upper-case",
+]
+
+function toCase(input: string, target: Case): string {
+  switch (target) {
+    case "lower-case":
+      return input.toLowerCase()
+    case "sentence-case":
+      return upperFirst(input)
+    case "start-case":
+      return startCase(input)
+    case "pascal-case":
+      return upperFirst(camelCase(input))
+    case "upper-case":
+      return input.toUpperCase()
   }
-  const first = cleaned.charAt(0)
-  return first !== first.toLowerCase()
+}
+
+/**
+ * commitlint's case check. It first drops anything in quotes, since a proper
+ * name in the subject is allowed its capitals, and trims. An empty remainder,
+ * or one that starts with a digit, counts as a match.
+ */
+function isCase(value: string, target: Case): boolean {
+  const input = value.replace(/`.*?`|".*?"|'.*?'/g, "").trim()
+  const transformed = toCase(input, target)
+  return transformed === "" || /^\d/.test(transformed) || transformed === input
 }
 
 /**
@@ -96,13 +120,6 @@ function startsCapitalised(value: string): boolean {
  */
 const STARTS_WITH_LETTER = /^[\p{Ll}\p{Lu}\p{Lt}]/u
 
-/** A scope may name several parts, split on `/`, `\` or `,` as upstream does. */
-const SCOPE_DELIMITER = /[/\\,]/
-
-function isLowerCase(value: string): boolean {
-  const cleaned = value.replace(/`.*?`|".*?"|'.*?'/g, "").trim()
-  return cleaned === "" || cleaned === cleaned.toLowerCase()
-}
 type Rule = Readonly<{
   id: RuleId
   /** The message when the rule is broken, or nothing when it holds. */
@@ -110,9 +127,8 @@ type Rule = Readonly<{
 }>
 
 /**
- * One entry per rule, in rule-id order — which is the order commitlint
- * prints them, and the order the article's transcripts show, so `lint`
- * needs no sort.
+ * One entry per rule, in the order `config-conventional` declares them, which
+ * is the order commitlint prints them in, so `lint` needs no sort.
  */
 const RULES: readonly Rule[] = [
   {
@@ -137,17 +153,16 @@ const RULES: readonly Rule[] = [
     id: "header-trim",
   },
   {
-    check: (_, { scope }) =>
-      scope && !scope.split(SCOPE_DELIMITER).every(isLowerCase)
-        ? "scope must be lower-case"
-        : null,
-    id: "scope-case",
-  },
-  {
-    check: (_, { subject }) =>
-      subject && STARTS_WITH_LETTER.test(subject) && startsCapitalised(subject)
-        ? "subject must not be sentence-case, start-case, pascal-case, upper-case"
-        : null,
+    check: (_, { subject }) => {
+      if (!subject || !STARTS_WITH_LETTER.test(subject)) {
+        return null
+      }
+      // A `never` rule names only the cases that matched.
+      const matched = SUBJECT_CASES.filter((target) => isCase(subject, target))
+      return matched.length > 0
+        ? `subject must not be ${matched.join(", ")}`
+        : null
+    },
     id: "subject-case",
   },
   {
@@ -161,7 +176,7 @@ const RULES: readonly Rule[] = [
   },
   {
     check: (_, { type }) =>
-      type && !isLowerCase(type) ? "type must be lower-case" : null,
+      type && !isCase(type, "lower-case") ? "type must be lower-case" : null,
     id: "type-case",
   },
   {
