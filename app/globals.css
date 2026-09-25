@@ -117,9 +117,19 @@
      2px scroll-progress bar sticking beneath it. Without this, an anchor
      target lands at y=0 — underneath the header. `scroll-padding-top` sits
      on the scrollport, so it covers both fragment navigation and the
-     `scrollIntoView()` the table of contents calls. */
+     `scrollIntoView()` the table of contents calls.
+
+     Japanese writes no spaces between words, so a line may otherwise break
+     inside one: `イ / メージ`, `揃わな / い`. `auto-phrase` breaks between
+     phrases instead, and inherits to every element. Chromium applies it only
+     to text whose language resolves to Japanese or Korean, which is why the
+     `lang` from `app/[locale]/layout.tsx` matters and why English pages are
+     unaffected; a phrase too long for its line still breaks inside, so nothing
+     overflows. Other engines drop the declaration and keep breaking per
+     character. */
   html {
     scroll-padding-top: 6.5rem;
+    word-break: auto-phrase;
   }
 
   body {
@@ -985,27 +995,17 @@
     font-size: 16px;
     line-height: 1.85;
   }
-  /* Japanese writes no spaces between words, so the engine may break a line at
-     almost any character: `デ / ィレクトリ` strands a small kana at the start of
-     a line, and `揃わな / い` leaves one kana behind. The two properties answer
-     different halves of that, and they do not reach the same engines.
-
-     `line-break: strict` is the kinsoku half and is supported broadly, so it is
+  /* Breaking between phrases (`word-break: auto-phrase` on `html`) still lets
+     a line start on a small kana: `デ / ィレクトリ`. `line-break: strict` is
+     the kinsoku rule that forbids it, and it is supported broadly, so it is
      not a Chromium-only change. Measured against a line ending on `ィ`, `ッ`,
      `ゃ` or `ー`: Chromium moves the preceding glyph down instead of starting a
      line with it, while Firefox already declined those breaks under `auto` and
      renders identically either way. It takes effect there too; it simply has
      nothing left to correct.
 
-     `word-break: auto-phrase` is the phrase half, and that one really is
-     Chromium-only today. Elsewhere the declaration is dropped and breaking
-     stays character-by-character within a phrase.
-
-     `:lang(ja)` marks intent rather than guarding anything, since both
-     properties are defined over CJK text — but the `lang` behind it carries
-     weight of its own: Chromium applies `auto-phrase` only to text whose
-     language resolves to Japanese or Korean. It comes from
-     `app/[locale]/layout.tsx`. */
+     `:lang(ja)` marks intent rather than guarding anything, since the property
+     is defined over CJK text. */
   /* A Japanese opening bracket carries half an em of its own space, drawn into
      the left of its fullwidth body. Mid-line that space is wanted; at the start
      of a line it reads as an accidental indent, because the paragraphs here are
@@ -1026,7 +1026,6 @@
   .prose-cyber:lang(ja) {
     line-break: strict;
     text-spacing-trim: trim-start;
-    word-break: auto-phrase;
   }
   /* A fence has to render the characters it was handed. `trim-start` inherits
      into `pre` and `code` like anywhere else — measured at 171px against 177px
