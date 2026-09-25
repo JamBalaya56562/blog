@@ -194,7 +194,9 @@ than repairs.
 
 Other tasks worth knowing (`mise tasks` lists them all): `mise db:scan` dumps
 every page view row as JSON, `mise thumbnail <png> <slug>` encodes a post
-thumbnail as AVIF, and `mise update` updates Bun dependencies and reinstalls.
+thumbnail as AVIF, `mise links` checks every link in the posts (the same check
+`.github/workflows/link-check.yml` runs monthly, filing an issue for what
+breaks), and `mise update` updates Bun dependencies and reinstalls.
 
 `.claude/launch.json` does not start a server of its own. It attaches the browser
 preview to `http://localhost:3000`, so bring the server up with

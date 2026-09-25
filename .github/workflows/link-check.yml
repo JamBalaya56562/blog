@@ -1,0 +1,63 @@
+name: 🔗 Link Check
+
+on:
+  schedule:
+    - cron: "0 0 1 * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  links:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    if: github.repository_owner == 'jambalaya56562'
+
+    steps:
+      - name: 📥 Checkout
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: 🐣 Setup mise
+        uses: jdx/mise-action@v4.3.0
+        with:
+          install_args: lychee
+
+      - name: 🔗 Check the links in posts
+        id: lychee
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          status=0
+          mise run --no-deps links --format markdown --output lychee.md || status=$?
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+          if [ "$status" != "0" ] && [ "$status" != "2" ]; then
+            echo "::error::lychee exited with $status, which is not a broken link."
+            exit "$status"
+          fi
+
+      - name: 📝 Report on the issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          STATUS: ${{ steps.lychee.outputs.status }}
+          TITLE: Broken links in posts
+        run: |
+          issue=$(gh issue list --repo "$REPO" --state open --search "\"$TITLE\" in:title" \
+            --json number,title --jq '.[] | select(.title == env.TITLE) | .number' | head -1)
+          if [ "$STATUS" = "0" ]; then
+            if [ -n "$issue" ]; then
+              gh issue close "$issue" --repo "$REPO" --comment "Every link resolves again as of [this run]($RUN_URL)."
+            fi
+            exit 0
+          fi
+          { echo "Found by [the monthly link check]($RUN_URL). Run \`mise run links\` to check locally."; echo; cat lychee.md; } > body.md
+          if [ -n "$issue" ]; then
+            gh issue edit "$issue" --repo "$REPO" --body-file body.md
+          else
+            gh issue create --repo "$REPO" --title "$TITLE" --body-file body.md
+          fi

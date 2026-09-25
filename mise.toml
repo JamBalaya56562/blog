@@ -1,5 +1,6 @@
 [tools]
 bun = "latest"
+lychee = "latest"
 opentofu = "latest"
 pitchfork = "latest"
 rumdl = "latest"
@@ -30,6 +31,16 @@ run = "rumdl check --fix ."
 description = "Build, then run the E2E tests with the database up"
 daemons = ["db"]
 run = ["bun run build", "bun test:e2e"]
+
+[tasks.links]
+description = "Check the posts' links: every URL, and that each /{locale}/blog/<slug> is a post"
+run = '''
+lychee --no-progress --scheme https --scheme http --scheme file \
+  --root-dir '{{config_root}}/content/posts' \
+  --remap '^file://{{config_root}}/content/posts/(en|ja)/blog/([^/#?]+) file://{{config_root}}/content/posts/$1/$2.mdx' \
+  --exclude '\.(svg|avif|png|jpe?g|webp)$' \
+  content/posts
+'''
 
 [tasks.update]
 description = "Update bun dependencies and reinstall"
