@@ -14,9 +14,10 @@ import { nextNavigationMock } from "./setup-next-navigation-mock"
 mock.module("@/lib/fonts", () => ({ fontVars: "font-vars-stub" }))
 
 // The preloaded mock returns a fixed "/en"; both boundaries read the locale
-// out of the pathname, so this file needs to move it. Spreading is mandatory:
-// bun's mock.module replaces the whole module for the entire run, and a
-// partial override makes the missing exports disappear for every other file.
+// out of the pathname, so this file needs to move it. The override spreads
+// the preloaded mock: mock.module replaces the whole module, and without
+// `--isolate` a partial override takes the other exports away from later
+// files.
 let pathname = "/en"
 mock.module("next/navigation", () => ({
   ...nextNavigationMock,
@@ -99,9 +100,8 @@ describe("app/[locale]/error.tsx", () => {
  *
  * React treats `<html>`, `<head>` and `<body>` as singletons: it applies them
  * to the real document instead of nesting copies inside a test container, which
- * takes Testing Library's container out from under it and leaves every later
- * test file rendering into a document that was never cleaned up. That is not
- * hypothetical — it broke `portfolio-page.test.tsx` from here.
+ * takes Testing Library's container out from under it. Without `--isolate`,
+ * later test files then render into a document that was never cleaned up.
  *
  * Rendering to markup is also the truthful case: when the root layout fails,
  * this page reaches the reader as server-rendered HTML.

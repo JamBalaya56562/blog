@@ -25,16 +25,15 @@ import { PROMPT_LINE } from "@/lib/prompt-line"
  *
  * Renders nothing where the Clipboard API is unavailable (a non-secure origin,
  * say), so there is no button that cannot do anything. That check goes through
- * `useSyncExternalStore` rather than an effect: a state update from an effect
- * after hydration commits as a transition, and React then activates every
- * ViewTransition boundary in the viewport — the post hero was picking up a
- * view-transition-name on plain page load, which broke the navigation tests.
+ * `useSyncExternalStore` rather than an effect: with the check in an effect,
+ * the post hero picked up a view-transition-name on plain page load, which
+ * broke the navigation tests.
  */
 const subscribe = () => () => {}
 const hasClipboard = () => Boolean(navigator.clipboard?.writeText)
 const noClipboard = () => false
 
-/** The prompt and the space after it, as the grammar reads them. */
+/** The prompt and the spaces after it, as `PROMPT_LINE` reads them. */
 const PROMPT_PREFIX = new RegExp(`${PROMPT_LINE.source}+`)
 
 function textToCopy(pre: HTMLElement, commands: boolean): string {

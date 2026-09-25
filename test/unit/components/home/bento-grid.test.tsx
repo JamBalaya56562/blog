@@ -4,9 +4,8 @@ import type { Post } from "@/lib/content/types"
 import { getDictionary } from "@/lib/i18n/get-dictionary"
 
 let countsResult: Record<string, number> = {}
-// Both exports are stubbed even though this file only needs one: bun applies
-// mock.module globally for the run, so a partial mock makes the missing export
-// disappear for every other test file too.
+// Both exports are stubbed even though this file only needs one: without
+// `--isolate`, a partial mock takes the missing export away from later files.
 mock.module("@/lib/views/client", () => ({
   fetchViewCounts: mock(() => Promise.resolve(countsResult)),
   recordView: mock(() => Promise.resolve(null)),

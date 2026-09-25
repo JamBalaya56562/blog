@@ -8,10 +8,8 @@ import { PageTransition } from "@/components/page-transition"
  * the ones whose drift would silently stop the directional slide.
  *
  * The component is called directly rather than rendered for these: it is a
- * plain function returning a single element, so its props are readable
- * without standing in for `ViewTransition` — which `setup-react-mock.ts`
- * patches to drop every prop, and which is module-cached by the time this
- * file runs anyway.
+ * plain function returning a single element, so its props can be read off
+ * that element.
  */
 function transitionProps() {
   const element = PageTransition({ children: null }) as {

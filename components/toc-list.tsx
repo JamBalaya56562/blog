@@ -78,7 +78,9 @@ export function TocList({
     }
     // Adjust the list's own scroll position rather than calling
     // `scrollIntoView`, which would also be free to move the window — and
-    // the window is what the reader is scrolling right now.
+    // the window is what the reader is scrolling right now. Its
+    // `container: "nearest"` option would prevent that, but only Chromium
+    // has it.
     const top = link.offsetTop - list.offsetTop
     const bottom = top + link.offsetHeight
     if (top < list.scrollTop) {

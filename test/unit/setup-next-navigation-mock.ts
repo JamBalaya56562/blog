@@ -1,14 +1,10 @@
 import { mock } from "bun:test"
 
-// Preload mock for next/navigation to resolve ESM export issues in Bun.
-// next/navigation's CJS entry point may not expose all named exports that
-// ESM consumers expect, causing "Export named '...' not found" errors.
-//
-// IMPORTANT: Individual test files that override this mock MUST spread
-// `nextNavigationMock` to preserve all exports. Bun's mock.module()
-// replaces the entire module, and partial overrides leak across test files
-// on Bun canary (Linux CI), causing "Export named '...' not found" errors.
-// See: https://github.com/oven-sh/bun/issues/12823
+// The real hooks need a mounted App Router: outside one, usePathname returns
+// null and useRouter throws. A file that overrides this mock spreads
+// `nextNavigationMock`, since mock.module replaces the whole module and,
+// without `--isolate`, a partial override takes the other exports away from
+// later files.
 export const nextNavigationMock = {
   forbidden: () => {
     throw new Error("NEXT_FORBIDDEN")

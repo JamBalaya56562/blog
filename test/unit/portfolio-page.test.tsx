@@ -26,12 +26,12 @@ const { default: PortfolioPage } = await import("@/app/[locale]/portfolio/page")
 
 // This file renders twice — once per locale — and used to lean on Testing
 // Library's automatic cleanup to keep the two apart. That is not dependable
-// across a whole `bun test` run: any test file importing a stylesheet (which
-// `app/global-error.tsx` must do) leaves a second copy of the library loaded,
-// and the automatic hook then belongs to the copy that did not do the render.
-// The second locale finds two of every element and the failure names the text,
-// not the cause. Every other render test here cleans up explicitly; so does
-// this one now.
+// when files share one global (`bun test` without `--isolate`): any test file
+// importing a stylesheet (which `app/global-error.tsx` must do) leaves a second
+// copy of the library loaded, and the automatic hook then belongs to the copy
+// that did not do the render. The second locale finds two of every element
+// and the failure names the text, not the cause. Every other render test here
+// cleans up explicitly; so does this one now.
 afterEach(cleanup)
 
 describe("Portfolio Page", () => {

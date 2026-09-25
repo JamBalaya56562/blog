@@ -72,9 +72,9 @@ resource "aws_iam_openid_connect_provider" "github" {
 resource "aws_iam_role" "github_actions" {
   name = "github-actions-blog-lambda"
 
-  # `sub` is pinned to one environment of this repository. Without that
-  # condition the trust policy would accept a token from any repository on
-  # GitHub, since the issuer is shared by all of them.
+  # `sub` is pinned to one environment of this repository. IAM refuses a
+  # GitHub trust policy with no `sub` condition at all, since the issuer is
+  # shared by every repository; which environment it names is the choice here.
   assume_role_policy = jsonencode({
     Statement = [{
       Action = "sts:AssumeRoleWithWebIdentity"
@@ -183,8 +183,9 @@ resource "aws_iam_role" "tofu_apply" {
   })
 }
 
-# PowerUserAccess is everything except IAM, which covers every service in these
-# files. IAM is added back below, narrowed to the resources they describe.
+# PowerUserAccess is everything except IAM, Organizations and Account, which
+# covers every service in these files. IAM is added back below, narrowed to the
+# resources they describe.
 resource "aws_iam_role_policy_attachment" "tofu_apply_power_user" {
   role       = aws_iam_role.tofu_apply.name
   policy_arn = "arn:aws:iam::aws:policy/PowerUserAccess"

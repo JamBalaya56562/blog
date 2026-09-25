@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useEffectEvent, useRef, useState } from "react"
 import type { Dictionary } from "@/lib/i18n/get-dictionary"
 
 /**
@@ -39,6 +39,8 @@ export function MobileMenu({
     }, 220)
   }
 
+  const onEscape = useEffectEvent(close)
+
   // Escape closes from anywhere while the panel is up, which a keyboard user
   // reaching the links needs — the links themselves are not the only focus
   // target inside the panel.
@@ -46,15 +48,9 @@ export function MobileMenu({
     if (!isOpen) {
       return
     }
-    // Written out rather than calling `close`: that function is a new
-    // value on every render, and an effect keyed on it would re-run each time.
     const onKey = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
-        setIsClosing(true)
-        timer.current = setTimeout(() => {
-          setIsOpen(false)
-          setIsClosing(false)
-        }, 220)
+        onEscape()
       }
     }
     window.addEventListener("keydown", onKey)
