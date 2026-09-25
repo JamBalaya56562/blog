@@ -87,7 +87,7 @@ resource "aws_cloudwatch_metric_alarm" "cloudfront_5xx" {
 resource "aws_cloudwatch_log_metric_filter" "app_errors" {
   log_group_name = aws_cloudwatch_log_group.lambda.name
   name           = "blog-app-errors"
-  pattern        = "?\"⨯\" ?\"] failed\" ?\"fetch failed\" ?\"fetch error:\" ?\"API error:\" ?\"is not set\""
+  pattern        = "?\"⨯\" ?\"] failed\" ?\"fetch failed\" ?\"fetch error:\" ?\"API error:\" ?\"DYNAMODB_TABLE_NAME is not set\""
 
   metric_transformation {
     name      = "AppErrors"
