@@ -9,9 +9,8 @@ let actionResult: Promise<number | null> = Promise.resolve(null)
 let readResult: Promise<Record<string, number>> = Promise.resolve({})
 const incrementMock = mock(() => actionResult)
 const readMock = mock(() => readResult)
-// Both exports are stubbed: bun applies mock.module globally for the run, so
-// a partial mock makes the missing export disappear for every other test file
-// too.
+// Both exports are stubbed: without `--isolate`, a partial mock takes the
+// missing export away from later files.
 mock.module("@/lib/views/client", () => ({
   fetchViewCounts: readMock,
   recordView: incrementMock,

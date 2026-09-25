@@ -95,8 +95,8 @@ export function isInitial(
 /**
  * Whether a `.dockerignore` line keeps this entry out.
  *
- * The real matcher is Go's `filepath.Match` over each path component, with
- * `**` spanning directories. The lines this figure carries are plain names
+ * The real matcher follows Go's `filepath.Match` rules, with `**` spanning
+ * any number of directories. The lines this figure carries are plain names
  * and `**\/name`, so it is enough to compare the name with the pattern's
  * last component — and the figure says as much rather than pretending to be
  * the whole of the format.

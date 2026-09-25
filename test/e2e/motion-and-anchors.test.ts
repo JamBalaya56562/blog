@@ -21,7 +21,8 @@ test.describe("Motion — default", () => {
   })
 
   test("card scan-line sweeps on hover", async ({ page, isMobile }) => {
-    // Touch devices never enter the `:hover` state the sweep hangs off.
+    // The sweep hangs off Tailwind's `hover:` variants, which apply only under
+    // `(hover: hover)`, and the phone projects do not match it.
     test.skip(!!isMobile, "hover is a pointer-device interaction")
     await page.goto("/en")
     const card = page.locator("a[href*='/en/blog/']").first()

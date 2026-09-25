@@ -13,9 +13,7 @@ on:
 
 permissions:
   contents: read
-  # Assume the read-only role through OIDC.
   id-token: write
-  # Read the state artifact from an earlier run.
   actions: read
   pull-requests: write
 
@@ -43,13 +41,6 @@ jobs:
       - name: 🐣 Setup mise
         uses: jdx/mise-action@v4.3.0
 
-      # State lives in an artifact rather than a bucket, and artifacts belong to
-      # runs. The script takes the newest one a trusted run produced — see it
-      # for what that means — and only the state file inside it.
-      #
-      # Missing state is an error. A plan against an empty state lists every
-      # resource as new, which reads like the account is empty; merging on the
-      # strength of it would reach an apply that now refuses to run.
       - name: 📦 Fetch the current state
         id: state
         env:
@@ -81,11 +72,6 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PLAN_EXIT: ${{ steps.plan.outputs.exit_code }}
         run: |
-          # The one line worth reading goes in the summary; the hundreds of
-          # lines behind it go in the fold. Whether the plan failed is the exit
-          # code's to say, not the text's: a plan that changes only outputs
-          # prints neither "Plan:" nor "No changes.", and reading the text
-          # alone called that a failure.
           if [ "$PLAN_EXIT" != "0" ]; then
             summary="Plan failed — see the output"
           else
@@ -98,10 +84,6 @@ jobs:
             fi
           fi
           {
-            # Invisible in the rendered comment, and the only way to find this
-            # comment again on the next push. `--edit-last` would have been
-            # shorter and wrong: preview-comment posts as the same bot, so the
-            # last comment is not reliably ours.
             echo "<!-- tofu-plan -->"
             echo "### 🌱 OpenTofu Plan"
             echo
@@ -114,8 +96,6 @@ jobs:
             echo "</details>"
           } > comment.md
 
-          # One comment per pull request, rewritten in place. An outdated plan
-          # is not worth scrolling past to reach the current one.
           id=$(gh api "repos/${GITHUB_REPOSITORY}/issues/${{ github.event.pull_request.number }}/comments" --paginate \
             --jq '[.[] | select(.body | startswith("<!-- tofu-plan -->"))] | last | .id // empty')
           if [ -n "$id" ]; then

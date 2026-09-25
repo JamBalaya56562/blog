@@ -1,8 +1,5 @@
 name: 🚜 OpenTofu Apply
 
-# The state is a single artifact with no lock behind it, so two applies running
-# at once would each write a state that does not know about the other. Queued,
-# never cancelled.
 concurrency:
   group: tofu-state
   cancel-in-progress: false
@@ -24,7 +21,6 @@ on:
 permissions:
   contents: read
   id-token: write
-  # Read the previous state artifact and write the new one.
   actions: write
 
 env:
@@ -52,12 +48,6 @@ jobs:
       - name: 🐣 Setup mise
         uses: jdx/mise-action@v4.3.0
 
-      # See the script for what a state has to come from to be taken. With none
-      # found the apply stops: an empty state would plan every resource as new
-      # and build a second copy of the account — including a second hosted zone
-      # for the same domain, which nothing would refuse. The one legitimate
-      # reason to apply from nothing, rebuilding after a deliberate destroy, is
-      # a dispatch with `bootstrap` ticked.
       - name: 📦 Fetch the current state
         id: state
         env:
@@ -82,9 +72,6 @@ jobs:
           tofu init -input=false
           tofu apply -input=false -auto-approve -no-color
 
-      # Uploaded whether or not the apply succeeded. A half-applied run still
-      # changed the account, and losing the state that records it is worse than
-      # keeping a state that is mid-flight.
       - name: 💾 Store the state
         if: always() && hashFiles('infra/terraform.tfstate') != ''
         uses: actions/upload-artifact@v7

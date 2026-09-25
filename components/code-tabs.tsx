@@ -21,10 +21,10 @@ import { Children, isValidElement, useId, useRef, useState } from "react"
  *
  *     </CodeTabs>
  *
- * The blank lines around the fences are what makes MDX parse them as markdown
- * rather than as JSX text, and going through the normal fence keeps the
- * highlighting: `rehypeHighlight` walks the whole tree, so it reaches these the
- * same way it reaches a code block that stands on its own.
+ * The fences sit on lines of their own, so MDX parses them as markdown, and
+ * going through the normal fence keeps the highlighting: `rehypeHighlight`
+ * walks the whole tree, so it reaches these the same way it reaches a code
+ * block that stands on its own.
  *
  * Panels are matched to labels by position, so anything else placed between the
  * fences would take a label away from the block after it. Every panel stays in

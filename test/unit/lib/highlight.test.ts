@@ -112,9 +112,10 @@ describe("code highlighting", () => {
 })
 
 describe("console fences", () => {
-  // The prompt characters are the ones the shellsession grammar accepts;
-  // a line that starts with one of them followed by a space is a command,
-  // and only those get the mark the terminal frame and copy button read.
+  // The prompt characters are `PROMPT_LINE`'s, a subset of the ones the
+  // shellsession grammar accepts; a line that starts with one of them
+  // followed by a space is a command, and only those get the mark the
+  // terminal frame and copy button read.
   test("mark the prompt lines as commands and leave the output unmarked", async () => {
     const tree = await highlight(
       "console",

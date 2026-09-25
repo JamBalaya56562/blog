@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 #MISE hide=true
-# Sourced by the db:* tasks beside it, not run on its own. Everything under
-# mise-tasks/ registers as a task, so this one is hidden from the listing;
-# running it defines the functions below and exits.
+# Sourced by the db:* tasks beside it, not run on its own. On Windows mise
+# registers any file here with a shebang as a task, so this one is hidden from
+# the listing; running it defines the functions below and exits.
 #
 # Resolves the container runtime to use.
 #
@@ -11,18 +11,11 @@
 # Override with RUNTIME=docker to force one.
 set -euo pipefail
 
-# Being on PATH is not enough. wslc ships with Windows whether or not its
-# backend is running, and an unavailable one fails every command with E_FAIL, so
-# each candidate is probed with a harmless listing before it is chosen.
-#
-# The probe has to be asked in each runtime's own dialect: `list` is wslc's, and
-# `docker list` is not a docker command at all, so probing docker with it fails
-# on a working daemon and drops docker from the candidates entirely.
+# Being on PATH is not enough. wslc ships with WSL whether or not its backend
+# is running, and an unavailable one fails every command with E_FAIL, so each
+# candidate is probed with a harmless listing before it is chosen.
 runtime_works() {
-  case "$1" in
-    *wslc*) "$1" list >/dev/null 2>&1 ;;
-    *) "$1" ps >/dev/null 2>&1 ;;
-  esac
+  "$1" ps >/dev/null 2>&1
 }
 
 resolve_runtime() {
