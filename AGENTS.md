@@ -234,6 +234,8 @@ own.
 Every push to main updates an open release pull request; every Monday at 09:00
 JST it is merged, which tags `vX.Y.Z` and publishes the GitHub release. Do not
 edit `package.json`'s `version` or `.github/release-please-manifest.json` by
-hand — the release pull request owns both. No `CHANGELOG.md` is kept
+hand — the release pull request owns both. It also moves the supported major in
+`SECURITY.md`'s table, between the `x-release-please` markers, so a new major
+drops support for the one before it. No `CHANGELOG.md` is kept
 (`skip-changelog` in `.github/release-please-config.json`); the notes live on
 the GitHub release.
