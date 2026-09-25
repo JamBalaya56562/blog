@@ -65,7 +65,6 @@ resource "aws_iam_role_policy_attachment" "lambda_basic_execution" {
 
 locals {
   github_subject_prefixes = [
-    "repo:JamBalaya56562/blog",
     "repo:JamBalaya56562@88115388/blog@714613703",
   ]
 }
