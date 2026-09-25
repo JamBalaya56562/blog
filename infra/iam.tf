@@ -63,6 +63,13 @@ resource "aws_iam_role_policy_attachment" "lambda_basic_execution" {
 # GitHub Actions assumes this through OIDC. No access key exists for it, and
 # the trust policy is what makes that possible.
 
+locals {
+  github_subject_prefixes = [
+    "repo:JamBalaya56562/blog",
+    "repo:JamBalaya56562@88115388/blog@714613703",
+  ]
+}
+
 resource "aws_iam_openid_connect_provider" "github" {
   url             = "https://token.actions.githubusercontent.com"
   client_id_list  = ["sts.amazonaws.com"]
@@ -81,7 +88,7 @@ resource "aws_iam_role" "github_actions" {
       Condition = {
         StringEquals = {
           "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
-          "token.actions.githubusercontent.com:sub" = "repo:JamBalaya56562/blog:environment:lambda-deploy"
+          "token.actions.githubusercontent.com:sub" = [for prefix in local.github_subject_prefixes : "${prefix}:environment:lambda-deploy"]
         }
       }
       Effect = "Allow"
@@ -144,7 +151,7 @@ resource "aws_iam_role" "tofu_plan" {
         # Wide on purpose: `sub` differs between a branch push and a
         # pull_request event, and this role cannot write anything.
         StringLike = {
-          "token.actions.githubusercontent.com:sub" = "repo:JamBalaya56562/blog:*"
+          "token.actions.githubusercontent.com:sub" = [for prefix in local.github_subject_prefixes : "${prefix}:*"]
         }
       }
       Effect = "Allow"
@@ -171,7 +178,7 @@ resource "aws_iam_role" "tofu_apply" {
       Condition = {
         StringEquals = {
           "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
-          "token.actions.githubusercontent.com:sub" = "repo:JamBalaya56562/blog:environment:tofu-apply"
+          "token.actions.githubusercontent.com:sub" = [for prefix in local.github_subject_prefixes : "${prefix}:environment:tofu-apply"]
         }
       }
       Effect = "Allow"
