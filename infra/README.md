@@ -18,6 +18,7 @@ account, not that the account needs correcting.
 | [iam.tf](iam.tf) | The function's execution role, the GitHub Actions deploy role and the OIDC provider behind it |
 | [cdn.tf](cdn.tf) | The CloudFront distribution and its origin access control, which is the only way to the function URL |
 | [dns.tf](dns.tf) | The hosted zone, its records and the ACM certificate |
+| [monitoring.tf](monitoring.tf) | Three CloudWatch alarms (function failures, CloudFront 5xx, errors in the app's log) and the SNS topics that mail them to `alert_email` |
 
 Two things are deliberately absent.
 

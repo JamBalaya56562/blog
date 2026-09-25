@@ -9,3 +9,9 @@ variable "domain_name" {
   type        = string
   default     = "kokohore56562wanwan.site"
 }
+
+variable "alert_email" {
+  description = "Address the CloudWatch alarms mail through SNS"
+  type        = string
+  default     = "jambalaya.pyoncafe@outlook.jp"
+}
