@@ -105,26 +105,26 @@ async function clickHydrated(
   await page.locator(selector).first().click()
 }
 
-test.describe("Directional view transitions", () => {
-  // Transition types and `view-transition-class` are Chromium 125+. Elsewhere
-  // the app navigates normally, it just does not animate.
-  test.skip(
-    ({ browserName }) => browserName !== "chromium",
-    "view-transition-class is not supported in this browser",
+/** Whether this engine runs typed view transitions with classes. */
+function supportsDirectionalTransitions(page: import("@playwright/test").Page) {
+  return page.evaluate(
+    () =>
+      typeof document.startViewTransition === "function" &&
+      CSS.supports("view-transition-class", "nav-forward"),
   )
+}
 
+test.describe("Directional view transitions", () => {
   test.beforeEach(async ({ page }) => {
     await recordTransitions(page)
   })
 
   test("opening a post from the list navigates forward", async ({ page }) => {
     await page.goto("/en/blog")
-    const supported = await page.evaluate(
-      () =>
-        typeof document.startViewTransition === "function" &&
-        CSS.supports("view-transition-class", "nav-forward"),
+    test.skip(
+      !(await supportsDirectionalTransitions(page)),
+      "no view-transition-class support",
     )
-    test.skip(!supported, "no view-transition-class support")
 
     await Promise.all([
       page.waitForURL(/\/en\/blog\/.+/),
@@ -144,10 +144,10 @@ test.describe("Directional view transitions", () => {
 
   test("the header logo navigates back", async ({ page }) => {
     await page.goto("/en/blog")
-    const supported = await page.evaluate(
-      () => typeof document.startViewTransition === "function",
+    test.skip(
+      !(await supportsDirectionalTransitions(page)),
+      "no view-transition-class support",
     )
-    test.skip(!supported, "no view transition support")
 
     await Promise.all([
       page.waitForURL(/\/en$/),
@@ -166,10 +166,10 @@ test.describe("Directional view transitions", () => {
     // one that exists at every width; the header's is inside the mobile
     // menu below `md`.
     await page.goto("/en")
-    const supported = await page.evaluate(
-      () => typeof document.startViewTransition === "function",
+    test.skip(
+      !(await supportsDirectionalTransitions(page)),
+      "no view-transition-class support",
     )
-    test.skip(!supported, "no view transition support")
 
     await Promise.all([
       page.waitForURL(/\/en\/blog$/),
@@ -181,11 +181,6 @@ test.describe("Directional view transitions", () => {
 })
 
 test.describe("Directional view transitions — the slide itself", () => {
-  test.skip(
-    ({ browserName }) => browserName !== "chromium",
-    "view-transition-class is not supported in this browser",
-  )
-
   test.beforeEach(async ({ page }) => {
     await recordTransitions(page)
   })
@@ -210,10 +205,8 @@ test.describe("Directional view transitions — the slide itself", () => {
   async function openFirstPost(page: import("@playwright/test").Page) {
     await page.goto("/en/blog")
     test.skip(
-      !(await page.evaluate(
-        () => typeof document.startViewTransition === "function",
-      )),
-      "no view transition support",
+      !(await supportsDirectionalTransitions(page)),
+      "no view-transition-class support",
     )
     await Promise.all([
       page.waitForURL(/\/en\/blog\/.+/),
@@ -327,11 +320,6 @@ test.describe("Directional slide composition", () => {
 })
 
 test.describe("Post-to-post navigation", () => {
-  test.skip(
-    ({ browserName }) => browserName !== "chromium",
-    "view-transition-class is not supported in this browser",
-  )
-
   test.beforeEach(async ({ page }) => {
     await recordTransitions(page)
   })
@@ -349,10 +337,8 @@ test.describe("Post-to-post navigation", () => {
   }) => {
     await page.goto("/en/blog/getting-started-with-mise")
     test.skip(
-      !(await page.evaluate(
-        () => typeof document.startViewTransition === "function",
-      )),
-      "no view transition support",
+      !(await supportsDirectionalTransitions(page)),
+      "no view-transition-class support",
     )
 
     await Promise.all([
@@ -379,10 +365,8 @@ test.describe("Post-to-post navigation", () => {
   }) => {
     await page.goto("/en/blog")
     test.skip(
-      !(await page.evaluate(
-        () => typeof document.startViewTransition === "function",
-      )),
-      "no view transition support",
+      !(await supportsDirectionalTransitions(page)),
+      "no view-transition-class support",
     )
 
     await Promise.all([
