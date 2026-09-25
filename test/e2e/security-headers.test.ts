@@ -256,11 +256,9 @@ test.describe("The policy does not break the page", () => {
     // unrelated failure, is what stopped it. All three engines implement
     // `script-src-attr` (Chrome 75, Firefox 108, Safari 15.4), the same support
     // floor as the `style-src-attr` this config already relies on, so no engine
-    // is excused here. `toContain` rather than an equality check because the
-    // reported directive name is `script-src-attr` on some engines and the
-    // effective `script-src` on others.
+    // is excused here, and all three report the violation under that name.
     const violations = await readViolations(page)
-    expect(violations.join(" ")).toContain("script-src")
+    expect(violations.map((v) => v.split(" ")[0])).toContain("script-src-attr")
   })
 
   test("the view count API still reaches the origin", async ({ page }) => {

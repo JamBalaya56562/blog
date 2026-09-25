@@ -266,8 +266,9 @@ test.describe("Directional slide composition", () => {
           continue // cross-origin sheet
         }
         for (const rule of Array.from(rules)) {
-          // Engines normalise the selector differently — Chromium reports
-          // `::view-transition-old(*.nav-forward)` — so match on shape.
+          // Engines report the selector as
+          // `::view-transition-old(*.nav-forward)`, not as written, so match
+          // on shape.
           if (
             rule instanceof CSSStyleRule &&
             rule.selectorText.startsWith("::view-transition-old(") &&
