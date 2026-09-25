@@ -18,7 +18,7 @@ import type { GraphRowView, RefKind } from "./graph"
 export type Commit = Readonly<{
   /** What the commit says, or the empty string for jj's working copy. */
   desc: string
-  /** Pushed, so jj will not let it be rewritten. */
+  /** On `main@origin`, which jj treats as immutable by default. */
   immutable: boolean
 }>
 
@@ -155,7 +155,10 @@ function pushGit(side: Side): Side {
   return { ...side, remoteMain: side.main }
 }
 
-/** jj's push also puts what the remote holds out of reach of a rewrite. */
+/**
+ * jj's push also puts what the remote's `main` holds out of reach of a
+ * rewrite: `main@origin` is `trunk()`, which jj treats as immutable.
+ */
 function pushJj(side: Side): Side {
   return {
     ...side,

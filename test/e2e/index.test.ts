@@ -16,9 +16,10 @@ const DATES = {
 /**
  * The redirect used to ignore `Accept-Language` and send everyone to `/en`, so
  * a Japanese reader typing the domain landed on the English site and had to
- * find the JA / EN switch. These two tests passed throughout, because the
- * browser Playwright runs happens to ask for English — the language was
- * assumed rather than stated, which is why it is stated now.
+ * find the JA / EN switch. These two tests passed throughout, because
+ * Playwright's browsers ask for English unless told otherwise (its default
+ * locale is `en-US`) — the language was assumed rather than stated, which is
+ * why it is stated now.
  */
 test.describe("Locale redirect", () => {
   test.describe("an English browser", () => {
@@ -259,9 +260,9 @@ test.describe("Blog post page", () => {
    * The dates read as digits and dots to a screen reader — "two thousand
    * twenty-five point zero three point zero one" — because nothing in the
    * markup said they were dates. `<time datetime>` does not fix that (it is
-   * not announced) and neither does `aria-label` (ARIA prohibits it on the
-   * roles these elements have), so the dotted form is hidden from the
-   * accessibility tree and a spoken form put beside it.
+   * not announced) and neither does `aria-label` (ARIA prohibits naming the
+   * `generic` role of the `<span>`s that carry the date), so the dotted form
+   * is hidden from the accessibility tree and a spoken form put beside it.
    *
    * These walk the DOM the way assistive technology reads it — skipping
    * `aria-hidden` subtrees, keeping visually hidden ones — because the whole
