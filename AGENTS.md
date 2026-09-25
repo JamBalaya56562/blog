@@ -222,3 +222,18 @@ runs commitlint with `@commitlint/config-conventional`, which rejects anything
 outside it. Scopes are not constrained by that config, so the list above is
 convention rather than enforcement. The check validates the **pull request
 title** as well as every commit on the branch, so both have to parse.
+
+## Releases
+
+Releases are cut by release-please (`.github/workflows/release-please.yml`),
+so the commit type is also what decides the next version: `fix` and `perf`
+bump the patch, `feat` the minor, and a `!` after the type or a
+`BREAKING CHANGE:` footer the major. The other types release nothing on their
+own.
+
+Every push to main updates an open release pull request; every Monday at 09:00
+JST it is merged, which tags `vX.Y.Z` and publishes the GitHub release. Do not
+edit `package.json`'s `version` or `.github/release-please-manifest.json` by
+hand — the release pull request owns both. No `CHANGELOG.md` is kept
+(`skip-changelog` in `.github/release-please-config.json`); the notes live on
+the GitHub release.

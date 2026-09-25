@@ -1,0 +1,77 @@
+name: 🚀 Release Please
+
+concurrency:
+  group: release-please
+  cancel-in-progress: false
+
+on:
+  push:
+    branches: main
+  schedule:
+    - cron: "0 0 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    if: github.event_name == 'push' && github.repository_owner == 'jambalaya56562'
+
+    steps:
+      - name: 🔑 Create the release app token
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ vars.RELEASE_APP_CLIENT_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+          permission-contents: write
+          permission-issues: write
+          permission-pull-requests: write
+
+      - name: 🚀 Update the release pull request, or release it
+        id: release
+        uses: googleapis/release-please-action@v5
+        with:
+          config-file: .github/release-please-config.json
+          manifest-file: .github/release-please-manifest.json
+          token: ${{ steps.app-token.outputs.token }}
+
+      - name: 🏷️ Name the release
+        if: steps.release.outputs.release_created == 'true'
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          REPO: ${{ github.repository }}
+          REPO_NAME: ${{ github.event.repository.name }}
+          TAG: ${{ steps.release.outputs.tag_name }}
+        run: gh release edit "$TAG" --repo "$REPO" --title "$REPO_NAME $TAG"
+
+  merge:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    if: github.event_name != 'push' && github.repository_owner == 'jambalaya56562'
+
+    steps:
+      - name: 🔑 Create the release app token
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ vars.RELEASE_APP_CLIENT_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+          permission-contents: write
+          permission-pull-requests: write
+
+      - name: 🔀 Merge the release pull request
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          PR=$(gh pr list --repo "$REPO" --state open --label "autorelease: pending" \
+            --json number --jq '.[0].number // empty')
+          if [ -z "$PR" ]; then
+            echo "::notice::No release is pending: nothing since the last one bumps the version."
+            exit 0
+          fi
+          gh pr merge "$PR" --repo "$REPO" --squash --auto
