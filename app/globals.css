@@ -2366,6 +2366,13 @@
     background-size: 100% 1px;
     color: var(--cyber-cyan);
   }
+  /* The blog list's rows reuse the card's markup from 640px up, where the
+     heading slides and recolours instead; the card's underline stays off. */
+  @media (width >= 40rem) {
+    .pp-list-row .pp-card-title {
+      background-image: none;
+    }
+  }
 }
 
 /* ──────────────────────────────────────────────
