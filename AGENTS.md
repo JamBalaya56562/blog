@@ -147,10 +147,10 @@ bun test:unit
 - Test runner: Bun test (`bun test --isolate`)
 - Test root is `test/unit/` and the order is randomized (`bunfig.toml`), so
   tests must not depend on each other or on the order they run in
-- Four preloads run before every test, all registered in `bunfig.toml`:
-  `happydom.ts` for the DOM environment, and `setup-react-mock.ts`,
-  `setup-lucide-mock.ts`, `setup-next-navigation-mock.ts` for the mocks. They
-  are global — do not re-register them per file
+- Four preloads run before every test, all in `test/unit/` and registered in
+  `bunfig.toml`: `happydom.ts` for the DOM environment, and
+  `setup-react-mock.ts`, `setup-lucide-mock.ts`, `setup-next-navigation-mock.ts`
+  for the mocks. They are global — do not re-register them per file
 - Test files are placed under `test/unit/` mirroring the source structure
 - File naming: `*.test.ts` / `*.test.tsx`
 - Uses Testing Library (`@testing-library/react`, `@testing-library/dom`)
