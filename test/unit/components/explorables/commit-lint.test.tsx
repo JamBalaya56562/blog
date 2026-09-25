@@ -65,7 +65,7 @@ describe("CommitLint", () => {
     expect(lines(container)).toEqual([
       "input:--- input ---",
       "echo:Fix: Login Button.",
-      "error:subject must not be sentence-case, start-case, pascal-case, upper-case [subject-case]",
+      "error:subject must not be sentence-case [subject-case]",
       "error:subject may not end with full stop [subject-full-stop]",
       "error:type must be lower-case [type-case]",
       "error:type must be one of [build, chore, ci, docs, feat, fix, perf, refactor, revert, style, test] [type-enum]",
