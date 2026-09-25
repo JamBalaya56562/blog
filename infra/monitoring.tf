@@ -97,6 +97,19 @@ resource "aws_cloudwatch_log_metric_filter" "app_errors" {
   }
 }
 
+resource "aws_cloudwatch_log_metric_filter" "error_lines" {
+  log_group_name = aws_cloudwatch_log_group.lambda.name
+  name           = "blog-error-lines"
+  pattern        = "%^[A-Za-z]*Error[: ]| Error: |^ERROR |Status: timeout|Status: error%"
+
+  metric_transformation {
+    name      = aws_cloudwatch_log_metric_filter.app_errors.metric_transformation[0].name
+    namespace = aws_cloudwatch_log_metric_filter.app_errors.metric_transformation[0].namespace
+    unit      = "Count"
+    value     = "1"
+  }
+}
+
 resource "aws_cloudwatch_metric_alarm" "app_errors" {
   alarm_actions       = [aws_sns_topic.alerts.arn]
   alarm_description   = "The blog logged an error. Its log group is /aws/lambda/blog."
