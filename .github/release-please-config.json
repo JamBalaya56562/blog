@@ -4,6 +4,8 @@
   "packages": {
     ".": {}
   },
+  "pull-request-footer": "Kept up to date by [release-please](https://github.com/googleapis/release-please) on every push to `main`. Its settings are in `.github/release-please-config.json`, and the schedule is in `.github/workflows/release-please.yml`.",
+  "pull-request-header": "🔖 The next release, worked out from the Conventional Commits merged since the last one. This pull request is merged every Monday at 09:00 JST, which tags the version and publishes the GitHub release; merge it sooner to release now.",
   "pull-request-title-pattern": "chore: release v${version}",
   "release-type": "node",
   "skip-changelog": true
