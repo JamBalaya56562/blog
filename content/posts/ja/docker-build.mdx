@@ -253,9 +253,6 @@ cd emdash
 
 この回は 70 分かかりました。`pnpm install` が 26 分、`pnpm build` が 19 分、`pnpm deploy` が 10 分です。ただしこれは、回線が細くて pnpm の並列を 4 に絞り（「[実際に踏んだ罠](#実際に踏んだ罠)」参照）、同じマシンで他の作業も動かしながらキャッシュ無しで通した数字で、同じ `Dockerfile` を空いているときにビルドしたら `pnpm install` は 5 分半、`pnpm build` は 8 分でした。ビルドの時間は環境次第です。
 
-> [!NOTE]
-> このコミットの `Dockerfile` は、そのままでは 2 か所で止まります。上の transcript はそれを直した状態のもので、修正は [PR #3222](https://github.com/emdash-cms/emdash/pull/3222) として送ってあります。何が起きてどう直したかは「[実際に踏んだ罠](#実際に踏んだ罠)」に書きました。読む時点でマージされていれば、何もしなくて済みます。
-
 できたイメージは 1.1 GB です。
 
 ```console
@@ -502,7 +499,7 @@ heap limit MB: 2096
 +RUN NODE_OPTIONS=--max-old-space-size=4096 pnpm --filter @emdash-cms/template-blog deploy /deploy --prod --legacy
 ```
 
-これで通りました。2 つの修正を合わせて [PR #3222](https://github.com/emdash-cms/emdash/pull/3222) にしてあります。
+これで通りました。
 
 > [!NOTE]
 > VM のメモリを増やしたのが無駄だったわけではありません。EmDash のリポジトリの型情報付き lint をコンテナの中で走らせたら、4 GB では OOM killer に殺され、8 GB で通りました。エラーメッセージ付きの `Reached heap limit` は Node の設定、メッセージ無しで `Killed` されるのは VM のメモリ、と切り分けてください。

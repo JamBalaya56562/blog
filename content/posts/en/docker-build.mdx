@@ -290,13 +290,6 @@ turned down to 4 (see "[Traps I actually hit](#traps-i-actually-hit)"), while th
 was doing other work. The same `Dockerfile` built on an idle machine took 5½ minutes for
 `pnpm install` and 8 for `pnpm build`. Build times depend on where you build.
 
-> [!NOTE]
-> The `Dockerfile` at this commit stops in two places as it is. The transcript above is from the
-> fixed version, and the fix went upstream as
-> [PR #3222](https://github.com/emdash-cms/emdash/pull/3222). What happened and how it was fixed
-> is in "[Traps I actually hit](#traps-i-actually-hit)". If it has been merged by the time you
-> read this, there is nothing to do.
-
 The resulting image is 1.1 GB.
 
 ```console
@@ -583,8 +576,7 @@ step.
 +RUN NODE_OPTIONS=--max-old-space-size=4096 pnpm --filter @emdash-cms/template-blog deploy /deploy --prod --legacy
 ```
 
-That got it through. Both fixes together are
-[PR #3222](https://github.com/emdash-cms/emdash/pull/3222).
+That got it through.
 
 > [!NOTE]
 > Raising the VM's memory was not wasted. Running EmDash's type-aware lint inside a container,
