@@ -233,7 +233,7 @@ bump the patch, `feat` the minor, and a `!` after the type or a
 `BREAKING CHANGE:` footer the major. The other types release nothing on their
 own.
 
-Every push to main updates an open release pull request; every Monday at 09:00
+Every push to main updates an open release pull request; every Monday at 09:23
 JST it is merged, which tags `vX.Y.Z` and publishes the GitHub release. Do not
 edit `package.json`'s `version` or `.github/release-please-manifest.json` by
 hand — the release pull request owns both. It also moves the supported major in
