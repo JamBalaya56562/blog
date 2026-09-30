@@ -130,6 +130,56 @@ resource "aws_cloudfront_cache_policy" "blog" {
   }
 }
 
+resource "aws_cloudwatch_log_group" "cloudfront_access" {
+  provider          = aws.us_east_1
+  name              = "blog-cloudfront-access"
+  retention_in_days = 30
+}
+
+resource "aws_cloudwatch_log_delivery_source" "cloudfront_access" {
+  provider     = aws.us_east_1
+  log_type     = "ACCESS_LOGS"
+  name         = "blog-cloudfront-access"
+  resource_arn = aws_cloudfront_distribution.blog.arn
+}
+
+resource "aws_cloudwatch_log_delivery_destination" "cloudfront_access" {
+  provider      = aws.us_east_1
+  name          = "blog-cloudfront-access"
+  output_format = "json"
+
+  delivery_destination_configuration {
+    destination_resource_arn = aws_cloudwatch_log_group.cloudfront_access.arn
+  }
+}
+
+resource "aws_cloudwatch_log_delivery" "cloudfront_access" {
+  provider                 = aws.us_east_1
+  delivery_destination_arn = aws_cloudwatch_log_delivery_destination.cloudfront_access.arn
+  delivery_source_name     = aws_cloudwatch_log_delivery_source.cloudfront_access.name
+
+  record_fields = [
+    "timestamp(ms)",
+    "x-edge-request-id",
+    "x-edge-location",
+    "cs-method",
+    "cs-uri-stem",
+    "cs-uri-query",
+    "cs-protocol-version",
+    "cs(User-Agent)",
+    "sc-status",
+    "sc-bytes",
+    "sc-content-type",
+    "x-edge-result-type",
+    "x-edge-response-result-type",
+    "x-edge-detailed-result-type",
+    "time-taken",
+    "time-to-first-byte",
+    "origin-fbl",
+    "origin-lbl",
+  ]
+}
+
 output "cloudfront_distribution_id" {
   description = "The value for the CLOUDFRONT_DISTRIBUTION_ID repository variable"
   value       = aws_cloudfront_distribution.blog.id
