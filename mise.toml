@@ -4,7 +4,7 @@ lychee = "latest"
 opentofu = "latest"
 pitchfork = "latest"
 rumdl = "latest"
-"github:BtbN/FFmpeg-Builds" = { version = "autobuild-2026-09-25-15-37", exe = "ffmpeg" }
+"github:BtbN/FFmpeg-Builds" = { version = "autobuild-2026-09-26-13-03", exe = "ffmpeg" }
 
 [env]
 AWS_REGION = "ap-northeast-1"
