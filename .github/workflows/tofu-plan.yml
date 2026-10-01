@@ -39,7 +39,7 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
 
       - name: 🐣 Setup mise
-        uses: jdx/mise-action@v4.3.0
+        uses: jdx/mise-action@v5.0.0
 
       - name: 📦 Fetch the current state
         id: state
