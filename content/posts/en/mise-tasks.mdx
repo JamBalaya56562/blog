@@ -170,10 +170,10 @@ run = [
 Reverse them and a failing test cuts the run short, so the formatting never happens. Locally that
 costs you a "fix it and go again". In CI it is a different matter.
 
-If you use something like [autofix.ci](https://autofix.ci/), where **CI commits the fixes your
-linter produced**, whatever was rewritten before the failure gets committed anyway. Put a
-report-only task in the middle and the run stops there, the formatting behind it never lands, and
-what gets committed is a half-finished state.
+If you use something like [autofix.ci](https://github.com/autofix-ci/action), where **CI commits
+the fixes your linter produced**, whatever was rewritten before the failure gets committed anyway.
+Put a report-only task in the middle and the run stops there, the formatting behind it never
+lands, and what gets committed is a half-finished state.
 
 Deciding the order is easiest if you sort by **whether the task rewrites files**.
 
