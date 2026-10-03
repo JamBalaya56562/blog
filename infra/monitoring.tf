@@ -112,16 +112,42 @@ resource "aws_cloudwatch_log_metric_filter" "error_lines" {
 
 resource "aws_cloudwatch_metric_alarm" "app_errors" {
   alarm_actions       = [aws_sns_topic.alerts.arn]
-  alarm_description   = "The blog logged an error. Its log group is /aws/lambda/blog."
+  alarm_description   = "The blog logged at least 3 errors in five minutes, on more than 10% of its invocations. Its log group is /aws/lambda/blog."
   alarm_name          = "blog-app-errors"
   comparison_operator = "GreaterThanThreshold"
   datapoints_to_alarm = local.alarm_window.datapoints_to_alarm
   evaluation_periods  = local.alarm_window.evaluation_periods
-  metric_name         = aws_cloudwatch_log_metric_filter.app_errors.metric_transformation[0].name
-  namespace           = aws_cloudwatch_log_metric_filter.app_errors.metric_transformation[0].namespace
   ok_actions          = [aws_sns_topic.alerts.arn]
-  period              = local.alarm_window.period
-  statistic           = "Sum"
-  threshold           = 0
+  threshold           = 10
   treat_missing_data  = "notBreaching"
+
+  metric_query {
+    id = "errors"
+
+    metric {
+      metric_name = aws_cloudwatch_log_metric_filter.app_errors.metric_transformation[0].name
+      namespace   = aws_cloudwatch_log_metric_filter.app_errors.metric_transformation[0].namespace
+      period      = local.alarm_window.period
+      stat        = "Sum"
+    }
+  }
+
+  metric_query {
+    id = "invocations"
+
+    metric {
+      dimensions  = { FunctionName = aws_lambda_function.blog.function_name }
+      metric_name = "Invocations"
+      namespace   = "AWS/Lambda"
+      period      = local.alarm_window.period
+      stat        = "Sum"
+    }
+  }
+
+  metric_query {
+    expression  = "IF(errors >= 3, 100 * errors / FILL(invocations, 1), 0)"
+    id          = "error_rate"
+    label       = "Error rate (%)"
+    return_data = true
+  }
 }
