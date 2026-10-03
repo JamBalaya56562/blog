@@ -145,7 +145,7 @@ resource "aws_cloudwatch_metric_alarm" "app_errors" {
   }
 
   metric_query {
-    expression  = "IF(errors >= 3, 100 * errors / invocations, 0)"
+    expression  = "IF(errors >= 3, 100 * errors / FILL(invocations, 1), 0)"
     id          = "error_rate"
     label       = "Error rate (%)"
     return_data = true
