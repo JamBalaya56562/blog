@@ -24,7 +24,7 @@ jobs:
           persist-credentials: false
 
       - name: 🐣 Setup mise
-        uses: jdx/mise-action@v5.0.0
+        uses: jdx/mise-action@v5.0.1
 
       - name: 📦 Update dependencies
         run: mise update
