@@ -1,0 +1,611 @@
+---
+title: uv 入門ガイド
+date: "2026-10-08"
+image: /thumbnails/getting-started-with-uv.avif
+description: Python のパッケージとプロジェクトを管理する uv を、pip と venv の流れとの比較から、Python 本体のインストール、pyproject.toml と uv.lock によるプロジェクト管理、1 ファイルのスクリプト、requirements.txt からの移行、実測した速さ、Anaconda や pixi との違いまで
+tags:
+  - uv
+  - python
+  - cli
+  - devtools
+---
+
+## uv とは
+
+[uv](https://docs.astral.sh/uv/) は、Ruff を作っている Astral 社の、**Python のパッケージとプロジェクトをまとめて管理するコマンドラインツール**です。Rust で書かれていて、これまで別々の道具が受け持っていた仕事を 1 つで引き受けます。
+
+- **pip** — パッケージを入れる
+- **venv / virtualenv** — 仮想環境を作る
+- **pyenv** — Python 本体を入れて切り替える
+- **pip-tools** — 依存のバージョンを固定する
+- **pipx** — CLI ツールをプロジェクトと分けて入れる
+- **Poetry** — `pyproject.toml` でプロジェクトを管理する
+
+この記事では、まず pip と venv を使う従来の流れを確かめ、何が面倒だったのかを見ます。そのうえで uv がそれをどう消すのかを、実際に打って確かめます。最後に、Anaconda や conda 系の道具とは何が違うのかを、実際に入れられるもの・入れられないもので比べます。
+
+この記事は uv 0.12.23、Windows 11 の PowerShell で確かめています。
+
+## これまでの Python はどこが面倒だったか
+
+pip と venv を使う、昔ながらの流れをなぞります。プロジェクトごとに仮想環境を作り、有効にし、そこに `pip install` します。
+
+```console
+❯ python -m venv .venv
+❯ .\.venv\Scripts\Activate.ps1
+❯ pip install requests
+...
+Successfully installed certifi-2026.7.22 charset_normalizer-3.5.2 idna-3.20 requests-2.34.2 urllib3-2.8.0
+❯ pip freeze
+certifi==2026.7.22
+charset-normalizer==3.5.2
+idna==3.20
+requests==2.34.2
+urllib3==2.8.0
+❯ deactivate
+```
+
+動きはします。ただ、ここにはいくつも落とし穴があります。
+
+- **有効にし忘れる**。`Activate.ps1` を打たずに `pip install` すると、仮想環境ではなく、その外の Python に入ります。どの `pip` がどの Python に繋がっているのかは、打った本人にも分かりにくいところです
+- **直接の依存と、その結果が区別できない**。入れたのは `requests` 1 つなのに、`pip freeze` には 5 つ並びます。これを `requirements.txt` に保存すると、`urllib3` が自分で選んだものなのか、`requests` に引きずられて入ったものなのかが、ファイルから読み取れなくなります
+- **固定しないと、入れた日で中身が変わる**。`requirements.txt` に `requests` とだけ書けば、その日の最新が入ります。全部を `==` で固定すれば、今度は更新が手作業になります
+- **Python 本体は別の道具**。プロジェクトが 3.11 を前提にしていても、それを入れて切り替えるのは pyenv や公式インストーラーの仕事で、pip は関知しません
+- **CLI ツールの置き場所が無い**。Ruff や Black のようなツールをプロジェクトの仮想環境に入れると、プロジェクトの依存と混ざります。それを避けるために、pipx というまた別の道具が生まれました
+
+道具ごとに覚えることがあり、組み合わせ方も人によって違う。uv は、これを 1 つにまとめます。
+
+## インストール
+
+使っている OS で選んでください。
+
+<CodeTabs labels={["macOS / Linux", "Windows"]}>
+
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+
+```powershell
+powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+```
+
+</CodeTabs>
+
+[mise](/ja/blog/getting-started-with-mise) を使っているなら、`mise use -g uv` でも入ります。このマシンではそうしています。入ったかどうかは、バージョンを聞いて確かめます。
+
+```console
+❯ uv --version
+uv 0.12.23 (46b84fd0b 2026-10-03 x86_64-pc-windows-msvc)
+```
+
+## Python 自体を入れる
+
+uv は、Python 本体も入れられます。pyenv の役目です。
+
+```console
+❯ uv python install 3.11
+Downloading cpython-3.11.17-windows-x86_64-none (download) (24.1MiB)
+ Downloaded cpython-3.11.17-windows-x86_64-none (download)
+Installed Python 3.11.17 in 41.65s
+ + cpython-3.11.17-windows-x86_64-none (python3.11.exe)
+❯ uv python list 3.11 --only-installed
+cpython-3.11.17-windows-x86_64-none    C:\Users\Jam\.local\share\uv\python\cpython-3.11.17-windows-x86_64-none\python.exe
+cpython-3.11.17-windows-x86_64-none    C:\Users\Jam\.local\bin\python3.11.exe
+cpython-3.11.17-windows-x86_64-none    C:\Users\Jam\.local\share\uv\python\cpython-3.11-windows-x86_64-none\python.exe
+❯ uv run --no-project --python 3.11 python -c "import sys; print(sys.version); print(sys.executable)"
+3.11.17 (main, Oct  3 2026, 01:03:09) [MSC v.1944 64 bit (AMD64)]
+C:\Users\Jam\.local\share\uv\python\cpython-3.11-windows-x86_64-none\python.exe
+```
+
+24 MiB を落として、42 秒で入りました。3 つ目のコマンドの `--no-project` は、近くにプロジェクトがあってもそれを使わず、指定した Python だけで動かすという意味です。
+
+入るのは、Astral が管理している [python-build-standalone](https://github.com/astral-sh/python-build-standalone) のビルド済みの CPython です。ソースからビルドしないので、pyenv のようにコンパイラやライブラリを先に揃える必要がありません。
+
+`python3.11.exe` が `~/.local/bin` に置かれているので、PATH が通っていれば `python3.11` でも起動できます。なお、このマシンでは環境変数 `UV_PYTHON_INSTALL_DIR` で、Python の置き場所を `~/.local/share/uv/python` に変えています。
+
+ディレクトリごとに使う Python を決めるのが `uv python pin` です。いま入れた 3.11 を、このディレクトリの Python にします。
+
+```console
+❯ uv python pin 3.11
+Pinned `.python-version` to `3.11`
+❯ Get-Content .python-version
+3.11
+❯ uv run python --version
+Python 3.11.17
+❯ python --version
+Python 3.14.7
+```
+
+`.python-version` に書いた 3.11 は、`uv run` を通したときだけ効きます。素の `python` は 3.14 のままです。PATH を書き換えて切り替えるのではなく、uv が打たれるたびに `.python-version` を読んで選んでいます。
+
+## プロジェクトを作って動かす
+
+ここからが uv の本領です。`uv init` でプロジェクトを作ります。
+
+```console
+❯ uv init hello --author-from none
+Initialized project `hello` at `C:\Users\Jam\uv-demo\hello`
+```
+
+`--author-from none` については、後の罠で書きます。できたのは、この 5 つのファイルと `.git` です。
+
+```text
+.gitignore
+.python-version
+pyproject.toml
+README.md
+src\hello\__init__.py
+```
+
+中心になるのは `pyproject.toml` です。
+
+```toml
+[project]
+name = "hello"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = []
+
+[project.scripts]
+hello = "hello:main"
+
+[build-system]
+requires = ["uv_build>=0.12.23,<0.13.0"]
+build-backend = "uv_build"
+```
+
+`src/hello/__init__.py` には `main()` が 1 つあり、`[project.scripts]` の `hello` という名前でそれを呼べます。
+
+> [!NOTE]
+> この形は uv 0.12 からの既定です。[0.12.0 のリリースノート](https://github.com/astral-sh/uv/releases/tag/0.12.0)に、`uv init` が `src` 配置と `uv_build` を持つパッケージを既定で作るようになったとあります。それより前の解説記事にある `main.py` 1 つの構成は、`uv init --no-package` で作れます。
+
+`uv run` で動かします。
+
+```console
+❯ uv run hello
+Using CPython 3.14.7
+Creating virtual environment at: .venv
+   Building hello @ file:///C:/Users/Jam/uv-demo/hello
+      Built hello @ file:///C:/Users/Jam/uv-demo/hello
+Installed 1 package in 50ms
+Hello from hello!
+```
+
+仮想環境を作れとも、有効にしろとも言っていません。`uv run` は、`.venv` が無ければ作り、プロジェクトの状態に合わせてから、その中でコマンドを実行します。**有効にし忘れる、という失敗がそもそも起きません。** このとき、`uv.lock` というファイルもできています。中身は後で見ます。
+
+### 依存を足す
+
+依存は `uv add` で足します。
+
+```console
+❯ uv add requests
+Resolved 6 packages in 407ms
+   Building hello @ file:///C:/Users/Jam/uv-demo/hello
+      Built hello @ file:///C:/Users/Jam/uv-demo/hello
+Prepared 1 package in 111ms
+Uninstalled 1 package in 6ms
+Installed 6 packages in 299ms
+ + certifi==2026.7.22
+ + charset-normalizer==3.5.2
+ ~ hello==0.1.0 (from file:///C:/Users/Jam/uv-demo/hello)
+ + idna==3.20
+ + requests==2.34.2
+ + urllib3==2.8.0
+```
+
+`~` の付いた `hello` は、自分のプロジェクトを入れ直したという印です。`pyproject.toml` の `dependencies` に書かれるのは、自分で選んだ 1 つだけです。
+
+```toml
+dependencies = [
+    "requests>=2.34.2",
+]
+```
+
+それに引きずられて入った 4 つは、`uv tree` で見ると、誰が連れてきたのかが分かります。
+
+```console
+❯ uv tree
+hello v0.1.0
+└── requests v2.34.2
+    ├── certifi v2026.7.22
+    ├── charset-normalizer v3.5.2
+    ├── idna v3.20
+    └── urllib3 v2.8.0
+Resolved 6 packages in 4ms
+```
+
+`pip freeze` では区別できなかった「直接の依存」と「その結果」が、ここでは分かれています。
+
+### uv.lock
+
+最初の `uv run` でできた `uv.lock` は、`uv add` のたびに書き換わります。入るパッケージの正確なバージョンと、ファイルのハッシュの記録です。`requests` を足した後の頭の部分はこうなっています。
+
+```toml
+version = 1
+revision = 5
+requires-python = ">=3.14"
+
+[[package]]
+name = "certifi"
+version = "2026.7.22"
+source = { registry = "https://pypi.org/simple" }
+...
+```
+
+`charset-normalizer` の項を見ると、wheel の一覧に Android、iOS、macOS、Linux 向けのものまで並んでいます。uv のロックファイルは、自分の OS の分だけでなく、**どの OS で入れても同じ結果になるように**全部を記録します。Windows で作ったロックファイルを、Linux の CI や同僚の Mac でそのまま使えます。
+
+`uv.lock` と `pyproject.toml` はリポジトリに入れます。`.venv` は入れません。`uv init` が作った `.gitignore` に、最初から `.venv` が書かれています。
+
+### 開発用の依存
+
+テストやリントにだけ使うものは、`--dev` を付けて足します。
+
+```console
+❯ uv add --dev ruff
+Resolved 7 packages in 287ms
+...
+Installed 2 packages in 1.88s
+ ~ hello==0.1.0 (from file:///C:/Users/Jam/uv-demo/hello)
+ + ruff==0.16.10
+❯ uv run ruff --version
+ruff 0.16.10
+```
+
+`pyproject.toml` では、`dependencies` とは別の `[dependency-groups]` に入ります。
+
+```toml
+[dependency-groups]
+dev = [
+    "ruff>=0.16.10",
+]
+```
+
+### 誰の手元でも同じ環境にする
+
+`.venv` を消して、`uv sync` で作り直します。リポジトリを clone した直後の状態です。
+
+```console
+❯ Remove-Item -Recurse -Force .venv
+❯ uv sync
+Using CPython 3.14.7
+Creating virtual environment at: .venv
+Resolved 7 packages in 4ms
+Installed 7 packages in 258ms
+ + certifi==2026.7.22
+ + charset-normalizer==3.5.2
+ + hello==0.1.0 (from file:///C:/Users/Jam/uv-demo/hello)
+ + idna==3.20
+ + requests==2.34.2
+ + ruff==0.16.10
+ + urllib3==2.8.0
+```
+
+`uv.lock` に書かれたとおりの 7 つが、0.3 秒で戻りました。新しく来た人がやることは、`git clone` と `uv sync` の 2 つだけです。
+
+![pyproject.toml の依存宣言を uv.lock に解決し、uv sync で .venv を同期して実行する流れ。uv run もロックと同期を自動で行う](/uv/project-workflow.avif)
+
+## 使い捨てスクリプトとツール
+
+### 1 ファイルで配れるスクリプト
+
+プロジェクトを作るほどでもない、ちょっとしたスクリプトにも依存はあります。httpx を使う `fetch.py` を書きます。
+
+```console
+❯ Get-Content fetch.py
+import httpx
+
+r = httpx.get("https://httpbin.org/get", params={"from": "uv"})
+print(r.status_code, r.json()["args"])
+❯ uv run fetch.py
+...
+    import httpx
+ModuleNotFoundError: No module named 'httpx'
+```
+
+httpx が無いので失敗します。ここで `uv add --script` を使うと、依存がスクリプトの先頭に書き込まれます。
+
+```console
+❯ uv add --script fetch.py httpx
+Resolved 7 packages in 26ms
+❯ Get-Content fetch.py
+# /// script
+# requires-python = ">=3.14"
+# dependencies = [
+#     "httpx>=0.28.1",
+# ]
+# ///
+import httpx
+
+r = httpx.get("https://httpbin.org/get", params={"from": "uv"})
+print(r.status_code, r.json()["args"])
+❯ uv run fetch.py
+Installed 7 packages in 432ms
+200 {'from': 'uv'}
+```
+
+先頭のコメントは [PEP 723](https://peps.python.org/pep-0723/) で決められた書式で、uv はこれを読んで、スクリプト専用の環境を用意してから実行します。**このファイル 1 つを渡せば、相手は `uv run fetch.py` だけで動かせます。** `requirements.txt` を添える必要も、仮想環境の作り方を説明する必要もありません。
+
+### CLI ツールは uvx で
+
+Ruff のような CLI ツールを、プロジェクトと関係なく一度だけ動かしたいときは `uvx` です。
+
+```console
+❯ uvx ruff --version
+Installed 1 package in 66ms
+ruff 0.16.10
+```
+
+`uvx` は使い捨ての環境にツールを入れて実行し、プロジェクトの `.venv` には何も足しません。
+
+![プロジェクトは .venv、PEP 723 のスクリプトと uvx はそれぞれ専用のキャッシュ環境を使用し、依存を分離する](/uv/environments.avif)
+
+いつも使うツールなら、`uv tool install` で PATH に置きます。
+
+```console
+❯ uv tool install ruff
+Resolved 1 package in 11ms
+Installed 1 package in 95ms
+ + ruff==0.16.10
+Installed 1 executable: ruff
+❯ uv tool list
+ruff v0.16.10
+- ruff
+❯ (Get-Command ruff).Source
+C:\Users\Jam\.local\bin\ruff.exe
+```
+
+ツールごとに専用の環境が作られ、実行ファイルだけが `~/.local/bin` に出てきます。pipx がやっていたことです。
+
+## 既存のプロジェクトから移る
+
+`requirements.txt` で回しているプロジェクトは、2 段階で移れます。
+
+### 1 段階目: そのまま速くする
+
+`uv pip` は、pip と同じ使い方ができるインターフェースです。`requests` と `rich` を書いた `requirements.txt` を、そのまま入れます。
+
+```console
+❯ Get-Content requirements.txt
+requests
+rich
+❯ uv venv
+Using CPython 3.14.7
+Creating virtual environment at: .venv
+Activate with: .venv\Scripts\activate
+❯ uv pip install -r requirements.txt
+Resolved 9 packages in 239ms
+Installed 9 packages in 1.58s
+ + certifi==2026.7.22
+ + charset-normalizer==3.5.2
+ + idna==3.20
+ + markdown-it-py==4.2.0
+ + mdurl==0.1.2
+ + pygments==2.21.0
+ + requests==2.34.2
+ + rich==15.0.0
+ + urllib3==2.8.0
+```
+
+`uv venv` は有効化の方法を案内しますが、有効にしなくても構いません。`uv pip` は、今いるディレクトリの `.venv` を見つけて、そこに入れます。
+
+バージョンを固定したければ、`uv pip compile` が pip-tools の代わりになります。
+
+```console
+❯ uv pip compile requirements.txt -o requirements.lock
+...
+❯ Get-Content requirements.lock
+# This file was autogenerated by uv via the following command:
+#    uv pip compile requirements.txt -o requirements.lock
+certifi==2026.7.22
+    # via requests
+charset-normalizer==3.5.2
+    # via requests
+idna==3.20
+    # via requests
+markdown-it-py==4.2.0
+    # via rich
+mdurl==0.1.2
+    # via markdown-it-py
+pygments==2.21.0
+    # via rich
+...
+```
+
+全部が `==` で固定され、それぞれに `# via` で出どころが付きます。`pip freeze` で失われていた情報が残っています。
+
+### 2 段階目: プロジェクトにする
+
+`uv init --bare` で `pyproject.toml` だけを作り、`uv add -r` で `requirements.txt` の中身を取り込みます。
+
+```console
+❯ uv init --bare --author-from none
+Initialized project `legacy`
+❯ uv add -r requirements.txt
+...
+Resolved 10 packages in 53ms
+Checked 9 packages in 3ms
+❯ Get-Content pyproject.toml
+[project]
+name = "legacy"
+version = "0.1.0"
+requires-python = ">=3.14"
+dependencies = [
+    "requests>=2.34.2",
+    "rich>=15.0.0",
+]
+```
+
+あとは前の節と同じく、`uv run` と `uv sync` で回せます。
+
+## どれだけ速いのか
+
+uv は「pip より 10〜100 倍速い」とうたっています。このマシンで、pip と uv に同じ Python で同じものを入れさせ、インストールにかかった時間だけを比べました。キャッシュを使わない場合と、一度入れてキャッシュがある場合の 2 通りです。
+
+`requests` を、pip と uv を交互に 3 回ずつ入れた中央値です。1 回ごとに、CPU の使用率が 20% を切るまで待ってから測っています。
+
+| | pip 26.2.1 | uv 0.12.23 |
+| --- | --- | --- |
+| キャッシュ無し | 6.6 秒 | 1.2 秒 |
+| キャッシュあり | 5.9 秒 | 0.35 秒 |
+
+キャッシュ無しでおよそ 5.6 倍、キャッシュありでおよそ 17 倍です。このマシンでは、uv はキャッシュから入れるとき、ファイルをコピーせずにハードリンクを張っていました。
+
+`jupyterlab`、`pandas`、`matplotlib` の 3 つ（依存を合わせて 99 パッケージ）でも 3 回ずつ試しました。どの回も uv の方が速かったものの、12 回中 7 回は、待っても CPU の使用率が 20% を切らず、35〜96% のまま計測に入りました。同じ条件の 3 回で最大 1.9 倍ぶれたので、この組の数字は載せません。
+
+## Anaconda や conda とは何が違うのか
+
+Python の環境管理といえば、Anaconda を思い浮かべる人も多いはずです。uv と Anaconda（conda）は、似ているようで解いている問題が違います。
+
+### uv は PyPI の世界
+
+uv が扱うのは、[PyPI](https://pypi.org/) に置かれた Python のパッケージです。NumPy、pandas、PyTorch のように、wheel（ビルド済みの配布物）が揃っているものなら何の問題もありません。
+
+困るのは、Python のパッケージの裏にある C や C++ のライブラリが要るときです。地理情報のライブラリ GDAL で試します。このマシンの Python 3.14 と Windows に合う wheel が PyPI に無いので、uv はソースからビルドしようとします。
+
+```console
+❯ uv add gdal
+Using CPython 3.14.7
+Creating virtual environment at: .venv
+Resolved 2 packages in 467ms
+   Building gdal==3.13.3
+error: Failed to add dependencies
+  cause: Failed to build `gdal==3.13.3`
+  cause: The build backend returned an error
+  cause: Call to `setuptools.build_meta.build_wheel` failed (exit code: 1)
+...
+         extensions/gdalconst_wrap.c(3182): fatal error C1083: include ファイルを開けません。'gdal.h':No such file or directory
+...
+```
+
+このマシンには C++ のビルドツールが入っているので、コンパイルまでは進みました。そこで `gdal.h` が見つからずに止まっています。Python のパッケージの GDAL は、GDAL 本体の C ライブラリに被せた薄い層で、その本体は PyPI からは入りません。自分で GDAL を入れてパスを通すまで、uv ではどうにもなりません。
+
+### conda は Python 以外も入れる
+
+conda は、Python のパッケージと一緒に、C のライブラリやコマンド、コンパイラまで、自分のパッケージとして配ります。同じ GDAL を、conda-forge のパッケージを扱う [pixi](https://pixi.sh/) で入れてみます。
+
+```console
+❯ pixi init
+Created C:\Users\Jam\uv-demo\gdal-pixi\pixi.toml
+❯ pixi add python gdal
+...
+Added python >=3.14.8,<3.15
+Added gdal >=3.13.3,<4
+❯ pixi run python -c "from osgeo import gdal; print(gdal.__version__)"
+3.13.3
+❯ pixi run gdalinfo --version
+GDAL 3.13.3 "Iowa City", released 2026/08/13
+```
+
+Python から読み込めるうえ、GDAL の C 側のコマンド `gdalinfo` まで入っています。C/C++ のライブラリやコマンド、コンパイラ、R のような Python 以外の言語まで 1 つの環境に揃えたいときは、conda 系の出番です。
+
+pixi は、conda のパッケージと PyPI のパッケージを同じプロジェクトに並べられます。
+
+```console
+❯ pixi add --pypi requests
+Added requests >=2.34.2, <3
+Added these as pypi-dependencies.
+❯ Get-Content pixi.toml
+[workspace]
+...
+channels = ["conda-forge"]
+name = "gdal-pixi"
+platforms = ["win-64"]
+version = "0.1.0"
+
+[tasks]
+
+[dependencies]
+python = ">=3.14.8,<3.15"
+gdal = ">=3.13.3,<4"
+
+[pypi-dependencies]
+requests = ">=2.34.2, <3"
+```
+
+[pixi の文書](https://pixi.prefix.dev/latest/concepts/conda_pypi/)によると、PyPI の側は uv をライブラリとして組み込んで解決しています。conda の世界が要るなら pixi、要らないなら uv、という分け方ができます。
+
+### Anaconda の利用規約
+
+Anaconda には、もう 1 つ気にすることがあります。[Anaconda の利用規約](https://www.anaconda.com/legal/terms/terms-of-service)（2025 年 7 月 15 日付）では、従業員と契約者が合わせて 200 人を超える営利組織が使う場合、有償のプランが要ります。規約は、repo.anaconda.com をはじめ、Anaconda が管理・提供するリポジトリからパッケージを取ることを対象に挙げています。conda-forge という名前は、規約には出てきません。
+
+ただし、conda-forge のパッケージ自体も、Anaconda が運営する conda.anaconda.org から配られています。上の pixi の `pixi.lock` を見ると、conda のパッケージの URL はすべて conda.anaconda.org でした。uv がパッケージを取りに行くのは、PyPI（pypi.org と files.pythonhosted.org）だけです。会社で conda 系を使うなら、どのホストから取っているのかを確かめ、規約が自分の組織に当たるのかを確認してください。
+
+### どれを選ぶか
+
+| | uv | pixi | Anaconda |
+| --- | --- | --- | --- |
+| パッケージの出どころ | PyPI | conda-forge と PyPI | Anaconda のリポジトリ |
+| C/C++ のライブラリやコマンド | 入らない | 入る | 入る |
+| Python 本体 | 入れられる | 入れられる | 入れられる |
+| ライセンス・規約 | MIT または Apache-2.0 | BSD-3-Clause | 200 人を超える営利組織は有償 |
+
+- **依存が Python のパッケージで、wheel が揃っている** — uv
+- **C/C++ のライブラリやコマンド、R まで 1 つの環境に揃えたい** — pixi
+- **すでに Anaconda で組んだ環境がある** — まず、規約が自分の組織に当たるかを確かめる
+
+## 実際に踏んだ罠
+
+### uv init が git のメールアドレスを書き込む
+
+最初に `uv init` を素で打ったとき、`pyproject.toml` に `authors` が付いていて、そこに git の設定にあるメールアドレスがそのまま入っていました。
+
+入っていたのは、`git config user.email` と同じアドレスでした。uv は既定で、git の `user.name` と `user.email` から作者を埋めます。公開するつもりのないアドレスを git に設定していると、それがそのままリポジトリに入ります。この記事で `--author-from none` を付けているのはそのためです。pixi も同じで、`pixi init` が作った `pixi.toml` の `authors` にもメールアドレスが入りました。上の `pixi.toml` では、その行を省いています。
+
+### uv で入れた Python には pip コマンドが無い
+
+このマシンの `python` は、uv で入れた 3.14 です。そこで `pip` と打つと、見つかりません。
+
+```console
+❯ python --version
+Python 3.14.7
+❯ pip --version
+pip: 用語 'pip' は、コマンドレット、関数、スクリプト ファイル、または実行可能プログラムの名前として認識されません。
+名前のスペルを確認するか、パスが含まれている場合はパスが正しいことを確認してから、もう一度お試しください。
+❯ python -m pip --version
+pip 26.2.1 from C:\Users\Jam\.local\share\uv\python\cpython-3.14-windows-x86_64-none\Lib\site-packages\pip (python 3.14)
+```
+
+pip 自体は入っていて、`python -m pip` なら動きます。uv が PATH に出すのは `python.exe` などの起動用のファイルだけで、`pip.exe` は出しません。uv を使うなら pip を直接打つ場面はほとんど無いので、困るのは古い手順書をなぞるときくらいです。
+
+### 長いパスの奥では pip だけが失敗する
+
+計測の最初の試みは、一時フォルダの奥の、長いパスの下で走らせていました。そこで `jupyterlab` を入れると、pip だけが途中で止まりました。長いパスの途中は省いています。
+
+```text
+ERROR: Could not install packages due to an OSError: [Errno 2] No such file or directory: 'C:\\Users\\Jam\\AppData\\Local\\Temp\\...\\Lib\\site-packages\\jedi\\third_party\\django-stubs\\...'
+HINT: This error might have occurred since this system does not have Windows Long Path support enabled.
+```
+
+Windows には、パスの長さを 260 文字までとする古い制限があります。pip はそれに当たり、uv は同じ場所でも 99 パッケージを全部入れていました。プロジェクトを深いフォルダに置くと、pip では入らないパッケージが出てきます。
+
+## よく使うコマンド
+
+| コマンド | 何をするか | 置き換えるもの |
+| --- | --- | --- |
+| `uv python install 3.11` | Python 本体を入れる | pyenv |
+| `uv python pin 3.11` | ディレクトリで使う Python を決める | pyenv local |
+| `uv init` | プロジェクトを作る | Poetry |
+| `uv add PKG` / `uv add --dev PKG` | 依存を足す / 開発用の依存を足す | pip install + requirements.txt |
+| `uv remove PKG` | 依存を外す | pip uninstall |
+| `uv run CMD` | プロジェクトの環境でコマンドを実行する | venv の有効化 |
+| `uv sync` | `uv.lock` どおりに環境を揃える | pip install -r |
+| `uv lock --upgrade` | ロックファイルを最新にする | pip-compile --upgrade |
+| `uv tree` | 依存の木を見る | pipdeptree |
+| `uv add --script FILE PKG` | スクリプトに依存を書き込む | — |
+| `uvx TOOL` | ツールを使い捨てで実行する | pipx run |
+| `uv tool install TOOL` | ツールを PATH に入れる | pipx install |
+| `uv venv` / `uv pip install` | pip と同じ使い方で入れる | venv / pip |
+| `uv pip compile` | バージョンを固定する | pip-compile |
+
+## まとめ
+
+- uv は、pip、venv、pyenv、pip-tools、pipx、Poetry の仕事を 1 つにまとめた、Python のパッケージとプロジェクトの管理ツール
+- `uv python install` で Python 本体が入る。ビルド済みの CPython なので、コンパイラは要らない
+- `uv init`、`uv add`、`uv run` で回す。仮想環境の作成も有効化も、`uv run` が引き受ける
+- `pyproject.toml` には自分で選んだ依存だけが書かれ、`uv.lock` がどの OS でも同じ結果になる全部を記録する。`git clone` の後は `uv sync` だけ
+- 0.12 から `uv init` の既定は `src` 配置のパッケージ。`main.py` 1 つの構成は `--no-package`
+- PEP 723 でスクリプトに依存を書けば、1 ファイルで配れる。ツールは `uvx` と `uv tool install`
+- `requirements.txt` のプロジェクトは、`uv pip` でそのまま速くしてから、`uv add -r` でプロジェクトに移せる
+- `requests` を入れる時間は、キャッシュ無しで約 5.6 倍、キャッシュありで約 17 倍速かった
+- uv が扱うパッケージは PyPI のものだけ。C/C++ のライブラリまで要るなら pixi（conda-forge）。Anaconda の規約では、200 人を超える営利組織は有償
