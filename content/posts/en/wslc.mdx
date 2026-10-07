@@ -1,0 +1,770 @@
+---
+title: Running Linux Containers Without Docker Desktop with wslc
+date: "2026-10-08"
+image: /thumbnails/wslc.avif
+description: wslc is the Docker-compatible CLI that ships with WSL. This post repeats the Docker series with it, from hello-world through nginx, PostgreSQL with a volume and a Dockerfile build, looks at what runs underneath, and works through the session concept Docker does not have and the other differences from Docker Desktop, Compose included
+tags:
+  - wslc
+  - wsl
+  - docker
+  - container
+  - devtools
+---
+
+## What wslc is
+
+[wslc](https://learn.microsoft.com/en-us/windows/wsl/wsl-container) is **a command-line tool for
+running Linux containers that ships with WSL (Windows Subsystem for Linux)**. It became generally
+available in WSL 3.0.1 on 29 September 2026. There is nothing extra to install: `wsl --update`
+brings WSL up to date, and `wslc.exe` comes with it.
+
+The commands are modelled on Docker. `wslc run`, `wslc build`, `wslc ps`, `wslc images`,
+`wslc volume create`. Take the commands from the [first](/en/blog/getting-started-with-docker) to
+the [third](/en/blog/docker-compose) post of the Docker series, replace `docker` with `wslc`, and
+most of them work as they are.
+
+Most, not all. It is not a drop-in replacement for Docker Desktop, and **there is no Docker Compose
+yet**. There are smaller differences too, and most of them come from a concept wslc has and Docker
+does not: the session. This post repeats what the series did, with wslc, and checks one by one what
+is the same as Docker and what is not.
+
+Everything here was checked on WSL 3.0.2.0 (kernel 6.18.40.1-1) on Windows 11 Pro build 26300.
+3.0.2 was a pre-release at the time of writing; the generally available version is 3.0.1.
+
+## Checking it is there
+
+The WSL version tells you whether wslc is included. Anything from 2.9.3 on has it.
+
+```console
+❯ wsl --version
+WSL version: 3.0.2.0
+Kernel version: 6.18.40.1-1
+WSLg version: 1.0.79
+MSRDC version: 1.2.7391
+Direct3D version: 1.611.1-81528511
+DXCore version: 10.0.26100.1-240331-1435.ge-release
+Windows version: 10.0.26300.9550
+❯ wslc version
+wslc 3.0.2.0
+```
+
+If it is older, `wsl --update`. If `wslc` is reported as not found, look for `wslc.exe` in
+`C:\Program Files\WSL`; it is installed in the same directory as WSL itself.
+
+As with Docker, the first thing to run is `hello-world`.
+
+```console
+❯ wslc run --rm hello-world
+Image 'hello-world' not found, pulling
+latest: Pulling from library/hello-world
+4f55086f7dd0: Pulling fs layer
+4f55086f7dd0: Downloading
+4f55086f7dd0: Verifying Checksum
+4f55086f7dd0: Download complete
+4f55086f7dd0: Extracting
+4f55086f7dd0: Pull complete
+Digest: sha256:5e23090353324d887c48ad5e5c56d294eab81588df9605b07d1afe895f9cc8f8
+Status: Downloaded newer image for hello-world:latest
+
+Hello from Docker!
+This message shows that your installation appears to be working correctly.
+
+To generate this message, Docker took the following steps:
+ 1. The Docker client contacted the Docker daemon.
+ 2. The Docker daemon pulled the "hello-world" image from the Docker Hub.
+    (amd64)
+...
+```
+
+The image comes from Docker Hub and the text is Docker's. That is expected, since `hello-world` is
+an image Docker publishes, but the line about "the Docker daemon" being printed by wslc is, as it
+turns out later, not entirely wrong either.
+
+As in the first post, look at the kernel.
+
+```console
+❯ wslc run --rm ubuntu:latest bash -c "uname -r; head -1 /etc/os-release"
+Image 'ubuntu:latest' not found, pulling
+...
+Status: Downloaded newer image for ubuntu:latest
+6.18.40.1-microsoft-standard-WSL2
+PRETTY_NAME="Ubuntu 26.04.1 LTS"
+```
+
+Inside the container it is Ubuntu 26.04, but the kernel is `microsoft-standard-WSL2`: the same
+kernel version `wsl --version` printed. Containers run on the same kernel that runs the WSL
+distributions.
+
+## Repeating the series with wslc
+
+### A web server and a port
+
+Start the nginx from the first post, with `docker` changed to `wslc`.
+
+```console
+❯ wslc run -d --rm -p 8080:80 --name web nginx
+cc6814017fae512d2cce6010a008acfefaaf2958919f60741523a4aca02fe579
+❯ curl.exe -s localhost:8080 | Select-Object -First 4
+<!DOCTYPE html>
+<html>
+<head>
+<title>Welcome to nginx!</title>
+```
+
+`-d`, `--rm`, `-p` and `--name` all mean what they mean in Docker. In some PowerShell versions
+`curl` is an alias of `Invoke-WebRequest`, which is why this says `curl.exe`. `ps`, `exec`, `logs`
+and `stop` are the same as in Docker too.
+
+```console
+❯ wslc ps
+CONTAINER ID   IMAGE     COMMAND                  CREATED         STATUS                  PORTS                    NAMES
+cc6814017fae   nginx     "/docker-entrypoint.…"   3 seconds ago   Up Less than a second   127.0.0.1:8080->80/tcp   web
+❯ wslc exec web head -1 /etc/os-release
+PRETTY_NAME="Debian GNU/Linux 13 (trixie)"
+❯ wslc logs web | Select-Object -Last 1
+2026/10/08 01:17:16 [notice] 1#1: start worker process 37
+❯ wslc stop web
+web
+❯ wslc ps -a
+CONTAINER ID   IMAGE     COMMAND   CREATED   STATUS    PORTS     NAMES
+```
+
+One thing differs from Docker. The ports column reads `127.0.0.1:8080->80/tcp`, not Docker
+Desktop's `0.0.0.0:8080->80/tcp`. **By default, wslc makes a published port reachable only from
+your own machine**. To accept connections from other devices as well, give the address the same
+way you would with Docker.
+
+```console
+❯ wslc run -d --rm -p 0.0.0.0:8081:80 --name web2 nginx
+9d96133e7aa590e9c9b74aa440bb38585b30d53cf7223e0bb772013a11e17557
+❯ wslc ps
+CONTAINER ID   IMAGE     COMMAND                  CREATED        STATUS                  PORTS                  NAMES
+9d96133e7aa5   nginx     "/docker-entrypoint.…"   1 second ago   Up Less than a second   0.0.0.0:8081->80/tcp   web2
+```
+
+It now listens on every network interface. Whether another device can actually reach it still
+depends on Windows Firewall allowing inbound traffic on that port. To change the default, there is
+`defaultBindingAddress` in the settings file described below.
+
+### A database and a volume
+
+The PostgreSQL from the first post works the same way. Create a named volume, put the data there,
+and check that it survives the container being removed.
+
+PostgreSQL takes a few seconds after the container starts before it accepts connections: the
+official image initialises the database on first start and then restarts the server. So wait until
+`pg_isready` says it is accepting before running `psql`. The `-h localhost` makes it check over TCP,
+so a server still in the middle of initialisation is not mistaken for the real one.
+
+```console
+❯ wslc volume create pgdata
+pgdata
+❯ wslc volume list
+DRIVER    VOLUME NAME
+guest     pgdata
+❯ wslc run -d --name db -e POSTGRES_PASSWORD=secret -v pgdata:/var/lib/postgresql/data postgres:17
+3cd14e83bed558ff50ed602f005e4b83a8b6960d75918efffee75e1ee58a7d1f
+❯ do { Start-Sleep 1 } until ((wslc exec db pg_isready -h localhost -U postgres) -match 'accepting')
+❯ wslc exec db psql -U postgres -c "CREATE TABLE notes (id serial PRIMARY KEY, body text); INSERT INTO notes (body) VALUES ('written from wslc');"
+CREATE TABLE
+INSERT 0 1
+```
+
+Stop the container, remove it, and start another on the same volume.
+
+```console
+❯ wslc stop db
+db
+❯ wslc remove db
+db
+❯ wslc run -d --name db -e POSTGRES_PASSWORD=secret -v pgdata:/var/lib/postgresql/data postgres:17
+1d48654e1431fe74156646e1d19441ed5f360391a56a95cfec18969b800102c9
+❯ do { Start-Sleep 1 } until ((wslc exec db pg_isready -h localhost -U postgres) -match 'accepting')
+❯ wslc exec db psql -U postgres -c "SELECT * FROM notes;"
+ id |       body
+----+-------------------
+  1 | written from wslc
+(1 row)
+```
+
+The row is still there. The counterpart of `docker rm` is `wslc remove`. Its `--help` lists `rm`
+and `delete` as aliases too, so `wslc rm` out of Docker habit works.
+
+```console
+❯ wslc remove --help
+...
+Aliases:
+  wslc container remove, wslc container delete, wslc container rm, wslc remove, wslc delete, wslc rm
+```
+
+Note the volume's `DRIVER`, which is `guest` rather than `local`, and where `inspect` says it lives.
+
+```console
+❯ wslc volume inspect pgdata
+[
+  {
+    "CreatedAt": "2026-10-08T01:21:53Z",
+    "Driver": "guest",
+    "Labels": null,
+    "Mountpoint": "/var/lib/docker/volumes/pgdata/_data",
+    "Name": "pgdata",
+    "Options": null,
+    "Scope": "local"
+  }
+]
+```
+
+`/var/lib/docker/volumes/` is where Docker Engine keeps its volumes. A wslc volume lives in a
+Docker volume directory somewhere inside a Linux. That "somewhere" is the main character of the
+second half of this post.
+
+Showing a Windows directory to a container is the same `-v` as in Docker Desktop. In PowerShell,
+`${PWD}` passes the current directory.
+
+```console
+❯ wslc run --rm -v ${PWD}:/src alpine ls -la /src
+Image 'alpine' not found, pulling
+...
+Status: Downloaded newer image for alpine:latest
+total 4
+drwxrwxrwx    1 root     root          4096 Oct  7 22:44 .
+drwxr-xr-x    1 root     root          4096 Oct  8 01:22 ..
+-rwxrwxrwx    1 root     root            88 Oct  7 22:38 Dockerfile
+-rwxrwxrwx    1 root     root           365 Oct  7 22:38 server.js
+```
+
+Files on the Windows side appear to the container as owned by `root`, readable, writable and
+executable by everyone. That is how they look under Docker Desktop too.
+
+### Building a Dockerfile
+
+The build from the [second post](/en/blog/docker-build) as well. EmDash takes 27 minutes, so this
+one is a five-line `Dockerfile`.
+
+```dockerfile
+FROM node:22-alpine
+WORKDIR /app
+COPY server.js .
+EXPOSE 3000
+CMD ["node", "server.js"]
+```
+
+`server.js` is an HTTP server that answers with its own hostname and Node version, nothing more.
+
+```console
+❯ wslc build -t hello-app .
+[1/3] FROM docker.io/library/node:22-alpine@sha256:0a7108bf6c7bf5de370ffb1a3ed6be93d405b43ff159f681a8d18c0e2bc2e402
+  | resolve docker.io/library/node:22-alpine@sha256:0a7108bf6c7bf5de370ffb1a3ed6be93d405b43ff159f681a8d18c0e2bc2e402
+  | extracting sha256:f7f2d304681aaa935c9cfd180850cf616ae843efce7682873d6521ded7268937
+  | extracting sha256:e554276b05e6306c5ad33cd85bfa7f0693083e21f6114db5abf60a20fb413039
+  | extracting sha256:d39db1cf9caa4f49c5a2e67111fbe6e0d5eea8ede550cb82f3dc2b79712688d6
+[2/3] WORKDIR /app
+[3/3] COPY server.js .
+exporting to image
+  | exporting layers
+  | writing image sha256:eda015a75608999fbc52702f3885273fdf72d8987474256d89928217840937da
+  | naming to docker.io/library/hello-app
+```
+
+42 seconds, almost all of it downloading `node:22-alpine`. Run it again and the layer cache from
+the second post kicks in.
+
+```console
+❯ wslc build -t hello-app .
+[1/3] FROM docker.io/library/node:22-alpine@sha256:0a7108bf6c7bf5de370ffb1a3ed6be93d405b43ff159f681a8d18c0e2bc2e402
+[2/3] WORKDIR /app
+[2/3] CACHED
+[3/3] COPY server.js .
+[3/3] CACHED
+exporting to image
+  | exporting layers
+  | writing image sha256:eda015a75608999fbc52702f3885273fdf72d8987474256d89928217840937da
+  | naming to docker.io/library/hello-app
+```
+
+One second. The output is formatted differently from `docker build`, but a cache hit or miss per
+step, as in `[2/3] CACHED`, is the same. Start it, hit it, stop it.
+
+```console
+❯ wslc run -d --rm -p 3000:3000 --name hello hello-app
+119cd943313d89a6efaa31f39e35bc2813323b08e1c4137177744bf2c3ae9729
+❯ curl.exe -s localhost:3000
+Hello from 119cd943313d (linux x64, node v22.23.3)
+❯ wslc stop hello
+hello
+```
+
+[Microsoft's tutorial](https://learn.microsoft.com/en-us/windows/wsl/tutorials/wsl-containers)
+calls the file `Containerfile` rather than `Dockerfile`. Either name is found without `-f`; I
+checked. `--platform`, on the other hand, does not exist.
+
+```console
+❯ wslc build --platform linux/arm64 -t hello-app-arm .
+Option name was not recognized for the current command: '--platform'
+```
+
+Building an ARM image for an Apple Silicon Mac is not something it can do yet.
+
+## What runs underneath
+
+The output so far carried several traces of Docker: the "Docker daemon" in `hello-world`, the
+`/var/lib/docker/volumes/` of the volume. wslc has a command that runs inside whatever it is that
+is running.
+
+```console
+❯ wslc system session run cat /etc/os-release
+NAME="Microsoft Azure Linux"
+VERSION="3.0.20260616"
+ID=azurelinux
+...
+❯ wslc system session run sh -c 'for b in docker dockerd containerd runc; do printf "%s: " $b; command -v $b; done'
+docker: /bin/docker
+dockerd: /bin/dockerd
+containerd: /bin/containerd
+runc: /bin/runc
+```
+
+**wslc is a Docker Engine running inside a lightweight virtual machine with Microsoft's
+[Azure Linux](https://github.com/microsoft/azurelinux) in it, plus a CLI that drives it from
+Windows.** Azure Linux is the Fedora-derived distribution Microsoft builds for Azure.
+`dockerd`, `containerd` and `runc` are the same cast that runs inside Docker Desktop. Containers
+are created and stopped the same way, images have the same format and volumes live in the same
+place because what is underneath is Docker.
+
+Docker Desktop on Windows also runs `dockerd` inside a WSL 2 virtual machine, the distribution
+called `docker-desktop`. The structure is the same. What differs is who provides the virtual machine
+and who looks after it: Docker's GUI application in one case, WSL itself in the other.
+
+wslc calls this virtual machine a **session**.
+
+```console
+❯ wslc system session list
+ID        Creator PID   Display Name
+4         3736          wslc-cli-Jam
+❯ wslc system session run sh -c 'nproc; free -h | head -2; df -h / /var/lib/docker'
+8
+               total        used        free      shared  buff/cache   available
+Mem:           7.7Gi       369Mi       7.2Gi       3.5Mi       281Mi       7.4Gi
+Filesystem      Size  Used Avail Use% Mounted on
+none            3.9G  152K  3.9G   1% /
+/dev/sdc       1007G  8.2G  948G   1% /var/lib/docker
+```
+
+This machine has 8 logical CPUs and about 16 GB of physical memory. The session gets all the CPUs,
+half the memory at 7.7 GiB, and a disk of up to 1 TB for `/var/lib/docker`. Those are the
+defaults, and the settings file described below changes them.
+
+The disk is a virtual hard disk on the Windows side.
+
+```console
+❯ Get-ChildItem $env:LOCALAPPDATA\wslc\sessions\wslc-cli-Jam
+
+    Directory: C:\Users\Jam\AppData\Local\wslc\sessions\wslc-cli-Jam
+
+Mode                 LastWriteTime         Length Name
+----                 -------------         ------ ----
+-a---          2026/10/08    10:25    45386563584 storage.vhdx
+-a---          2026/10/08    10:25       37748736 swap.vhdx
+```
+
+Images, volumes and the build cache all live in this one `storage.vhdx`. The `swap.vhdx` next to it
+is the virtual machine's swap. Docker Desktop is built the same way and keeps its images in a VHD
+of its own.
+
+```console
+❯ Get-ChildItem $env:LOCALAPPDATA\Docker\wsl -Recurse -Filter *.vhdx
+
+    Directory: C:\Users\Jam\AppData\Local\Docker\wsl\disk
+
+Mode                 LastWriteTime         Length Name
+----                 -------------         ------ ----
+-a---          2026/08/22    23:28    34919677952 docker_data.vhdx
+
+    Directory: C:\Users\Jam\AppData\Local\Docker\wsl\main
+
+Mode                 LastWriteTime         Length Name
+----                 -------------         ------ ----
+-a---          2026/08/22    23:28      100663296 ext4.vhdx
+```
+
+The 32.5 GB `docker_data.vhdx` holds the images, and the 0.1 GB `ext4.vhdx` is the `docker-desktop`
+distribution itself. Separate files and separate engines mean **wslc and Docker Desktop do not
+share images**. To use something one has pulled, the other has to pull it again.
+
+![wslc.exe on Windows controls Docker Engine inside a session VM, with images, volumes and build cache stored in storage.vhdx](/wslc/architecture.avif)
+
+### The session stops on its own and starts on its own
+
+This is the biggest difference from Docker Desktop. **Leave a wslc session alone for 30 seconds
+and the whole virtual machine stops.** The next command boots it again.
+
+`/proc/uptime` shows this: its first number is the seconds since the virtual machine booted. I
+waited 45 seconds, started a do-nothing `alpine` container, and looked right after.
+
+```console
+❯ Start-Sleep 45; wslc run --rm alpine true
+❯ wslc system session run cat /proc/uptime
+8.52 54.79
+```
+
+The virtual machine had booted 8.5 seconds earlier. I tried six times with different waits, reading
+`uptime` right after each.
+
+| Waited | `uptime` right after |
+| --- | --- |
+| 45 s | 8.5 s |
+| 45 s | 13.4 s |
+| 40 s | 18.3 s |
+| 40 s | 12.6 s |
+| 90 s | 8.8 s |
+| 60 s | 9.8 s |
+
+Every time the virtual machine had been booted again, and the boot took 8 to 18 seconds. From the
+second command in a row on, each returned in 1 to 2 seconds. Every pause between commands means
+waiting for that boot.
+
+The same thing is visible on the Windows side. While containers run, a process called
+`vmmemwslc-cli-Jam` holds the memory; leave it for 45 seconds and it is gone.
+
+```console
+❯ Get-Process vmmem*, wslcsession | Select-Object ProcessName, Id, @{n='MB';e={[int]($_.WorkingSet64/1MB)}}
+
+ProcessName          Id  MB
+-----------          --  --
+vmmemwslc-cli-Jam 10148 712
+wslcsession       15348  17
+❯ Start-Sleep 45; Get-Process vmmem*, wslcsession | Select-Object ProcessName, Id, @{n='MB';e={[int]($_.WorkingSet64/1MB)}}
+
+ProcessName    Id MB
+-----------    -- --
+wslcsession 15348 17
+```
+
+`wslcsession.exe` is the session's manager and stays after the virtual machine stops. The session
+is still listed in `session list` too; only the machine inside it went away.
+
+Docker Desktop has an idle saving of its own,
+[Resource Saver](https://docs.docker.com/desktop/use-desktop/resource-saver/), on by default. Its
+documentation says that under WSL 2 it pauses only the engine after 5 minutes idle and leaves the
+virtual machine running: CPU use drops, memory does not, and there is no wait on the way back.
+Giving back memory as well is a point in wslc's favour, and the price is waiting for the boot
+whenever you pause between commands.
+
+> [!TIP]
+> The 30-second idle period can be extended with `idleTimeout` in the settings file described
+> below.
+
+A container started with `-d` keeps the virtual machine alive while it runs. With nginx left running
+for 50 seconds, `vmmemwslc-cli-Jam` stayed, `uptime` reached 70 seconds and `localhost:8080`
+answered `200`. The machine stops only when no container is running at all.
+
+![With no running containers, the VM stops after the default 30-second idle period and boots again on the next wslc command. storage.vhdx persists, and running containers keep the VM alive](/wslc/session-lifecycle.avif)
+
+### The settings file
+
+`wslc settings` opens `%LOCALAPPDATA%\wslc\settings.yaml` in the default editor. The first time, it
+creates the file with every setting commented out. This is what it contains.
+
+```yaml
+# wslc user settings
+# https://aka.ms/wslc-settings
+# All settings support string value "default" which uses built-in defaults.
+
+session:
+  # Number of virtual CPUs allocated to the session (e.g. 4 default: all available CPUs)
+  # cpuCount: default
+
+  # Memory limit for the session (e.g. 2GB default: half of available memory)
+  # memorySize: default
+
+  # Maximum disk image size (e.g. 500GB default: 1TB)
+  # maxStorageSize: default
+
+  # Base directory for the default session's storage; the session VHD is created at
+  # <storagePath>\wslc\sessions\<session>\storage.vhdx. Must be an absolute path (e.g. D:\data default: %LOCALAPPDATA%). Changing this after a session already exists does not move existing storage, containers, or
+  # images; the previous location is left in place and a new empty session is created at the new path.
+  # storagePath: default
+
+  # Default host address that published ports bind to when 'container run -p' is
+  # used without an explicit address (default: 127.0.0.1)
+  # defaultBindingAddress: default
+
+  # DNS name that resolves to the host loopback address (default: host.wslc.internal).
+  # Set to "none" to disable the entry.
+  # hostLoopback: default
+
+  # Seconds an idle session VM stays running before it is torn down (default: 30)
+  # idleTimeout: default
+
+# Credential storage backend: "wincred" or "file" (default: wincred)
+# credentialStore: wincred
+```
+
+Every number seen so far is here: all CPUs, half the memory, 1 TB of disk, ports on `127.0.0.1`,
+30 seconds idle. `storagePath` is for putting `storage.vhdx` on another drive, and as the comment
+says, **changing it once a session exists does not move the old VHD; you get a new, empty session**.
+
+The `host.wslc.internal` of `hostLoopback` is the counterpart of Docker Desktop's
+`host.docker.internal`: the name a container uses to reach something running on the Windows side.
+On Windows, start an HTTP server that listens on `127.0.0.1` only.
+
+```console
+❯ python -m http.server 8765 --bind 127.0.0.1
+```
+
+From another terminal, reach it by name with curl inside a container.
+
+```console
+❯ wslc run --rm curlimages/curl -s -m 6 http://host.wslc.internal:8765/
+...
+</ul>
+<hr>
+</body>
+</html>
+```
+
+On Windows, `127.0.0.1` is reachable only from the machine itself, and the container got there, so
+the name really does lead to the Windows loopback.
+
+After editing the settings, end the session with `wslc system session terminate`. The next command
+starts a virtual machine with the new settings. I checked with the idle period set to 90 seconds and
+the default bind address set to `0.0.0.0`.
+
+```yaml
+session:
+  idleTimeout: 90
+  defaultBindingAddress: 0.0.0.0
+```
+
+```console
+❯ wslc system session terminate
+❯ wslc run -d --rm -p 8080:80 --name web nginx
+06970f5230b035f96f4d51cbe1b4afaa25a77f8e312dcb890f434f394fef9934
+❯ wslc ps
+CONTAINER ID   IMAGE     COMMAND                  CREATED         STATUS                  PORTS                  NAMES
+06970f5230b0   nginx     "/docker-entrypoint.…"   3 seconds ago   Up Less than a second   0.0.0.0:8080->80/tcp   web
+❯ wslc stop web
+web
+```
+
+`-p 8080:80` with no address was published on `0.0.0.0:8080`. With nginx stopped,
+`vmmemwslc-cli-Jam` was still there after 60 seconds and gone after 105. With the default 30
+seconds it would have been gone by the 60-second mark.
+
+`wslc settings reset` writes the file back to the initial template without asking.
+
+```console
+❯ wslc settings reset
+Settings reset to defaults.
+```
+
+The `idleTimeout: 90` I had written was back to `# idleTimeout: default`.
+
+## How it differs from Docker Desktop
+
+What the post has found so far, in the order a reader of the Docker series is likely to care about.
+
+| | Docker Desktop | wslc |
+| --- | --- | --- |
+| Installation | Separate install, GUI application | Ships with WSL, CLI only |
+| Licence | Paid for larger companies | Free (WSL is published under the MIT licence) |
+| Engine | Docker Engine in a WSL 2 VM | Docker Engine in an Azure Linux VM |
+| Image store | `%LOCALAPPDATA%\Docker\wsl\disk\docker_data.vhdx` | `%LOCALAPPDATA%\wslc\sessions\<name>\storage.vhdx` |
+| When idle | Engine paused after 5 min (VM and memory stay) | Whole VM stops after 30 s, boots again on the next command in 8 to 18 s |
+| Published ports bind to | `0.0.0.0` | `127.0.0.1` |
+| Docker Compose | `docker compose` | **None** (in development) |
+| Docker Engine API | Named pipe (TCP only when enabled in settings) | **Not exposed** |
+| `--platform` | Yes (multi-architecture) | No |
+| GPU | `--gpus` | `--gpus` (the same mechanism as WSL's GPU support) |
+
+### There is no Compose
+
+```console
+❯ wslc compose version
+Unrecognized command: 'compose'
+```
+
+Microsoft lists `wslc compose` as the most requested feature and says it is in development, but
+at the time of writing it does not exist. A multi-container setup like the one in the
+[third post](/en/blog/docker-compose) means writing out `wslc network create` and the `wslc run`
+lines yourself. There is a community project, [wslc-compose](https://github.com/Ivanbeethoven/wslc-compose),
+written in Rust, that reads `compose.yaml` and calls wslc. It has to be built from source, and I
+have not tried it.
+
+### The Docker Engine API is not exposed
+
+Docker Desktop exposes the Docker Engine API on a named pipe, `//./pipe/docker_engine`, and tools
+other than the Docker CLI connect to it. Testcontainers starting a database for a test suite goes
+through that API.
+
+wslc has no such thing. On the Windows side there is no named pipe and nothing on 2375 or 2376, the
+ports Docker uses for its API. The API itself is `/var/run/docker.sock` inside the virtual machine.
+
+```console
+❯ Get-ChildItem \\.\pipe\ | Where-Object Name -match docker
+❯ Test-NetConnection 127.0.0.1 -Port 2375 -WarningAction SilentlyContinue | Select-Object -ExpandProperty TcpTestSucceeded
+False
+❯ wslc system session run ls -l /var/run/docker.sock
+srw-rw---- 1 root docker 0 Oct  8 00:14 /var/run/docker.sock
+```
+
+The first command prints nothing because no pipe has `docker` in its name. Docker Desktop was
+stopped while I checked, so its own pipe being absent is no surprise; what this shows is that wslc
+does not create one in its place.
+
+With `wslc.exe` the only way from Windows to that `dockerd`, pointing a tool at wslc through
+`DOCKER_HOST` is not possible. The request is
+[microsoft/WSL#40976](https://github.com/microsoft/WSL/issues/40976).
+
+Tools that call the CLI rather than the API do work. I checked with the
+[Dev Container CLI](https://github.com/devcontainers/cli) that the VS Code Dev Containers extension
+builds on. Pointed at wslc with `--docker-path`, both a `devcontainer.json` naming an `image` and
+one building from a `Dockerfile` came up.
+
+```console
+❯ Get-Content .devcontainer\devcontainer.json
+{ "name": "wslc-check", "image": "alpine:latest" }
+❯ npx --yes @devcontainers/cli up --workspace-folder . --docker-path "C:\Program Files\WSL\wslc.exe"
+[2026-10-08T00:25:56.636Z] @devcontainers/cli 0.89.0. Node.js v26.10.0. win32 10.0.26300 x64.
+...
+[2026-10-08T00:26:01.630Z] Container started
+{"outcome":"success","containerId":"ff6ee7f8fdfa669e4d03d1ea491905357eaf7081a45764991984bbb26b922f54","remoteUser":"root","remoteWorkspaceFolder":"/workspaces/devc","ociAuthDiagnostics":{"authLookupWouldBeBlocked":false,"registryRedirectWouldPreventCredentialForwarding":false,"authServerRedirect":false}}
+❯ npx --yes @devcontainers/cli exec --workspace-folder . --docker-path "C:\Program Files\WSL\wslc.exe" sh -c 'head -1 /etc/os-release; pwd'
+NAME="Alpine Linux"
+/workspaces/devc
+```
+
+The elided line is the `wslc.exe run -v ... alpine:latest` command the CLI actually ran: the same
+arguments it would give Docker, handed to wslc. In the VS Code extension, the
+`Dev Containers: Docker Path` setting does the same job. VS Code is not installed on this machine,
+so I have not tried it from the extension.
+
+### Which to use
+
+Putting it together:
+
+- **You use Compose, Testcontainers, or a tool that talks to the Docker Engine API** — you need
+  Docker Desktop
+- **You start single containers, build images, run CLI tools in containers** — wslc is enough.
+  I do not install the AWS CLI locally and run it as
+  `wslc run --rm -v ~/.aws:/root/.aws amazon/aws-cli`
+- **Both** — they coexist. This machine has both, and their image stores and engines are separate
+
+> [!WARNING]
+> Mounting `~/.aws` lets any program inside the container read your credentials. Mount it only into
+> an image whose contents you trust, such as AWS's official `amazon/aws-cli`.
+
+## Traps I actually hit
+
+### Deleting images does not shrink storage.vhdx
+
+After removing 12 old images, about 8 GB by their listed sizes, `storage.vhdx` was still 42 GB. A virtual hard disk
+does not give back space freed inside it on its own.
+
+WSL has an experimental setting for sparse VHDs that do give space back (`sparseVhd=true` in
+`.wslconfig`). This machine's `.wslconfig` has it, and the wslc session VHD is not sparse.
+
+```console
+❯ fsutil sparse queryflag $env:LOCALAPPDATA\wslc\sessions\wslc-cli-Jam\storage.vhdx
+This file is NOT set as sparse
+```
+
+`.wslconfig` configures the classic WSL distributions and does not seem to reach wslc sessions, and
+wslc's `settings.yaml` has no equivalent key.
+
+### `--format` is not a Go template
+
+Docker's `--format '{{.Repository}}:{{.Tag}}'` is rejected.
+
+```console
+❯ wslc images --format '{{.Repository}}:{{.Tag}}'
+Invalid format value: {{.Repository}}:{{.Tag}} is not a recognized format type. Supported format types are: json, table.
+```
+
+Choose `json` and you get **one object per line** (NDJSON). Reading the whole output as one JSON
+array fails on the second line. In PowerShell, pass each line through `ConvertFrom-Json`.
+
+```console
+❯ wslc images --format json | % { $_ | ConvertFrom-Json } | % { "$($_.Repository):$($_.Tag)" }
+hello-app:latest
+postgres:17
+nginx:latest
+ubuntu:latest
+amazon/aws-cli:latest
+alpine:latest
+amazon/dynamodb-local:latest
+```
+
+### Some options are missing
+
+`wslc stats --no-stream` and `wslc build --platform` are rejected. `wslc stats`,
+unlike Docker's, prints a single snapshot from the start, so there is nothing for `--no-stream` to
+turn off. Type one out of Docker habit and the reply is "Option name was not recognized for the
+current command", after which you end up at `wslc <command> --help` each time.
+
+### Do not put `--` in `session run`
+
+Out of `docker exec` habit, `wslc system session run -- cat /etc/os-release` tries to start a
+program called `--` and fails.
+
+```console
+❯ wslc system session run -- cat /etc/os-release
+Failed to launch command --. Errno = 2
+Error code: E_FAIL
+```
+
+Leave the `--` out and write the command directly after `run`.
+
+### `session run` always fails on a command that takes time
+
+`ps` and `docker version` through `session run` failed with `ERROR_INVALID_HANDLE`, while `cat` and
+`df` worked. What decides it is not the command but how long it runs. Here is `sleep` at different
+lengths, four tries each.
+
+```console
+❯ foreach ($s in '0','0.02','0.1','1') { $fail = 0; 1..4 | % { if ((wslc system session run sh -c "sleep $s; echo done" 2>&1 | Out-String) -match 'ERROR_INVALID_HANDLE') { $fail++ } }; "sleep $s failed $fail/4" }
+sleep 0 failed 1/4
+sleep 0.02 failed 4/4
+sleep 0.1 failed 4/4
+sleep 1 failed 4/4
+```
+
+Taking 0.02 seconds is enough to fail every time, and even an instant command failed one try in
+four. `ps` reads 137 processes and `docker` is slow just to start, so both cross that line every
+time. I have not traced what happens inside. Treat `session run` as a way to take a quick look
+inside the virtual machine and nothing more.
+
+## Commands you will use
+
+| Command | What it does | Difference from Docker |
+| --- | --- | --- |
+| `wslc run --rm -it IMAGE CMD` | Start a container, run a command, remove it afterwards | Same |
+| `wslc run -d -p 8080:80 --name NAME IMAGE` | Start in the background and publish a port | Binds to `127.0.0.1` by default |
+| `wslc ps` / `ps -a` | List containers / including stopped ones | Alias of `wslc container list` |
+| `wslc exec NAME CMD` / `logs NAME` / `stop NAME` | Run a command inside / show logs / stop | Same |
+| `wslc remove NAME` | Remove a container | `rm` and `delete` are aliases |
+| `wslc images` / `rmi IMAGE` | List images / remove one | `--format` is `json` or `table` only |
+| `wslc build -t NAME .` | Build from a Dockerfile | No `--platform` |
+| `wslc volume create NAME` / `list` / `remove NAME` | Create / list / remove volumes | Same |
+| `wslc container prune` / `image prune` | Remove stopped containers / unused images | Same |
+| `wslc system session list` | List sessions | No Docker equivalent |
+| `wslc system session run CMD` | Run a command inside the session's virtual machine (fails past 0.02 s) | No Docker equivalent |
+| `wslc system session terminate` | End the session (images and volumes stay) | No Docker equivalent |
+| `wslc settings` / `settings reset` | Open the settings file / restore defaults | Docker Desktop's settings screen |
+
+## Summary
+
+- wslc is a Docker-compatible CLI that ships with WSL. Underneath is a Docker Engine in an Azure
+  Linux virtual machine, and most commands work with `docker` changed to `wslc`
+- That virtual machine is a **session**, and images and volumes all live in one `storage.vhdx`
+  under `%LOCALAPPDATA%\wslc\sessions\`. Nothing is shared with Docker Desktop
+- A session stops after 30 seconds idle and restarts on the next command. Boot takes 8 to 18
+  seconds. It gives memory back, and makes you wait after a pause.
+  `idleTimeout` extends the 30 seconds
+- Published ports bind to `127.0.0.1` by default. Change it with `defaultBindingAddress` or
+  `-p 0.0.0.0:…`
+- No Docker Compose, and no Docker Engine API reachable from Windows. Keep Docker Desktop for work
+  that needs them; single containers and `build` are fine on wslc, and the Dev Container CLI,
+  which only calls the CLI, works
+- `--format` is `json` or `table`. `--platform` and `--no-stream` do not exist. When in doubt,
+  `wslc <command> --help`
