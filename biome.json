@@ -37,6 +37,7 @@
     },
     "rules": {
       "correctness": {
+        "noUndeclaredDependencies": "error",
         "noUnusedImports": "error"
       },
       "style": {
