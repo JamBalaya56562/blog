@@ -18,11 +18,13 @@ set -euo pipefail
 # A wedged wslc session does not fail that listing, it never answers it, and
 # the probe used to wait on it forever. Each probe is therefore bounded. The
 # default leaves room for wslc booting its VM after an idle period, which takes
-# 8-18 s. Override with RUNTIME_PROBE_TIMEOUT (whole seconds, above 0: GNU
-# timeout reads 0 as "no limit at all").
+# 8-18 s. Override with RUNTIME_PROBE_TIMEOUT: whole seconds from 1 to 99999.
+# 0 is out because GNU timeout reads it as "no limit at all". The check is a
+# pattern rather than an integer comparison, since a long enough string of
+# digits makes `[ -eq ]` error out instead of answering.
 PROBE_TIMEOUT="${RUNTIME_PROBE_TIMEOUT:-45}"
-if ! [[ "$PROBE_TIMEOUT" =~ ^[0-9]+$ ]] || [ "$PROBE_TIMEOUT" -eq 0 ]; then
-  echo "RUNTIME_PROBE_TIMEOUT must be a whole number of seconds above 0; using 45." >&2
+if ! [[ "$PROBE_TIMEOUT" =~ ^[1-9][0-9]{0,4}$ ]]; then
+  echo "RUNTIME_PROBE_TIMEOUT must be whole seconds from 1 to 99999; using 45." >&2
   PROBE_TIMEOUT=45
 fi
 
