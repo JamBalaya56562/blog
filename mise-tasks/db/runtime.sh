@@ -14,8 +14,20 @@ set -euo pipefail
 # Being on PATH is not enough. wslc ships with WSL whether or not its backend
 # is running, and an unavailable one fails every command with E_FAIL, so each
 # candidate is probed with a harmless listing before it is chosen.
+#
+# A wedged wslc session does not fail that listing, it never answers it, and
+# the probe used to wait on it forever. Each probe is therefore bounded. The
+# default leaves room for wslc booting its VM after an idle period, which takes
+# 8-18 s. Override with RUNTIME_PROBE_TIMEOUT (seconds).
+PROBE_TIMEOUT="${RUNTIME_PROBE_TIMEOUT:-45}"
+
 runtime_works() {
-  "$1" ps >/dev/null 2>&1
+  local status=0
+  timeout "$PROBE_TIMEOUT" "$1" ps >/dev/null 2>&1 || status=$?
+  if [ "$status" -eq 124 ]; then
+    echo "$1 did not answer within ${PROBE_TIMEOUT}s; trying the next runtime." >&2
+  fi
+  return "$status"
 }
 
 resolve_runtime() {
@@ -30,10 +42,24 @@ resolve_runtime() {
     "docker"
   )
 
+  # Both wslc entries are the same program when it is on PATH, so once one has
+  # timed out the other would only make the fallback wait twice as long.
+  local wslc_hung=0
   for candidate in "${candidates[@]}"; do
-    if runtime_works "$candidate"; then
+    local is_wslc=0
+    [[ "$(basename "$candidate")" == wslc* ]] && is_wslc=1
+    if [ "$is_wslc" -eq 1 ] && [ "$wslc_hung" -eq 1 ]; then
+      continue
+    fi
+
+    local status=0
+    runtime_works "$candidate" || status=$?
+    if [ "$status" -eq 0 ]; then
       echo "$candidate"
       return
+    fi
+    if [ "$status" -eq 124 ] && [ "$is_wslc" -eq 1 ]; then
+      wslc_hung=1
     fi
   done
 
