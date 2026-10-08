@@ -1,0 +1,821 @@
+---
+title: Bun 入門ガイド
+date: "2026-10-08"
+image: /thumbnails/getting-started-with-bun.avif
+description: JavaScript と TypeScript のランタイム、パッケージマネージャー、テストランナーを 1 つにまとめた Bun を、TypeScript の直接実行、bun install と bun.lock、依存のスクリプトを止める仕組み、bun test、npm からの移行、Node と Bun のどちらで動いているのかの見分け方、npm・pnpm・Deno と並べて測った速さまで
+tags:
+  - bun
+  - javascript
+  - typescript
+  - cli
+  - devtools
+---
+
+## Bun とは
+
+[Bun](https://bun.com/) は、**JavaScript と TypeScript を動かすための道具をひとまとめにした、1 つの実行ファイル**です。もともとは Zig で書かれていましたが、2026 年 8 月の 1.4 で [Rust に書き直されました](https://bun.com/blog/bun-in-rust)。JavaScript エンジンは、書き直しの後も Safari と同じ JavaScriptCore です。なお、Bun は 2025 年 12 月に Anthropic に買収されています。これまで別々の道具が受け持っていた仕事を、`bun` という 1 つのコマンドで引き受けます。
+
+- **Node.js** — JavaScript を動かすランタイム
+- **npm / pnpm / yarn** — パッケージを入れる
+- **npx** — パッケージのコマンドを一度だけ動かす
+- **Jest / Vitest** — テストを走らせる
+- **tsx / ts-node** — TypeScript をそのまま動かす
+
+このブログ自体も、パッケージ管理とテストに Bun を使っています。この記事では、まず Bun の基本の使い方を実際に打って確かめます。次に、このブログで **Bun が実際にどこで動いていて、どこで動いていないのか** を調べます。最後に、npm、pnpm、Deno と並べて、インストールの速さを測ります。
+
+この記事は Bun 1.4.2、Windows 11 の PowerShell で確かめています。
+
+## Node.js まわりはどこが面倒だったか
+
+Node.js でプロジェクトを始めると、ランタイムのほかに、少なくとも次のことを決める必要があります。
+
+- **Node.js のバージョンを誰が入れて切り替えるか**。nvm、fnm、Volta、mise など、選択肢がいくつもあります
+- **パッケージマネージャーをどれにするか**。npm、pnpm、yarn でロックファイルの形式も、`node_modules` の作り方も違います
+- **テストランナーをどれにするか**。Jest にするか Vitest にするか。TypeScript を読ませるための設定も、それぞれに要ります
+- **TypeScript をどう動かすか**。tsc でビルドするか、tsx のような道具を挟むか
+
+TypeScript については、Node.js 自身も追いついてきています。Node.js 26 は、型の注釈が付いただけの `.ts` ファイルなら、そのまま実行できます（後で実際に見ます）。ただし、型を消すだけで済まない書き方は受け付けません。`enum` を使った 2 行のファイルで試します。
+
+```console
+❯ Get-Content enum.ts
+enum Level { Low, High }
+console.log(Level.High)
+❯ node enum.ts
+...
+SyntaxError [ERR_UNSUPPORTED_TYPESCRIPT_SYNTAX]: TypeScript enum is not supported in strip-only mode
+```
+
+Node.js がやっているのは「型を取り除いて JavaScript として読む」ことだけで、`enum` のように JavaScript のコードに変換しないといけない構文は扱えません。そこを補うには、今も別の道具が要ります。
+
+道具ごとに設定があり、組み合わせ方もプロジェクトごとに違う。Bun は、これを 1 つにまとめます。
+
+## インストール
+
+使っている OS で選んでください。
+
+<CodeTabs labels={["macOS / Linux", "Windows"]}>
+
+```bash
+curl -fsSL https://bun.com/install | bash
+```
+
+```powershell
+powershell -c "irm bun.sh/install.ps1|iex"
+```
+
+</CodeTabs>
+
+[mise](/ja/blog/getting-started-with-mise) を使っているなら、`mise use -g bun` でも入ります。このブログでは、リポジトリの `mise.toml` に `bun = "latest"` と書いて入れています。入ったかどうかは、バージョンを聞いて確かめます。
+
+```console
+❯ bun --version
+1.4.2
+```
+
+## TypeScript をそのまま動かす
+
+`bun init` で、新しいプロジェクトを作ります。`-y` は、質問に全部既定値で答えるという意味です。
+
+```console
+❯ bun init -y
+ + .gitignore
+ + index.ts
+ + tsconfig.json (for editor autocomplete)
+ + README.md
+
+To get started, run:
+
+    bun run index.ts
+
+bun install v1.4.2 (744846f84)
+Resolving dependencies
+Resolved, downloaded and extracted [10]
+
++ @types/bun@1.4.2
++ typescript@7.0.2
+
+6 packages installed [2.02s]
+Saved lockfile
+❯ Get-Content package.json
+{
+  "name": "hello",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^7"
+  }
+}
+```
+
+`tsconfig.json` に添えられた `(for editor autocomplete)` のとおり、ここで入る `typescript` パッケージは、エディターの補完と型チェックのためのものです。Bun が TypeScript を動かすのには使いません。
+
+型を付けた小さなファイルを書いて、`bun` に渡します。
+
+```console
+❯ Get-Content greet.ts
+type User = { name: string; langs: string[] }
+
+const user: User = { name: "Jam", langs: ["TypeScript", "Rust"] }
+console.log(`${user.name} writes ${user.langs.join(" and ")}`)
+console.log(`runtime: ${process.versions.bun ? "bun " + Bun.version : "node " + process.version}`)
+❯ bun greet.ts
+Jam writes TypeScript and Rust
+runtime: bun 1.4.2
+```
+
+ビルドも設定も無しで動きました。最後の行は、自分がどのランタイムの上で動いているかを表示しています。Bun の上では `process.versions.bun` があり、Node.js の上には無いので、後の節でもこの見分け方を使います。
+
+型の注釈だけのこのファイルなら、Node.js 26 でも動きます。
+
+```console
+❯ node greet.ts
+Jam writes TypeScript and Rust
+runtime: node v26.11.1
+```
+
+差が出るのは、Node.js が受け付けなかった `enum` です。Bun はそのまま動かします。
+
+```console
+❯ bun enum.ts
+1
+```
+
+`package.json` の `scripts` に書いたコマンドは、`bun run` で呼べます。`run` は省略できます。
+
+```console
+❯ bun run greet
+$ bun greet.ts
+Jam writes TypeScript and Rust
+runtime: bun 1.4.2
+❯ bun greet
+$ bun greet.ts
+Jam writes TypeScript and Rust
+runtime: bun 1.4.2
+```
+
+`$` で始まる行は、Bun が実際に実行したコマンドです。ただし、`run` を省略できないスクリプト名があります。これは後の罠で書きます。
+
+## パッケージを管理する
+
+### 依存を足す
+
+依存は `bun add` で足します。開発用の依存は `-d` を付けます。
+
+```console
+❯ bun add zod
+bun add v1.4.2 (744846f84)
+Resolving dependencies
+Resolved, downloaded and extracted [2]
+
+installed zod@4.6.5
+
+1 package installed [916.00ms]
+Saved lockfile
+❯ bun add -d @biomejs/biome
+bun add v1.4.2 (744846f84)
+Resolving dependencies
+Resolved, downloaded and extracted [18]
+
+installed @biomejs/biome@2.5.15 with binaries:
+ - biome
+
+2 packages installed [538.00ms]
+Saved lockfile
+```
+
+`package.json` には、`dependencies` と `devDependencies` に分かれて書き込まれます。
+
+```console
+❯ Get-Content package.json
+{
+  "name": "hello",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "devDependencies": {
+    "@biomejs/biome": "^2.5.15",
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^7"
+  },
+  "dependencies": {
+    "zod": "^4.6.5"
+  }
+}
+```
+
+`bun pm ls` で、入っているものを見られます。
+
+```console
+❯ bun pm ls
+C:\Users\Jam\bun-demo\hello node_modules (35 installed)
+├── @biomejs/biome@2.5.15
+├── @types/bun@1.4.2
+├── typescript@7.0.2
+└── zod@4.6.5
+```
+
+木に並ぶのは `package.json` に書かれた 4 つで、それに引きずられて入ったものを合わせると、`node_modules` には 35 個入っています。
+
+### bun.lock
+
+`Saved lockfile` のときに書かれているのが `bun.lock` です。入るパッケージの正確なバージョンと、パッケージごとの整合性ハッシュ（`sha512-` で始まる値）の記録です。頭の部分はこうなっています。
+
+```console
+❯ Get-Content bun.lock -TotalCount 22
+{
+  "lockfileVersion": 2,
+  "configVersion": 1,
+  "workspaces": {
+    "": {
+      "name": "hello",
+      "dependencies": {
+        "zod": "^4.6.5",
+      },
+      "devDependencies": {
+        "@biomejs/biome": "^2.5.15",
+        "@types/bun": "latest",
+      },
+      "peerDependencies": {
+        "typescript": "^7",
+      },
+    },
+  },
+  "packages": {
+    "@biomejs/biome": ["@biomejs/biome@2.5.15", "", { "optionalDependencies": { "@biomejs/cli-darwin-arm64": "2.5.15", ... } }, "sha512-WZTW4slm/..."],
+```
+
+テキストのファイルなので、Pull Request の差分で何が変わったのかを読めます。`@biomejs/biome` の項には、macOS、Linux、Windows 向けのバイナリのパッケージが並んでいます。ロックファイルはほかの OS の分までまとめて記録するので、Windows で作ったものを Linux の CI でそのまま使えます。
+
+`bun.lock` と `package.json` はリポジトリに入れます。CI では、ロックファイルと食い違っていたら止まる `bun install --frozen-lockfile` を使います。このブログの `Dockerfile` も、そう入れています。
+
+依存を外すのは `bun remove` です。`package.json` と `bun.lock` の両方から消えます。
+
+```console
+❯ bun remove zod
+bun remove v1.4.2 (744846f84)
+
+- zod
+1 package removed [38.00ms]
+Saved lockfile
+```
+
+### コマンドを一度だけ動かす bunx
+
+パッケージに入っているコマンドを、依存に足さずに一度だけ動かしたいときは `bunx` です。npm の `npx` にあたります。
+
+```console
+❯ bunx cowsay hello from bunx
+Resolving dependencies
+Resolved, downloaded and extracted [100]
+Saved lockfile
+ _________________
+< hello from bunx >
+ -----------------
+        \   ^__^
+         \  (oo)\_______
+            (__)\       )\/\
+                ||----w |
+                ||     ||
+```
+
+プロジェクトにすでに入っているコマンドなら、それが使われます。
+
+```console
+❯ bunx biome --version
+Version: 2.5.15
+```
+
+### 依存のスクリプトは既定では動かない
+
+npm のパッケージは、`postinstall` のような**ライフサイクルスクリプト**を持てます。インストールの途中で、パッケージの作者が書いた任意のコマンドが走る仕組みです。npm は、これを既定で実行します（後で実際に見ます）。乗っ取られたパッケージが依存のどこかに紛れ込んでいれば、インストールしただけで、そのコードが手元で走ります。
+
+Bun は、これを既定では実行しません。`postinstall` を持つ `core-js` を足してみます。
+
+```console
+❯ bun add core-js
+bun add v1.4.2 (744846f84)
+Resolving dependencies
+Resolved, downloaded and extracted [4]
+
+installed core-js@3.50.0
+
+1 package installed [25.54s]
+
+Blocked 1 postinstall. Run `bun pm untrusted` for details.
+Saved lockfile
+❯ bun pm untrusted
+bun pm untrusted v1.4.2 (744846f84)
+
+.\node_modules\core-js @3.50.0
+ » [postinstall]: node -e "try{require('./postinstall')}catch(e){}"
+
+These dependencies had their lifecycle scripts blocked during install.
+
+If you trust them and wish to run their scripts, use `bun pm trust`.
+```
+
+パッケージ自体は入り、`postinstall` だけが止められました。中身を見て、動かしてよいと判断したら `bun pm trust` で許します。
+
+```console
+❯ bun pm trust core-js
+bun pm trust v1.4.2 (744846f84)
+
+.\node_modules\core-js @3.50.0
+ ✓ [postinstall]: node -e "try{require('./postinstall')}catch(e){}"
+
+ 1 script ran across 1 package [407.00ms]
+❯ Select-String trustedDependencies -Context 0,2 package.json
+
+> package.json:21:  "trustedDependencies": [
+  package.json:22:    "core-js"
+  package.json:23:  ]
+```
+
+止めていたスクリプトがその場で実行され、`package.json` の `trustedDependencies` に名前が書き込まれました。次からは、誰の手元でもこのパッケージのスクリプトが動きます。
+
+ただし、ネイティブのバイナリを扱う人気のパッケージまで毎回止まると不便なので、Bun には[既定で信頼するパッケージの一覧](https://bun.com/docs/pm/lifecycle)があります。esbuild はそこに入っています。ここには罠が 1 つあり、後で書きます。
+
+## テストを書いて走らせる
+
+`bun test` は、Bun に組み込まれたテストランナーです。Jest と同じ書き方ができ、TypeScript もそのまま読みます。
+
+記事のタイトルを URL 用の文字列に変える関数を、わざと不完全に書きます。
+
+```console
+❯ Get-Content slugify.ts
+export function slugify(title: string): string {
+  return title.toLowerCase().trim().replace(/\s+/g, "-")
+}
+❯ Get-Content slugify.test.ts
+import { describe, expect, test } from "bun:test"
+import { slugify } from "./slugify"
+
+describe("slugify", () => {
+  test("joins words with hyphens", () => {
+    expect(slugify("Getting Started with Bun")).toBe("getting-started-with-bun")
+  })
+
+  test("drops punctuation", () => {
+    expect(slugify("Hello, Bun!")).toBe("hello-bun")
+  })
+})
+❯ bun test
+bun test v1.4.2 (744846f84)
+
+slugify.test.ts:
+ 5 |   test("joins words with hyphens", () => {
+ 6 |     expect(slugify("Getting Started with Bun")).toBe("getting-started-with-bun")
+ 7 |   })
+ 8 |
+ 9 |   test("drops punctuation", () => {
+10 |     expect(slugify("Hello, Bun!")).toBe("hello-bun")
+                                        ^
+error: expect(received).toBe(expected)
+
+Expected: "hello-bun"
+Received: "hello,-bun!"
+
+      at <anonymous> (C:\Users\Jam\bun-demo\hello\slugify.test.ts:10:36)
+(fail) slugify > drops punctuation [0.99ms]
+
+ 1 pass
+ 1 fail
+ 2 expect() calls
+Ran 2 tests across 1 file. [24.00ms]
+```
+
+`bun test` は、`.test.ts` や `.spec.ts` で終わるファイルを探して実行します。記号を落とし忘れているのが、期待値と実際の値の並びで分かります。直して走らせ直します。
+
+```console
+❯ Get-Content slugify.ts
+export function slugify(title: string): string {
+  return title
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}\s-]/gu, "")
+    .trim()
+    .replace(/\s+/g, "-")
+}
+❯ bun test
+bun test v1.4.2 (744846f84)
+
+ 2 pass
+ 0 fail
+ 2 expect() calls
+Ran 2 tests across 1 file. [16.00ms]
+```
+
+### このブログのテストの設定
+
+規模が大きくなると、設定が要ります。`bun test` の設定は `bunfig.toml` の `[test]` に書きます。このブログの `bunfig.toml` は、この 4 行です。
+
+```console
+❯ Get-Content bunfig.toml
+[test]
+root = "./test/unit"
+randomize = true
+preload = ["./test/unit/happydom.ts", "./test/unit/setup-next-navigation-mock.ts"]
+```
+
+- `root` — テストを探すディレクトリ。E2E テストのファイルを拾わないように、単体テストのディレクトリに絞っています
+- `randomize` — 実行する順番を毎回変えます。前のテストが残した状態に頼っているテストがあれば、それが見つかります
+- `preload` — どのテストよりも先に読み込むファイルです。1 つ目は [happy-dom](https://github.com/capricorn86/happy-dom) を登録して、React のコンポーネントを描けるように `document` や `window` を用意します。2 つ目は、Next.js の `usePathname` などを、App Router の外でも動く偽物に差し替えます
+
+`package.json` の `test:unit` は、これに `--isolate` を付けて走らせます。`--isolate` は、ヘルプによると、テストのファイルごとに新しいグローバルオブジェクトで実行するオプションです。あるファイルで差し替えたモジュールが、次のファイルに漏れなくなります。
+
+```console
+❯ bun test:unit
+...
+ --seed=1780192552
+ 841 pass
+ 0 fail
+ 39881 expect() calls
+Ran 841 tests across 108 files. [68.96s]
+```
+
+`--seed` は、この回の順番を決めた乱数の種です。特定の順番でだけ落ちるテストが見つかったら、`bun test --seed=1780192552` で同じ順番を再現できます。
+
+## 既存の Node.js プロジェクトから移る
+
+Bun は、`package.json` と `node_modules` という Node.js のやり方をそのまま使います。そのため、全部を一度に移す必要はなく、段階を踏めます。
+
+### 1 段階目: パッケージマネージャーだけ替える
+
+npm で `dayjs` と `zod` を入れたプロジェクトで、`bun install` を打ちます。
+
+```console
+❯ ls
+node_modules
+date.test.js
+package-lock.json
+package.json
+❯ bun install
+bun install v1.4.2 (744846f84)
+
+Checked 2 installs across 3 packages (no changes) [120.00ms]
+[1.69ms] migrated lockfile from package-lock.json
+Saved lockfile
+❯ ls
+node_modules
+bun.lock
+date.test.js
+package-lock.json
+package.json
+```
+
+`migrated lockfile from package-lock.json` のとおり、Bun は `package-lock.json` を読んで、同じバージョンのまま `bun.lock` を作りました。`(no changes)` なので、入っているものは何も変わっていません。移った後は、`package-lock.json` を消して、`bun.lock` だけをリポジトリに入れます。
+
+アプリは、これまでどおり Node.js で動かして構いません。パッケージを入れる道具が替わっただけです。
+
+### 2 段階目: テストを移す
+
+`bun test` は、Jest の `test` や `expect` を、`import` しなくても使えます。npm のプロジェクトにあった Jest 向けのテストを、そのまま走らせます。
+
+```console
+❯ Get-Content date.test.js
+const dayjs = require("dayjs")
+
+test("adds a day", () => {
+  expect(dayjs("2026-10-08").add(1, "day").format("YYYY-MM-DD")).toBe("2026-10-09")
+})
+❯ bun test
+bun test v1.4.2 (744846f84)
+
+ 1 pass
+ 0 fail
+ 1 expect() calls
+Ran 1 test across 1 file. [214.00ms]
+```
+
+Jest の設定や、TypeScript を読ませるための変換の設定が要らなくなります。
+
+### 3 段階目: ランタイムも替えるか決める
+
+最後が、アプリそのものを Bun の上で動かすかどうかです。Bun は Node.js の API の大半を実装していますが、すべてではありません。どこまで対応しているかは、[Node.js との互換性のページ](https://bun.com/docs/runtime/nodejs-compat)にモジュールごとにまとまっています。
+
+ここで、このブログが実際にどうしているのかを見ます。
+
+## Bun はどこで動いているのか
+
+このブログの `package.json` の `dev` は `next dev`、`build` は `next build` です。それを `bun dev` や `bun run build` で呼んでいます。では、Next.js は Bun の上で動いているのでしょうか。
+
+### bun run は node を差し替えることがある
+
+確かめるために、自分がどちらのランタイムで動いているかを表示するだけの `who.js` と、それを `node` で呼ぶスクリプトを用意します。
+
+```console
+❯ Get-Content who.js
+console.log(process.versions.bun ? `bun ${process.versions.bun}` : `node ${process.version}`)
+❯ Get-Content package.json
+{ "name": "who", "scripts": { "who": "node who.js" } }
+```
+
+まず、PATH に Node.js がある状態です。
+
+```console
+❯ (Get-Command node).Source
+C:\Users\Jam\AppData\Local\mise\installs\node\26.11.1\node.exe
+❯ bun run who
+$ node who.js
+node v26.11.1
+❯ bun run --bun who
+$ node who.js
+bun 1.4.2
+```
+
+`bun run` で呼んでも、スクリプトに `node` と書いてあれば、本物の Node.js が動きます。`--bun` を付けたときだけ、同じ `node who.js` が Bun で動きました。
+
+次に、PATH から Node.js を外します。
+
+```console
+❯ Get-Command node
+Get-Command: 用語 'node' は、コマンドレット、関数、スクリプト ファイル、または実行可能プログラムの名前として認識されません。
+名前のスペルを確認するか、パスが含まれている場合はパスが正しいことを確認してから、もう一度お試しください。
+❯ bun run who
+$ node who.js
+bun 1.4.2
+❯ bun run where
+$ where node
+C:\Users\Jam\AppData\Local\Temp\bun-node-744846f84\node.exe
+```
+
+`node` が無いのに、スクリプトは動きました。`where node` で確かめると、一時フォルダに `node.exe` が置かれています。**Node.js が見つからないとき、`bun run` は自分自身を `node` という名前で PATH に差し込みます。** `node` で動くつもりで書かれたコマンドも、そのまま Bun で動くようにするための仕組みです。
+
+つまり、`bun run` で何が動くかは、PATH に Node.js があるかどうかで変わります。
+
+### 手元の開発サーバーは Node.js で動いていた
+
+このブログの開発サーバーは、mise から `bun dev` で起動しています。動いているプロセスを、親子関係と一緒に見ます。
+
+```console
+❯ Get-CimInstance Win32_Process | Where-Object { $_.Name -eq "bun.exe" -or $_.CommandLine -match "\\next" } | Select-Object ProcessId, ParentProcessId, ExecutablePath
+
+ProcessId ParentProcessId ExecutablePath
+--------- --------------- --------------
+    18864           11352 C:\Users\Jam\AppData\Local\mise\installs\bun\1.4.2\bin\bun.exe
+     7292           18864 C:\Users\Jam\Documents\blog\node_modules\.bin\next.exe
+     6924            7292 C:\Users\Jam\AppData\Local\mise\installs\node\26.11.1\node.exe
+    21972            6924 C:\Users\Jam\AppData\Local\mise\installs\node\26.11.1\node.exe
+```
+
+`bun.exe` が `next.exe` を起動し、その下で Next.js を動かしているのは **本物の Node.js 26.11.1** でした。リポジトリの `mise.toml` には Node.js を書いていませんが、このマシンの mise のグローバル設定に Node.js が入っていて、それが PATH に乗っています。`bun dev` の仕事は、スクリプトを呼ぶところまでです。
+
+### Docker のビルドでは Bun で動いていた
+
+このブログは Docker イメージにして配っています。その `Dockerfile` は、ビルドと実行でイメージを分けています。
+
+```dockerfile
+FROM oven/bun:1.4.2 AS builder
+...
+RUN bun run build
+
+FROM gcr.io/distroless/nodejs26-debian13:nonroot
+...
+ENTRYPOINT ["/nodejs/bin/node", "server.js"]
+```
+
+ビルドに使う `oven/bun` のイメージに、Node.js は入っているのでしょうか。[wslc](/ja/blog/wslc) で中を見ます。
+
+```console
+❯ wslc run --rm oven/bun:1.4.2 which node
+/usr/local/bun-node-fallback-bin/node
+❯ wslc run --rm oven/bun:1.4.2 readlink -f /usr/local/bun-node-fallback-bin/node
+/usr/local/bin/bun
+❯ wslc run --rm oven/bun:1.4.2 node -p process.versions.bun
+1.4.2
+❯ wslc run --rm oven/bun:1.4.2 node -p process.version
+v26.3.0
+```
+
+`node` はありますが、その正体は `bun` へのリンクです。`bun-node-fallback-bin` という名前のとおり、さっきの差し替えを、イメージが最初から用意しています。`process.version` が `v26.3.0` を返すのは、Bun が「Node.js のこのバージョン相当」と名乗っているからです。**`next build` は、Docker の中では Bun の上で動いています。**
+
+### まとめると
+
+| 場所 | `next` を動かしているもの |
+| --- | --- |
+| 手元の `bun dev` | Node.js 26.11.1（PATH にあるから） |
+| Docker のビルド（`oven/bun:1.4.2`） | Bun 1.4.2（`node` が `bun` へのリンク） |
+| 本番（distroless） | Node.js（`ENTRYPOINT` で直接呼ぶ） |
+
+同じ `bun run build` でも、手元と Docker の中では別のランタイムが Next.js を動かしています。このブログでは、手元のビルドも Docker のビルドも通っているので困ってはいません。ただ、「Bun を使っている」と言ったとき、どの層の話なのかは場所によって違います。
+
+本番を Node.js のままにしているのは、Next.js の `standalone` 出力が Node.js で `server.js` を動かす前提だからです。[Next.js の文書](https://nextjs.org/docs/app/api-reference/config/next-config-js/output)も、`node .next/standalone/server.js` で起動する手順で説明しています。パッケージを入れる速さとテストの手軽さは Bun から受け取り、本番で動かすのは Next.js が想定している Node.js に任せる。Bun を部分的に使う、という選び方もできます。
+
+![このブログでは手元の開発は Node.js、oven/bun の Docker ビルドは Bun、本番の distroless は Node.js で実行する。起動コマンドと実際のランタイムは区別する](/bun/runtimes.avif)
+
+## どれだけ速いのか
+
+Bun の文書は、`npm install` を `bun install` に替えると、インストールが[最大で 25 倍速くなる](https://bun.com/docs/pm/cli/install)とうたっています。このマシンで、npm、pnpm、Bun、Deno に同じプロジェクトを入れさせて測りました。
+
+題材は、`hono`、`react`、`react-dom`、`zod`、`typescript`、`vite` の 6 つを依存に持つ、小さな新規プロジェクトです。ロックファイルはあらかじめ作っておき、毎回 `node_modules` を消してから入れ直します。キャッシュを空にした場合と、一度入れてキャッシュが残っている場合の 2 通りです。ツールごとに 5 回ずつ測った中央値で、1 回ごとに CPU の使用率が 20% を切ったのを確かめてから測っています。
+
+| | キャッシュ無し | キャッシュあり |
+| --- | --- | --- |
+| npm 11.20.0 | 10.2 秒 | 9.2 秒 |
+| pnpm 12.10.1 | 14.1 秒 | 3.8 秒 |
+| Bun 1.4.2 | 9.9 秒 | 3.2 秒 |
+| Deno 2.9.7 | 14.6 秒 | 3.8 秒 |
+
+キャッシュ無しでは、4 つとも 10〜15 秒に収まりました。この回線では、ダウンロードの時間がほとんどを占めていて、道具の差はほぼ出ません。
+
+キャッシュありでは、Bun が一番速く、npm のおよそ 2.9 倍でした。ただ、pnpm と Deno との差は 5 回のばらつき（pnpm は 2.6〜4.7 秒、Deno は 2.7〜4.5 秒）の中に収まっていて、はっきり差が付いたのは npm だけです。
+
+25 倍には、遠く及びませんでした。Windows で、小さなプロジェクトで、この回線で測ると、こうなったということです。Bun の速さが一番効くのは、ロックファイルとキャッシュがそろった状態で何度も入れ直す場面、たとえば CI です。その場面でも、比べる相手が pnpm なら差は小さくなります。
+
+## Deno や pnpm とは何が違うのか
+
+### Deno も TypeScript をそのまま動かす
+
+[Deno](https://deno.com/) は、Node.js を作った Ryan Dahl が始めたランタイムで、Bun と同じく、TypeScript の実行、パッケージ管理、テスト、フォーマッターまでを 1 つにまとめています。
+
+```console
+❯ deno --version
+deno 2.9.7 (stable, release, x86_64-pc-windows-msvc)
+v8 15.0.245.2-rusty
+typescript 6.0.3
+❯ deno enum.ts
+1
+```
+
+`enum` もそのまま動きます。Bun との大きな違いは、**権限**です。npm のレジストリから Bun の最新版の番号を取ってくるだけのスクリプトを、Deno と Bun で動かします。
+
+```console
+❯ Get-Content latest.ts
+const res = await fetch("https://registry.npmjs.org/bun/latest")
+console.log((await res.json()).version)
+❯ deno latest.ts
+error: Uncaught (in promise) NotCapable: Requires net access to "registry.npmjs.org:443", run again with the --allow-net flag
+...
+❯ deno --allow-net=registry.npmjs.org latest.ts
+1.4.2
+❯ bun latest.ts
+1.4.2
+```
+
+Deno は、ネットワークもファイルも環境変数も、許可したものにしか触らせません。Bun は Node.js と同じく、何も聞かずにすべてに触れます。
+
+Deno も、`package.json` のあるプロジェクトで `deno install` を打てば、npm のパッケージを `node_modules` に入れます。上の計測で Deno が測れているのはそのためです。
+
+### pnpm はパッケージマネージャーだけ
+
+pnpm は、npm を置き換えるパッケージマネージャーで、ランタイムでもテストランナーでもありません。キャッシュありの計測では Bun との差が小さかったので、「インストールを速くしたい」だけなら pnpm でも十分です。なお、[pnpm 12 のリリース記事](https://pnpm.io/blog/releases/12.0)によると、pnpm 12 は pnpm を Rust で書き直したものです。このマシンの pnpm 12.10.1 では、`--cache-dir` のように、以前のフラグが無くなっているものがありました。
+
+### 依存のスクリプトの扱い
+
+`postinstall` を持つ `core-js` を、pnpm と Deno でも入れてみます。
+
+```console
+❯ pnpm install
+...
+dependencies:
++ core-js 3.50.0
+
+Error: ERR_PNPM_IGNORED_BUILDS
+
+  × installing dependencies
+  ╰─▶ Ignored build scripts: core-js@3.50.0
+  help: Run "pnpm approve-builds" to pick which dependencies should be allowed
+        to run scripts.
+
+❯ deno install
+...
+Dependencies:
++ npm:core-js 3.50.0
+
+╭ Warning
+│
+│  Ignored build scripts for packages:
+│  npm:core-js@3.50.0
+│
+│  Run "deno approve-scripts" to run build scripts.
+╰─
+```
+
+npm 11.20.0 でも入れてみます。`--foreground-scripts` は、依存のスクリプトの出力を画面に出すオプションです。
+
+```console
+❯ npm install --foreground-scripts
+
+> core-js@3.50.0 postinstall
+> node -e "try{require('./postinstall')}catch(e){}"
+
+Thank you for using core-js ( https://github.com/zloirock/core-js ) for polyfilling JavaScript standard library!
+...
+added 1 package, and audited 2 packages in 37s
+...
+npm warn install-scripts 1 package has install scripts not yet covered by allowScripts:
+npm warn install-scripts   core-js@3.50.0 (postinstall: node -e "try{require('./postinstall')}catch(e){}")
+npm warn install-scripts
+npm warn install-scripts Run `npm install-scripts ls` to review, or `npm install-scripts approve <pkg>` to allow.
+```
+
+npm だけは、`postinstall` を実行しました。core-js の挨拶文が出ているのが、スクリプトが走った証拠です。そのうえで、`allowScripts` で許可されていないスクリプトだったと警告し、`npm install-scripts approve` で許可するよう案内しています。npm にも許可の仕組みはできていますが、11.20.0 の既定は「実行してから知らせる」です。
+
+Bun、Deno、pnpm の 3 つは、スクリプトを止めました。違うのは止めた後で、Bun と Deno は止めたことを知らせて正常に終わり、pnpm は**インストール自体を失敗にします**（終了コード 1）。パッケージは入っているのに、CI はここで止まります。上の計測でも、esbuild のスクリプトを許可する `--allow-build=esbuild` を付けるまで、pnpm だけが失敗していました。
+
+### どれを選ぶか
+
+| | Bun | Deno | pnpm |
+| --- | --- | --- | --- |
+| 何をするか | ランタイム、パッケージ管理、テスト | ランタイム、パッケージ管理、テスト、フォーマット | パッケージ管理 |
+| TypeScript の直接実行 | できる | できる | —（Node.js に任せる） |
+| 権限の制限 | 無い | 既定ですべて拒否 | — |
+| 依存のスクリプト | 既定の一覧以外は止める | 止める | 止めて、インストールを失敗にする |
+| Node.js のプロジェクトへの入りやすさ | `package.json` をそのまま使う | `package.json` も読む | `package.json` をそのまま使う |
+
+- **Node.js のプロジェクトで、インストールとテストを手軽に速くしたい** — Bun。このブログのように、本番は Node.js のままでも使えます
+- **書いたスクリプトに、何を触らせるかを絞りたい** — Deno
+- **ランタイムは Node.js のまま、パッケージマネージャーだけ替えたい** — pnpm でも Bun でもよい
+
+## 実際に踏んだ罠
+
+### bun test は scripts の test を呼ばない
+
+`package.json` の `scripts` に `test` を書いても、`bun test` はそれを呼びません。テストのファイルが無いディレクトリで試します。
+
+```console
+❯ Get-Content package.json
+{ "name": "who", "scripts": { "test": "echo this is the test script" } }
+❯ bun run test
+$ echo this is the test script
+this is the test script
+❯ bun test
+bun test v1.4.2 (744846f84)
+error: 0 test files matching **{.test,.spec,_test_,_spec_}.{js,ts,jsx,tsx} in --cwd="C:\Users\Jam\bun-demo\who"
+```
+
+`bun test` は Bun に組み込まれたテストランナーの名前なので、`scripts` より先にそちらが動きます。`scripts` の `test` を呼ぶには、`run` を省略せずに `bun run test` と打ちます。このブログのスクリプトは `test` ではなく `test:unit` と `test:e2e` なので、この衝突は起きません。
+
+### trustedDependencies を書くと、既定の一覧が消える
+
+`bun pm trust core-js` で `trustedDependencies` に `core-js` が書かれた後、同じプロジェクトに esbuild を足しました。
+
+```console
+❯ bun add esbuild
+bun add v1.4.2 (744846f84)
+Resolving dependencies
+Resolved, downloaded and extracted [54]
+
+installed esbuild@0.28.2 with binaries:
+ - esbuild
+
+2 packages installed [1032.00ms]
+
+Blocked 1 postinstall. Run `bun pm untrusted` for details.
+Saved lockfile
+❯ bun pm untrusted
+bun pm untrusted v1.4.2 (744846f84)
+
+.\node_modules\esbuild @0.28.2
+ » [postinstall]: node install.js
+
+These dependencies had their lifecycle scripts blocked during install.
+
+If you trust them and wish to run their scripts, use `bun pm trust`.
+```
+
+既定の一覧に入っているはずの esbuild の `postinstall` が止まりました。[Bun の文書](https://bun.com/docs/pm/lifecycle)によると、`trustedDependencies` を書くと、既定の一覧に**付け足される**のではなく、**置き換えられます**。1 つ許したとたん、それまで黙って許されていたものが止まり始めます。
+
+esbuild の場合は、このマシンでは止まっても動きました。
+
+```console
+❯ bunx esbuild --version
+0.28.2
+```
+
+ただ、`postinstall` でバイナリを用意するパッケージは、止まると動かないことがあります。`trustedDependencies` を書いたら、`bun pm untrusted` を一度見て、止まったものが無いか確かめてください。
+
+![trustedDependencies 未指定時は既定の信頼リストを使うが、core-js を明示するとリストが置き換わり esbuild の postinstall は止まる。パッケージのインストールとスクリプトの実行は別](/bun/trusted-dependencies.avif)
+
+## よく使うコマンド
+
+| コマンド | 何をするか | 置き換えるもの |
+| --- | --- | --- |
+| `bun init` | プロジェクトを作る | npm init |
+| `bun FILE.ts` | TypeScript をそのまま動かす | tsx / ts-node |
+| `bun run SCRIPT` / `bun SCRIPT` | `scripts` を実行する | npm run |
+| `bun run --bun SCRIPT` | `node` も Bun で動かす | — |
+| `bun install` | `package.json` どおりに入れる | npm install |
+| `bun install --frozen-lockfile` | ロックファイルと食い違ったら止める | npm ci |
+| `bun add PKG` / `bun add -d PKG` | 依存を足す / 開発用の依存を足す | npm install PKG |
+| `bun remove PKG` | 依存を外す | npm uninstall |
+| `bun pm ls` | 入っているものを見る | npm ls |
+| `bun pm untrusted` / `bun pm trust PKG` | 止めたスクリプトを見る / 許す | — |
+| `bunx CMD` | コマンドを一度だけ動かす | npx |
+| `bun test` | テストを走らせる | Jest / Vitest |
+
+## まとめ
+
+- Bun は、ランタイム、パッケージマネージャー、テストランナーを 1 つにまとめた、JavaScript と TypeScript の道具
+- TypeScript は設定無しでそのまま動く。Node.js 26 が受け付けない `enum` も動く
+- `bun add` と `bun.lock` でパッケージを管理する。ロックファイルはテキストなので、差分が読める
+- 依存の `postinstall` は既定では動かない。許すのは `bun pm trust`。ただし `trustedDependencies` を書くと、既定で信頼する一覧が消える
+- `bun test` は Jest と同じ書き方ができる。設定は `bunfig.toml` の `[test]`
+- npm のプロジェクトは、`bun install` で `package-lock.json` から移れる。テスト、ランタイムと段階を踏める
+- `bun run` は、PATH に Node.js があればそれを使い、無ければ自分を `node` として差し込む。このブログでは、手元の開発は Node.js、Docker のビルドは Bun、本番は Node.js で動いていた
+- インストールの速さは、キャッシュありで npm のおよそ 2.9 倍。pnpm と Deno との差は、ばらつきの範囲だった
