@@ -115,7 +115,7 @@ Python 3.11.17
 Python 3.14.7
 ```
 
-`.python-version` に書いた 3.11 は、`uv run` を通したときだけ効きます。素の `python` は 3.14 のままです。PATH を書き換えて切り替えるのではなく、uv が打たれるたびに `.python-version` を読んで選んでいます。
+`.python-version` に書いた 3.11 は、`uv run` や `uv venv` のような、uv のコマンドを通したときだけ効きます。素の `python` は 3.14 のままです。PATH を書き換えて切り替えるのではなく、uv が打たれるたびに `.python-version` を読んで選んでいます。
 
 ## プロジェクトを作って動かす
 
@@ -233,7 +233,7 @@ source = { registry = "https://pypi.org/simple" }
 ...
 ```
 
-`charset-normalizer` の項を見ると、wheel の一覧に Android、iOS、macOS、Linux 向けのものまで並んでいます。uv のロックファイルは、自分の OS の分だけでなく、**どの OS で入れても同じ結果になるように**全部を記録します。Windows で作ったロックファイルを、Linux の CI や同僚の Mac でそのまま使えます。
+`charset-normalizer` の項を見ると、wheel の一覧に Android、iOS、macOS、Linux 向けのものまで並んでいます。uv のロックファイルは、自分の OS の分だけでなく、**ほかの OS で入れるときの分まで**まとめて解決して記録します。Windows で作ったロックファイルを、Linux の CI や同僚の Mac でそのまま使えます。入る wheel は OS ごとに違い、特定の OS でだけ入る依存もありますが、どれもこのロックファイルに書かれたものから選ばれます。
 
 `uv.lock` と `pyproject.toml` はリポジトリに入れます。`.venv` は入れません。`uv init` が作った `.gitignore` に、最初から `.venv` が書かれています。
 
@@ -387,7 +387,7 @@ Installed 9 packages in 1.58s
  + urllib3==2.8.0
 ```
 
-`uv venv` は有効化の方法を案内しますが、有効にしなくても構いません。`uv pip` は、今いるディレクトリの `.venv` を見つけて、そこに入れます。
+`uv venv` は有効化の方法を案内しますが、有効にしなくても構いません。`uv pip` は、今いるディレクトリの `.venv` を見つけて、そこに入れます。ただし、別の仮想環境を有効にしているときは、そちらに入ります。
 
 バージョンを固定したければ、`uv pip compile` が pip-tools の代わりになります。
 
@@ -457,9 +457,9 @@ uv は「pip より 10〜100 倍速い」とうたっています。このマシ
 
 Python の環境管理といえば、Anaconda を思い浮かべる人も多いはずです。uv と Anaconda（conda）は、似ているようで解いている問題が違います。
 
-### uv は PyPI の世界
+### uv は Python のパッケージの世界
 
-uv が扱うのは、[PyPI](https://pypi.org/) に置かれた Python のパッケージです。NumPy、pandas、PyTorch のように、wheel（ビルド済みの配布物）が揃っているものなら何の問題もありません。
+uv が扱うのは、Python のパッケージです。普段は [PyPI](https://pypi.org/) から取りますが、社内のパッケージインデックスや、Git のリポジトリ、手元のディレクトリからも入れられます。どこから取るにしても、中身は Python のパッケージの形式（wheel やソース配布物）です。NumPy、pandas、PyTorch のように、wheel（ビルド済みの配布物）が揃っているものなら何の問題もありません。
 
 困るのは、Python のパッケージの裏にある C や C++ のライブラリが要るときです。地理情報のライブラリ GDAL で試します。このマシンの Python 3.14 と Windows に合う wheel が PyPI に無いので、uv はソースからビルドしようとします。
 
@@ -529,13 +529,13 @@ requests = ">=2.34.2, <3"
 
 Anaconda には、もう 1 つ気にすることがあります。[Anaconda の利用規約](https://www.anaconda.com/legal/terms/terms-of-service)（2025 年 7 月 15 日付）では、従業員と契約者が合わせて 200 人を超える営利組織が使う場合、有償のプランが要ります。規約は、repo.anaconda.com をはじめ、Anaconda が管理・提供するリポジトリからパッケージを取ることを対象に挙げています。conda-forge という名前は、規約には出てきません。
 
-ただし、conda-forge のパッケージ自体も、Anaconda が運営する conda.anaconda.org から配られています。上の pixi の `pixi.lock` を見ると、conda のパッケージの URL はすべて conda.anaconda.org でした。uv がパッケージを取りに行くのは、PyPI（pypi.org と files.pythonhosted.org）だけです。会社で conda 系を使うなら、どのホストから取っているのかを確かめ、規約が自分の組織に当たるのかを確認してください。
+ただし、conda-forge のパッケージ自体も、Anaconda が運営する conda.anaconda.org から配られています。上の pixi の `pixi.lock` を見ると、conda のパッケージの URL はすべて conda.anaconda.org でした。一方、この記事の uv の例は、パッケージをすべて PyPI（pypi.org と files.pythonhosted.org）から取っていました。会社で conda 系を使うなら、どのホストから取っているのかを確かめ、規約が自分の組織に当たるのかを確認してください。
 
 ### どれを選ぶか
 
 | | uv | pixi | Anaconda |
 | --- | --- | --- | --- |
-| パッケージの出どころ | PyPI | conda-forge と PyPI | Anaconda のリポジトリ |
+| パッケージの出どころ | PyPI などの Python のパッケージ | conda-forge と PyPI | Anaconda のリポジトリ |
 | C/C++ のライブラリやコマンド | 入らない | 入る | 入る |
 | Python 本体 | 入れられる | 入れられる | 入れられる |
 | ライセンス・規約 | MIT または Apache-2.0 | BSD-3-Clause | 200 人を超える営利組織は有償 |
@@ -603,9 +603,9 @@ Windows には、パスの長さを 260 文字までとする古い制限があ�
 - uv は、pip、venv、pyenv、pip-tools、pipx、Poetry の仕事を 1 つにまとめた、Python のパッケージとプロジェクトの管理ツール
 - `uv python install` で Python 本体が入る。ビルド済みの CPython なので、コンパイラは要らない
 - `uv init`、`uv add`、`uv run` で回す。仮想環境の作成も有効化も、`uv run` が引き受ける
-- `pyproject.toml` には自分で選んだ依存だけが書かれ、`uv.lock` がどの OS でも同じ結果になる全部を記録する。`git clone` の後は `uv sync` だけ
+- `pyproject.toml` には自分で選んだ依存だけが書かれ、`uv.lock` がほかの OS の分までまとめて解決して記録する。`git clone` の後は `uv sync` だけ
 - 0.12 から `uv init` の既定は `src` 配置のパッケージ。`main.py` 1 つの構成は `--no-package`
 - PEP 723 でスクリプトに依存を書けば、1 ファイルで配れる。ツールは `uvx` と `uv tool install`
 - `requirements.txt` のプロジェクトは、`uv pip` でそのまま速くしてから、`uv add -r` でプロジェクトに移せる
 - `requests` を入れる時間は、キャッシュ無しで約 5.6 倍、キャッシュありで約 17 倍速かった
-- uv が扱うパッケージは PyPI のものだけ。C/C++ のライブラリまで要るなら pixi（conda-forge）。Anaconda の規約では、200 人を超える営利組織は有償
+- uv が扱うのは、PyPI などから取る Python のパッケージだけ。C/C++ のライブラリまで要るなら pixi（conda-forge）。Anaconda の規約では、200 人を超える営利組織は有償

@@ -136,7 +136,8 @@ Python 3.11.17
 Python 3.14.7
 ```
 
-The 3.11 in `.python-version` applies only through `uv run`; plain `python` stays at 3.14. Nothing
+The 3.11 in `.python-version` applies only through uv's own commands, such as `uv run` and
+`uv venv`; plain `python` stays at 3.14. Nothing
 rewrites PATH to switch versions: uv reads `.python-version` each time it is invoked and picks from
 that.
 
@@ -267,9 +268,10 @@ source = { registry = "https://pypi.org/simple" }
 ```
 
 The entry for `charset-normalizer` lists wheels for Android, iOS, macOS and Linux as well. uv's lock
-file does not record just your own OS; it records everything **so that installing on any OS gives
-the same result**. A lock file made on Windows works unchanged on a Linux CI runner or a
-colleague's Mac.
+file does not record just your own OS; it **resolves for the other operating systems too** and
+records all of it. A lock file made on Windows works unchanged on a Linux CI runner or a colleague's
+Mac. The wheels that go in differ by OS, and some dependencies apply to one OS only, but each comes
+from what this lock file lists.
 
 Commit `uv.lock` and `pyproject.toml`; do not commit `.venv`. The `.gitignore` that `uv init` wrote
 already lists `.venv`.
@@ -433,7 +435,8 @@ Installed 9 packages in 1.58s
 ```
 
 `uv venv` tells you how to activate, but there is no need to. `uv pip` finds the `.venv` in the
-current directory and installs into it.
+current directory and installs into it. If a different virtual environment is active, though, it
+installs into that one instead.
 
 To pin the versions, `uv pip compile` stands in for pip-tools.
 
@@ -513,10 +516,13 @@ rounds, so the numbers for that set are left out.
 Plenty of people think of Anaconda when Python environments come up. uv and Anaconda (conda) look
 alike but solve different problems.
 
-### uv lives in the PyPI world
+### uv lives in the world of Python packages
 
-What uv handles is Python packages on [PyPI](https://pypi.org/). For anything with a full set of
-wheels (prebuilt distributions), such as NumPy, pandas or PyTorch, there is no problem at all.
+What uv handles is Python packages. It normally takes them from [PyPI](https://pypi.org/), but it
+can also install from a private package index, a Git repository or a local directory. Wherever they
+come from, they are in Python's package formats (wheels and source distributions). For anything
+with a full set of wheels (prebuilt distributions), such as NumPy, pandas or PyTorch, there is no
+problem at all.
 
 The trouble starts when a Python package needs a C or C++ library behind it. Try GDAL, the
 geospatial library. PyPI has no wheel for this machine's Python 3.14 on Windows, so uv tries to
@@ -600,15 +606,16 @@ needs a paid plan. The terms list fetching packages from repo.anaconda.com and o
 Anaconda maintains or provides. conda-forge is not named in them.
 
 conda-forge packages themselves, though, are also served from conda.anaconda.org, which Anaconda
-runs. In the `pixi.lock` from the pixi project above, every conda package URL points there. For
-packages, uv goes only to PyPI (pypi.org and files.pythonhosted.org). If you use conda-based tools
+runs. In the `pixi.lock` from the pixi project above, every conda package URL points there. The uv
+examples in this post, by contrast, took every package from PyPI (pypi.org and
+files.pythonhosted.org). If you use conda-based tools
 at work, check which hosts they fetch from and whether the terms apply to your organisation.
 
 ### Which to choose
 
 | | uv | pixi | Anaconda |
 | --- | --- | --- | --- |
-| Where packages come from | PyPI | conda-forge and PyPI | Anaconda's repositories |
+| Where packages come from | Python packages, from PyPI and the like | conda-forge and PyPI | Anaconda's repositories |
 | C/C++ libraries and tools | No | Yes | Yes |
 | Python itself | Yes | Yes | Yes |
 | Licence / terms | MIT or Apache-2.0 | BSD-3-Clause | Paid for for-profits over 200 people |
@@ -689,8 +696,8 @@ all 99 packages. Keep a project deep in nested folders and some packages will no
 - `uv python install` installs Python itself, as a prebuilt CPython, so no compiler is needed
 - `uv init`, `uv add`, `uv run` are the loop; `uv run` takes care of creating and activating the
   virtual environment
-- `pyproject.toml` holds only the dependencies you chose, and `uv.lock` records everything needed
-  for the same result on any OS. After `git clone`, `uv sync` is all there is
+- `pyproject.toml` holds only the dependencies you chose, and `uv.lock` records a resolution that
+  covers the other operating systems too. After `git clone`, `uv sync` is all there is
 - From 0.12, `uv init` defaults to a packaged `src` layout; the single `main.py` layout is
   `--no-package`
 - Write dependencies into a script with PEP 723 and it travels as one file. Tools go through `uvx`
@@ -698,5 +705,5 @@ all 99 packages. Keep a project deep in nested folders and some packages will no
 - A `requirements.txt` project can be sped up with `uv pip` as it is, then moved into a project
   with `uv add -r`
 - Installing `requests` was about 5.6 times faster cold and about 17 times faster warm
-- uv takes packages from PyPI only. For C/C++ libraries as well, pixi (conda-forge). Under Anaconda's terms,
-  for-profits over 200 people pay
+- uv handles only Python packages, from PyPI and the like. For C/C++ libraries as well, pixi
+  (conda-forge). Under Anaconda's terms, for-profits over 200 people pay
