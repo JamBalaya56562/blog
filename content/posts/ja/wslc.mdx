@@ -1,0 +1,655 @@
+---
+title: wslc で Docker Desktop なしに Linux コンテナを動かす
+date: "2026-10-08"
+image: /thumbnails/wslc.avif
+description: WSL に同梱された Docker 互換 CLI の wslc を、hello-world から nginx、PostgreSQL とボリューム、Dockerfile のビルドまで Docker 連載と同じ手順で確かめる。中で動いているものを覗き、セッションという Docker にない概念と、Compose が無いことを含めた Docker Desktop との違いまで
+tags:
+  - wslc
+  - wsl
+  - docker
+  - container
+  - devtools
+---
+
+## wslc とは
+
+[wslc](https://learn.microsoft.com/ja-jp/windows/wsl/wsl-container) は、**WSL（Windows Subsystem for Linux）に同梱された、Linux コンテナを動かすためのコマンドラインツール**です。2026 年 9 月 29 日の WSL 3.0.1 で一般提供になりました。別途インストールするものは何もなく、`wsl --update` で WSL を最新にすれば `wslc.exe` が付いてきます。
+
+コマンド体系は Docker に寄せてあります。`wslc run`、`wslc build`、`wslc ps`、`wslc images`、`wslc volume create`。Docker 連載の [第 1 回](/ja/blog/getting-started-with-docker)から[第 3 回](/ja/blog/docker-compose)で打ってきたコマンドの `docker` を `wslc` に置き換えると、だいたいそのまま動きます。
+
+ただし「だいたい」です。Docker Desktop をそのまま置き換えられるものではなく、**Docker Compose がまだありません**。他にも細かな差がいくつもあり、その差の大半は wslc 特有の「セッション」という仕組みから来ています。この記事では、連載でやったことを wslc で再現しながら、Docker と同じところと違うところを 1 つずつ確かめます。
+
+この記事は WSL 3.0.2.0（カーネル 6.18.40.1-1）、Windows 11 Pro 26300 で確かめています。3.0.2 は執筆時点ではプレリリースで、一般提供版は 3.0.1 です。
+
+## 入っているか確かめる
+
+WSL の版を見れば、wslc が入っているかどうかも分かります。2.9.3 以降なら入っています。
+
+```console
+❯ wsl --version
+WSL バージョン: 3.0.2.0
+カーネル バージョン: 6.18.40.1-1
+WSLg バージョン: 1.0.79
+MSRDC バージョン: 1.2.7391
+Direct3D バージョン: 1.611.1-81528511
+DXCore バージョン: 10.0.26100.1-240331-1435.ge-release
+Windows バージョン: 10.0.26300.9550
+❯ wslc version
+wslc 3.0.2.0
+```
+
+古ければ `wsl --update` で上げます。`wslc` が見つからないと言われたら、`C:\Program Files\WSL` に `wslc.exe` があるかを見てください。WSL と同じディレクトリに入ります。
+
+Docker と同じく、最初に打つのは `hello-world` です。
+
+```console
+❯ wslc run --rm hello-world
+イメージ 'hello-world' が見つかりません。プルしています
+latest: Pulling from library/hello-world
+4f55086f7dd0: Pulling fs layer
+4f55086f7dd0: Downloading
+4f55086f7dd0: Verifying Checksum
+4f55086f7dd0: Download complete
+4f55086f7dd0: Extracting
+4f55086f7dd0: Pull complete
+Digest: sha256:5e23090353324d887c48ad5e5c56d294eab81588df9605b07d1afe895f9cc8f8
+Status: Downloaded newer image for hello-world:latest
+
+Hello from Docker!
+This message shows that your installation appears to be working correctly.
+
+To generate this message, Docker took the following steps:
+ 1. The Docker client contacted the Docker daemon.
+ 2. The Docker daemon pulled the "hello-world" image from the Docker Hub.
+    (amd64)
+...
+```
+
+イメージは Docker Hub から取ってきていて、出てくる文面も Docker のものです。`hello-world` は Docker 社が配っているイメージなので当然ではあるのですが、「Docker daemon が」と書かれた文を wslc が表示しているのは、後で分かるとおり、あながち間違いでもありません。
+
+第 1 回でやったように、カーネルも見ておきます。
+
+```console
+❯ wslc run --rm ubuntu:latest bash -c "uname -r; head -1 /etc/os-release"
+イメージ 'ubuntu:latest' が見つかりません。プルしています
+...
+Status: Downloaded newer image for ubuntu:latest
+6.18.40.1-microsoft-standard-WSL2
+PRETTY_NAME="Ubuntu 26.04.1 LTS"
+```
+
+コンテナの中は Ubuntu 26.04 ですが、カーネルは `microsoft-standard-WSL2` です。`wsl --version` が出したカーネル版と同じもので、WSL のディストリビューションを動かしているのと同じカーネルの上でコンテナが動いています。
+
+## 連載の手順を wslc でなぞる
+
+### Web サーバーとポート
+
+第 1 回の nginx を、`docker` を `wslc` に変えて起こします。
+
+```console
+❯ wslc run -d --rm -p 8080:80 --name web nginx
+cc6814017fae512d2cce6010a008acfefaaf2958919f60741523a4aca02fe579
+❯ curl.exe -s localhost:8080 | Select-Object -First 4
+<!DOCTYPE html>
+<html>
+<head>
+<title>Welcome to nginx!</title>
+```
+
+`-d`、`--rm`、`-p`、`--name`、どれも Docker と同じ意味です。PowerShell の `curl` は環境によって `Invoke-WebRequest` の別名になるので、ここでは `curl.exe` と書いています。`ps`、`exec`、`logs`、`stop` も Docker と同じです。
+
+```console
+❯ wslc ps
+コンテナー ID       画像        コマンド                     作成済み      状態                      ポート                      名前
+cc6814017fae   nginx     "/docker-entrypoint.…"   3 秒前      Up Less than a second   127.0.0.1:8080->80/tcp   web
+❯ wslc exec web head -1 /etc/os-release
+PRETTY_NAME="Debian GNU/Linux 13 (trixie)"
+❯ wslc logs web | Select-Object -Last 1
+2026/10/08 01:17:16 [notice] 1#1: start worker process 37
+❯ wslc stop web
+web
+❯ wslc ps -a
+コンテナー ID   画像        コマンド      作成済み      状態        ポート       名前
+```
+
+見出しが日本語になっているのは、wslc が Windows の表示言語に合わせて出力を翻訳するからです。`画像` は image の訳で、イメージのことです。
+
+1 か所だけ Docker と違うところがあります。ポートの欄が `127.0.0.1:8080->80/tcp` で、Docker Desktop の `0.0.0.0:8080->80/tcp` ではありません。**wslc は既定で、公開したポートを自分のマシンからしか開けないようにします**。ほかの端末からの接続も受け付けたいときは、Docker と同じ書き方でアドレスを指定します。
+
+```console
+❯ wslc run -d --rm -p 0.0.0.0:8081:80 --name web2 nginx
+9d96133e7aa590e9c9b74aa440bb38585b30d53cf7223e0bb772013a11e17557
+❯ wslc ps
+コンテナー ID       画像        コマンド                     作成済み      状態                      ポート                    名前
+9d96133e7aa5   nginx     "/docker-entrypoint.…"   1 秒前      Up Less than a second   0.0.0.0:8081->80/tcp   web2
+```
+
+これで、すべてのネットワークインターフェースで待ち受けます。ただし、ほかの端末から実際に届くかどうかは、Windows ファイアウォールでそのポートの受信が許可されているか次第です。既定を変えたければ、後述する設定ファイルの `defaultBindingAddress` です。
+
+### データベースとボリューム
+
+第 1 回の PostgreSQL も同じです。名前付きボリュームを作り、そこにデータを置き、コンテナを消しても残ることを確かめます。
+
+PostgreSQL は、コンテナが起きてから接続を受け付けるまでに数秒かかります。公式イメージは最初の起動でデータベースを初期化し、それからサーバーを起動し直すからです。そこで `pg_isready` が「受け付けている」と答えるまで待ってから、`psql` を打ちます。`-h localhost` を付けて TCP で確かめるのは、初期化の途中のサーバーを本番と取り違えないためです。
+
+```console
+❯ wslc volume create pgdata
+pgdata
+❯ wslc volume list
+DRIVER    VOLUME NAME
+guest     pgdata
+❯ wslc run -d --name db -e POSTGRES_PASSWORD=secret -v pgdata:/var/lib/postgresql/data postgres:17
+3cd14e83bed558ff50ed602f005e4b83a8b6960d75918efffee75e1ee58a7d1f
+❯ do { Start-Sleep 1 } until ((wslc exec db pg_isready -h localhost -U postgres) -match 'accepting')
+❯ wslc exec db psql -U postgres -c "CREATE TABLE notes (id serial PRIMARY KEY, body text); INSERT INTO notes (body) VALUES ('written from wslc');"
+CREATE TABLE
+INSERT 0 1
+```
+
+コンテナを止めて消し、同じボリュームで起こし直します。
+
+```console
+❯ wslc stop db
+db
+❯ wslc remove db
+db
+❯ wslc run -d --name db -e POSTGRES_PASSWORD=secret -v pgdata:/var/lib/postgresql/data postgres:17
+1d48654e1431fe74156646e1d19441ed5f360391a56a95cfec18969b800102c9
+❯ do { Start-Sleep 1 } until ((wslc exec db pg_isready -h localhost -U postgres) -match 'accepting')
+❯ wslc exec db psql -U postgres -c "SELECT * FROM notes;"
+ id |       body
+----+-------------------
+  1 | written from wslc
+(1 row)
+```
+
+行は残っています。`docker rm` に当たるのは `wslc remove` です。`--help` を見ると `rm` と `delete` も別名として登録されているので、Docker の癖で `wslc rm` と打っても通ります。
+
+```console
+❯ wslc remove --help
+...
+エイリアス:
+  wslc container remove, wslc container delete, wslc container rm, wslc remove, wslc delete, wslc rm
+```
+
+ボリュームの `DRIVER` が `local` ではなく `guest` になっているのと、`inspect` で見える置き場所に注目してください。
+
+```console
+❯ wslc volume inspect pgdata
+[
+  {
+    "CreatedAt": "2026-10-08T01:21:53Z",
+    "Driver": "guest",
+    "Labels": null,
+    "Mountpoint": "/var/lib/docker/volumes/pgdata/_data",
+    "Name": "pgdata",
+    "Options": null,
+    "Scope": "local"
+  }
+]
+```
+
+`/var/lib/docker/volumes/` は、Docker Engine がボリュームを置くディレクトリです。wslc のボリュームは、どこか Linux の中にある Docker の置き場にあります。その「どこか」が、この記事の後半の主役です。
+
+Windows のディレクトリをコンテナに見せるのも、Docker Desktop と同じ `-v` です。PowerShell なら `${PWD}` で今いるディレクトリを渡せます。
+
+```console
+❯ wslc run --rm -v ${PWD}:/src alpine ls -la /src
+イメージ 'alpine' が見つかりません。プルしています
+...
+Status: Downloaded newer image for alpine:latest
+total 4
+drwxrwxrwx    1 root     root          4096 Oct  7 22:44 .
+drwxr-xr-x    1 root     root          4096 Oct  8 01:22 ..
+-rwxrwxrwx    1 root     root            88 Oct  7 22:38 Dockerfile
+-rwxrwxrwx    1 root     root           365 Oct  7 22:38 server.js
+```
+
+Windows 側のファイルは、コンテナからは `root` の持ち物で、全員に読み書き実行の権限が付いて見えます。Docker Desktop で Windows のディレクトリをマウントしたときと同じ見え方です。
+
+### Dockerfile をビルドする
+
+[第 2 回](/ja/blog/docker-build)のビルドも試します。EmDash を持ち出すと 27 分かかるので、ここでは 5 行の `Dockerfile` にします。
+
+```dockerfile
+FROM node:22-alpine
+WORKDIR /app
+COPY server.js .
+EXPOSE 3000
+CMD ["node", "server.js"]
+```
+
+`server.js` は、自分のホスト名と Node の版を返すだけの HTTP サーバーです。
+
+```console
+❯ wslc build -t hello-app .
+[1/3] FROM docker.io/library/node:22-alpine@sha256:0a7108bf6c7bf5de370ffb1a3ed6be93d405b43ff159f681a8d18c0e2bc2e402
+  | resolve docker.io/library/node:22-alpine@sha256:0a7108bf6c7bf5de370ffb1a3ed6be93d405b43ff159f681a8d18c0e2bc2e402
+  | extracting sha256:f7f2d304681aaa935c9cfd180850cf616ae843efce7682873d6521ded7268937
+  | extracting sha256:e554276b05e6306c5ad33cd85bfa7f0693083e21f6114db5abf60a20fb413039
+  | extracting sha256:d39db1cf9caa4f49c5a2e67111fbe6e0d5eea8ede550cb82f3dc2b79712688d6
+[2/3] WORKDIR /app
+[3/3] COPY server.js .
+exporting to image
+  | exporting layers
+  | writing image sha256:eda015a75608999fbc52702f3885273fdf72d8987474256d89928217840937da
+  | naming to docker.io/library/hello-app
+```
+
+42 秒で、ほぼ全部が `node:22-alpine` のダウンロードです。もう一度打つと、第 2 回で見たレイヤーキャッシュが効きます。
+
+```console
+❯ wslc build -t hello-app .
+[1/3] FROM docker.io/library/node:22-alpine@sha256:0a7108bf6c7bf5de370ffb1a3ed6be93d405b43ff159f681a8d18c0e2bc2e402
+[2/3] WORKDIR /app
+[2/3] CACHED
+[3/3] COPY server.js .
+[3/3] CACHED
+exporting to image
+  | exporting layers
+  | writing image sha256:eda015a75608999fbc52702f3885273fdf72d8987474256d89928217840937da
+  | naming to docker.io/library/hello-app
+```
+
+1 秒です。出力の書式は `docker build` と違いますが、`[2/3] CACHED` のように段階ごとにキャッシュの当たり外れが出るのは同じです。起こして、叩いて、止めます。
+
+```console
+❯ wslc run -d --rm -p 3000:3000 --name hello hello-app
+119cd943313d89a6efaa31f39e35bc2813323b08e1c4137177744bf2c3ae9729
+❯ curl.exe -s localhost:3000
+Hello from 119cd943313d (linux x64, node v22.23.3)
+❯ wslc stop hello
+hello
+```
+
+[Microsoft のチュートリアル](https://learn.microsoft.com/ja-jp/windows/wsl/tutorials/wsl-containers)は `Dockerfile` ではなく `Containerfile` という名前を使っています。`-f` を付けずにどちらの名前でも見つけることは確かめました。一方で `--platform` はありません。
+
+```console
+❯ wslc build --platform linux/arm64 -t hello-app-arm .
+オプション名が現在のコマンドに対して認識されませんでした: '--platform'
+```
+
+Apple Silicon の Mac 向けに ARM のイメージを作る、といった用途にはまだ使えません。
+
+## 中で何が動いているのか
+
+ここまでの出力に、Docker の痕跡がいくつもありました。`hello-world` の「Docker daemon」、ボリュームの `/var/lib/docker/volumes/`。wslc には、動いているものの中に入るコマンドがあります。
+
+```console
+❯ wslc system session run cat /etc/os-release
+NAME="Microsoft Azure Linux"
+VERSION="3.0.20260616"
+ID=azurelinux
+...
+❯ wslc system session run sh -c 'for b in docker dockerd containerd runc; do printf "%s: " $b; command -v $b; done'
+docker: /bin/docker
+dockerd: /bin/dockerd
+containerd: /bin/containerd
+runc: /bin/runc
+```
+
+**wslc の正体は、Microsoft の [Azure Linux](https://github.com/microsoft/azurelinux) を入れた軽量な仮想マシンの中で動く Docker Engine と、それを Windows から操作する CLI** です。Azure Linux は、Microsoft が Azure 向けに作っている Fedora 系のディストリビューションです。`dockerd` も `containerd` も `runc` も、Docker Desktop の中で動いているものと同じ顔ぶれです。コンテナの作り方や止め方、イメージの形式、ボリュームの置き場所が Docker と同じなのは、中身が Docker だからです。
+
+Docker Desktop も、Windows では WSL 2 の仮想マシン（`docker-desktop` というディストリビューション）の中で `dockerd` を動かしています。構造は同じで、違うのは仮想マシンを誰が用意して誰が面倒を見るかです。Docker Desktop は Docker 社の GUI アプリがそれを担い、wslc は WSL 自身が担います。
+
+この仮想マシンを、wslc は**セッション**と呼びます。
+
+```console
+❯ wslc system session list
+ID        作成者 PID   表示名
+4         3736      wslc-cli-Jam
+❯ wslc system session run sh -c 'nproc; free -h | head -2; df -h / /var/lib/docker'
+8
+               total        used        free      shared  buff/cache   available
+Mem:           7.7Gi       369Mi       7.2Gi       3.5Mi       281Mi       7.4Gi
+Filesystem      Size  Used Avail Use% Mounted on
+none            3.9G  152K  3.9G   1% /
+/dev/sdc       1007G  8.2G  948G   1% /var/lib/docker
+```
+
+このマシンは論理 CPU が 8 個、物理メモリが約 16 GB です。CPU は全部、メモリは半分の 7.7 GiB、`/var/lib/docker` は最大 1 TB のディスクです。これらは既定値で、後述する設定ファイルで変えられます。
+
+ディスクの実体は、Windows 側の仮想ハードディスクです。
+
+```console
+❯ Get-ChildItem $env:LOCALAPPDATA\wslc\sessions\wslc-cli-Jam
+
+    ディレクトリ:C:\Users\Jam\AppData\Local\wslc\sessions\wslc-cli-Jam
+
+Mode                 LastWriteTime         Length Name
+----                 -------------         ------ ----
+-a---          2026/10/08    10:25    45386563584 storage.vhdx
+-a---          2026/10/08    10:25       37748736 swap.vhdx
+```
+
+イメージもボリュームもビルドキャッシュも、全部この `storage.vhdx` 1 つに入っています。隣の `swap.vhdx` は、仮想マシンのスワップ用です。Docker Desktop も同じ構造で、イメージは自分専用の VHD に置いています。
+
+```console
+❯ Get-ChildItem $env:LOCALAPPDATA\Docker\wsl -Recurse -Filter *.vhdx
+
+    ディレクトリ:C:\Users\Jam\AppData\Local\Docker\wsl\disk
+
+Mode                 LastWriteTime         Length Name
+----                 -------------         ------ ----
+-a---          2026/08/22    23:28    34919677952 docker_data.vhdx
+
+    ディレクトリ:C:\Users\Jam\AppData\Local\Docker\wsl\main
+
+Mode                 LastWriteTime         Length Name
+----                 -------------         ------ ----
+-a---          2026/08/22    23:28      100663296 ext4.vhdx
+```
+
+32.5 GB の `docker_data.vhdx` がイメージの置き場で、0.1 GB の `ext4.vhdx` は `docker-desktop` ディストリビューション自体です。置き場のファイルもエンジンも別なので、**wslc と Docker Desktop はイメージを共有しません**。片方で `pull` したものを使うには、もう片方でも `pull` し直すことになります。
+
+![Windows 上の wslc.exe がセッション VM 内の Docker Engine を操作し、イメージ・ボリューム・ビルドキャッシュを storage.vhdx に保存する構造](/wslc/architecture.avif)
+
+### セッションは勝手に止まり、勝手に起きる
+
+Docker Desktop との最大の違いがここです。**wslc のセッションは、何もしないでいると 30 秒で仮想マシンごと止まります**。次にコマンドを打つと、仮想マシンが起動し直します。
+
+それは `/proc/uptime` で見えます。最初の数字が、仮想マシンが起動してからの秒数です。45 秒待ってから `alpine` で何もしないコンテナを起こし、直後に見ました。
+
+```console
+❯ Start-Sleep 45; wslc run --rm alpine true
+❯ wslc system session run cat /proc/uptime
+8.52 54.79
+```
+
+仮想マシンは、8.5 秒前に起動したばかりです。待つ秒数を変えて 6 回試し、そのたびに直後の `uptime` を見ました。
+
+| 待った秒数 | 直後の `uptime` |
+| --- | --- |
+| 45 | 8.5 秒 |
+| 45 | 13.4 秒 |
+| 40 | 18.3 秒 |
+| 40 | 12.6 秒 |
+| 90 | 8.8 秒 |
+| 60 | 9.8 秒 |
+
+6 回とも仮想マシンは起動し直していて、その起動に 8〜18 秒かかっています。続けて打つ 2 回目からは、1 回あたり 1〜2 秒で返りました。間を空けて打つたびに、この起動を待つことになります。
+
+Windows 側でもそれが見えます。コンテナを動かしている間は `vmmemwslc-cli-Jam` というプロセスがメモリを持っていて、45 秒放っておくと消えます。
+
+```console
+❯ Get-Process vmmem*, wslcsession | Select-Object ProcessName, Id, @{n='MB';e={[int]($_.WorkingSet64/1MB)}}
+
+ProcessName          Id  MB
+-----------          --  --
+vmmemwslc-cli-Jam 10148 712
+wslcsession       15348  17
+❯ Start-Sleep 45; Get-Process vmmem*, wslcsession | Select-Object ProcessName, Id, @{n='MB';e={[int]($_.WorkingSet64/1MB)}}
+
+ProcessName    Id MB
+-----------    -- --
+wslcsession 15348 17
+```
+
+`wslcsession.exe` はセッションの管理役で、仮想マシンが止まっても残ります。`session list` にもセッションは載ったままで、消えたのは中の仮想マシンだけです。
+
+Docker Desktop にも、アイドル時に資源を節約する [Resource Saver](https://docs.docker.com/desktop/use-desktop/resource-saver/) が既定で入っています。ただし公式の説明によると、WSL 2 で動かしているときは、5 分のアイドルで止めるのは中のエンジンだけで、仮想マシンは止めません。CPU は減ってもメモリは減らない代わりに、戻るときの待ち時間もありません。「使っていないときはメモリまで返す」のは wslc の利点で、その代わりに、少し間を空けて打つたびに起動を待たされます。
+
+> [!TIP]
+> アイドルの 30 秒は、後で説明する設定ファイルの `idleTimeout` で延ばせます。
+
+なお、`-d` で起こしたコンテナが動いている間は、仮想マシンは止まりません。nginx を起こしたまま 50 秒放置しても `vmmemwslc-cli-Jam` は残り、`uptime` は 70 秒まで伸び、`localhost:8080` は `200` を返しました。止まるのは、コンテナが 1 つも動いていないときだけです。
+
+![実行中のコンテナがない状態で既定の30秒間アイドルになると VM が停止し、次の wslc コマンドで再起動する。storage.vhdx は保持され、コンテナ実行中は自動停止しない](/wslc/session-lifecycle.avif)
+
+### 設定ファイル
+
+`wslc settings` を打つと、`%LOCALAPPDATA%\wslc\settings.yaml` を既定のエディタで開きます。初回は、全部の設定がコメントアウトされた状態でファイルが作られます。中身はこうです。
+
+```yaml
+# wslc user settings
+# https://aka.ms/wslc-settings
+# All settings support string value "default" which uses built-in defaults.
+
+session:
+  # Number of virtual CPUs allocated to the session (e.g. 4 default: all available CPUs)
+  # cpuCount: default
+
+  # Memory limit for the session (e.g. 2GB default: half of available memory)
+  # memorySize: default
+
+  # Maximum disk image size (e.g. 500GB default: 1TB)
+  # maxStorageSize: default
+
+  # Base directory for the default session's storage; the session VHD is created at
+  # <storagePath>\wslc\sessions\<session>\storage.vhdx. Must be an absolute path (e.g. D:\data default: %LOCALAPPDATA%). Changing this after a session already exists does not move existing storage, containers, or
+  # images; the previous location is left in place and a new empty session is created at the new path.
+  # storagePath: default
+
+  # Default host address that published ports bind to when 'container run -p' is
+  # used without an explicit address (default: 127.0.0.1)
+  # defaultBindingAddress: default
+
+  # DNS name that resolves to the host loopback address (default: host.wslc.internal).
+  # Set to "none" to disable the entry.
+  # hostLoopback: default
+
+  # Seconds an idle session VM stays running before it is torn down (default: 30)
+  # idleTimeout: default
+
+# Credential storage backend: "wincred" or "file" (default: wincred)
+# credentialStore: wincred
+```
+
+先ほど見た数字が全部ここにあります。CPU は全部、メモリは半分、ディスクは 1 TB、ポートは `127.0.0.1`、アイドルは 30 秒。`storagePath` は `storage.vhdx` を別のドライブに置きたいときのためのもので、コメントにあるとおり、**既にセッションがある状態で変えても古い VHD は移動されず、新しい空のセッションができます**。
+
+`hostLoopback` の `host.wslc.internal` は、Docker Desktop の `host.docker.internal` に相当する名前で、コンテナから Windows 側で動いているものに繋ぐときに使います。Windows 側で、`127.0.0.1` だけで待ち受ける HTTP サーバーを立てます。
+
+```console
+❯ python -m http.server 8765 --bind 127.0.0.1
+```
+
+別のターミナルから、コンテナの中の curl で名前を使って叩きます。
+
+```console
+❯ wslc run --rm curlimages/curl -s -m 6 http://host.wslc.internal:8765/
+...
+</ul>
+<hr>
+</body>
+</html>
+```
+
+`127.0.0.1` は、Windows では自分のマシンからしか開けないアドレスです。そこにコンテナから届いているので、この名前は文字どおり Windows のループバックに繋がっています。
+
+設定を書き換えたら、`wslc system session terminate` でセッションを終了させます。次のコマンドで、新しい設定の仮想マシンが起きます。アイドルを 90 秒に、公開ポートの既定を `0.0.0.0` にして確かめました。
+
+```yaml
+session:
+  idleTimeout: 90
+  defaultBindingAddress: 0.0.0.0
+```
+
+```console
+❯ wslc system session terminate
+❯ wslc run -d --rm -p 8080:80 --name web nginx
+06970f5230b035f96f4d51cbe1b4afaa25a77f8e312dcb890f434f394fef9934
+❯ wslc ps
+コンテナー ID       画像        コマンド                     作成済み      状態                      ポート                    名前
+06970f5230b0   nginx     "/docker-entrypoint.…"   3 秒前      Up Less than a second   0.0.0.0:8080->80/tcp   web
+❯ wslc stop web
+web
+```
+
+アドレスを書かない `-p 8080:80` が、`0.0.0.0:8080` で公開されました。nginx を止めた後は、60 秒経っても `vmmemwslc-cli-Jam` が残っていて、105 秒経つと消えていました。既定の 30 秒なら、60 秒の時点で止まっているはずです。
+
+`wslc settings reset` は、確認無しでファイルを最初のテンプレートに書き戻します。
+
+```console
+❯ wslc settings reset
+設定が既定値にリセットされました。
+```
+
+書いた `idleTimeout: 90` は、`# idleTimeout: default` に戻っていました。
+
+## Docker Desktop と何が違うのか
+
+ここまでで分かったことを、Docker 連載の読者が気にするであろう順に並べます。
+
+| | Docker Desktop | wslc |
+| --- | --- | --- |
+| インストール | 別途インストール、GUI アプリ | WSL に同梱、CLI のみ |
+| ライセンス | 大企業では有償 | 無償（WSL は MIT ライセンスで公開） |
+| エンジン | WSL 2 の VM 内の Docker Engine | Azure Linux の VM 内の Docker Engine |
+| イメージの置き場 | `%LOCALAPPDATA%\Docker\wsl\disk\docker_data.vhdx` | `%LOCALAPPDATA%\wslc\sessions\<名前>\storage.vhdx` |
+| アイドル時 | 5 分でエンジンだけ一時停止（VM とメモリはそのまま） | 30 秒で VM ごと止まり、次のコマンドで 8〜18 秒かけて起動し直す |
+| 公開ポートの既定 | `0.0.0.0` | `127.0.0.1` |
+| Docker Compose | `docker compose` | **無い**（開発中） |
+| Docker Engine API | 名前付きパイプで公開（TCP は設定で有効にしたときだけ） | **公開していない** |
+| `--platform` | あり（マルチアーキテクチャ） | 無い |
+| GPU | `--gpus` | `--gpus`（WSL の GPU 対応と同じ仕組み） |
+
+### Compose が無い
+
+```console
+❯ wslc compose version
+認識されないコマンド: 'compose'
+```
+
+Microsoft は `wslc compose` を最も要望の多い機能として開発中としていますが、執筆時点では使えません。[第 3 回](/ja/blog/docker-compose)でやったような複数コンテナの構成は、`wslc network create` と `wslc run` を自分で並べることになります。コミュニティには、`compose.yaml` を読んで wslc を呼ぶ Rust 製の [wslc-compose](https://github.com/Ivanbeethoven/wslc-compose) があります。ソースからのビルドが必要で、この記事では試していません。
+
+### Docker Engine API を公開していない
+
+Docker Desktop は `//./pipe/docker_engine` という名前付きパイプで Docker Engine API を公開していて、Docker CLI 以外のツールもそこに繋ぎます。Testcontainers がテスト用のデータベースを起こすのも、この API 経由です。
+
+wslc にはそれがありません。Windows 側には名前付きパイプも、Docker が API に使う 2375 番と 2376 番のポートも開いていませんでした。API そのものは、仮想マシンの中の `/var/run/docker.sock` にあります。
+
+```console
+❯ Get-ChildItem \\.\pipe\ | Where-Object Name -match docker
+❯ Test-NetConnection 127.0.0.1 -Port 2375 -WarningAction SilentlyContinue | Select-Object -ExpandProperty TcpTestSucceeded
+False
+❯ wslc system session run ls -l /var/run/docker.sock
+srw-rw---- 1 root docker 0 Oct  8 00:14 /var/run/docker.sock
+```
+
+1 つ目は、名前に `docker` を含むパイプが 1 つも無いので何も表示されません。Docker Desktop を止めた状態で確かめているので、パイプが無いのは当然ではありますが、wslc が代わりのパイプを作っていないことは分かります。
+
+Windows から `dockerd` に繋ぐ手段は `wslc.exe` だけなので、`DOCKER_HOST` を設定してツールを wslc に向ける、ということができません。要望は [microsoft/WSL#40976](https://github.com/microsoft/WSL/issues/40976) に出ています。
+
+一方、API ではなく CLI を呼ぶだけのツールは動きます。VS Code の Dev Containers 拡張の土台になっている [Dev Container CLI](https://github.com/devcontainers/cli) で確かめました。`--docker-path` で wslc を指定すると、`devcontainer.json` に `image` を書いた構成も、`Dockerfile` からビルドする構成も、起動まで通りました。
+
+```console
+❯ Get-Content .devcontainer\devcontainer.json
+{ "name": "wslc-check", "image": "alpine:latest" }
+❯ npx --yes @devcontainers/cli up --workspace-folder . --docker-path "C:\Program Files\WSL\wslc.exe"
+[2026-10-08T00:25:56.636Z] @devcontainers/cli 0.89.0. Node.js v26.10.0. win32 10.0.26300 x64.
+...
+[2026-10-08T00:26:01.630Z] Container started
+{"outcome":"success","containerId":"ff6ee7f8fdfa669e4d03d1ea491905357eaf7081a45764991984bbb26b922f54","remoteUser":"root","remoteWorkspaceFolder":"/workspaces/devc","ociAuthDiagnostics":{"authLookupWouldBeBlocked":false,"registryRedirectWouldPreventCredentialForwarding":false,"authServerRedirect":false}}
+❯ npx --yes @devcontainers/cli exec --workspace-folder . --docker-path "C:\Program Files\WSL\wslc.exe" sh -c 'head -1 /etc/os-release; pwd'
+NAME="Alpine Linux"
+/workspaces/devc
+```
+
+省略した行は、CLI が実際に打った `wslc.exe run -v ... alpine:latest` のコマンドです。Docker のときと同じ引数を、そのまま wslc に渡しています。
+
+VS Code の拡張では、設定の `Dev Containers: Docker Path` が同じ役目をします。VS Code そのものはこのマシンに入っていないので、拡張からは試していません。
+
+### どちらを使うか
+
+ここまでをまとめると、こう判断できます。
+
+- **Compose を使う、Testcontainers を使う、Docker Engine API に繋ぐツールがある** — Docker Desktop が要ります
+- **単発のコンテナを起こす、イメージをビルドする、CLI ツールをコンテナで動かす** — wslc で足ります。この記事の著者は AWS CLI をローカルに入れず、`wslc run --rm -v ~/.aws:/root/.aws amazon/aws-cli` で動かしています
+- **両方入れる** — 共存できます。このマシンにも両方入っていて、イメージの置き場もエンジンも別々です
+
+> [!WARNING]
+> `~/.aws` をマウントすると、コンテナの中のプログラムからは資格情報が読めます。マウントするのは、AWS 公式の `amazon/aws-cli` のように、中身を信頼できるイメージだけにしてください。
+
+## 実際に踏んだ罠
+
+### イメージを消しても storage.vhdx は縮まない
+
+古いイメージを 12 個、一覧のサイズで合計 8 GB ほど消した後も、`storage.vhdx` は 42 GB のままでした。仮想ハードディスクは中で空いた領域を自動では返しません。
+
+WSL には、空いた領域を返すスパース VHD という実験的な設定（`.wslconfig` の `sparseVhd=true`）があります。このマシンの `.wslconfig` にはそれが入っていますが、wslc のセッション VHD はスパースになっていませんでした。
+
+```console
+❯ fsutil sparse queryflag $env:LOCALAPPDATA\wslc\sessions\wslc-cli-Jam\storage.vhdx
+This file is NOT set as sparse
+```
+
+`.wslconfig` は従来の WSL ディストリビューション向けの設定で、wslc のセッションには効かないようです。wslc の `settings.yaml` にも、それに当たる項目はありません。
+
+### `--format` は Go テンプレートではない
+
+Docker の `--format '{{.Repository}}:{{.Tag}}'` は通りません。
+
+```console
+❯ wslc images --format '{{.Repository}}:{{.Tag}}'
+無効な format 値: {{.Repository}}:{{.Tag}} は認識された形式の種類ではありません。サポートされている形式の種類: json, table。
+```
+
+`json` を選ぶと、**1 行に 1 つのオブジェクト**が並ぶ形式（NDJSON）で出てきます。全体を 1 つの JSON 配列として読もうとすると、2 行目で失敗します。PowerShell なら行ごとに `ConvertFrom-Json` に通します。
+
+```console
+❯ wslc images --format json | % { $_ | ConvertFrom-Json } | % { "$($_.Repository):$($_.Tag)" }
+hello-app:latest
+postgres:17
+nginx:latest
+ubuntu:latest
+amazon/aws-cli:latest
+alpine:latest
+amazon/dynamodb-local:latest
+```
+
+### 無いオプションがいくつかある
+
+`wslc stats --no-stream` と `wslc build --platform` は通りません。`wslc stats` は Docker と違って最初からスナップショットを 1 回表示するだけなので、`--no-stream` に相当するものがそもそも要りません。Docker の癖で打つと「オプション名が現在のコマンドに対して認識されませんでした」と返るので、そのたびに `wslc <コマンド> --help` を見ることになります。
+
+### `session run` に `--` を付けてはいけない
+
+Docker の `exec` の癖で `wslc system session run -- cat /etc/os-release` と打つと、`--` そのものをコマンドとして起動しようとして失敗します。
+
+```console
+❯ wslc system session run -- cat /etc/os-release
+コマンド -- を起動できませんでした。Errno = 2
+エラー コード: E_FAIL
+```
+
+`--` 無しで、コマンドをそのまま続けます。
+
+### `session run` は時間のかかるコマンドで必ず失敗する
+
+`session run` で `ps` や `docker version` を打つと、`ERROR_INVALID_HANDLE` で失敗しました。一方で `cat` や `df` は通ります。コマンドの種類ではなく、実行にかかる時間で決まっていました。`sleep` の長さを変えて、それぞれ 4 回ずつ打った結果です。
+
+```console
+❯ foreach ($s in '0','0.02','0.1','1') { $fail = 0; 1..4 | % { if ((wslc system session run sh -c "sleep $s; echo done" 2>&1 | Out-String) -match 'ERROR_INVALID_HANDLE') { $fail++ } }; "sleep $s failed $fail/4" }
+sleep 0 failed 1/4
+sleep 0.02 failed 4/4
+sleep 0.1 failed 4/4
+sleep 1 failed 4/4
+```
+
+0.02 秒かかるだけで、毎回失敗します。一瞬で終わるコマンドでも、4 回に 1 回は失敗しました。`ps` は 137 個のプロセスを読み、`docker` は起動そのものに時間がかかるので、毎回この線を越えます。中で何が起きているのかまでは追っていません。`session run` は、仮想マシンの中を一瞬覗くためのものと思っておくのが無難です。
+
+## よく使うコマンド
+
+| コマンド | 何をするか | Docker との違い |
+| --- | --- | --- |
+| `wslc run --rm -it IMAGE CMD` | コンテナを起こしてコマンドを実行し、終わったら消す | 同じ |
+| `wslc run -d -p 8080:80 --name NAME IMAGE` | 裏で起こしてポートを公開する | 既定で `127.0.0.1` にしか公開しない |
+| `wslc ps` / `ps -a` | コンテナの一覧 / 止まったものも含めて | `wslc container list` の別名 |
+| `wslc exec NAME CMD` / `logs NAME` / `stop NAME` | 中でコマンド / ログ / 止める | 同じ |
+| `wslc remove NAME` | コンテナを消す | `rm` と `delete` は別名 |
+| `wslc images` / `rmi IMAGE` | イメージの一覧 / 削除 | `--format` は `json` か `table` のみ |
+| `wslc build -t NAME .` | Dockerfile からビルドする | `--platform` は無い |
+| `wslc volume create NAME` / `list` / `remove NAME` | ボリュームの作成 / 一覧 / 削除 | 同じ |
+| `wslc container prune` / `image prune` | 止まったコンテナ / 使っていないイメージを消す | 同じ |
+| `wslc system session list` | セッションの一覧 | Docker に相当なし |
+| `wslc system session run CMD` | セッションの仮想マシンの中でコマンドを実行する（0.02 秒以上かかると失敗） | Docker に相当なし |
+| `wslc system session terminate` | セッションを終了する（イメージとボリュームは残る） | Docker に相当なし |
+| `wslc settings` / `settings reset` | 設定ファイルを開く / 既定に戻す | Docker Desktop の設定画面に相当 |
+
+## まとめ
+
+- wslc は、WSL に同梱された Docker 互換の CLI。中身は Azure Linux の仮想マシンで動く Docker Engine で、`docker` を `wslc` に変えるとコマンドの大半がそのまま動く
+- その仮想マシンを**セッション**と呼び、イメージもボリュームも `%LOCALAPPDATA%\wslc\sessions\` の `storage.vhdx` 1 つに入る。Docker Desktop とは共有しない
+- セッションはアイドル 30 秒で止まり、次のコマンドで起き直す。起動には 8〜18 秒かかる。メモリを返す代わりに、間を空けて打つと待たされる。`idleTimeout` で延ばせる
+- 公開したポートは既定で `127.0.0.1` にしか開かない。`defaultBindingAddress` か `-p 0.0.0.0:…` で変える
+- Docker Compose と、Windows から繋げる Docker Engine API は無い。それが要る作業は Docker Desktop に残し、単発のコンテナと `build` は wslc で足りる。CLI を呼ぶだけの Dev Container CLI は動く
+- `--format` は `json` か `table`。`--platform` と `--no-stream` は無い。迷ったら `wslc <コマンド> --help`
