@@ -18,14 +18,42 @@ set -euo pipefail
 # A wedged wslc session does not fail that listing, it never answers it, and
 # the probe used to wait on it forever. Each probe is therefore bounded. The
 # default leaves room for wslc booting its VM after an idle period, which takes
-# 8-18 s. Override with RUNTIME_PROBE_TIMEOUT (seconds).
+# 8-18 s. Override with RUNTIME_PROBE_TIMEOUT: whole seconds from 1 to 99999.
+# 0 is out because GNU timeout reads it as "no limit at all". The check is a
+# pattern rather than an integer comparison, since a long enough string of
+# digits makes `[ -eq ]` error out instead of answering.
 PROBE_TIMEOUT="${RUNTIME_PROBE_TIMEOUT:-45}"
+if ! [[ "$PROBE_TIMEOUT" =~ ^[1-9][0-9]{0,4}$ ]]; then
+  echo "RUNTIME_PROBE_TIMEOUT must be whole seconds from 1 to 99999; using 45." >&2
+  PROBE_TIMEOUT=45
+fi
 
+# macOS ships no `timeout`; Homebrew's coreutils installs it as `gtimeout`.
+# Without either, probes run unbounded as they did before. That only loses the
+# guard where it is not needed: the wedge is a wslc one, wslc is Windows-only,
+# and Git Bash on Windows has `timeout`.
+TIMEOUT_CMD=""
+if command -v timeout >/dev/null 2>&1; then
+  TIMEOUT_CMD="timeout"
+elif command -v gtimeout >/dev/null 2>&1; then
+  TIMEOUT_CMD="gtimeout"
+fi
+
+# Returns 124 when the probe had to be cut off, whatever signal it took.
 runtime_works() {
   local status=0
-  timeout "$PROBE_TIMEOUT" "$1" ps >/dev/null 2>&1 || status=$?
-  if [ "$status" -eq 124 ]; then
+  if [ -z "$TIMEOUT_CMD" ]; then
+    "$1" ps >/dev/null 2>&1 || status=$?
+    return "$status"
+  fi
+  # A probe that ignores TERM gets KILL five seconds later; timeout reports
+  # that as 128+9. The KILL reaches the whole process group, the subshell
+  # included, and the outer group sends bash's "Killed" notice for it to
+  # /dev/null instead of the task's output.
+  { ("$TIMEOUT_CMD" -k 5 "$PROBE_TIMEOUT" "$1" ps) >/dev/null 2>&1; } 2>/dev/null || status=$?
+  if [ "$status" -eq 124 ] || [ "$status" -eq 137 ]; then
     echo "$1 did not answer within ${PROBE_TIMEOUT}s; trying the next runtime." >&2
+    return 124
   fi
   return "$status"
 }
@@ -42,13 +70,24 @@ resolve_runtime() {
     "docker"
   )
 
-  # Both wslc entries are the same program when it is on PATH, so once one has
-  # timed out the other would only make the fallback wait twice as long.
-  local wslc_hung=0
+  # The first two entries are the same file when wslc is on PATH, so once one
+  # has timed out the other would only make the fallback wait twice as long.
+  # `-ef` compares the files themselves, so a different wslc earlier on PATH
+  # does not get the bundled one skipped. The `${hung[@]+...}` form keeps an
+  # empty array legal under `set -u` on bash 3.2, which macOS still ships.
+  local hung=()
   for candidate in "${candidates[@]}"; do
-    local is_wslc=0
-    [[ "$(basename "$candidate")" == wslc* ]] && is_wslc=1
-    if [ "$is_wslc" -eq 1 ] && [ "$wslc_hung" -eq 1 ]; then
+    local path="" seen=0 h
+    path="$(command -v "$candidate" 2>/dev/null)" || path=""
+    if [ -n "$path" ]; then
+      for h in ${hung[@]+"${hung[@]}"}; do
+        if [ "$path" -ef "$h" ]; then
+          seen=1
+          break
+        fi
+      done
+    fi
+    if [ "$seen" -eq 1 ]; then
       continue
     fi
 
@@ -58,8 +97,8 @@ resolve_runtime() {
       echo "$candidate"
       return
     fi
-    if [ "$status" -eq 124 ] && [ "$is_wslc" -eq 1 ]; then
-      wslc_hung=1
+    if [ "$status" -eq 124 ] && [ -n "$path" ]; then
+      hung+=("$path")
     fi
   done
 
