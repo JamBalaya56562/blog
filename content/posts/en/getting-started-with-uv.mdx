@@ -1,0 +1,709 @@
+---
+title: Getting Started with uv
+date: "2026-10-08"
+image: /thumbnails/getting-started-with-uv.avif
+description: uv manages Python packages and projects. This guide compares it with the pip and venv workflow, then covers installing Python itself, managing a project with pyproject.toml and uv.lock, single-file scripts, moving off requirements.txt, measured speed, and how it differs from Anaconda and pixi
+tags:
+  - uv
+  - python
+  - cli
+  - devtools
+---
+
+## What uv is
+
+[uv](https://docs.astral.sh/uv/) is **a command-line tool from Astral, the makers of Ruff, that
+manages Python packages and projects in one place**. It is written in Rust and takes over jobs that
+used to belong to separate tools.
+
+- **pip** — installing packages
+- **venv / virtualenv** — creating virtual environments
+- **pyenv** — installing and switching Python itself
+- **pip-tools** — pinning dependency versions
+- **pipx** — installing CLI tools apart from projects
+- **Poetry** — managing a project through `pyproject.toml`
+
+This post first walks through the traditional pip and venv workflow to see what was awkward about
+it, then checks, by running it, how uv removes each of those problems. At the end it compares uv
+with Anaconda and other conda-based tools by what each can and cannot install.
+
+Everything here was checked with uv 0.12.23 in PowerShell on Windows 11.
+
+## What was awkward about Python until now
+
+The time-honoured workflow with pip and venv: create a virtual environment per project, activate
+it, and `pip install` into it.
+
+```console
+❯ python -m venv .venv
+❯ .\.venv\Scripts\Activate.ps1
+❯ pip install requests
+...
+Successfully installed certifi-2026.7.22 charset_normalizer-3.5.2 idna-3.20 requests-2.34.2 urllib3-2.8.0
+❯ pip freeze
+certifi==2026.7.22
+charset-normalizer==3.5.2
+idna==3.20
+requests==2.34.2
+urllib3==2.8.0
+❯ deactivate
+```
+
+It works. It also has several traps in it.
+
+- **Forgetting to activate**. Run `pip install` without `Activate.ps1` and it goes into the Python
+  outside the virtual environment. Which `pip` belongs to which Python is hard to tell even for the
+  person typing
+- **Direct dependencies and their consequences look the same**. One package went in, `requests`,
+  and `pip freeze` lists five. Save that as `requirements.txt` and the file no longer says whether
+  `urllib3` was your choice or something `requests` dragged in
+- **Unpinned, the contents depend on the day**. A `requirements.txt` that says only `requests` gets
+  whatever is newest that day. Pin everything with `==` and updating becomes manual work
+- **Python itself is another tool's job**. If the project expects 3.11, installing and switching to
+  it is for pyenv or the official installer; pip has nothing to do with it
+- **CLI tools have nowhere to live**. Put Ruff or Black in the project's environment and they mix
+  with the project's dependencies. pipx, yet another tool, exists to avoid that
+
+Each tool has its own things to learn, and everyone combines them differently. uv rolls them into
+one.
+
+## Installing it
+
+Pick your OS.
+
+<CodeTabs labels={["macOS / Linux", "Windows"]}>
+
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+
+```powershell
+powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+```
+
+</CodeTabs>
+
+With [mise](/en/blog/getting-started-with-mise), `mise use -g uv` installs it too; that is how this
+machine has it. Ask for the version to check.
+
+```console
+❯ uv --version
+uv 0.12.23 (46b84fd0b 2026-10-03 x86_64-pc-windows-msvc)
+```
+
+## Installing Python itself
+
+uv can install Python itself, which is pyenv's job.
+
+```console
+❯ uv python install 3.11
+Downloading cpython-3.11.17-windows-x86_64-none (download) (24.1MiB)
+ Downloaded cpython-3.11.17-windows-x86_64-none (download)
+Installed Python 3.11.17 in 41.65s
+ + cpython-3.11.17-windows-x86_64-none (python3.11.exe)
+❯ uv python list 3.11 --only-installed
+cpython-3.11.17-windows-x86_64-none    C:\Users\Jam\.local\share\uv\python\cpython-3.11.17-windows-x86_64-none\python.exe
+cpython-3.11.17-windows-x86_64-none    C:\Users\Jam\.local\bin\python3.11.exe
+cpython-3.11.17-windows-x86_64-none    C:\Users\Jam\.local\share\uv\python\cpython-3.11-windows-x86_64-none\python.exe
+❯ uv run --no-project --python 3.11 python -c "import sys; print(sys.version); print(sys.executable)"
+3.11.17 (main, Oct  3 2026, 01:03:09) [MSC v.1944 64 bit (AMD64)]
+C:\Users\Jam\.local\share\uv\python\cpython-3.11-windows-x86_64-none\python.exe
+```
+
+A 24 MiB download, installed in 42 seconds. The `--no-project` in the third command means: ignore
+any project nearby and run with just the Python asked for.
+
+What arrives is a prebuilt CPython from
+[python-build-standalone](https://github.com/astral-sh/python-build-standalone), which Astral
+maintains. Nothing is built from source, so unlike pyenv there is no compiler or library to set up
+first.
+
+`python3.11.exe` is placed in `~/.local/bin`, so with that on PATH, `python3.11` starts it as well.
+This machine also moves the Python installs to `~/.local/share/uv/python` with the
+`UV_PYTHON_INSTALL_DIR` environment variable.
+
+`uv python pin` decides which Python a directory uses. Make the 3.11 just installed this
+directory's Python.
+
+```console
+❯ uv python pin 3.11
+Pinned `.python-version` to `3.11`
+❯ Get-Content .python-version
+3.11
+❯ uv run python --version
+Python 3.11.17
+❯ python --version
+Python 3.14.7
+```
+
+The 3.11 in `.python-version` applies only through uv's own commands, such as `uv run` and
+`uv venv`; plain `python` stays at 3.14. Nothing
+rewrites PATH to switch versions: uv reads `.python-version` each time it is invoked and picks from
+that.
+
+## Creating and running a project
+
+This is where uv shows what it is for. `uv init` creates a project.
+
+```console
+❯ uv init hello --author-from none
+Initialized project `hello` at `C:\Users\Jam\uv-demo\hello`
+```
+
+The `--author-from none` is explained in the traps below. What it made is these five files plus
+`.git`.
+
+```text
+.gitignore
+.python-version
+pyproject.toml
+README.md
+src\hello\__init__.py
+```
+
+At the centre is `pyproject.toml`.
+
+```toml
+[project]
+name = "hello"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = []
+
+[project.scripts]
+hello = "hello:main"
+
+[build-system]
+requires = ["uv_build>=0.12.23,<0.13.0"]
+build-backend = "uv_build"
+```
+
+`src/hello/__init__.py` has a single `main()`, callable as `hello` through `[project.scripts]`.
+
+> [!NOTE]
+> This layout is the default from uv 0.12. The
+> [0.12.0 release notes](https://github.com/astral-sh/uv/releases/tag/0.12.0) say `uv init` now
+> creates a packaged project with a `src` layout and `uv_build` by default. The single `main.py`
+> layout in older guides comes from `uv init --no-package`.
+
+Run it with `uv run`.
+
+```console
+❯ uv run hello
+Using CPython 3.14.7
+Creating virtual environment at: .venv
+   Building hello @ file:///C:/Users/Jam/uv-demo/hello
+      Built hello @ file:///C:/Users/Jam/uv-demo/hello
+Installed 1 package in 50ms
+Hello from hello!
+```
+
+Nothing asked for a virtual environment to be created or activated. `uv run` creates `.venv` if it
+is missing, brings it in line with the project, and runs the command inside it. **Forgetting to
+activate is not a mistake you can make.** It has also written a file called `uv.lock`, which comes
+up below.
+
+### Adding dependencies
+
+Dependencies go in with `uv add`.
+
+```console
+❯ uv add requests
+Resolved 6 packages in 407ms
+   Building hello @ file:///C:/Users/Jam/uv-demo/hello
+      Built hello @ file:///C:/Users/Jam/uv-demo/hello
+Prepared 1 package in 111ms
+Uninstalled 1 package in 6ms
+Installed 6 packages in 299ms
+ + certifi==2026.7.22
+ + charset-normalizer==3.5.2
+ ~ hello==0.1.0 (from file:///C:/Users/Jam/uv-demo/hello)
+ + idna==3.20
+ + requests==2.34.2
+ + urllib3==2.8.0
+```
+
+The `~` in front of `hello` marks your own project being reinstalled. Only the one you chose lands
+in `dependencies` in `pyproject.toml`.
+
+```toml
+dependencies = [
+    "requests>=2.34.2",
+]
+```
+
+The four that came along with it show who brought them in `uv tree`.
+
+```console
+❯ uv tree
+hello v0.1.0
+└── requests v2.34.2
+    ├── certifi v2026.7.22
+    ├── charset-normalizer v3.5.2
+    ├── idna v3.20
+    └── urllib3 v2.8.0
+Resolved 6 packages in 4ms
+```
+
+The direct dependency and its consequences, indistinguishable in `pip freeze`, are separate here.
+
+### uv.lock
+
+The `uv.lock` that the first `uv run` wrote is rewritten by every `uv add`. It records the exact
+version of every package that goes in and the hashes of its files. After adding `requests`, it
+starts like this.
+
+```toml
+version = 1
+revision = 5
+requires-python = ">=3.14"
+
+[[package]]
+name = "certifi"
+version = "2026.7.22"
+source = { registry = "https://pypi.org/simple" }
+...
+```
+
+The entry for `charset-normalizer` lists wheels for Android, iOS, macOS and Linux as well. uv's lock
+file does not record just your own OS; it **resolves for the other operating systems too** and
+records all of it. A lock file made on Windows works unchanged on a Linux CI runner or a colleague's
+Mac. The wheels that go in differ by OS, and some dependencies apply to one OS only, but each comes
+from what this lock file lists.
+
+Commit `uv.lock` and `pyproject.toml`; do not commit `.venv`. The `.gitignore` that `uv init` wrote
+already lists `.venv`.
+
+### Development dependencies
+
+Things you need only for tests or linting go in with `--dev`.
+
+```console
+❯ uv add --dev ruff
+Resolved 7 packages in 287ms
+...
+Installed 2 packages in 1.88s
+ ~ hello==0.1.0 (from file:///C:/Users/Jam/uv-demo/hello)
+ + ruff==0.16.10
+❯ uv run ruff --version
+ruff 0.16.10
+```
+
+In `pyproject.toml` they go under `[dependency-groups]`, apart from `dependencies`.
+
+```toml
+[dependency-groups]
+dev = [
+    "ruff>=0.16.10",
+]
+```
+
+### The same environment on every machine
+
+Delete `.venv` and rebuild it with `uv sync`: the state right after cloning the repository.
+
+```console
+❯ Remove-Item -Recurse -Force .venv
+❯ uv sync
+Using CPython 3.14.7
+Creating virtual environment at: .venv
+Resolved 7 packages in 4ms
+Installed 7 packages in 258ms
+ + certifi==2026.7.22
+ + charset-normalizer==3.5.2
+ + hello==0.1.0 (from file:///C:/Users/Jam/uv-demo/hello)
+ + idna==3.20
+ + requests==2.34.2
+ + ruff==0.16.10
+ + urllib3==2.8.0
+```
+
+The seven packages in `uv.lock` were back in 0.3 seconds. A newcomer's whole setup is `git clone`
+and `uv sync`.
+
+![Dependencies declared in pyproject.toml are resolved into uv.lock and synced to .venv before execution. uv run also locks and syncs automatically](/uv/project-workflow.avif)
+
+## Throwaway scripts and tools
+
+### A script you can hand over as one file
+
+A small script that does not deserve a project still has dependencies. Here is `fetch.py`, which
+uses httpx.
+
+```console
+❯ Get-Content fetch.py
+import httpx
+
+r = httpx.get("https://httpbin.org/get", params={"from": "uv"})
+print(r.status_code, r.json()["args"])
+❯ uv run fetch.py
+...
+    import httpx
+ModuleNotFoundError: No module named 'httpx'
+```
+
+No httpx, so it fails. `uv add --script` writes the dependency into the top of the script.
+
+```console
+❯ uv add --script fetch.py httpx
+Resolved 7 packages in 26ms
+❯ Get-Content fetch.py
+# /// script
+# requires-python = ">=3.14"
+# dependencies = [
+#     "httpx>=0.28.1",
+# ]
+# ///
+import httpx
+
+r = httpx.get("https://httpbin.org/get", params={"from": "uv"})
+print(r.status_code, r.json()["args"])
+❯ uv run fetch.py
+Installed 7 packages in 432ms
+200 {'from': 'uv'}
+```
+
+The comment block at the top is the format defined in [PEP 723](https://peps.python.org/pep-0723/).
+uv reads it, prepares an environment just for the script, and runs it. **Hand someone this one file
+and `uv run fetch.py` is all they need.** No `requirements.txt` alongside, no instructions for
+making a virtual environment.
+
+### CLI tools with uvx
+
+To run a CLI tool such as Ruff once, unrelated to any project, use `uvx`.
+
+```console
+❯ uvx ruff --version
+Installed 1 package in 66ms
+ruff 0.16.10
+```
+
+`uvx` installs the tool into a throwaway environment and runs it, adding nothing to the project's
+`.venv`.
+
+![Projects use .venv, while scripts with PEP 723 metadata and uvx tools use separate cached environments to isolate their dependencies](/uv/environments.avif)
+
+For a tool you use all the time, `uv tool install` puts it on PATH.
+
+```console
+❯ uv tool install ruff
+Resolved 1 package in 11ms
+Installed 1 package in 95ms
+ + ruff==0.16.10
+Installed 1 executable: ruff
+❯ uv tool list
+ruff v0.16.10
+- ruff
+❯ (Get-Command ruff).Source
+C:\Users\Jam\.local\bin\ruff.exe
+```
+
+Each tool gets an environment of its own and only its executable appears in `~/.local/bin`. That
+is what pipx used to do.
+
+## Moving an existing project over
+
+A project that runs on `requirements.txt` can move over in two steps.
+
+### Step one: the same thing, faster
+
+`uv pip` is an interface that works the way pip does. Install a `requirements.txt` listing
+`requests` and `rich` as it is.
+
+```console
+❯ Get-Content requirements.txt
+requests
+rich
+❯ uv venv
+Using CPython 3.14.7
+Creating virtual environment at: .venv
+Activate with: .venv\Scripts\activate
+❯ uv pip install -r requirements.txt
+Resolved 9 packages in 239ms
+Installed 9 packages in 1.58s
+ + certifi==2026.7.22
+ + charset-normalizer==3.5.2
+ + idna==3.20
+ + markdown-it-py==4.2.0
+ + mdurl==0.1.2
+ + pygments==2.21.0
+ + requests==2.34.2
+ + rich==15.0.0
+ + urllib3==2.8.0
+```
+
+`uv venv` tells you how to activate, but there is no need to. `uv pip` finds the `.venv` in the
+current directory and installs into it. If a different virtual environment is active, though, it
+installs into that one instead.
+
+To pin the versions, `uv pip compile` stands in for pip-tools.
+
+```console
+❯ uv pip compile requirements.txt -o requirements.lock
+...
+❯ Get-Content requirements.lock
+# This file was autogenerated by uv via the following command:
+#    uv pip compile requirements.txt -o requirements.lock
+certifi==2026.7.22
+    # via requests
+charset-normalizer==3.5.2
+    # via requests
+idna==3.20
+    # via requests
+markdown-it-py==4.2.0
+    # via rich
+mdurl==0.1.2
+    # via markdown-it-py
+pygments==2.21.0
+    # via rich
+...
+```
+
+Everything is pinned with `==` and each line carries a `# via` saying where it came from: the
+information `pip freeze` threw away is kept.
+
+### Step two: make it a project
+
+`uv init --bare` creates just a `pyproject.toml`, and `uv add -r` pulls in the contents of
+`requirements.txt`.
+
+```console
+❯ uv init --bare --author-from none
+Initialized project `legacy`
+❯ uv add -r requirements.txt
+...
+Resolved 10 packages in 53ms
+Checked 9 packages in 3ms
+❯ Get-Content pyproject.toml
+[project]
+name = "legacy"
+version = "0.1.0"
+requires-python = ">=3.14"
+dependencies = [
+    "requests>=2.34.2",
+    "rich>=15.0.0",
+]
+```
+
+From here it runs on `uv run` and `uv sync`, as in the previous section.
+
+## How fast is it
+
+uv advertises being "10-100x faster than pip". On this machine I had pip and uv install the same
+packages with the same Python, timing only the install: once without using any cache, and once
+with the cache filled by an earlier install.
+
+Medians of three alternating runs each, installing `requests`. Before every run I waited for CPU
+use to drop below 20%.
+
+| | pip 26.2.1 | uv 0.12.23 |
+| --- | --- | --- |
+| Cold cache | 6.6 s | 1.2 s |
+| Warm cache | 5.9 s | 0.35 s |
+
+About 5.6 times faster cold and about 17 times faster warm. On this machine, uv installed from its
+cache by hard-linking files instead of copying them.
+
+I also ran three rounds with `jupyterlab`, `pandas` and `matplotlib` (99 packages with their
+dependencies). uv was faster in every round, but in 7 of the 12 runs CPU use never got below 20%
+and the run started at 35 to 96%. The same measurement varied by up to 1.9 times across its three
+rounds, so the numbers for that set are left out.
+
+## How it differs from Anaconda and conda
+
+Plenty of people think of Anaconda when Python environments come up. uv and Anaconda (conda) look
+alike but solve different problems.
+
+### uv lives in the world of Python packages
+
+What uv handles is Python packages. It normally takes them from [PyPI](https://pypi.org/), but it
+can also install from a private package index, a Git repository or a local directory. Wherever they
+come from, they are in Python's package formats (wheels and source distributions). For anything
+with a full set of wheels (prebuilt distributions), such as NumPy, pandas or PyTorch, there is no
+problem at all.
+
+The trouble starts when a Python package needs a C or C++ library behind it. Try GDAL, the
+geospatial library. PyPI has no wheel for this machine's Python 3.14 on Windows, so uv tries to
+build it from source.
+
+```console
+❯ uv add gdal
+Using CPython 3.14.7
+Creating virtual environment at: .venv
+Resolved 2 packages in 467ms
+   Building gdal==3.13.3
+error: Failed to add dependencies
+  cause: Failed to build `gdal==3.13.3`
+  cause: The build backend returned an error
+  cause: Call to `setuptools.build_meta.build_wheel` failed (exit code: 1)
+...
+         extensions/gdalconst_wrap.c(3182): fatal error C1083: Cannot open include file: 'gdal.h': No such file or directory
+...
+```
+
+This machine has the C++ build tools, so it got as far as compiling and stopped there for want of
+`gdal.h`. The GDAL Python package is a thin layer over GDAL's own C library, and that library does
+not come from PyPI. Until you install GDAL yourself and point the build at it, uv can do nothing.
+
+### conda installs more than Python
+
+conda ships C libraries, command-line tools and even compilers as packages of its own, alongside
+the Python ones. Install the same GDAL with [pixi](https://pixi.sh/), which works with conda-forge
+packages.
+
+```console
+❯ pixi init
+Created C:\Users\Jam\uv-demo\gdal-pixi\pixi.toml
+❯ pixi add python gdal
+...
+Added python >=3.14.8,<3.15
+Added gdal >=3.13.3,<4
+❯ pixi run python -c "from osgeo import gdal; print(gdal.__version__)"
+3.13.3
+❯ pixi run gdalinfo --version
+GDAL 3.13.3 "Iowa City", released 2026/08/13
+```
+
+It imports from Python, and even GDAL's C-side command `gdalinfo` is there. When you want C/C++
+libraries and tools, compilers, or another language such as R in one environment, that is where the
+conda side comes in.
+
+pixi can put conda packages and PyPI packages in the same project.
+
+```console
+❯ pixi add --pypi requests
+Added requests >=2.34.2, <3
+Added these as pypi-dependencies.
+❯ Get-Content pixi.toml
+[workspace]
+...
+channels = ["conda-forge"]
+name = "gdal-pixi"
+platforms = ["win-64"]
+version = "0.1.0"
+
+[tasks]
+
+[dependencies]
+python = ">=3.14.8,<3.15"
+gdal = ">=3.13.3,<4"
+
+[pypi-dependencies]
+requests = ">=2.34.2, <3"
+```
+
+According to [pixi's documentation](https://pixi.prefix.dev/latest/concepts/conda_pypi/), the PyPI
+side is resolved with uv built in as a library. If you need the conda world, pixi; if not, uv.
+
+### Anaconda's terms of service
+
+Anaconda comes with one more thing to watch. Under
+[Anaconda's terms of service](https://www.anaconda.com/legal/terms/terms-of-service) (dated
+15 July 2025), a for-profit organisation with more than 200 employees and contractors combined
+needs a paid plan. The terms list fetching packages from repo.anaconda.com and other repositories
+Anaconda maintains or provides. conda-forge is not named in them.
+
+conda-forge packages themselves, though, are also served from conda.anaconda.org, which Anaconda
+runs. In the `pixi.lock` from the pixi project above, every conda package URL points there. The uv
+examples in this post, by contrast, took every package from PyPI (pypi.org and
+files.pythonhosted.org). If you use conda-based tools
+at work, check which hosts they fetch from and whether the terms apply to your organisation.
+
+### Which to choose
+
+| | uv | pixi | Anaconda |
+| --- | --- | --- | --- |
+| Where packages come from | Python packages, from PyPI and the like | conda-forge and PyPI | Anaconda's repositories |
+| C/C++ libraries and tools | No | Yes | Yes |
+| Python itself | Yes | Yes | Yes |
+| Licence / terms | MIT or Apache-2.0 | BSD-3-Clause | Paid for for-profits over 200 people |
+
+- **Your dependencies are Python packages with wheels available** — uv
+- **You want C/C++ libraries and tools, or R, in one environment** — pixi
+- **You already have environments built on Anaconda** — first check whether the terms apply to your
+  organisation
+
+## Traps I actually hit
+
+### uv init writes your git email address
+
+The first time I ran plain `uv init`, `pyproject.toml` came with an `authors` entry holding the
+email address from my git configuration.
+
+It was the same address as `git config user.email`: by default uv fills in the author from git's
+`user.name` and `user.email`. If git holds an address
+you never meant to publish, it goes straight into the repository. That is why this post passes
+`--author-from none`. pixi does the same: the `pixi.toml` from `pixi init` had the email address in
+`authors` too, and the `pixi.toml` above leaves that line out.
+
+### Python installed by uv has no pip command
+
+`python` on this machine is a 3.14 installed by uv. Typing `pip` there finds nothing.
+
+```console
+❯ python --version
+Python 3.14.7
+❯ pip --version
+pip: The term 'pip' is not recognized as a name of a cmdlet, function, script file, or executable program.
+Check the spelling of the name, or if a path was included, verify that the path is correct and try again.
+❯ python -m pip --version
+pip 26.2.1 from C:\Users\Jam\.local\share\uv\python\cpython-3.14-windows-x86_64-none\Lib\site-packages\pip (python 3.14)
+```
+
+pip itself is there, and `python -m pip` works. What uv puts on PATH is only the launchers such as
+`python.exe`, not `pip.exe`. With uv there is rarely a reason to type pip directly; it bites mostly
+when following an old set of instructions.
+
+### Deep under a long path, only pip fails
+
+The first attempt at the measurements ran deep inside a temporary folder, under a long path.
+Installing `jupyterlab` there, pip alone stopped halfway. The middle of the long paths is elided
+here.
+
+```text
+ERROR: Could not install packages due to an OSError: [Errno 2] No such file or directory: 'C:\\Users\\Jam\\AppData\\Local\\Temp\\...\\Lib\\site-packages\\jedi\\third_party\\django-stubs\\...'
+HINT: This error might have occurred since this system does not have Windows Long Path support enabled.
+```
+
+Windows has an old limit of 260 characters on a path. pip hit it; uv, in the same place, installed
+all 99 packages. Keep a project deep in nested folders and some packages will not install with pip.
+
+## Commands you will use
+
+| Command | What it does | Replaces |
+| --- | --- | --- |
+| `uv python install 3.11` | Install Python itself | pyenv |
+| `uv python pin 3.11` | Choose the Python for a directory | pyenv local |
+| `uv init` | Create a project | Poetry |
+| `uv add PKG` / `uv add --dev PKG` | Add a dependency / a development dependency | pip install + requirements.txt |
+| `uv remove PKG` | Remove a dependency | pip uninstall |
+| `uv run CMD` | Run a command in the project's environment | Activating the venv |
+| `uv sync` | Make the environment match `uv.lock` | pip install -r |
+| `uv lock --upgrade` | Update the lock file to the latest versions | pip-compile --upgrade |
+| `uv tree` | Show the dependency tree | pipdeptree |
+| `uv add --script FILE PKG` | Write a dependency into a script | — |
+| `uvx TOOL` | Run a tool in a throwaway environment | pipx run |
+| `uv tool install TOOL` | Put a tool on PATH | pipx install |
+| `uv venv` / `uv pip install` | Install the way pip does | venv / pip |
+| `uv pip compile` | Pin versions | pip-compile |
+
+## Summary
+
+- uv is a package and project manager for Python that rolls the jobs of pip, venv, pyenv,
+  pip-tools, pipx and Poetry into one
+- `uv python install` installs Python itself, as a prebuilt CPython, so no compiler is needed
+- `uv init`, `uv add`, `uv run` are the loop; `uv run` takes care of creating and activating the
+  virtual environment
+- `pyproject.toml` holds only the dependencies you chose, and `uv.lock` records a resolution that
+  covers the other operating systems too. After `git clone`, `uv sync` is all there is
+- From 0.12, `uv init` defaults to a packaged `src` layout; the single `main.py` layout is
+  `--no-package`
+- Write dependencies into a script with PEP 723 and it travels as one file. Tools go through `uvx`
+  and `uv tool install`
+- A `requirements.txt` project can be sped up with `uv pip` as it is, then moved into a project
+  with `uv add -r`
+- Installing `requests` was about 5.6 times faster cold and about 17 times faster warm
+- uv handles only Python packages, from PyPI and the like. For C/C++ libraries as well, pixi
+  (conda-forge). Under Anaconda's terms, for-profits over 200 people pay
