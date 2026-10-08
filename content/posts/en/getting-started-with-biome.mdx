@@ -1,0 +1,879 @@
+---
+title: Getting Started with Biome
+date: "2026-10-08"
+image: /thumbnails/getting-started-with-biome.avif
+description: Biome rolls a formatter and a linter into one tool. This guide compares it with the ESLint and Prettier pairing, then covers format, lint and check, assist actions that rewrite code, domains enabled by dependencies, this blog's biome.json, migrating the create-next-app template, measured speed, GritQL plugins, and the traps hit along the way
+tags:
+  - biome
+  - javascript
+  - typescript
+  - cli
+  - devtools
+---
+
+## What Biome is
+
+[Biome](https://biomejs.dev/) is **a single tool that combines a formatter, which tidies JavaScript and
+TypeScript code, with a linter, which finds problems in it**. It is written in Rust and runs as one
+executable. It is a [fork that carries on Rome](https://biomejs.dev/blog/announcing-biome/).
+
+It takes over jobs that used to belong to separate tools.
+
+- **Prettier** — formatting code
+- **ESLint** and its plugins — finding problems in code
+- import-sorting plugins — keeping imports in order
+
+It has 568 lint rules in total ([docs](https://biomejs.dev/linter/)) and claims 97% compatibility with
+Prettier ([website](https://biomejs.dev/)). It supports JavaScript, TypeScript, JSX, JSON, CSS and
+GraphQL; HTML works once explicitly enabled, and Vue, Svelte and Astro support is experimental
+([language support table](https://biomejs.dev/internals/language-support/)).
+
+This blog uses Biome alone for formatting and linting, with no ESLint or Prettier. This post first
+builds the ESLint and Prettier pairing to see what is awkward about it. It then walks through Biome,
+migrates the official Next.js template to it, and measures the speed.
+
+Everything here was checked with Biome 2.5.15 in PowerShell on Windows 11.
+
+## What was awkward about ESLint and Prettier
+
+`create-next-app`, which creates Next.js projects, offers both ESLint and Biome as the linter in
+16.4.0, the latest version at the time of writing.
+
+```console
+❯ bunx create-next-app@latest --help
+...
+  --eslint                                 Initialize with ESLint config.
+  --biome                                  Initialize with Biome config.
+...
+```
+
+Create one with ESLint first. `--yes` answers the remaining questions with their defaults.
+
+```console
+❯ bunx create-next-app@16.4.0 next-eslint --ts --app --tailwind --eslint --use-bun --yes
+...
++ eslint@9.39.5 (v10.12.0 available)
++ eslint-config-next@16.4.0
+...
+352 packages installed [56.05s]
+...
+Success! Created next-eslint at C:\Users\Jam\biome-demo\next-eslint
+```
+
+Then the same template with Biome.
+
+```console
+❯ bunx create-next-app@16.4.0 next-biome --ts --app --tailwind --biome --use-bun --yes
++ @biomejs/biome@2.4.2
+...
+47 packages installed [12.40s]
+...
+Success! Created next-biome at C:\Users\Jam\biome-demo\next-biome
+```
+
+The ESLint version installed 352 packages, the Biome version 47. Nearly all of the 305-package
+difference comes from ESLint and its plugins.
+
+And the ESLint version still has no formatter. To format as well, add Prettier, plus
+`eslint-config-prettier` to turn off ESLint's formatting-related rules so ESLint and Prettier do not
+fight.
+
+```console
+❯ bun add -d prettier eslint-config-prettier
+Saved lockfile
+
+installed prettier@3.9.9 with binaries:
+ - prettier
+installed eslint-config-prettier@10.1.8 with binaries:
+ - eslint-config-prettier
+
+2 packages installed [9.64s]
+```
+
+Add `eslint-config-prettier` to the ESLint config, write a Prettier config and a list of files Prettier
+should leave alone, and there are three configuration files. The Prettier config turns semicolons off
+to match this blog.
+
+```console
+❯ Get-Content .prettierrc.json
+{ "semi": false }
+❯ Get-ChildItem -Force -Name -File
+.gitignore
+.prettierignore
+.prettierrc.json
+AGENTS.md
+bun.lock
+eslint.config.mjs
+next-env.d.ts
+next.config.ts
+package.json
+README.md
+tsconfig.json
+```
+
+- **A configuration file per tool**. `eslint.config.mjs`, `.prettierrc.json`, `.prettierignore`. Even the
+  ignored files are listed separately for ESLint and for Prettier
+- **You manage the boundary between the two**. `eslint-config-prettier` exists to remove formatting
+  rules from ESLint; miss one and the two tools demand opposite fixes
+- **Dependencies pile up**. Many ESLint rules ship as plugins, and each plugin brings its own
+  dependencies
+- **Two runs**. CI runs both `eslint .` and `prettier --check .`
+
+Biome puts all of this into one tool and one configuration file.
+
+## Installing it and biome init
+
+Install it as a development dependency. `-E` writes the exact version instead of a `^` range. The
+[docs](https://biomejs.dev/guides/manual-installation/) also recommend pinning it with `-E` so every
+contributor and CI run the same version of Biome.
+
+```console
+❯ bun add -d -E @biomejs/biome
+Resolved, downloaded and extracted [1]
+Saved lockfile
+
+installed @biomejs/biome@2.5.15 with binaries:
+ - biome
+
+2 packages installed [401.00ms]
+```
+
+`biome init` creates the configuration file.
+
+```console
+❯ bunx biome init
+...
+  i Welcome to Biome! Let's get you started...
+
+    Files created
+
+      - biome.json
+        Your project configuration. See https://biomejs.dev/reference/configuration
+
+    Found an ignore file. Biome enabled VCS integration.
+...
+```
+
+Here is the `biome.json` it created.
+
+```json
+{
+	"$schema": "https://biomejs.dev/schemas/2.5.15/schema.json",
+	"vcs": {
+		"enabled": true,
+		"clientKind": "git",
+		"useIgnoreFile": true
+	},
+	"files": {
+		"ignoreUnknown": false
+	},
+	"formatter": {
+		"enabled": true,
+		"indentStyle": "tab"
+	},
+	"linter": {
+		"enabled": true,
+		"rules": {
+			"preset": "recommended"
+		}
+	},
+	"javascript": {
+		"formatter": {
+			"quoteStyle": "double"
+		}
+	},
+	"assist": {
+		"enabled": true,
+		"actions": {
+			"source": {
+				"organizeImports": "on"
+			}
+		}
+	}
+}
+```
+
+Two things stand out.
+
+- **Tabs for indentation**. Prettier defaults to two spaces; Biome defaults to tabs. For spaces, set
+  `"indentStyle": "space"`
+- **It reads `.gitignore`**. As `Found an ignore file` says, `vcs.useIgnoreFile` is on, so whatever Git
+  ignores, Biome ignores too
+
+## format, lint and check
+
+A deliberately messy little file shows how the three commands differ.
+
+```console
+❯ Get-Content title.ts
+import { readFileSync } from "node:fs"
+import { join } from "node:path"
+import { basename } from "node:path"
+
+export function title(file:string){
+  var text = readFileSync(join("posts", file), 'utf8')
+  if (text == "") return basename(file)
+  return text.split("\n")[0]
+}
+```
+
+`biome format` checks formatting only. It shows the result as a diff.
+
+```console
+❯ bunx biome format title.ts
+title.ts format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+
+    1    │ - import·{·readFileSync·}·from·"node:fs"
+    2    │ - import·{·join·}·from·"node:path"
+    3    │ - import·{·basename·}·from·"node:path"
+       1 │ + import·{·readFileSync·}·from·"node:fs";
+       2 │ + import·{·join·}·from·"node:path";
+       3 │ + import·{·basename·}·from·"node:path";
+    4  4 │
+    5    │ - export·function·title(file:string){
+    6    │ - ··var·text·=·readFileSync(join("posts",·file),·'utf8')
+    7    │ - ··if·(text·==·"")·return·basename(file)
+    8    │ - ··return·text.split("\n")[0]
+    9    │ - }
+       5 │ + export·function·title(file:·string)·{
+       6 │ + → var·text·=·readFileSync(join("posts",·file),·"utf8");
+       7 │ + → if·(text·==·"")·return·basename(file);
+       8 │ + → return·text.split("\n")[0];
+       9 │ + }
+      10 │ +
+...
+Checked 1 file in 5ms. No fixes applied.
+Found 1 error.
+```
+
+`biome lint` looks only for problems in the code.
+
+```console
+❯ bunx biome lint title.ts
+title.ts:7:12 lint/suspicious/noDoubleEquals  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Using == may be unsafe if you are relying on type coercion.
+
+    5 │ export function title(file:string){
+    6 │   var text = readFileSync(join("posts", file), 'utf8')
+  > 7 │   if (text == "") return basename(file)
+      │            ^^
+    8 │   return text.split("\n")[0]
+    9 │ }
+
+  i == is only allowed when comparing against null.
+
+  i Unsafe fix: Use === instead.
+
+    7 │ ··if·(text·===·"")·return·basename(file)
+      │              +
+...
+Checked 1 file in 9ms. No fixes applied.
+Found 1 error.
+```
+
+`biome check` does formatting, linting and the assist actions covered below in one pass. It is the
+one you use day to day.
+
+```console
+❯ bunx biome check title.ts
+title.ts:1:1 assist/source/organizeImports  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  × Sort these imports.
+...
+title.ts:7:12 lint/suspicious/noDoubleEquals  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  × Using == may be unsafe if you are relying on type coercion.
+...
+title.ts format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  × Formatter would have printed the following content:
+...
+Checked 1 file in 13ms. No fixes applied.
+Found 3 errors.
+```
+
+Three kinds of findings. `assist/source/organizeImports` proposes merging and sorting the two imports
+from `node:path`.
+
+![biome check combines the formatter, linter and assist. format handles formatting, lint reports problems, and --write applies fixes](/biome/check-overview.avif)
+
+### --write and --unsafe
+
+`--write` applies what it can fix and writes the file.
+
+```console
+❯ bunx biome check --write title.ts
+title.ts:6:11 lint/suspicious/noDoubleEquals  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  × Using == may be unsafe if you are relying on type coercion.
+...
+Checked 1 file in 15ms. Fixed 1 file.
+Found 1 error.
+❯ Get-Content title.ts
+import { readFileSync } from "node:fs";
+import { basename, join } from "node:path";
+
+export function title(file: string) {
+	var text = readFileSync(join("posts", file), "utf8");
+	if (text == "") return basename(file);
+	return text.split("\n")[0];
+}
+```
+
+Formatting and import sorting are done, but `==` remains. As the lint output's `Unsafe fix` said,
+turning `==` into `===` can change the behaviour of code that relied on type coercion. Biome puts fixes
+that may change meaning in a separate "unsafe" bucket and does not apply them with `--write` alone.
+
+```console
+❯ bunx biome check --write --unsafe title.ts
+Checked 1 file in 16ms. Fixed 1 file.
+❯ Get-Content title.ts
+import { readFileSync } from "node:fs";
+import { basename, join } from "node:path";
+
+export function title(file: string) {
+	var text = readFileSync(join("posts", file), "utf8");
+	if (text === "") return basename(file);
+	return text.split("\n")[0];
+}
+```
+
+Only with `--unsafe` did it become `===`.
+
+![biome check only checks, --write applies safe fixes, and --write --unsafe also applies fixes that may change behavior. biome ci does not write files](/biome/fix-modes.avif)
+
+## Assist actions rewrite your code
+
+Besides lint rules, Biome has **assist actions**, such as `organizeImports`. Where a lint rule says
+"this is a problem", an assist action says "rewrite it like this", and `check --write` applies it.
+
+This blog turns on `useSortedKeys`, which orders object keys alphabetically. Try it in a small project.
+
+```console
+❯ Select-String -Context 0,3 '"source"' biome.json
+
+> biome.json:29:      "source": {
+  biome.json:30:        "organizeImports": "on",
+  biome.json:31:        "useSortedKeys": "on"
+  biome.json:32:      }
+❯ Get-Content post.ts
+export const post = {
+	title: "Getting Started with Biome",
+	date: "2026-10-09",
+	tags: ["biome", "cli"],
+	description: "A formatter and linter in one",
+};
+❯ bunx biome check post.ts
+post.ts:2:2 assist/source/useSortedKeys  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × The object properties are not sorted by key.
+...
+  i Safe fix: Sort the object properties by key.
+
+    1 1 │   export const post = {
+    2   │ - → title:·"Getting·Started·with·Biome",
+    3   │ - → date:·"2026-10-09",
+      2 │ + → date:·"2026-10-09",
+      3 │ + → description:·"A·formatter·and·linter·in·one",
+    4 4 │     tags: ["biome", "cli"],
+    5   │ - → description:·"A·formatter·and·linter·in·one",
+      5 │ + → title:·"Getting·Started·with·Biome",
+    6 6 │   };
+...
+Checked 1 file in 22ms. No fixes applied.
+Found 1 error.
+❯ bunx biome check --write post.ts
+Checked 1 file in 25ms. Fixed 1 file.
+❯ Get-Content post.ts
+export const post = {
+	date: "2026-10-09",
+	description: "A formatter and linter in one",
+	tags: ["biome", "cli"],
+	title: "Getting Started with Biome",
+};
+```
+
+It is a `Safe fix`, so `--write` alone reordered the keys. The order you wrote them in is gone. That is
+why this blog's contributor notes say to write code the way Biome's assist actions would leave it.
+
+## Domains switch on from your dependencies
+
+Some of Biome's rules only make sense with a particular library: React, Next.js, a test framework.
+They are grouped into **domains**. According to the
+[docs](https://biomejs.dev/linter/domains/), a domain is enabled automatically when the matching
+dependency is declared in `package.json`.
+
+Here is a component that breaks React's rules by calling a hook after an `if`. `biome.json` is
+untouched from `biome init` and says nothing about domains.
+
+```console
+❯ Get-Content counter.tsx
+import { useState } from "react";
+
+export function Counter({ enabled }: { enabled: boolean }) {
+	if (!enabled) {
+		return null;
+	}
+	const [count, setCount] = useState(0);
+	return <button onClick={() => setCount(count + 1)}>{count}</button>;
+}
+❯ Get-Content package.json
+{
+  "name": "basics",
+  "devDependencies": {
+    "@biomejs/biome": "2.5.15"
+  },
+  "private": true
+}
+❯ bunx biome lint counter.tsx
+counter.tsx:8:9 lint/a11y/useButtonType ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+...
+Checked 1 file in 18ms. No fixes applied.
+Found 1 error.
+```
+
+Without `react` in the dependencies, the only finding is an accessibility one: the `button` has no
+`type`. Install `react` and run it again.
+
+```console
+❯ bun add react
+installed react@19.3.0
+
+1 package installed [254.00ms]
+❯ bunx biome lint counter.tsx
+counter.tsx:7:28 lint/correctness/useHookAtTopLevel ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × This hook is being called conditionally, but all hooks must be called in the exact same order in every component render.
+
+    5 │ 		return null;
+    6 │ 	}
+  > 7 │ 	const [count, setCount] = useState(0);
+      │ 	                          ^^^^^^^^
+    8 │ 	return <button onClick={() => setCount(count + 1)}>{count}</button>;
+    9 │ }
+
+  i Hooks should not be called after an early return.
+...
+counter.tsx:8:9 lint/a11y/useButtonType ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+...
+Checked 1 file in 22ms. No fixes applied.
+Found 2 errors.
+```
+
+`biome.json` did not change, yet `useHookAtTopLevel` from the React domain started working.
+
+### The slow domains
+
+Two domains, `project` and `types`, are different in kind. Other domains look at one file at a time;
+these two follow imports across the whole project, and `types` also infers types. The docs say
+enabling them makes Biome scan the entire project, at a cost in speed.
+
+This blog enables both. I timed `biome lint` over its 283 files against a configuration without those
+two. Each figure is the median of eight runs, and each run started only after CPU usage was confirmed
+below 20%.
+
+| | Time (median) | Range |
+| --- | --- | --- |
+| With `project` and `types` | 4.73 s | 2.90–6.50 s |
+| Without `project` and `types` | 0.55 s | 0.46–0.77 s |
+
+About nine times slower. In exchange you get rules that need to look across files. For example,
+`noPrivateImports`, which `project`'s recommended set enables, checks that exports restricted with the
+JSDoc tags `@private` or `@package` are not imported from outside that scope. Most of the `types`
+domain's rules are still in the nursery according to the docs. Whether a few seconds of waiting is
+worth it is a call each project makes.
+
+## This blog's biome.json
+
+With all that in hand, here is this blog's configuration.
+
+```json
+{
+  "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
+  "assist": {
+    "actions": {
+      "source": {
+        "noDuplicateClasses": "on",
+        "useSortedKeys": "on",
+        "useSortedPackageJson": "on"
+      }
+    }
+  },
+  "css": {
+    "parser": {
+      "tailwindDirectives": true
+    }
+  },
+  "files": {
+    "includes": ["**", "!**/*.svg"]
+  },
+  "formatter": {
+    "useEditorconfig": true
+  },
+  "javascript": {
+    "formatter": {
+      "semicolons": "asNeeded"
+    }
+  },
+  "linter": {
+    "domains": {
+      "next": "recommended",
+      "playwright": "recommended",
+      "project": "recommended",
+      "react": "recommended",
+      "tailwind": "recommended",
+      "test": "recommended",
+      "types": "recommended"
+    },
+    "rules": {
+      "correctness": {
+        "noUndeclaredDependencies": "error",
+        "noUnusedImports": "error"
+      },
+      "style": {
+        "noUselessElse": "error",
+        "useBlockStatements": "error"
+      }
+    }
+  },
+  "overrides": [
+    {
+      "assist": {
+        "actions": {
+          "source": {
+            "useSortedKeys": "off"
+          }
+        }
+      },
+      "includes": ["**/package.json"]
+    },
+    {
+      "includes": ["test/**"],
+      "linter": {
+        "rules": {
+          "performance": {
+            "noImgElement": "off"
+          }
+        }
+      }
+    }
+  ],
+  "vcs": {
+    "clientKind": "git",
+    "defaultBranch": "main",
+    "enabled": true,
+    "useIgnoreFile": true
+  }
+}
+```
+
+- **`$schema`** — points at the schema inside `node_modules`. Unlike a URL, it always matches the
+  installed Biome, and the editor completes from it
+- **`assist`** — besides `useSortedKeys`, `noDuplicateClasses` removes a class repeated in `class`, and
+  `useSortedPackageJson` orders `package.json` the same way as
+  [sort-package-json](https://github.com/keithamus/sort-package-json)
+- **The first `overrides` entry** — turns `useSortedKeys` off for `package.json`, so alphabetical order
+  does not undo the conventional order with `name` and `version` at the top
+- **`css.parser.tailwindDirectives`** — keeps Tailwind CSS v4 syntax such as `@theme` from being a CSS
+  syntax error
+- **`formatter.useEditorconfig`** — reads indentation and line endings from `.editorconfig`, so the
+  editor and Biome share one source
+- **`javascript.formatter.semicolons`** — `asNeeded` leaves semicolons out except where they are needed
+- **`linter.domains`** — lists seven domains explicitly. `next`, `react` and `playwright` would switch
+  on from dependencies anyway, but writing them down makes it obvious from the config alone which
+  domains are active. `test` is enabled by dependencies such as jest or vitest, not by the `bun:test`
+  this blog uses, so this line is needed. Every `tailwind` rule is still in the nursery, so
+  `recommended` enables nothing there for now
+- **`linter.rules`** — four rules are configured individually. `noUnusedImports` is recommended but
+  defaults to a warning, so it is raised to an error. `noUselessElse` and `useBlockStatements` are not
+  recommended. `noUndeclaredDependencies`, a `project` domain rule outside the recommended set, finds
+  imports of packages that `package.json` does not declare
+
+The last one, `noUndeclaredDependencies`, was added while reviewing this configuration for this post.
+`--only` runs a single rule even if the configuration does not enable it. Tried before adding it, it
+found four problems.
+
+```console
+❯ bunx biome lint --only=correctness/noUndeclaredDependencies .
+lib\remark-alerts.ts:1:39 lint/correctness/noUndeclaredDependencies ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  × Dependency mdast isn't specified in package.json.
+...
+lib\remark-static-mdx.ts:1:27 lint/correctness/noUndeclaredDependencies ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  × Dependency mdast isn't specified in package.json.
+...
+lib\remark-static-mdx.ts:2:27 lint/correctness/noUndeclaredDependencies ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  × Dependency unist isn't specified in package.json.
+...
+test\unit\lib\remark-alerts.test.ts:2:56 lint/correctness/noUndeclaredDependencies ━━━━━━━━━━━━━━━━━━
+  × Dependency mdast isn't specified in package.json.
+...
+Found 4 errors.
+```
+
+All four are type imports such as `import type { Root } from "mdast"`. The `@types/mdast` and
+`@types/unist` packages that provide those types were only there as dependencies of
+`mdast-util-from-markdown` and `unist-util-visit`; this blog's `package.json` never declared them. It
+works today, but if either package changes its dependencies, the types disappear. Both are now
+devDependencies, and the rule is on.
+
+## Migrating from ESLint and Prettier
+
+Now move the first template, the one with ESLint and Prettier, over to Biome. After installing Biome
+and running `biome init`, run the two migration commands.
+
+```console
+❯ bunx biome migrate prettier --write
+.prettierignore has been successfully migrated.
+.prettierrc.json has been successfully migrated.
+configuration ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  i Migration results:
+
+  - C:\Users\Jam\biome-demo\next-eslint\biome.json: configuration successfully migrated.
+
+❯ bunx biome migrate eslint --write
+\\?\C:\Users\Jam\biome-demo\next-eslint\eslint.config.mjs migrate ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  i 471 ESLint rules found
+    - 160 are obsolete because of Biome's formatter
+    - 64 have been migrated to Biome's rules
+    - 49% (232) of your ESLint rules are fully covered by Biome
+      - 13% (64) via direct migration to Biome rules
+...
+  i Unsupported rules (62 incompatible with formatter, 118 made obsolete by the formatter, 42 covered by a formatter option, 147 not yet implemented, 30 unknown source):
+...
+```
+
+The ESLint configuration mentions 471 rules: the ones `eslint-config-next` enables plus the formatting
+rules `eslint-config-prettier` turns off. Of those, 64 moved straight to matching Biome rules, and
+160 are about formatting, so the formatter takes over and they are no longer needed.
+
+The rest do not move. The output names every one, and these stand out.
+
+- **147 not yet implemented** — rules such as `react-hooks/purity` and `react-hooks/refs`, which
+  [surface React Compiler diagnostics through ESLint](https://react.dev/reference/eslint-plugin-react-hooks),
+  `react/no-unescaped-entities`, `import/no-anonymous-default-export` and more
+- **30 from plugins Biome does not know** — some of the Next.js-specific rules, such as
+  `@next/next/no-html-link-for-pages`
+
+So after the move, Biome stops checking part of what ESLint was checking. The list tells you exactly
+which rules you are giving up.
+
+The migrated `biome.json` also has things you would not want to keep as they are.
+
+- `"preset": "none"`, so Biome's recommended rules are off; only the migrated rules are listed one by one
+- `linter.includes` repeats ESLint's ignore patterns three times over
+- `overrides` lists 137 browser globals such as `onclick` and `onload`
+
+The migration copies the ESLint configuration mechanically. Treat the result as a starting point: switch
+back to `"preset": "recommended"`, drop the duplicates and tidy it up. The Prettier migration also has a
+bug worth knowing about, covered in the traps.
+
+## How fast is it
+
+On the same template I compared ESLint plus Prettier against Biome. The Biome configuration was set to
+match Prettier's output (two spaces, semicolons only where needed), with the recommended rules plus the
+`next` and `react` domains. All tools checked the same nine files, which none of them flagged. The SVGs
+in `public/`, which ESLint and Prettier do not handle, were excluded from Biome too.
+
+Each tool's executable was called directly, without `bunx`. Each figure is the median of ten runs, and
+each run started only after CPU usage was confirmed below 20%.
+
+| | Time (median) | Range |
+| --- | --- | --- |
+| `eslint .` | 3.29 s | 2.63–5.87 s |
+| `prettier --check .` | 0.48 s | 0.37–0.75 s |
+| `eslint .` then `prettier --check .` | 3.43 s | 2.99–5.22 s |
+| `biome lint .` | 0.083 s | 0.054–0.16 s |
+| `biome format .` | 0.081 s | 0.050–0.21 s |
+| `biome check .` | 0.084 s | 0.058–0.25 s |
+
+For linting and formatting together, 3.43 s against 0.084 s: about 40 times faster.
+
+Most of that gap is start-up, not checking files. Given only `next.config.ts`, ESLint took a median of
+2.78 s, not far from 3.10 s for all nine files (six runs each). Most of its time goes into starting
+Node.js and loading the configuration and plugins. Biome's `biome check`, which lints and formats,
+takes about as long as `biome lint` alone. The ratio will differ on a large project, but for a tool you
+run on every save or before every commit, start-up time is the wait you feel.
+
+## Editors and CI
+
+### Editors
+
+Biome has an official VS Code extension. According to the
+[docs](https://biomejs.dev/editors/first-party-extensions/), VS Code installs it from the Visual Studio
+Marketplace, and VSCodium, Cursor and the like from Open VSX. This blog recommends the extension in the
+repository's `.vscode/extensions.json`, and `.vscode/settings.json` formats and fixes on save. According
+to the [VS Code docs](https://code.visualstudio.com/docs/editing/refactoring), `explicit` in
+`codeActionsOnSave` runs only on an explicit save; to run the fixes on auto saves from window or focus
+changes as well, use `always`.
+
+```json
+{
+  "editor.codeActionsOnSave": {
+    "source.fixAll.biome": "explicit",
+    "source.organizeImports.biome": "explicit"
+  },
+  "editor.defaultFormatter": "biomejs.biome",
+  "editor.formatOnSave": true,
+  "typescript.autoClosingTags": false
+}
+```
+
+### CI
+
+For CI there is `biome ci`. It checks the same things as `biome check` but never writes files.
+
+```console
+❯ bunx biome ci
+Checked 9 files in 35ms. No fixes applied.
+❯ bunx biome ci --write
+Error: `--write` is not expected in this context
+...
+```
+
+It refuses `--write`. `--reporter` picks the output format, with options such as `github`, `gitlab`,
+`junit` and `sarif`.
+
+This blog's CI does it a little differently. GitHub Actions runs `mise lint`, in which
+`biome check --write --unsafe` fixes what it can, and [autofix.ci](https://autofix.ci/) commits those
+changes back to the pull request. Rather than failing and making a person fix it, CI pushes the fix.
+
+## Writing your own rules with GritQL
+
+What Biome's rules do not cover, you can write as a plugin in [GritQL](https://docs.grit.io/language/overview),
+a code search language. Here is a small plugin that reports `console.log`.
+
+```console
+❯ Get-Content no-console-log.grit
+`console.log($args)` where {
+  register_diagnostic(span = $args, message = "Use the logger instead of console.log")
+}
+❯ Select-String plugins -Context 0,2 biome.json
+
+> biome.json:35:  "plugins": [
+  biome.json:36:    "./no-console-log.grit"
+  biome.json:37:  ]
+❯ Get-Content log.ts
+export function report(count: number) {
+	console.log(count);
+	console.error(count);
+}
+❯ bunx biome lint log.ts
+log.ts:2:14 plugin ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Use the logger instead of console.log
+
+    1 │ export function report(count: number) {
+  > 2 │ 	console.log(count);
+      │ 	            ^^^^^
+    3 │ 	console.error(count);
+    4 │ }
+...
+Checked 1 file in 17ms. No fixes applied.
+Found 1 error.
+```
+
+The part in backticks is a code pattern, and `$args` matches any arguments. `console.error` has a
+different shape, so it does not match. Matching is by syntax rather than text, so `console.log` inside
+a comment or a string does not trigger it.
+
+```console
+❯ Get-Content log2.ts
+// TODO: remove console.log(count) later
+export const note = "console.log(count)";
+❯ bunx biome lint log2.ts
+Checked 1 file in 7ms. No fixes applied.
+```
+
+## Pitfalls I actually hit
+
+### migrate prettier flips semicolons and quotes
+
+When the Prettier configuration does not set `semi` or `singleQuote`, `biome migrate prettier` writes
+the opposite of Prettier's defaults.
+
+Start from an empty Prettier configuration. Formatting with Prettier adds double quotes and semicolons,
+as Prettier's defaults say.
+
+```console
+❯ Get-Content .prettierrc.json
+{}
+❯ bunx prettier --write sample.js
+sample.js 206ms
+❯ Get-Content sample.js
+const greeting = "hello";
+console.log(greeting);
+```
+
+Migrate that configuration to Biome and check the same file with Biome.
+
+```console
+❯ bunx biome migrate prettier --write
+.prettierrc.json has been successfully migrated.
+...
+❯ Select-String '"(semicolons|quoteStyle)"' biome.json
+
+biome.json:24:			"semicolons": "asNeeded",
+biome.json:27:			"quoteStyle": "single",
+❯ bunx biome format sample.js
+sample.js format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+
+    1   │ - const·greeting·=·"hello";
+    2   │ - console.log(greeting);
+      1 │ + const·greeting·=·'hello'
+      2 │ + console.log(greeting)
+    3 3 │
+...
+Checked 1 file in 6ms. No fixes applied.
+Found 1 error.
+```
+
+After the migration, Biome wants to strip the semicolons from a file Prettier just formatted and switch
+its double quotes to single. Prettier's defaults, per its [docs](https://prettier.io/docs/options), are
+semicolons and double quotes.
+
+The cause is the set of Prettier defaults the migration carries. In
+[Biome's source](https://github.com/biomejs/biome/blob/c870caa6419ba669edf5e3fbc3c72605e9c0a87f/crates/biome_cli/src/execute/migrate/prettier.rs#L70-L78),
+options missing from the configuration file fall back to `semi: false` and `single_quote: true`, the
+reverse of Prettier's. Biome's own tests record the same output: migrating only
+`{ "endOfLine": "auto" }` yields `asNeeded` and `single`.
+
+The Next.js template in this post had `"semi": false` in its Prettier configuration, so semicolons
+happened to come out right. Even so, `biome format` wanted to turn every double quote into a single
+quote. After migrating, always check that `semicolons` and `quoteStyle` match Prettier's output. To fix
+it by hand, set whatever the Prettier configuration left out to `"semicolons": "always"` and
+`"quoteStyle": "double"`.
+
+## Commands you will use
+
+| Command | What it does | Replaces |
+| --- | --- | --- |
+| `biome init` | Create `biome.json` | — |
+| `biome format --write .` | Format | prettier --write |
+| `biome lint .` | Find problems | eslint |
+| `biome check .` | Check formatting, lint and assist together | eslint + prettier --check |
+| `biome check --write .` | Apply safe fixes | eslint --fix + prettier --write |
+| `biome check --write --unsafe .` | Apply unsafe fixes too | — |
+| `biome ci .` | Check without writing (for CI) | — |
+| `biome migrate eslint --write` | Migrate the ESLint configuration | — |
+| `biome migrate prettier --write` | Migrate the Prettier configuration (then check it) | — |
+
+## Summary
+
+- Biome is a Rust tool that combines a formatter and a linter, replacing Prettier, ESLint and its
+  plugins, and import sorting
+- In the `create-next-app` template, the ESLint version installed 352 packages and the Biome version 47
+- `biome init` defaults to tab indentation. It reads `.gitignore`, so ignored files need no separate list
+- Use `biome check` day to day. `--write` applies only safe fixes; fixes that may change meaning need
+  `--unsafe`
+- Assist actions rewrite code. With `useSortedKeys` on, the order you wrote things in does not survive
+- Domains switch on from dependencies. `project` and `types` analyse the whole project, which made
+  linting this blog about nine times slower
+- `biome migrate` moves ESLint and Prettier configurations. Of the 471 rules in the template's ESLint
+  configuration, 64 moved directly
+- `migrate prettier` fills in a missing `semi` and `singleQuote` with the opposite of Prettier's
+  defaults. Check after migrating
+- On the small template, linting and formatting took 3.43 s with ESLint and Prettier and 0.084 s with
+  Biome. Most of the gap is start-up time
