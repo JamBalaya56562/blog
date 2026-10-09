@@ -8,6 +8,7 @@
 set -euo pipefail
 
 CONTAINER_NAME="blog-dynamodb"
+OWNER_LABEL="blog.dynamodb.owner"
 
 # The port the container publishes is read back out of the endpoint the clients
 # are given, rather than declared a second time beside it. Two values that have

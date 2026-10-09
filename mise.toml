@@ -50,7 +50,7 @@ run = ["bun update", "mise deps"]
 task = "db:start"
 ready_cmd = { run = "mise run db:push", timeout = "300s" }
 stop_signal = { signal = "SIGTERM", timeout = "30s" }
-hooks = { on_stop = "mise run db:stop" }
+hooks = { on_stop = "mise run db:reap" }
 
 [daemons.dev]
 run = "bun dev"

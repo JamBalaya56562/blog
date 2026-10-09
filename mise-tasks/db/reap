@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+#MISE description="Stop DynamoDB Local containers whose db:start has exited"
+set -euo pipefail
+
+# shellcheck source=common.sh
+source mise-tasks/db/common.sh
+
+# db:start labels its container with its own PID. A container whose owner is
+# still running belongs to a live db:start and is left alone, whatever its name.
+format="{{.ID}} {{.Label \"${OWNER_LABEL}\"}}"
+docker ps --filter "label=${OWNER_LABEL}" --format "$format" |
+  while read -r id owner; do
+    if [ -n "$owner" ] && kill -0 "$owner" 2>/dev/null; then
+      continue
+    fi
+    echo "Stopping container $id, whose db:start ($owner) has exited..."
+    docker stop "$id" >/dev/null
+  done
