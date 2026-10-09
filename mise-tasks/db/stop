@@ -2,8 +2,7 @@
 #MISE description="Stop DynamoDB Local container"
 set -euo pipefail
 
-# shellcheck source=runtime.sh
-source mise-tasks/db/runtime.sh
+# shellcheck source=common.sh
+source mise-tasks/db/common.sh
 
-runtime="$(resolve_runtime)"
-"$runtime" stop "$CONTAINER_NAME"
+docker stop "$CONTAINER_NAME"

@@ -34,7 +34,7 @@ cd blog && bun i
 
 ### 3. Set up the local database
 
-This project uses DynamoDB for page view tracking. A container runtime is required — [wslc](https://learn.microsoft.com/windows/wsl/) is used when available, otherwise [Docker](https://www.docker.com/). Set `RUNTIME` to force one.
+This project uses DynamoDB for page view tracking. DynamoDB Local runs on [Docker](https://www.docker.com/), so start Docker Desktop first.
 
 ```bash
 # Start DynamoDB Local in the background and create the table
