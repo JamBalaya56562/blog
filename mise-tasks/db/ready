@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+#MISE description="Succeed once this run's DynamoDB Local answers and its table exists"
+set -euo pipefail
+
+# shellcheck source=common.sh
+source mise-tasks/db/common.sh
+
+# The daemon's readiness check. On a restart the previous container can still
+# answer on the port for a moment after its db:start has been killed, until the
+# new db:start removes it, and a db:start run by hand can own the name when the
+# daemon starts. A check that only asked the port would find that container's
+# table, report ready, and leave the daemon's own container without one. So the
+# container must be running, its owner, the db:start that labelled it, must be
+# alive, and it must carry this daemon's ID before the table is checked.
+# pitchfork gives the readiness check the same PITCHFORK_DAEMON_ID as the daemon.
+format="{{.State.Running}} {{index .Config.Labels \"${OWNER_LABEL}\"}} {{index .Config.Labels \"${DAEMON_LABEL}\"}}"
+state="$(docker inspect --format "$format" "$CONTAINER_NAME" 2>/dev/null)" || state=""
+read -r running owner daemon <<<"$state"
+
+if [ "${running:-}" != "true" ] || [ -z "${owner:-}" ] || ! kill -0 "$owner" 2>/dev/null ||
+  [ "${daemon:-}" != "${PITCHFORK_DAEMON_ID:-}" ]; then
+  echo "DynamoDB Local of this daemon's db:start is not up yet." >&2
+  exit 1
+fi
+
+exec mise run db:push

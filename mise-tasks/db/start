@@ -48,11 +48,16 @@ trap stop INT TERM
 # without being awaited, so it must not go by the name alone: a restart may
 # already have put a new container, with a live owner, in this one's place.
 #
+# The second label is the pitchfork daemon this run belongs to, empty when the
+# task is run by hand. db:ready, the daemon's readiness check, uses it to tell
+# its own container from one a separate db:start still owns.
+#
 # Run it as a background job and `wait` on it, so INT and TERM reach the handler
 # at once rather than after the container has exited of its own accord.
 docker run --rm \
   --name "$CONTAINER_NAME" \
   --label "${OWNER_LABEL}=$$" \
+  --label "${DAEMON_LABEL}=${PITCHFORK_DAEMON_ID:-}" \
   -p "127.0.0.1:${DYNAMODB_PORT}:8000" \
   amazon/dynamodb-local \
   -jar DynamoDBLocal.jar -sharedDb -inMemory &
