@@ -7,20 +7,15 @@ set -euo pipefail
 # job — `mise daemons start db` runs this same task as a daemon — so there is no
 # second, detached code path to keep in step with this one.
 
-# shellcheck source=runtime.sh
-source mise-tasks/db/runtime.sh
+# shellcheck source=common.sh
+source mise-tasks/db/common.sh
 
-runtime="$(resolve_runtime)"
-echo "Using container runtime: $runtime"
-
-# A container left behind by an earlier run — a SIGKILL, a runtime that died
-# before --rm could fire — still owns the name and would fail the run below.
-# `docker ps --format '{{.Names}}'` cannot answer this: wslc's --format only
-# accepts json or table, not Go templates. `inspect` exists on both runtimes and
-# its exit code asks the same question.
-if "$runtime" inspect "$CONTAINER_NAME" >/dev/null 2>&1; then
+# A container left behind by an earlier run — a SIGKILL, a Docker engine that
+# died before --rm could fire — still owns the name and would fail the run
+# below. `inspect` fails when no container has the name.
+if docker inspect "$CONTAINER_NAME" >/dev/null 2>&1; then
   echo "Removing the container an earlier run left behind..."
-  "$runtime" rm -f "$CONTAINER_NAME" >/dev/null
+  docker rm -f "$CONTAINER_NAME" >/dev/null
 fi
 
 stopped=0
@@ -29,9 +24,8 @@ stop() {
   stopped=1
   # The signal reaches the whole process group, so the client is usually already
   # gone and the container with it. This is the belt to that pair of braces: it
-  # covers a signal sent to this script alone, and a runtime that does not
-  # forward signals to the container the way docker does.
-  "$runtime" stop "$CONTAINER_NAME" >/dev/null 2>&1 || true
+  # covers a signal sent to this script alone.
+  docker stop "$CONTAINER_NAME" >/dev/null 2>&1 || true
 }
 trap stop INT TERM
 
@@ -43,11 +37,23 @@ trap stop INT TERM
 # is fine for a view counter in development and avoids the volume ownership
 # problems the image has with a mounted -dbPath.
 #
+# The port is published on loopback only: the clients use 127.0.0.1, and the
+# database has no authentication.
+#
+# The label names this script's PID as the container's owner. On Windows
+# pitchfork stops the daemon with `taskkill /F`, so the trap above never runs,
+# and the `docker run` client an MSYS shell started survives the kill; the
+# container would keep running. db:reap, run from the daemon's on_stop hook,
+# stops the containers whose owner has exited. The hook runs after the stop
+# without being awaited, so it must not go by the name alone: a restart may
+# already have put a new container, with a live owner, in this one's place.
+#
 # Run it as a background job and `wait` on it, so INT and TERM reach the handler
 # at once rather than after the container has exited of its own accord.
-"$runtime" run --rm \
+docker run --rm \
   --name "$CONTAINER_NAME" \
-  -p "${DYNAMODB_PORT}:8000" \
+  --label "${OWNER_LABEL}=$$" \
+  -p "127.0.0.1:${DYNAMODB_PORT}:8000" \
   amazon/dynamodb-local \
   -jar DynamoDBLocal.jar -sharedDb -inMemory &
 
