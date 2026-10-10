@@ -15,6 +15,7 @@ function loadHighlighter(): Promise<HighlighterCore> {
       import("@shikijs/langs/bash"),
       import("@shikijs/langs/css"),
       import("@shikijs/langs/diff"),
+      import("@shikijs/langs/hcl"),
       import("@shikijs/langs/html"),
       import("@shikijs/langs/javascript"),
       import("@shikijs/langs/json"),

@@ -101,6 +101,23 @@ describe("code highlighting", () => {
     expect(classesOf(tree, "code")).toContain("language-bash")
   })
 
+  // OpenTofu configuration in posts is fenced as `hcl`, which used to fall
+  // back to one flat colour.
+  test("hcl is bundled", async () => {
+    const tree = await highlight(
+      "hcl",
+      'resource "aws_s3_bucket" "demo" {\n  bucket = "demo"\n}',
+    )
+    const light = new Set(
+      styles(tree).flatMap(
+        (s) => s.match(/--shiki-light:(#[0-9a-fA-F]+)/)?.slice(1) ?? [],
+      ),
+    )
+
+    expect(classesOf(tree, "code")).toContain("language-hcl")
+    expect(light.size).toBeGreaterThan(2)
+  })
+
   // A fence naming a language the bundle does not carry is a typo in a post,
   // not a reason to fail the page: it renders unhighlighted instead.
   test("an unbundled language falls back instead of throwing", async () => {
