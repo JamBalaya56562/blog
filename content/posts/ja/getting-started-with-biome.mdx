@@ -2,7 +2,7 @@
 title: Biome 入門ガイド
 date: "2026-10-08"
 image: /thumbnails/getting-started-with-biome.avif
-description: formatter と linter を 1 つにまとめた Biome を、ESLint と Prettier の組み合わせとの比較から、format・lint・check の違い、コードを書き換える assist、依存から有効になる domain、このブログの biome.json、create-next-app のテンプレートからの移行、実測した速さ、GritQL のプラグイン、移行で踏んだ罠まで
+description: formatter と linter を 1 つにまとめた Biome を、ESLint と Prettier の組み合わせとの比較から、format・lint・check の違い、コードを書き換える assist、依存から有効になる domain、このブログの biome.json、create-next-app のテンプレートからの移行、実測した速さ、GritQL のプラグインまで
 tags:
   - biome
   - javascript
@@ -599,7 +599,7 @@ ESLint の設定に出てくるルールは 471 個ありました。`eslint-con
 - `linter.includes` に、ESLint の無視の指定が同じ内容で 3 回並んでいる
 - `overrides` に、`onclick` や `onload` のようなブラウザのグローバル変数が 137 個書き込まれている
 
-移行のコマンドは、ESLint の設定を機械的に写し取ります。その結果を出発点に、`"preset": "recommended"` に戻し、重複を消して整理するのが現実的です。もう 1 つ、Prettier の設定の移行には見過ごせないバグがありました。これは罠の章で書きます。
+移行のコマンドは、ESLint の設定を機械的に写し取ります。その結果を出発点に、`"preset": "recommended"` に戻し、重複を消して整理するのが現実的です。
 
 ## どれだけ速いのか
 
@@ -698,55 +698,6 @@ export const note = "console.log(count)";
 Checked 1 file in 7ms. No fixes applied.
 ```
 
-## 実際に踏んだ罠
-
-### migrate prettier がセミコロンとクォートを逆にする
-
-Prettier の設定ファイルで `semi` や `singleQuote` を書いていないとき、`biome migrate prettier` は、Prettier の既定とは逆の設定を書き込みます。
-
-空の Prettier の設定で確かめます。まず Prettier で整形すると、Prettier の既定どおり、ダブルクォートとセミコロンが付きます。
-
-```console
-❯ Get-Content .prettierrc.json
-{}
-❯ bunx prettier --write sample.js
-sample.js 206ms
-❯ Get-Content sample.js
-const greeting = "hello";
-console.log(greeting);
-```
-
-この設定を Biome に移して、同じファイルを Biome で確かめます。
-
-```console
-❯ bunx biome migrate prettier --write
-.prettierrc.json has been successfully migrated.
-...
-❯ Select-String '"(semicolons|quoteStyle)"' biome.json
-
-biome.json:24:			"semicolons": "asNeeded",
-biome.json:27:			"quoteStyle": "single",
-❯ bunx biome format sample.js
-sample.js format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-  × Formatter would have printed the following content:
-
-    1   │ - const·greeting·=·"hello";
-    2   │ - console.log(greeting);
-      1 │ + const·greeting·=·'hello'
-      2 │ + console.log(greeting)
-    3 3 │
-...
-Checked 1 file in 6ms. No fixes applied.
-Found 1 error.
-```
-
-移行の後の Biome は、Prettier が整形したばかりのファイルから、セミコロンを消し、ダブルクォートをシングルクォートに変えようとします。Prettier の既定は、[文書](https://prettier.io/docs/options)のとおりセミコロンありとダブルクォートです。
-
-原因は、移行のコマンドが持っている Prettier の既定値です。[Biome のソース](https://github.com/biomejs/biome/blob/c870caa6419ba669edf5e3fbc3c72605e9c0a87f/crates/biome_cli/src/execute/migrate/prettier.rs#L70-L78)では、設定ファイルに書かれていない項目の値として `semi: false` と `single_quote: true` が使われていて、Prettier の既定と逆になっています。Biome 自身のテストにも、`{ "endOfLine": "auto" }` だけを移すと `asNeeded` と `single` になる結果が、そのまま記録されていました。
-
-この記事の Next.js のテンプレートでは、Prettier の設定に `"semi": false` を書いていたので、セミコロンのほうは偶然合っていました。それでも、`biome format` は、すべてのダブルクォートをシングルクォートに変えようとしました。移行の後は、`semicolons` と `quoteStyle` が Prettier の出力と合っているかを必ず確かめてください。手で直すなら、Prettier の設定に書いていなかった項目を、`"semicolons": "always"` と `"quoteStyle": "double"` にします。
-
 ## よく使うコマンド
 
 | コマンド | 何をするか | 置き換えるもの |
@@ -759,7 +710,7 @@ Found 1 error.
 | `biome check --write --unsafe .` | 安全でない修正も適用する | — |
 | `biome ci .` | 書き換えずに確かめる（CI 向け） | — |
 | `biome migrate eslint --write` | ESLint の設定を移す | — |
-| `biome migrate prettier --write` | Prettier の設定を移す（移した後に確かめる） | — |
+| `biome migrate prettier --write` | Prettier の設定を移す | — |
 
 ## まとめ
 
@@ -770,5 +721,4 @@ Found 1 error.
 - assist はコードを書き換える。`useSortedKeys` を有効にすると、書いた順番は残らない
 - domain は依存から自動で有効になる。`project` と `types` はプロジェクト全体を調べるので、このブログでは lint が約 9 倍遅くなった
 - `biome migrate` で ESLint と Prettier の設定を移せる。テンプレートの ESLint の設定に出てくる 471 ルールのうち、そのまま移ったのは 64 個
-- `migrate prettier` は、書かれていない `semi` と `singleQuote` を Prettier の既定と逆に移す。移した後に確かめる
 - 小さなテンプレートで、lint と整形の時間は ESLint と Prettier の 3.43 秒に対して Biome は 0.084 秒。差の大半は起動の時間

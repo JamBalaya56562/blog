@@ -2,7 +2,7 @@
 title: Getting Started with Biome
 date: "2026-10-08"
 image: /thumbnails/getting-started-with-biome.avif
-description: Biome rolls a formatter and a linter into one tool. This guide compares it with the ESLint and Prettier pairing, then covers format, lint and check, assist actions that rewrite code, domains enabled by dependencies, this blog's biome.json, migrating the create-next-app template, measured speed, GritQL plugins, and the traps hit along the way
+description: Biome rolls a formatter and a linter into one tool. This guide compares it with the ESLint and Prettier pairing, then covers format, lint and check, assist actions that rewrite code, domains enabled by dependencies, this blog's biome.json, migrating the create-next-app template, measured speed, and GritQL plugins
 tags:
   - biome
   - javascript
@@ -665,8 +665,7 @@ The migrated `biome.json` also has things you would not want to keep as they are
 - `overrides` lists 137 browser globals such as `onclick` and `onload`
 
 The migration copies the ESLint configuration mechanically. Treat the result as a starting point: switch
-back to `"preset": "recommended"`, drop the duplicates and tidy it up. The Prettier migration also has a
-bug worth knowing about, covered in the traps.
+back to `"preset": "recommended"`, drop the duplicates and tidy it up.
 
 ## How fast is it
 
@@ -785,67 +784,6 @@ export const note = "console.log(count)";
 Checked 1 file in 7ms. No fixes applied.
 ```
 
-## Pitfalls I actually hit
-
-### migrate prettier flips semicolons and quotes
-
-When the Prettier configuration does not set `semi` or `singleQuote`, `biome migrate prettier` writes
-the opposite of Prettier's defaults.
-
-Start from an empty Prettier configuration. Formatting with Prettier adds double quotes and semicolons,
-as Prettier's defaults say.
-
-```console
-❯ Get-Content .prettierrc.json
-{}
-❯ bunx prettier --write sample.js
-sample.js 206ms
-❯ Get-Content sample.js
-const greeting = "hello";
-console.log(greeting);
-```
-
-Migrate that configuration to Biome and check the same file with Biome.
-
-```console
-❯ bunx biome migrate prettier --write
-.prettierrc.json has been successfully migrated.
-...
-❯ Select-String '"(semicolons|quoteStyle)"' biome.json
-
-biome.json:24:			"semicolons": "asNeeded",
-biome.json:27:			"quoteStyle": "single",
-❯ bunx biome format sample.js
-sample.js format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-  × Formatter would have printed the following content:
-
-    1   │ - const·greeting·=·"hello";
-    2   │ - console.log(greeting);
-      1 │ + const·greeting·=·'hello'
-      2 │ + console.log(greeting)
-    3 3 │
-...
-Checked 1 file in 6ms. No fixes applied.
-Found 1 error.
-```
-
-After the migration, Biome wants to strip the semicolons from a file Prettier just formatted and switch
-its double quotes to single. Prettier's defaults, per its [docs](https://prettier.io/docs/options), are
-semicolons and double quotes.
-
-The cause is the set of Prettier defaults the migration carries. In
-[Biome's source](https://github.com/biomejs/biome/blob/c870caa6419ba669edf5e3fbc3c72605e9c0a87f/crates/biome_cli/src/execute/migrate/prettier.rs#L70-L78),
-options missing from the configuration file fall back to `semi: false` and `single_quote: true`, the
-reverse of Prettier's. Biome's own tests record the same output: migrating only
-`{ "endOfLine": "auto" }` yields `asNeeded` and `single`.
-
-The Next.js template in this post had `"semi": false` in its Prettier configuration, so semicolons
-happened to come out right. Even so, `biome format` wanted to turn every double quote into a single
-quote. After migrating, always check that `semicolons` and `quoteStyle` match Prettier's output. To fix
-it by hand, set whatever the Prettier configuration left out to `"semicolons": "always"` and
-`"quoteStyle": "double"`.
-
 ## Commands you will use
 
 | Command | What it does | Replaces |
@@ -858,7 +796,7 @@ it by hand, set whatever the Prettier configuration left out to `"semicolons": "
 | `biome check --write --unsafe .` | Apply unsafe fixes too | — |
 | `biome ci .` | Check without writing (for CI) | — |
 | `biome migrate eslint --write` | Migrate the ESLint configuration | — |
-| `biome migrate prettier --write` | Migrate the Prettier configuration (then check it) | — |
+| `biome migrate prettier --write` | Migrate the Prettier configuration | — |
 
 ## Summary
 
@@ -873,7 +811,5 @@ it by hand, set whatever the Prettier configuration left out to `"semicolons": "
   linting this blog about nine times slower
 - `biome migrate` moves ESLint and Prettier configurations. Of the 471 rules in the template's ESLint
   configuration, 64 moved directly
-- `migrate prettier` fills in a missing `semi` and `singleQuote` with the opposite of Prettier's
-  defaults. Check after migrating
 - On the small template, linting and formatting took 3.43 s with ESLint and Prettier and 0.084 s with
   Biome. Most of the gap is start-up time
