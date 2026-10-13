@@ -1,0 +1,1296 @@
+---
+title: Getting Started with OpenTofu
+image: /thumbnails/getting-started-with-opentofu.avif
+date: "2026-10-10"
+description: OpenTofu is the open fork of Terraform. This guide starts from what goes wrong with a hand-built cloud account, then covers running aws login in a Docker container and handing the credentials over, plan, apply and destroy, what state really is, variables and references, adopting resources with import blocks, this blog's infra/ and its CI, OpenTofu-only features such as state encryption, and the traps hit along the way
+tags:
+  - opentofu
+  - terraform
+  - aws
+  - cli
+  - devtools
+---
+
+## What OpenTofu is
+
+[OpenTofu](https://opentofu.org/) is **a tool that lets you describe cloud resources in code, then creates,
+changes and deletes them to match**. The approach is called Infrastructure as Code (IaC). It is written in
+Go and licensed under MPL-2.0 ([GitHub](https://github.com/opentofu/opentofu)).
+
+It started life as HashiCorp's Terraform. On 10 August 2023 HashiCorp
+[announced](https://www.hashicorp.com/blog/hashicorp-adopts-business-source-license) that future releases
+would move to the Business Source License (BSL) 1.1. People who objected forked Terraform as OpenTF, and on
+20 September it was renamed OpenTofu and [joined the Linux Foundation](https://www.linuxfoundation.org/press/announcing-opentofu).
+The first stable release, 1.6.0, came out on
+[10 January 2024](https://github.com/opentofu/opentofu/releases/tag/v1.6.0). HashiCorp itself was later
+bought by IBM: the deal was
+[announced on 24 April 2024](https://newsroom.ibm.com/2024-04-24-IBM-to-Acquire-HashiCorp-Inc-Creating-a-Comprehensive-End-to-End-Hybrid-Cloud-Platform),
+and once it
+[closed on 27 February 2025](https://newsroom.ibm.com/2025-02-27-ibm-completes-acquisition-of-hashicorp,-creates-comprehensive,-end-to-end-hybrid-cloud-platform)
+HashiCorp became part of IBM.
+
+The command changes from `terraform` to `tofu`, and that is about it: the configuration language (HCL) and
+providers such as `hashicorp/aws` work as they are.
+
+The AWS account this blog runs in is managed with OpenTofu too. This article first tries the basics by hand
+on throwaway resources, then reads this blog's `infra/` and the CI that runs it.
+
+Everything here was checked with OpenTofu 1.13.1 and AWS provider 6.68.0, in PowerShell on Windows 11.
+
+## What goes wrong with a hand-built cloud account
+
+This blog's AWS account was built by hand in the console over about two years. There is no record of what
+was clicked.
+
+The trouble is that **nobody knows exactly what the account looks like now**. Adopting it into OpenTofu
+([#1195](https://github.com/JamBalaya56562/blog/pull/1195)) turned up several surprises.
+
+- An "origin access control", with which CloudFront signs its requests to the function URL, was configured.
+  Nobody remembered creating it
+- The CloudFront cache policy was assumed to cache. It was actually `Managed-CachingDisabled` and cached
+  nothing
+- The certificate uses an ECDSA key, so `aws acm list-certificates` did not list it. That command returns
+  only RSA_2048 certificates by default
+  ([API docs](https://docs.aws.amazon.com/acm/latest/APIReference/API_ListCertificates.html))
+
+None of these shows up from browsing the console. They surfaced only once the account was written down as
+code and OpenTofu was asked whether the code and the real account differed.
+
+Code makes these things possible:
+
+- **You can read the current state**. The settings live in files, so `git log` tells you who changed what,
+  when and why
+- **You can check a change first**. `tofu plan` shows what will be created, changed and deleted before
+  anything happens
+- **You can build the same thing again**. Delete it, and the same code puts it back
+
+## Installing it and AWS credentials
+
+### Installing with mise
+
+Install it with [mise](/en/blog/getting-started-with-mise). The tool is called `opentofu` in mise, and the
+executable is `tofu`.
+
+```console
+❯ mise use opentofu@1.13.1
+mise by @jdx – installing 1 tool
+...
+mise ✓ opentofu@1.13.1  5.1s  tofu_1.13.1_windows_amd64.tar.gz
+mise ████████████████ 1/1 · installed 1 tool in 5.1s
+...
+❯ Get-Content mise.toml
+[tools]
+opentofu = "1.13.1"
+❯ tofu version
+OpenTofu v1.13.1
+on windows_amd64
+```
+
+### Running aws login in a Docker container
+
+To work with AWS, OpenTofu needs AWS credentials. Rather than installing the AWS CLI, this article runs
+AWS's official `amazon/aws-cli` image in a [Docker](/en/blog/getting-started-with-docker) container.
+
+Sign-in uses `aws login`, a command
+[added in AWS CLI 2.32.0](https://aws.amazon.com/blogs/security/simplified-developer-access-to-aws-with-aws-login/):
+you sign in to the console in a browser and get short-lived credentials the CLI can use. They are rotated
+automatically every 15 minutes and stay usable up to the IAM principal's session duration (12 hours at
+most). No long-lived credential such as an access key ends up in a file.
+
+There is no browser inside the container, so add `--remote`. You open the printed URL in your own browser,
+sign in, and paste the code you are shown back into the container.
+
+```powershell
+docker run --rm -v aws-login:/root/.aws amazon/aws-cli:2.37.12 configure set region ap-northeast-1
+docker run --rm -it -v aws-login:/root/.aws amazon/aws-cli:2.37.12 login --remote
+```
+
+`-v aws-login:/root/.aws` makes the container's `~/.aws` a named volume called `aws-login`. `--rm` deletes
+the container every time, but the volume stays, and so does the sign-in. The credentials live in the volume
+and are never written to a file on the machine.
+
+You could mount the host's `C:\Users\<name>\.aws` instead. Docker Desktop, however, cannot mount a folder
+that is not in its file sharing settings, and fails like this:
+
+```console
+❯ docker run --rm -v 'C:\Users\Jam\.aws:/root/.aws' amazon/aws-cli sts get-caller-identity
+docker: Error response from daemon: the path "C:\\Users\\Jam\\.aws" is not shared from the host; add it in Settings > Resources > File Sharing before using it in a container
+```
+
+### Handing the credentials to OpenTofu
+
+`tofu` runs on the machine itself and cannot read the container's volume. So ask
+`aws configure export-credentials` to print the current credentials as environment variables. With
+`--format powershell` they come out as PowerShell `$Env:...=` lines, which `Invoke-Expression` runs as they
+are.
+
+```console
+❯ docker run --rm -v aws-login:/root/.aws amazon/aws-cli:2.37.12 configure export-credentials --format powershell | Invoke-Expression
+❯ $env:AWS_CREDENTIAL_EXPIRATION
+2026-10-10T00:24:28+00:00
+```
+
+This sets `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_SESSION_TOKEN` and the expiry,
+`AWS_CREDENTIAL_EXPIRATION`, which was 15 minutes later. The AWS provider reads these variables to reach
+AWS. When they expire, run the same command again.
+
+The sign-in session itself expired once while this article was being recorded. When that happens, `tofu`
+stops with this error:
+
+```text
+Error: failed to refresh cached credentials, create oauth2 token: login
+session has expired, please reauthenticate
+```
+
+Start again from `aws login --remote`.
+
+The principal used while recording this article was the AWS account's root user. For everyday work, use
+a separate principal with narrower permissions, such as an IAM Identity Center user. `aws login` works the
+same way with any of them.
+
+## A first configuration: init, plan, apply, destroy
+
+![OpenTofu workflow: init prepares, plan previews changes, and apply executes them. destroy deletes resources](/opentofu/workflow.avif)
+
+### Writing the configuration
+
+Create one S3 bucket. An empty bucket costs nothing
+([S3 docs](https://docs.aws.amazon.com/AmazonS3/latest/userguide/creating-bucket.html)).
+
+Make a working folder and put `main.tf` in it. Every file with the `.tf` extension in the folder is read
+together, so how you split them up is your choice.
+
+```hcl
+terraform {
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 6.0"
+    }
+  }
+}
+
+provider "aws" {
+  region = "ap-northeast-1"
+}
+
+resource "aws_s3_bucket" "demo" {
+  bucket = "jam-tofu-demo-20261010"
+}
+```
+
+There are three blocks.
+
+- `required_providers` inside `terraform` — which providers to use, at which versions. A provider is the
+  plugin that connects OpenTofu to an API such as AWS
+- `provider "aws"` — that provider's settings, here the Tokyo region
+- `resource "aws_s3_bucket" "demo"` — the resource to create. `aws_s3_bucket` is the type, and `demo` is its
+  name within this configuration
+
+`bucket` is the bucket name. S3 bucket names must be unique across all AWS accounts
+([S3 docs](https://docs.aws.amazon.com/AmazonS3/latest/userguide/gpbucketnamespaces.html)); pick a name of
+your own when you try this.
+
+### init: fetching providers
+
+`tofu init` prepares the working folder. It downloads the providers the configuration names.
+
+```console
+❯ tofu init
+Initializing the backend...
+
+Initializing provider plugins...
+- Finding hashicorp/aws versions matching "~> 6.0"...
+- Installing hashicorp/aws v6.68.0...
+- Installed hashicorp/aws v6.68.0 (signed, key ID 0C0AF313E5FD9F80)
+...
+OpenTofu has created a lock file .terraform.lock.hcl to record the provider
+selections it made above. Include this file in your version control repository
+so that OpenTofu can guarantee to make the same selections by default when
+you run "tofu init" in the future.
+
+OpenTofu has been successfully initialized!
+...
+❯ Get-ChildItem -Force | Format-Table Mode,Length,Name
+
+Mode  Length Name
+----  ------ ----
+d----        .terraform
+-a--- 2171   .terraform.lock.hcl
+-a--- 237    main.tf
+```
+
+`~> 6.0` means "the newest 6.x", which picked 6.68.0. The provider itself goes into `.terraform`, and the
+chosen version and its hashes are recorded in `.terraform.lock.hcl`. As the output says, the lock file
+belongs in the repository, so the same version is used next time.
+
+With nothing else specified, `hashicorp/aws` comes from OpenTofu's own registry, `registry.opentofu.org`
+([docs](https://opentofu.org/docs/language/providers/requirements/)). That is why a configuration written
+for Terraform runs unchanged.
+
+### plan: seeing what will happen first
+
+`tofu plan` compares the configuration with the real account and shows **what it would do**. It changes
+nothing.
+
+```console
+❯ tofu plan
+
+OpenTofu used the selected providers to generate the following execution
+plan. Resource actions are indicated with the following symbols:
+  + create
+
+OpenTofu will perform the following actions:
+
+  # aws_s3_bucket.demo will be created
+  + resource "aws_s3_bucket" "demo" {
+      + acceleration_status         = (known after apply)
+      + acl                         = (known after apply)
+      + arn                         = (known after apply)
+      + bucket                      = "jam-tofu-demo-20261010"
+...
+      + force_destroy               = false
+...
+      + region                      = "ap-northeast-1"
+...
+    }
+
+Plan: 1 to add, 0 to change, 0 to destroy.
+```
+
+The leading `+` means "create". Apart from `bucket` and `region`, which the configuration sets, almost every
+value is `(known after apply)`: values such as the ARN that AWS decides only once the bucket exists.
+
+The final `Plan: 1 to add, 0 to change, 0 to destroy.` is the summary: how many things will be created,
+changed and deleted.
+
+### apply: doing it
+
+`tofu apply` carries it out. It shows the same plan first and asks whether to go ahead, proceeding only if
+you type `yes`.
+
+```console
+❯ tofu apply
+...
+Plan: 1 to add, 0 to change, 0 to destroy.
+
+Do you want to perform these actions?
+  OpenTofu will perform the actions described above.
+  Only 'yes' will be accepted to approve.
+
+  Enter a value: yes
+
+aws_s3_bucket.demo: Creating...
+aws_s3_bucket.demo: Creation complete after 2s [id=jam-tofu-demo-20261010]
+
+Apply complete! Resources: 1 added, 0 changed, 0 destroyed.
+```
+
+Check with the AWS CLI that the bucket really exists.
+
+```console
+❯ docker run --rm -v aws-login:/root/.aws amazon/aws-cli:2.37.12 s3api list-buckets --query "Buckets[?starts_with(Name,'jam-tofu')].[Name,CreationDate]" --output text
+jam-tofu-demo-20261010  2026-10-10T00:00:49+00:00
+```
+
+Plan again, and this time there is nothing to do.
+
+```console
+❯ tofu plan
+aws_s3_bucket.demo: Refreshing state... [id=jam-tofu-demo-20261010]
+
+No changes. Your infrastructure matches the configuration.
+```
+
+`No changes.` means the configuration and the real account agree. That one line becomes the centre of how
+this blog's infrastructure is run, later on.
+
+### Changes: in place or replaced
+
+Add a tag to the configuration.
+
+```hcl
+resource "aws_s3_bucket" "demo" {
+  bucket = "jam-tofu-demo-20261010"
+
+  tags = {
+    Purpose = "opentofu-guide"
+  }
+}
+```
+
+Apply it, and the symbol becomes `~`: the existing bucket is changed in place.
+
+```console
+❯ tofu apply
+aws_s3_bucket.demo: Refreshing state... [id=jam-tofu-demo-20261010]
+
+OpenTofu used the selected providers to generate the following execution
+plan. Resource actions are indicated with the following symbols:
+  ~ update in-place (current -> planned)
+
+OpenTofu will perform the following actions:
+
+  # aws_s3_bucket.demo will be updated in-place
+  ~ resource "aws_s3_bucket" "demo" {
+        id                          = "jam-tofu-demo-20261010"
+      ~ tags                        = {
+          + "Purpose" = "opentofu-guide"
+        }
+      ~ tags_all                    = {
+          + "Purpose" = "opentofu-guide"
+        }
+        # (11 unchanged attributes hidden)
+
+        # (3 unchanged blocks hidden)
+    }
+
+Plan: 0 to add, 1 to change, 0 to destroy.
+...
+  Enter a value: yes
+
+aws_s3_bucket.demo: Modifying... [id=jam-tofu-demo-20261010]
+aws_s3_bucket.demo: Modifications complete after 1s [id=jam-tofu-demo-20261010]
+
+Apply complete! Resources: 0 added, 1 changed, 0 destroyed.
+```
+
+Some values cannot be changed. Rename the bucket to `jam-tofu-demo-renamed` and plan:
+
+```console
+❯ tofu plan
+...
+  # aws_s3_bucket.demo must be replaced
+-/+ resource "aws_s3_bucket" "demo" {
+...
+      ~ bucket                      = "jam-tofu-demo-20261010" -> "jam-tofu-demo-renamed" # forces replacement
+...
+Plan: 1 to add, 0 to change, 1 to destroy.
+```
+
+`-/+` means "delete, then create again". An S3 bucket cannot be renamed, so a new name means deleting this
+bucket and creating another one, and any data in it goes with it. The line marked `# forces replacement` is
+the cause. **When a plan says `must be replaced`, find out why before you apply.** This one was not applied;
+the name went back.
+
+### Undoing a change made by hand
+
+What happens when a resource managed as code is changed from outside the code? Add a tag to the bucket with
+the AWS CLI.
+
+```console
+❯ docker run --rm -v aws-login:/root/.aws amazon/aws-cli:2.37.12 s3api put-bucket-tagging --bucket jam-tofu-demo-20261010 --tagging 'TagSet=[{Key=Purpose,Value=opentofu-guide},{Key=Owner,Value=console}]'
+❯ tofu plan
+aws_s3_bucket.demo: Refreshing state... [id=jam-tofu-demo-20261010]
+...
+  # aws_s3_bucket.demo will be updated in-place
+  ~ resource "aws_s3_bucket" "demo" {
+        id                          = "jam-tofu-demo-20261010"
+      ~ tags                        = {
+          - "Owner"   = "console" -> null
+            "Purpose" = "opentofu-guide"
+        }
+...
+Plan: 0 to add, 1 to change, 0 to destroy.
+```
+
+OpenTofu wants to remove the tag added by hand. The code is what is right, and `Owner`, which the code does
+not have, is "extra". The real account drifting away from the code like this is called drift. If you want
+to keep a manual change, write it into the code.
+
+This time the change goes, so save the plan to a file with `-out` and apply that. Given a saved plan, apply
+runs exactly what the plan says, without asking. Nothing you have not looked at can slip in, even if the
+account changes between reading the plan and applying it.
+
+```console
+❯ tofu plan -out=tfplan
+...
+Saved the plan to: tfplan
+
+To perform exactly these actions, run the following command to apply:
+    tofu apply "tfplan"
+❯ tofu apply tfplan
+aws_s3_bucket.demo: Modifying... [id=jam-tofu-demo-20261010]
+aws_s3_bucket.demo: Modifications complete after 1s [id=jam-tofu-demo-20261010]
+
+Apply complete! Resources: 0 added, 1 changed, 0 destroyed.
+```
+
+## What state is
+
+![State records the mapping between a resource address in configuration and the identifier of the real cloud resource](/opentofu/state-mapping.avif)
+
+### What OpenTofu remembers
+
+After the apply, the folder has a new file, `terraform.tfstate`.
+
+```console
+❯ Get-ChildItem -Force | Format-Table Mode,Length,Name
+
+Mode  Length Name
+----  ------ ----
+d----        .terraform
+-a--- 2171   .terraform.lock.hcl
+-a--- 237    main.tf
+-a--- 2947   terraform.tfstate
+```
+
+This is the **state**: OpenTofu's record of the resources it made, stored as JSON.
+
+```console
+❯ tofu state list
+aws_s3_bucket.demo
+❯ Get-Content terraform.tfstate
+{
+  "version": 4,
+  "terraform_version": "1.13.1",
+  "serial": 1,
+  "lineage": "352407af-ee6d-89f3-cd62-7785a25ca4df",
+  "outputs": {},
+  "resources": [
+    {
+      "mode": "managed",
+      "type": "aws_s3_bucket",
+      "name": "demo",
+      "provider": "provider[\"registry.opentofu.org/hashicorp/aws\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "acceleration_status": "",
+            "acl": null,
+            "arn": "arn:aws:s3:::jam-tofu-demo-20261010",
+            "bucket": "jam-tofu-demo-20261010",
+...
+```
+
+It records that `aws_s3_bucket.demo` in the configuration is the AWS bucket called `jam-tofu-demo-20261010`.
+A plan uses that mapping to re-read the current state of each resource from AWS (the `Refreshing state...`
+lines) and compares it with the configuration.
+
+### Without state
+
+Move the state aside and plan.
+
+```console
+❯ Rename-Item terraform.tfstate state.saved
+❯ tofu plan
+...
+Plan: 1 to add, 0 to change, 0 to destroy.
+```
+
+The bucket has been in AWS all along, yet OpenTofu says "create". Without state it has no idea which bucket
+`aws_s3_bucket.demo` refers to, and it does not go looking through AWS for something similar.
+
+Apply it anyway:
+
+```console
+❯ tofu apply
+...
+  Enter a value: yes
+
+aws_s3_bucket.demo: Creating...
+
+Error: creating S3 Bucket (jam-tofu-demo-20261010): operation error S3: CreateBucket, https response error StatusCode: 409, RequestID: 56NNWXHYFD8RF4AQ, HostID: ..., BucketAlreadyOwnedByYou: Your previous request to create the named bucket succeeded and you already own it.
+```
+
+Bucket names cannot repeat, so AWS refused. But that was luck: S3 happened to save us. For a resource whose
+name may repeat, **a second one is created without complaint**. A Route 53 hosted zone, for example, can be
+created any number of times for the same domain; the only duplicate it refuses is a repeated request
+identifier, `CallerReference`
+([API docs](https://docs.aws.amazon.com/Route53/latest/APIReference/API_CreateHostedZone.html)). Lose this blog's state and apply, and you get a second
+hosted zone for the same domain, with different name servers.
+
+State is OpenTofu's only way of knowing which resources are its own. It must not be lost, and an old copy
+must not be used. Put the saved state back and carry on.
+
+```console
+❯ Move-Item state.saved terraform.tfstate
+```
+
+State holds every resource's attributes as they are, including values such as database passwords in plain
+text, so it must not go into the repository. Where this blog keeps it comes later.
+
+## Variables, outputs and references
+
+### Variables and references
+
+Make the configuration a little bigger: add a bucket for logs with a random suffix on its name, and turn on
+versioning for it.
+
+```hcl
+terraform {
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 6.0"
+    }
+    random = {
+      source  = "hashicorp/random"
+      version = "~> 3.0"
+    }
+  }
+}
+
+provider "aws" {
+  region = var.region
+}
+
+variable "region" {
+  type    = string
+  default = "ap-northeast-1"
+}
+
+variable "prefix" {
+  type        = string
+  description = "Start of every bucket name"
+}
+
+resource "random_id" "suffix" {
+  byte_length = 4
+}
+
+resource "aws_s3_bucket" "demo" {
+  bucket = "jam-tofu-demo-20261010"
+
+  tags = {
+    Purpose = "opentofu-guide"
+  }
+}
+
+resource "aws_s3_bucket" "logs" {
+  bucket = "${var.prefix}-logs-${random_id.suffix.hex}"
+}
+
+resource "aws_s3_bucket_versioning" "logs" {
+  bucket = aws_s3_bucket.logs.id
+
+  versioning_configuration {
+    status = "Enabled"
+  }
+}
+
+output "logs_bucket" {
+  value = aws_s3_bucket.logs.bucket
+}
+```
+
+Four things are new.
+
+- `variable` — a value passed in from outside, referenced as `var.prefix`. Without a `default` it is
+  required
+- `random_id` — a resource from the `hashicorp/random` provider. It makes a random value once and keeps it in
+  the state
+- references such as `aws_s3_bucket.logs.id` — using a value from another resource
+- `output` — a value printed after apply
+
+A provider was added, so run `tofu init` again. Plan without it and you are told the lock file has no
+`random`.
+
+```console
+❯ tofu plan
+...
+Error: Inconsistent dependency lock file
+
+The following dependency selections recorded in the lock file are
+inconsistent with the current configuration:
+  - provider registry.opentofu.org/hashicorp/random: required by this configuration but no version is selected
+...
+❯ tofu init
+...
+- Finding hashicorp/random versions matching "~> 3.0"...
+- Installing hashicorp/random v3.9.1...
+- Installed hashicorp/random v3.9.1 (signed, key ID 0C0AF313E5FD9F80)
+- Using previously-installed hashicorp/aws v6.68.0
+...
+```
+
+`prefix` has no `default`, so without a value every plan asks for one. A file called `terraform.tfvars` is
+read automatically.
+
+```console
+❯ Get-Content terraform.tfvars
+prefix = "jam-tofu"
+```
+
+### Order comes from references
+
+Apply it.
+
+```console
+❯ tofu apply -auto-approve
+...
+Plan: 3 to add, 0 to change, 0 to destroy.
+
+Changes to Outputs:
+  + logs_bucket = (known after apply)
+random_id.suffix: Creating...
+random_id.suffix: Creation complete after 0s [id=_0Op_A]
+aws_s3_bucket.logs: Creating...
+aws_s3_bucket.logs: Creation complete after 1s [id=jam-tofu-logs-ff43a9fc]
+aws_s3_bucket_versioning.logs: Creating...
+aws_s3_bucket_versioning.logs: Creation complete after 2s [id=jam-tofu-logs-ff43a9fc]
+
+Apply complete! Resources: 3 added, 0 changed, 0 destroyed.
+
+Outputs:
+
+logs_bucket = "jam-tofu-logs-ff43a9fc"
+```
+
+`-auto-approve` skips the confirmation.
+
+Things were created in the order random value, bucket, versioning. That is not the order they are written
+in the file. The bucket name refers to the random value, and the versioning refers to the bucket's ID, so
+no other order can work. OpenTofu follows references to build a dependency graph and runs it in that order,
+running independent things in parallel.
+
+`tofu graph` shows the graph. An arrow means "the left depends on the right".
+
+```console
+❯ tofu graph | Select-String -- '->'
+...
+		"[root] aws_s3_bucket.logs (expand)" -> "[root] random_id.suffix (expand)"
+		"[root] aws_s3_bucket.logs (expand)" -> "[root] var.prefix (expand, reference)"
+		"[root] aws_s3_bucket_versioning.logs (expand)" -> "[root] aws_s3_bucket.logs (expand)"
+		"[root] output.logs_bucket (expand)" -> "[root] aws_s3_bucket.logs (expand)"
+...
+```
+
+As a rule, take a value from the resource that produces it rather than copying it somewhere. A copied ID
+stays behind when the resource is recreated; a reference picks up the new value and lets OpenTofu work out
+the order as well.
+
+`tofu output` shows outputs at any time. `-raw` prints the value alone, for handing to a script.
+
+```console
+❯ tofu output
+logs_bucket = "jam-tofu-logs-ff43a9fc"
+❯ tofu output -raw logs_bucket
+jam-tofu-logs-ff43a9fc
+```
+
+## Adopting resources made by hand
+
+### The import block
+
+So far OpenTofu has created everything. To bring a resource that already exists under OpenTofu's
+management, use an `import` block.
+
+Make a bucket by hand with the AWS CLI.
+
+```console
+❯ docker run --rm -v aws-login:/root/.aws amazon/aws-cli:2.37.12 s3api create-bucket --bucket jam-tofu-handmade-20261010 --create-bucket-configuration LocationConstraint=ap-northeast-1
+{
+    "Location": "http://jam-tofu-handmade-20261010.s3.amazonaws.com/",
+    "BucketArn": "arn:aws:s3:::jam-tofu-handmade-20261010"
+}
+❯ docker run --rm -v aws-login:/root/.aws amazon/aws-cli:2.37.12 s3api put-bucket-tagging --bucket jam-tofu-handmade-20261010 --tagging 'TagSet=[{Key=CreatedBy,Value=hand}]'
+```
+
+Add an `import` block to `main.tf`. `to` is the address in the configuration, `id` the identifier AWS knows
+it by. What the `id` is depends on the resource type; for an S3 bucket it is the name.
+
+```hcl
+import {
+  to = aws_s3_bucket.handmade
+  id = "jam-tofu-handmade-20261010"
+}
+```
+
+### Generating the configuration
+
+Adopting it also needs a `resource "aws_s3_bucket" "handmade"` block. You can write it by hand, but
+`tofu plan` with `-generate-config-out` writes it from the bucket's current state. The target must be a file
+that does not exist yet.
+
+In PowerShell, wrap this option in quotes. Why is explained under "Traps hit along the way".
+
+```console
+❯ tofu plan '-generate-config-out=generated.tf'
+...
+aws_s3_bucket.handmade: Preparing import... [id=jam-tofu-handmade-20261010]
+aws_s3_bucket.handmade: Refreshing state... [id=jam-tofu-handmade-20261010]
+...
+Planning failed. OpenTofu encountered an error while generating this plan.
+
+
+Error: Conflicting configuration arguments
+
+  with aws_s3_bucket.handmade,
+  on generated.tf line 1:
+  (source code not available)
+
+"bucket": conflicts with bucket_prefix
+...
+❯ Get-Content generated.tf
+# __generated__ by OpenTofu
+# Please review these resources and move them into your main configuration files.
+
+# __generated__ by OpenTofu
+resource "aws_s3_bucket" "handmade" {
+  bucket              = "jam-tofu-handmade-20261010"
+  bucket_namespace    = "global"
+  bucket_prefix       = ""
+  force_destroy       = false
+  object_lock_enabled = false
+  region              = "ap-northeast-1"
+  tags = {
+    CreatedBy = "hand"
+  }
+  tags_all = {
+    CreatedBy = "hand"
+  }
+}
+```
+
+The file was written, but the plan failed: the generated configuration sets both `bucket` and
+`bucket_prefix`, and only one of them is allowed. `bucket_prefix` fixes just the start of the name and lets
+AWS choose the rest.
+
+The [docs](https://opentofu.org/docs/language/import/generating-configuration/) still call configuration
+generation experimental. **Treat what it writes as a draft**; it does not necessarily work as it is. Delete
+the `bucket_prefix` line and plan again.
+
+```console
+❯ tofu plan
+...
+aws_s3_bucket.handmade: Preparing import... [id=jam-tofu-handmade-20261010]
+aws_s3_bucket.handmade: Refreshing state... [id=jam-tofu-handmade-20261010]
+...
+OpenTofu will perform the following actions:
+
+  # aws_s3_bucket.handmade will be imported
+  # (imported from "jam-tofu-handmade-20261010")
+    resource "aws_s3_bucket" "handmade" {
+        arn                         = "arn:aws:s3:::jam-tofu-handmade-20261010"
+        bucket                      = "jam-tofu-handmade-20261010"
+...
+        tags                        = {
+            "CreatedBy" = "hand"
+        }
+...
+    }
+
+Plan: 1 to import, 0 to add, 0 to change, 0 to destroy.
+```
+
+`1 to import`, and zero of everything else: nothing is created or changed, the existing bucket is only
+recorded in the state. **That plan, with nothing but imports, is the goal of an adoption.** If a `change`
+appears, the configuration and the real thing differ, and the configuration is what to fix.
+
+Apply it.
+
+```console
+❯ tofu apply -auto-approve
+aws_s3_bucket.handmade: Preparing import... [id=jam-tofu-handmade-20261010]
+...
+Plan: 1 to import, 0 to add, 0 to change, 0 to destroy.
+aws_s3_bucket.handmade: Importing... [id=jam-tofu-handmade-20261010]
+aws_s3_bucket.handmade: Import complete [id=jam-tofu-handmade-20261010]
+
+Apply complete! Resources: 1 imported, 0 added, 0 changed, 0 destroyed.
+```
+
+Once the import is done, delete the `import` block. The bucket is in the state now, so the plan does not
+change.
+
+```console
+❯ tofu plan
+...
+No changes. Your infrastructure matches the configuration.
+❯ tofu state list
+aws_s3_bucket.demo
+aws_s3_bucket.handmade
+aws_s3_bucket.logs
+aws_s3_bucket_versioning.logs
+random_id.suffix
+```
+
+Keeping the `import` block looks like insurance in case the state is lost. This blog deletes it on purpose;
+the next section explains why.
+
+## Reading this blog's infra/
+
+### The account, written down
+
+This blog's [`infra/`](https://github.com/JamBalaya56562/blog/tree/main/infra) is the hand-built AWS account
+adopted exactly this way. The plan at the time read
+([#1195](https://github.com/JamBalaya56562/blog/pull/1195)):
+
+```text
+Plan: 29 to import, 0 to add, 0 to change, 0 to destroy.
+```
+
+Monitoring and a few other things have been added since, and it now manages 43 resources, split into files
+by role.
+
+| File | What it holds |
+| --- | --- |
+| `lambda.tf` | The Lambda function running Next.js, its URL and its logs |
+| `storage.tf` | The DynamoDB table counting page views, and the ECR repository for the container image |
+| `iam.tf` | The function's execution role and the CI roles for deploys and OpenTofu |
+| `cdn.tf` | The CloudFront distribution and its cache policy |
+| `dns.tf` | The Route 53 hosted zone and the ACM certificate |
+| `monitoring.tf` | CloudWatch alarms and the mail they send |
+
+The directory has one rule: **the plan says `No changes.`** A plan that adds, changes or deletes something is
+not a sign that the account needs fixing; it is a sign that the configuration has drifted from the account.
+
+Fetch the production state and run a read-only plan. Where the state lives, and the script that fetches it,
+are covered in the next section.
+
+```console
+❯ ../.github/scripts/fetch-tofu-state.sh .
+Restored state from artifact 11337054056 (2026-10-05T09:56:58Z), made by .github/workflows/tofu-state-backup.yml on schedule.
+❯ jq '.resources | length' terraform.tfstate
+43
+❯ tofu plan -lock=false
+...
+aws_route53_record.apex_a: Refreshing state... [id=Z05913233HM04NTDQJT9V_kokohore56562wanwan.site_A]
+aws_cloudwatch_metric_alarm.cloudfront_5xx: Refreshing state... [id=blog-cloudfront-5xx]
+aws_cloudwatch_log_delivery.cloudfront_access: Refreshing state... [id=xgPH9gqTQFtyNRjs]
+
+No changes. Your infrastructure matches the configuration.
+```
+
+All 43 resources were re-read from AWS and matched the configuration, in about 23 seconds. Afterwards the
+fetched state is deleted: a local copy goes stale the moment CI next applies.
+
+### Two regions
+
+The certificate CloudFront uses has to live in ACM in `us-east-1`, wherever the rest of the resources are.
+So `providers.tf` has two AWS providers.
+
+```hcl
+provider "aws" {
+  region = var.aws_region
+}
+
+provider "aws" {
+  alias  = "us_east_1"
+  region = "us-east-1"
+}
+```
+
+The second one, with an `alias`, is used only by resources that say `provider = aws.us_east_1`, like the
+certificate in `dns.tf`.
+
+```hcl
+resource "aws_acm_certificate" "blog" {
+  provider = aws.us_east_1
+
+  domain_name       = var.domain_name
+  key_algorithm     = "EC_prime256v1"
+  validation_method = "DNS"
+...
+}
+```
+
+### A value OpenTofu does not manage
+
+The container image the Lambda function runs is updated by the deploy workflow, not by OpenTofu. Every
+change that reaches main pushes an image with a new tag and points the function at it.
+
+Left alone, the next plan would have OpenTofu move the function back to the old tag written in the
+configuration. So `lambda.tf` uses `ignore_changes` to stop looking at the image.
+
+```hcl
+resource "aws_lambda_function" "blog" {
+...
+  image_uri = "${aws_ecr_repository.blog.repository_url}:e58965131889a24b7d19c96fc3b9766155276163"
+
+  lifecycle {
+    ignore_changes = [image_uri]
+  }
+...
+}
+```
+
+`image_uri` is used only when the function is created; later differences are ignored. The tag in the file
+is just whatever was current when the configuration was written.
+
+### Why the import blocks are gone
+
+This blog deleted its `import` blocks once the first apply had done the adoption.
+
+Keeping them looks like insurance: lose the state and they would adopt everything again. But an `import`
+block whose target does not exist in AWS is an error. Run `tofu destroy`, then apply, and it stops at the
+first `import` block instead of building anything. **Being able to rebuild what was deleted from the same
+code** won.
+
+If the state is ever lost, the way back is to write the `import` blocks again and adopt once more.
+
+## Splitting plan and apply in CI
+
+### Two roles
+
+Changes to `infra/` are planned and applied by GitHub Actions. Nobody applies from a laptop.
+
+| Workflow | When it runs | AWS role |
+| --- | --- | --- |
+| `tofu-plan.yml` | A pull request that changes `infra/` | `github-actions-blog-tofu-plan` (read-only) |
+| `tofu-apply.yml` | A push to main | `github-actions-blog-tofu-apply` (main only) |
+| `tofu-state-backup.yml` | Every Monday | None (GitHub only) |
+
+The AWS credentials come from GitHub's OIDC: GitHub Actions shows AWS a token it issued and assumes a
+specific role. No access key exists anywhere.
+
+What separates the two roles is less their permissions than **who may assume them**. The plan role has
+`ReadOnlyAccess` and can be assumed by a run on any branch of this repository. The apply role can be
+assumed only by a run in the GitHub environment `tofu-apply`. That is a condition in the trust policy in
+`iam.tf`:
+
+```hcl
+StringEquals = {
+  "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
+  "token.actions.githubusercontent.com:sub" = [for prefix in local.github_subject_prefixes : "${prefix}:environment:tofu-apply"]
+}
+```
+
+A pull request can read the account and say what it would do; only a change that has reached main can
+change anything.
+
+The plan is posted on the pull request as a comment. For
+[#1347](https://github.com/JamBalaya56562/blog/pull/1347), which turned on deletion protection for the
+DynamoDB table, it said:
+
+```text
+  # aws_dynamodb_table.page_views will be updated in-place
+  ~ resource "aws_dynamodb_table" "page_views" {
+      ~ deletion_protection_enabled = false -> true
+        id                          = "blog-page-views"
+        name                        = "blog-page-views"
+        tags                        = {}
+        # (10 unchanged attributes hidden)
+
+      ~ point_in_time_recovery {
+          ~ enabled                 = false -> true
+            # (1 unchanged attribute hidden)
+        }
+
+        # (3 unchanged blocks hidden)
+    }
+
+Plan: 0 to add, 1 to change, 0 to destroy.
+```
+
+Review reads this plan alongside the code diff, and merges only after confirming `1 to change` touches just
+the two intended values.
+
+### Keeping state in a GitHub Actions artifact
+
+Running OpenTofu from more than one place needs somewhere shared for the state. S3 is the usual choice; this
+blog uses a GitHub Actions artifact. The apply workflow saves the resulting state as an artifact named
+`tofu-state`, and the next run fetches it.
+
+[`fetch-tofu-state.sh`](https://github.com/JamBalaya56562/blog/blob/main/.github/scripts/fetch-tofu-state.sh)
+does the fetching, and it does not trust the name alone. A pull request's run can upload an artifact under
+the same name, and a doctored state placed there would be used with the apply role. The script takes only
+an artifact made by the apply or backup workflow, on main of this repository, from a push, schedule or
+manual run.
+
+Artifacts expire; here, after 90 days. `infra/` can go months without a change, so left alone the state
+would vanish. `tofu-state-backup.yml` therefore fetches the state every Monday and uploads it again, which
+restarts the clock. If it finds no state, the workflow fails, so a lost state shows up as a red run on a
+Monday rather than as an apply that can no longer happen.
+
+The apply workflow also stops when it finds no state. As shown earlier, an apply against an empty state
+tries to build a second copy of the account.
+
+## How it differs from Terraform
+
+### Features only OpenTofu has
+
+Since the fork, OpenTofu and Terraform have each added features. Some that only OpenTofu has:
+
+| Feature | Version |
+| --- | --- |
+| [State and plan encryption](https://opentofu.org/docs/language/state/encryption/) | 1.7 |
+| Variables in backend and encryption settings | 1.8 |
+| [`-exclude`](https://opentofu.org/docs/cli/commands/plan/) and provider `for_each` | 1.9 |
+| Providers and modules from [OCI registries](https://opentofu.org/docs/cli/oci_registries/) | 1.10 |
+| Turning resources on and off with [`enabled`](https://opentofu.org/docs/language/meta-arguments/enabled/) | 1.11 |
+
+Some features exist in both, such as the `removed` block, `for_each` on `import` blocks and
+provider-defined functions. Some exist only in Terraform, such as `terraform query` in Terraform 1.14. This
+section tries encryption and `-exclude`.
+
+### Encrypting state
+
+State holds every resource attribute in plain text. OpenTofu can encrypt it on disk.
+
+Add `encryption.tf`. It combines `pbkdf2`, which derives a key from a passphrase, with `aes_gcm`, which
+encrypts with AES-GCM, and uses them for the state. The passphrase must be at least 16 characters.
+
+```hcl
+variable "passphrase" {
+  type      = string
+  sensitive = true
+}
+
+terraform {
+  encryption {
+    key_provider "pbkdf2" "main" {
+      passphrase = var.passphrase
+    }
+
+    method "aes_gcm" "main" {
+      keys = key_provider.pbkdf2.main
+    }
+
+    state {
+      method = method.aes_gcm.main
+    }
+  }
+}
+```
+
+Pass the passphrase in an environment variable. An environment variable named `TF_VAR_` plus a variable's
+name is read as that variable's value.
+
+```console
+❯ $env:TF_VAR_passphrase = "correct-horse-battery-staple"
+❯ tofu plan
+Error: Error acquiring the state lock
+
+Error message: failed to write backup file: encountered unencrypted payload
+without unencrypted method configured
+...
+```
+
+The existing state is not encrypted, so it cannot be read. With encryption configured, OpenTofu refuses
+unencrypted state, so that a state swapped for a plain-text one does not go unnoticed.
+
+To encrypt an existing state, allow unencrypted state to be read just once, by putting an `unencrypted`
+method in a `fallback`.
+
+```hcl
+    method "unencrypted" "migrate" {}
+
+    state {
+      method = method.aes_gcm.main
+
+      fallback {
+        method = method.unencrypted.migrate
+      }
+    }
+```
+
+Apply in this state, and the plain-text state is read and written back encrypted.
+
+```console
+❯ tofu apply -auto-approve
+...
+Outputs:
+
+logs_bucket = "jam-tofu-logs-ff43a9fc"
+❯ Get-Content terraform.tfstate
+{"serial":6,"lineage":"352407af-ee6d-89f3-cd62-7785a25ca4df","meta":{"key_provider.pbkdf2.main":"eyJzYWx0IjoiSUIwK0RYMFhTellGSXY4bVZEQWNwZ2t2V05XaFllT1RQOVkwcG9yUkFvWT0iLCJpdGVyYXRpb25zIjo2MDAwMDAsImhhc2hfZnVuY3Rpb24iOiJzaGE1MTIiLCJrZXlfbGVuZ3RoIjozMn0="},"encrypted_data":"pja3x1KioHdV2QE1A+eLc3IUECVGt/ieRIhieTRhFo3pAWOLTyP+Lw+Jqx0hXhDZa8Ce7rDI9USz1JQRJGJQ/qe0pcEQ9HOEvz8jHvixPtU/jDw1S6MAWEdNQuZHhe...
+❯ Select-String -Path terraform.tfstate -Pattern 'jam-tofu' -Quiet
+False
+```
+
+The state's content is now `encrypted_data`, and not even the bucket names can be read. `meta` holds the
+salt and other inputs used to derive the key, not the key itself.
+
+With the right passphrase everything works as usual. With the wrong one, nothing can be read.
+
+```console
+❯ tofu state list
+aws_s3_bucket.demo
+aws_s3_bucket.handmade
+aws_s3_bucket.logs
+aws_s3_bucket_versioning.logs
+random_id.suffix
+❯ $env:TF_VAR_passphrase = "wrong-passphrase-123"
+❯ tofu state list
+
+Error: Error refreshing the state
+
+Failed to load state: decryption failed for all provided methods
+attempted decryption failed for state: decryption failed: cipher: message
+authentication failed
+```
+
+Once the state is encrypted, remove the `fallback` and the `unencrypted` method. Add `enforced = true` in
+their place, and OpenTofu will not write plain-text state if the encryption settings ever go missing.
+
+```hcl
+    state {
+      method   = method.aes_gcm.main
+      enforced = true
+    }
+```
+
+Lose the passphrase and nobody can read the state again. There are also key providers that use a key in AWS
+KMS and similar services instead of a passphrase
+([docs](https://opentofu.org/docs/language/state/encryption/)).
+
+### Leaving things out with -exclude
+
+`-exclude` plans everything except the given resource and whatever depends on it: the opposite of
+`-target`, which plans only the given resource.
+
+Add a tag to two buckets and plan normally, and both change.
+
+```console
+❯ tofu plan
+...
+  # aws_s3_bucket.demo will be updated in-place
+  # aws_s3_bucket.logs will be updated in-place
+...
+Plan: 0 to add, 2 to change, 0 to destroy.
+```
+
+Exclude `logs`, and only `demo` is left.
+
+```console
+❯ tofu plan '-exclude=aws_s3_bucket.logs'
+...
+  # aws_s3_bucket.demo will be updated in-place
+...
+Plan: 0 to add, 1 to change, 0 to destroy.
+...
+Warning: Resource targeting is in effect
+```
+
+As the warning says, this is not for routine use. It is for exceptions, such as one broken resource holding
+up everything else.
+
+### Cleaning up
+
+Finally, delete everything. `tofu destroy` deletes every resource in the state.
+
+```console
+❯ tofu destroy
+...
+Plan: 0 to add, 0 to change, 5 to destroy.
+...
+Do you really want to destroy all resources?
+  OpenTofu will destroy all your managed infrastructure, as shown above.
+  There is no undo. Only 'yes' will be accepted to confirm.
+
+  Enter a value: yes
+
+aws_s3_bucket_versioning.logs: Destroying... [id=jam-tofu-logs-ff43a9fc]
+aws_s3_bucket.handmade: Destroying... [id=jam-tofu-handmade-20261010]
+aws_s3_bucket.demo: Destroying... [id=jam-tofu-demo-20261010]
+aws_s3_bucket_versioning.logs: Destruction complete after 1s
+aws_s3_bucket.logs: Destroying... [id=jam-tofu-logs-ff43a9fc]
+aws_s3_bucket.demo: Destruction complete after 1s
+aws_s3_bucket.handmade: Destruction complete after 1s
+aws_s3_bucket.logs: Destruction complete after 0s
+random_id.suffix: Destroying... [id=_0Op_A]
+random_id.suffix: Destruction complete after 0s
+
+Destroy complete! Resources: 5 destroyed.
+❯ docker run --rm -v aws-login:/root/.aws amazon/aws-cli:2.37.12 s3api list-buckets --query "Buckets[?starts_with(Name,'jam-tofu')].Name"
+[]
+```
+
+The order of deletion also comes from the dependencies, reversed: the log bucket waits for its versioning
+settings to go, and the random value goes last. The adopted `handmade` bucket went like the rest. Once
+adopted, whether it was made by hand no longer matters; it is OpenTofu's.
+
+## Traps hit along the way
+
+### Quote `-option=value` in PowerShell
+
+Pass `-generate-config-out=generated.tf` in PowerShell, and this happens:
+
+```console
+❯ tofu plan -generate-config-out=generated.tf
+...
+Error: Unexpected argument
+
+Too many command line arguments. Did you mean to use -chdir?
+```
+
+PowerShell splits an argument that starts with `-` at the `.` and passes two arguments. A Node.js one-liner
+that prints the arguments it receives shows it:
+
+```console
+❯ node -e "console.log(process.argv.slice(1))" -- -generate-config-out=generated.tf '-generate-config-out=generated.tf'
+[
+  '-generate-config-out=generated',
+  '.tf',
+  '-generate-config-out=generated.tf'
+]
+```
+
+The unquoted one arrives as two, `-generate-config-out=generated` and `.tf`; the quoted one arrives whole.
+To `tofu`, `.tf` is one argument too many. `-exclude=aws_s3_bucket.logs` broke the same way.
+
+```console
+❯ tofu plan -destroy -exclude=aws_s3_bucket.logs
+...
+Error: Invalid exclude "aws_s3_bucket"
+```
+
+For any option whose value contains a `.`, quote the whole thing: `'-generate-config-out=generated.tf'`.
+Without a `.`, as in `-out=tfplan`, it works unquoted.
+
+### Old backups stay in plain text after encryption
+
+Whenever OpenTofu rewrites the state, it keeps the previous one as `terraform.tfstate.backup`. Commands such
+as `tofu state rm` also make backups, named `terraform.tfstate.<number>.backup`.
+
+Here is the folder after the state was encrypted:
+
+```console
+❯ Get-ChildItem terraform.tfstate*
+
+    ディレクトリ: C:\Users\Jam\tofu-demo
+
+Mode                 LastWriteTime         Length Name
+----                 -------------         ------ ----
+-a---          2026/10/10     9:12          14338 terraform.tfstate
+-a---          2026/10/10     9:10          10497 terraform.tfstate.1791591049.backup
+-a---          2026/10/10     9:11           7585 terraform.tfstate.backup
+```
+
+`terraform.tfstate` is encrypted, but both backups are still the plain-text state from before. After moving
+to encryption, delete any plain-text backups left behind.
+
+### Generated configuration does not work as it is
+
+For an S3 bucket, the configuration `-generate-config-out` wrote set both `bucket` and `bucket_prefix`, and
+the plan failed. Edit the generated configuration until the plan shows nothing but imports.
+
+## Commands you will use
+
+| Command | What it does |
+| --- | --- |
+| `tofu init` | Fetches providers and prepares the working folder |
+| `tofu plan` | Compares the configuration with reality and shows what it would do |
+| `tofu plan -out=tfplan` | Saves the plan to a file |
+| `tofu apply` | Shows the plan and runs it on `yes` |
+| `tofu apply tfplan` | Runs a saved plan without asking |
+| `tofu destroy` | Deletes every resource in the state |
+| `tofu state list` | Lists the resources in the state |
+| `tofu output` | Shows output values |
+| `tofu graph` | Shows the dependency graph |
+| `tofu plan '-generate-config-out=generated.tf'` | Generates configuration for `import` block targets |
+| `tofu plan '-exclude=<address>'` | Plans everything except the given resource |
+
+## Summary
+
+- OpenTofu is the IaC tool forked after Terraform's licence change. It is a Linux Foundation project, and
+  Terraform's configurations and providers work as they are
+- Nobody knows exactly what a hand-built account looks like. This blog's account had several settings that
+  only came to light once it was adopted
+- `aws login` runs fine in a Docker container. Keep the sign-in in a named volume and hand 15-minute
+  credentials to `tofu` with `export-credentials`
+- In a plan, `+` creates, `~` changes in place and `-/+` replaces. Before applying a `must be replaced`, find
+  out why
+- State is the record of which resource each piece of configuration means. Lose it and apply, and resources
+  whose names may repeat get created a second time
+- Creation order comes from references, not from the order things are written
+- `import` blocks adopt resources made by hand. The goal is a plan with nothing but imports, and generated
+  configuration is a draft to fix up
+- This blog makes `No changes.` the rule, runs plan and apply from CI with two roles that differ in who may
+  assume them, and keeps the state in a GitHub Actions artifact refreshed every week
+- State encryption is OpenTofu-only. Migrate once with an `unencrypted` fallback, then delete the plain-text
+  backups
+- In PowerShell, quote any `-option=value` whose value contains a `.`
