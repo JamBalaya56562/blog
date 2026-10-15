@@ -125,11 +125,13 @@ the account. The one time that is the intent — rebuilding after a deliberate
 
 Artifacts expire, and this configuration can go months without a change.
 [tofu-state-backup.yml](../.github/workflows/tofu-state-backup.yml) downloads
-the state every Monday and uploads it again, which restarts the retention
-clock. That workflow is not optional housekeeping: without it the state
+the state on the first of every month and uploads it again, which restarts the
+retention clock. That workflow is not optional housekeeping: without it the state
 disappears 90 days after the last apply, and with it every way to apply at all.
 If it ever finds nothing to refresh it fails, so the loss shows up as a red run
-on a Monday rather than as a refused apply later.
+on the first of a month rather than as a refused apply later. A failed run still
+leaves about two months before the artifact expires, time enough to run it again
+by hand.
 
 ## Why there are no `import` blocks
 
@@ -141,7 +143,7 @@ block whose target does not exist is a hard error, so leaving them in makes
 `tofu destroy` a one-way door: the next apply stops at the first block instead
 of rebuilding what was destroyed. Being able to tear the stack down and put it
 back is worth more than a second line of defence against losing the state, which
-the weekly backup already covers.
+the monthly backup already covers.
 
 If the state is ever lost for real, the way back is to write the blocks again —
 one per resource, `to` the address in these files and `id` the identifier AWS
@@ -153,7 +155,7 @@ already knows — and delete them after the apply, exactly as before.
 | --- | --- | --- |
 | [tofu-plan.yml](../.github/workflows/tofu-plan.yml) | pull request touching `infra/**` | `github-actions-blog-tofu-plan`, read-only |
 | [tofu-apply.yml](../.github/workflows/tofu-apply.yml) | push to `main` touching `infra/**` | `github-actions-blog-tofu-apply`, `main` only |
-| [tofu-state-backup.yml](../.github/workflows/tofu-state-backup.yml) | Mondays | none — GitHub side only |
+| [tofu-state-backup.yml](../.github/workflows/tofu-state-backup.yml) | first of every month | none — GitHub side only |
 
 Both AWS roles are assumed through the OIDC provider this configuration
 manages; neither has an access key. The split is the point: a pull request can
