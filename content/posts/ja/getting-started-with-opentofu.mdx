@@ -866,7 +866,7 @@ Plan: 0 to add, 1 to change, 0 to destroy.
 
 取ってくるのが [`fetch-tofu-state.sh`](https://github.com/JamBalaya56562/blog/blob/main/.github/scripts/fetch-tofu-state.sh) です。名前だけで探すと危ないので、条件を付けています。artifact は、pull request の実行からでも同じ名前でアップロードできます。そこに細工した state が置かれると、apply のロールで使われてしまいます。このスクリプトは、apply か backup の workflow が、このリポジトリの main で、push かスケジュールか手動の実行で作った artifact だけを使います。
 
-artifact には期限があり、この設定では 90 日で消えます。`infra/` は何か月も変わらないことがあるので、そのままだと state が消えます。そこで、`tofu-state-backup.yml` が毎月 1 日に state を取ってきて、アップロードし直し、期限を延ばしています。state が見つからなければ、この workflow は失敗します。state をなくしたことが、apply できなくなった後ではなく、月初めの赤い実行として分かります。この workflow 自体が失敗しても、期限までは 2 か月ほどあるので、手で実行し直せば間に合います。
+artifact には期限があり、この設定では 90 日で消えます。`infra/` は何か月も変わらないことがあるので、そのままだと state が消えます。そこで、`tofu-state-backup.yml` が毎月 1 日に state を取ってきて、アップロードし直し、期限を延ばしています。state が見つからなければ、この workflow は失敗します。state をなくしたことが、apply できなくなった後ではなく、月初めの赤い実行として分かります。一時的なエラーやスケジュールの取りこぼしでこの workflow が失敗したときは、前回の artifact が残っていて、期限までは 2 か月ほどあるので、手で実行し直せば間に合います。
 
 apply の workflow も、state が見つからなければ止まります。さっき見たとおり、空の state で apply すると、アカウントをもう 1 つ作ろうとするからです。
 
