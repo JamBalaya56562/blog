@@ -931,7 +931,7 @@ Changes to `infra/` are planned and applied by GitHub Actions. Nobody applies fr
 | --- | --- | --- |
 | `tofu-plan.yml` | A pull request that changes `infra/` | `github-actions-blog-tofu-plan` (read-only) |
 | `tofu-apply.yml` | A push to main | `github-actions-blog-tofu-apply` (main only) |
-| `tofu-state-backup.yml` | Every Monday | None (GitHub only) |
+| `tofu-state-backup.yml` | First of every month | None (GitHub only) |
 
 The AWS credentials come from GitHub's OIDC: GitHub Actions shows AWS a token it issued and assumes a
 specific role. No access key exists anywhere.
@@ -991,9 +991,10 @@ an artifact made by the apply or backup workflow, on main of this repository, fr
 manual run.
 
 Artifacts expire; here, after 90 days. `infra/` can go months without a change, so left alone the state
-would vanish. `tofu-state-backup.yml` therefore fetches the state every Monday and uploads it again, which
-restarts the clock. If it finds no state, the workflow fails, so a lost state shows up as a red run on a
-Monday rather than as an apply that can no longer happen.
+would vanish. `tofu-state-backup.yml` therefore fetches the state on the first of every month and uploads
+it again, which restarts the clock. If it finds no state, the workflow fails, so a lost state shows up as a
+red run at the start of a month rather than as an apply that can no longer happen. Even if the backup run
+itself fails, about two months remain before the artifact expires, enough to run it again by hand.
 
 The apply workflow also stops when it finds no state. As shown earlier, an apply against an empty state
 tries to build a second copy of the account.
@@ -1290,7 +1291,7 @@ the plan failed. Edit the generated configuration until the plan shows nothing b
 - `import` blocks adopt resources made by hand. The goal is a plan with nothing but imports, and generated
   configuration is a draft to fix up
 - This blog makes `No changes.` the rule, runs plan and apply from CI with two roles that differ in who may
-  assume them, and keeps the state in a GitHub Actions artifact refreshed every week
+  assume them, and keeps the state in a GitHub Actions artifact refreshed every month
 - State encryption is OpenTofu-only. Migrate once with an `unencrypted` fallback, then delete the plain-text
   backups
 - In PowerShell, quote any `-option=value` whose value contains a `.`

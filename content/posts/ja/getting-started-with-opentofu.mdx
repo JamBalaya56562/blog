@@ -821,7 +821,7 @@ state をなくしたときは、`import` ブロックを書き直して、も�
 | --- | --- | --- |
 | `tofu-plan.yml` | `infra/` を変える pull request | `github-actions-blog-tofu-plan`（読み取りだけ） |
 | `tofu-apply.yml` | main への push | `github-actions-blog-tofu-apply`（main からだけ） |
-| `tofu-state-backup.yml` | 毎週月曜 | なし（GitHub の中だけ） |
+| `tofu-state-backup.yml` | 毎月 1 日 | なし（GitHub の中だけ） |
 
 AWS の資格情報は、GitHub の OIDC で受け取ります。GitHub Actions が発行するトークンを AWS に見せて、決められたロールを引き受けます。アクセスキーは、どこにもありません。
 
@@ -866,7 +866,7 @@ Plan: 0 to add, 1 to change, 0 to destroy.
 
 取ってくるのが [`fetch-tofu-state.sh`](https://github.com/JamBalaya56562/blog/blob/main/.github/scripts/fetch-tofu-state.sh) です。名前だけで探すと危ないので、条件を付けています。artifact は、pull request の実行からでも同じ名前でアップロードできます。そこに細工した state が置かれると、apply のロールで使われてしまいます。このスクリプトは、apply か backup の workflow が、このリポジトリの main で、push かスケジュールか手動の実行で作った artifact だけを使います。
 
-artifact には期限があり、この設定では 90 日で消えます。`infra/` は何か月も変わらないことがあるので、そのままだと state が消えます。そこで、`tofu-state-backup.yml` が毎週月曜に state を取ってきて、アップロードし直し、期限を延ばしています。state が見つからなければ、この workflow は失敗します。state をなくしたことが、apply できなくなった後ではなく、月曜の赤い実行として分かります。
+artifact には期限があり、この設定では 90 日で消えます。`infra/` は何か月も変わらないことがあるので、そのままだと state が消えます。そこで、`tofu-state-backup.yml` が毎月 1 日に state を取ってきて、アップロードし直し、期限を延ばしています。state が見つからなければ、この workflow は失敗します。state をなくしたことが、apply できなくなった後ではなく、月初めの赤い実行として分かります。この workflow 自体が失敗しても、期限までは 2 か月ほどあるので、手で実行し直せば間に合います。
 
 apply の workflow も、state が見つからなければ止まります。さっき見たとおり、空の state で apply すると、アカウントをもう 1 つ作ろうとするからです。
 
@@ -1135,6 +1135,6 @@ Mode                 LastWriteTime         Length Name
 - state は、設定とリソースの対応の記録。なくして apply すると、名前が重複できるリソースは 2 つ目が作られる
 - 作る順番は、書いた順番ではなく参照から決まる
 - 手で作ったリソースは `import` ブロックで取り込める。目標は `import` 以外が 0 の plan で、生成された設定は下書きとして手直しする
-- このブログでは、plan が `No changes.` であることを決まりにして、plan と apply を、引き受けられる実行が違う 2 つのロールで CI から実行し、state は GitHub Actions の artifact に置いて毎週延命している
+- このブログでは、plan が `No changes.` であることを決まりにして、plan と apply を、引き受けられる実行が違う 2 つのロールで CI から実行し、state は GitHub Actions の artifact に置いて毎月延命している
 - state の暗号化は OpenTofu だけの機能。移行は `unencrypted` の fallback で一度だけ行い、平文のバックアップを消す
 - PowerShell では、値に `.` が入る `-option=値` をクォートで囲む
