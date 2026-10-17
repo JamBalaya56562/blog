@@ -135,6 +135,54 @@ describe("code highlighting", () => {
     expect(light.size).toBeGreaterThan(2)
   })
 
+  // The EmDash guide fences a WordPress plugin as `php`, a plugin manifest as
+  // `jsonc` and an Astro page as `astro`; all three used to fall back to one
+  // flat colour.
+  test("php is bundled", async () => {
+    const tree = await highlight(
+      "php",
+      '<?php\nfunction probe(string $url): void {\n  echo "ok";\n}',
+    )
+    const light = new Set(
+      styles(tree).flatMap(
+        (s) => s.match(/--shiki-light:(#[0-9a-fA-F]+)/)?.slice(1) ?? [],
+      ),
+    )
+
+    expect(classesOf(tree, "code")).toContain("language-php")
+    expect(light.size).toBeGreaterThan(2)
+  })
+
+  test("jsonc is bundled", async () => {
+    const tree = await highlight(
+      "jsonc",
+      '{\n  // the plugin id\n  "id": "probe",\n  "version": 1\n}',
+    )
+    const light = new Set(
+      styles(tree).flatMap(
+        (s) => s.match(/--shiki-light:(#[0-9a-fA-F]+)/)?.slice(1) ?? [],
+      ),
+    )
+
+    expect(classesOf(tree, "code")).toContain("language-jsonc")
+    expect(light.size).toBeGreaterThan(2)
+  })
+
+  test("astro is bundled", async () => {
+    const tree = await highlight(
+      "astro",
+      '---\nconst { slug } = Astro.params\n---\n<h1 class="title">{slug}</h1>',
+    )
+    const light = new Set(
+      styles(tree).flatMap(
+        (s) => s.match(/--shiki-light:(#[0-9a-fA-F]+)/)?.slice(1) ?? [],
+      ),
+    )
+
+    expect(classesOf(tree, "code")).toContain("language-astro")
+    expect(light.size).toBeGreaterThan(2)
+  })
+
   // A fence naming a language the bundle does not carry is a typo in a post,
   // not a reason to fail the page: it renders unhighlighted instead.
   test("an unbundled language falls back instead of throwing", async () => {

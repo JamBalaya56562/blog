@@ -12,6 +12,7 @@ function loadHighlighter(): Promise<HighlighterCore> {
   return createHighlighterCore({
     engine: createJavaScriptRegexEngine(),
     langs: [
+      import("@shikijs/langs/astro"),
       import("@shikijs/langs/bash"),
       import("@shikijs/langs/css"),
       import("@shikijs/langs/diff"),
@@ -19,9 +20,11 @@ function loadHighlighter(): Promise<HighlighterCore> {
       import("@shikijs/langs/html"),
       import("@shikijs/langs/javascript"),
       import("@shikijs/langs/json"),
+      import("@shikijs/langs/jsonc"),
       import("@shikijs/langs/jsx"),
       import("@shikijs/langs/markdown"),
       import("@shikijs/langs/mdx"),
+      import("@shikijs/langs/php"),
       // Posts that give a Windows alternative next to a shell command land
       // here; without it the block falls back to `text` and reads as one
       // undifferentiated line while the tab beside it is fully coloured.
