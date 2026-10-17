@@ -26,6 +26,7 @@ function loadHighlighter(): Promise<HighlighterCore> {
       // here; without it the block falls back to `text` and reads as one
       // undifferentiated line while the tab beside it is fully coloured.
       import("@shikijs/langs/powershell"),
+      import("@shikijs/langs/rust"),
       // A terminal transcript: prompt lines are commands, the rest is what
       // they printed. `console` is the alias posts use on the fence.
       import("@shikijs/langs/shellsession"),
