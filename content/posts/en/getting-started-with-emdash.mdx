@@ -125,7 +125,10 @@ wordpress wordpress:latest Up 2 seconds
 ```
 
 Opening it in a browser would show the installer. wp-cli's `wp core install` does the same job here, with
-a throwaway admin password.
+a throwaway admin password. `depends_on` only waits for the MySQL container to start, not for MySQL to
+accept connections. If `wp core install` starts while MySQL is still initializing, it exits with
+`Error establishing a database connection`. That happened once while recording, when it ran straight after
+`docker compose up -d`; running the same command again a little later succeeded, as shown below.
 
 ```console
 ❯ docker compose run --rm cli wp core install --url=http://localhost:8080 --title="WordPress Demo" --admin_user=admin --admin_password=... --admin_email=admin@example.test --skip-email
@@ -264,7 +267,7 @@ systems.
 First, a WordPress plugin. It adds `/probe/v1/run` to the REST API and tries the following there:
 
 - make an HTTP request to an outside site (`httpbin.org`)
-- see whether the database password `DB_PASSWORD` is visible
+- see whether `DB_PASSWORD`, the constant holding the database password, is defined
 - read the users table
 - read the administrator's password hash
 - check whether `wp-config.php` is writable
@@ -295,6 +298,9 @@ add_action('rest_api_init', function () {
 });
 ```
 
+Anyone can call this route, signed in or not. Keep it off any public site: try it only on a throwaway local
+WordPress, and delete it afterwards.
+
 The file goes in WordPress's `wp-content/plugins`, and `wp plugin activate` turns it on.
 
 ```console
@@ -308,9 +314,10 @@ admin password hash prefix : $wp$
 can write wp-config.php    : True
 ```
 
-Every one of them worked. The plugin reached an outside site, saw the database password, read the
-administrator's password hash out of the users table, and could write the configuration file. WordPress
-plugins have no notion of permissions: once activated, a plugin can do everything WordPress itself can.
+Every one of them worked. The plugin reached an outside site, had the database password's constant
+`DB_PASSWORD` within reach, read the administrator's password hash out of the users table, and could write
+the configuration file. WordPress plugins have no notion of permissions: once activated, a plugin can do
+everything WordPress itself can.
 
 That is not this plugin's fault; it is how WordPress works. Installing a plugin means trusting whoever
 wrote it.
@@ -581,7 +588,8 @@ input.
 7
 ```
 
-The post got ID 7. Here is its stored body, straight from MySQL.
+The post got ID 7. IDs vary between installs, so if you follow along, use the ID your own
+`wp post create` printed. Here is its stored body, straight from MySQL.
 
 ```console
 ❯ docker compose exec db mysql -uwordpress -pwordpress wordpress -e "SELECT post_content FROM wp_posts WHERE ID = 7\G"
@@ -976,8 +984,8 @@ work on the site safely are things WordPress does not offer.
 
 - EmDash is Cloudflare's TypeScript CMS built on Astro. 1.0 came out in September 2026, under the MIT
   license
-- A WordPress plugin, once activated, could read the database password and the administrator's password
-  hash, and write the configuration file
+- A WordPress plugin, once activated, had the database password's constant and the administrator's
+  password hash within reach, and could write the configuration file
 - A sandboxed EmDash plugin only reaches the permissions and hosts it declares; plain `fetch()` and
   `process` were both unavailable
 - A native plugin skips the sandbox, and there plain `fetch()` and the environment variables were both
