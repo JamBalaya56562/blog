@@ -99,7 +99,7 @@ db mysql:8.4 Up 3 seconds
 wordpress wordpress:latest Up 2 seconds
 ```
 
-ブラウザで開くとインストールの画面になりますが、ここでは wp-cli の `wp core install` で済ませます。管理者のパスワードは、使い捨てのものを渡しています。
+ブラウザで開くとインストールの画面になりますが、ここでは wp-cli の `wp core install` で済ませます。管理者のパスワードは、使い捨てのものを渡しています。`depends_on` が待つのは MySQL のコンテナが起動するところまでで、MySQL が接続を受け付けるようになるまでではありません。`docker compose up -d` の直後に呼ぶと `Error establishing a database connection` で失敗するので（記録のときも 1 回失敗しました）、少し待ってから呼びます。
 
 ```console
 ❯ docker compose run --rm cli wp core install --url=http://localhost:8080 --title="WordPress Demo" --admin_user=admin --admin_password=... --admin_email=admin@example.test --skip-email
@@ -226,7 +226,7 @@ EmDash の一番の売りは、プラグインのサンドボックスです。�
 WordPress のプラグインを 1 つ書きます。REST API に `/probe/v1/run` を足して、そこで次のことを試します。
 
 - 外のサイト（`httpbin.org`）に HTTP でアクセスできるか
-- データベースのパスワード `DB_PASSWORD` が見えるか
+- データベースのパスワードが入った定数 `DB_PASSWORD` が定義されているか
 - ユーザーのテーブルを読めるか
 - 管理者のパスワードのハッシュを読めるか
 - `wp-config.php` に書き込めるか
@@ -257,6 +257,8 @@ add_action('rest_api_init', function () {
 });
 ```
 
+このルートは、ログインしていない人でも呼べます。公開しているサイトには入れず、手元の使い捨ての WordPress でだけ試して、終わったら消してください。
+
 このファイルを WordPress の `wp-content/plugins` に置いて、`wp plugin activate` で有効にします。
 
 ```console
@@ -270,7 +272,7 @@ admin password hash prefix : $wp$
 can write wp-config.php    : True
 ```
 
-全部できました。外のサイトにアクセスでき、データベースのパスワードが見え、ユーザーのテーブルから管理者のパスワードのハッシュまで読めて、設定ファイルにも書き込めます。WordPress のプラグインには、権限という考え方がありません。有効にした時点で、WordPress 本体と同じことが全部できます。
+全部できました。外のサイトにアクセスでき、データベースのパスワードが入った定数 `DB_PASSWORD` にも手が届き、ユーザーのテーブルから管理者のパスワードのハッシュまで読めて、設定ファイルにも書き込めます。WordPress のプラグインには、権限という考え方がありません。有効にした時点で、WordPress 本体と同じことが全部できます。
 
 これはこのプラグインが悪いのではなく、WordPress の仕組みがそうなっています。だから、プラグインを入れるときは、そのプラグインの作者を信用するしかありません。
 
@@ -502,7 +504,7 @@ WordPress に記事を 1 本作ります。段落、見出し、箇条書き、�
 7
 ```
 
-記事の ID は 7 になりました。MySQL で、保存された本文を見ます。
+記事の ID は 7 になりました。ID は環境によって変わるので、試すときは、自分の `wp post create` が出した ID に置き換えてください。MySQL で、保存された本文を見ます。
 
 ```console
 ❯ docker compose exec db mysql -uwordpress -pwordpress wordpress -e "SELECT post_content FROM wp_posts WHERE ID = 7\G"
@@ -836,7 +838,7 @@ EmDash は、WordPress の弱いところをよく考えて作られています
 ## まとめ
 
 - EmDash は、Cloudflare が作っている、Astro の上の TypeScript の CMS。2026 年 9 月に 1.0 が出て、ライセンスは MIT
-- WordPress のプラグインは、有効にした時点でデータベースのパスワードも管理者のパスワードのハッシュも読め、設定ファイルにも書き込めた
+- WordPress のプラグインは、有効にした時点でデータベースのパスワードの定数にも管理者のパスワードのハッシュにも手が届き、設定ファイルにも書き込めた
 - EmDash のサンドボックスのプラグインは、宣言した権限とホストにしか届かない。素の `fetch()` も `process` も使えなかった
 - ただし、native のプラグインはサンドボックスに入らないので、素の `fetch()` も環境変数も使えた。Node.js でサンドボックスを使うには `sandboxRunner` の設定が要り、CPU 時間の制限は Cloudflare でしか効かない
 - WordPress の本文は HTML とコメント、EmDash の本文は Portable Text の JSON。コレクションごとに本物のテーブルができる
