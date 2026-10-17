@@ -1,0 +1,1297 @@
+---
+title: "Learning Rust with the Book: From Installation to the Guessing Game"
+image: /thumbnails/rust-book-guessing-game.avif
+date: "2026-10-17"
+description: The first post in a series that works through The Rust Programming Language a little at a time, hands on. It installs Rust with mise, runs Hello, World! with rustc and Cargo, and builds the guessing game from chapter 2, breaking the code on purpose to read what the compiler says
+tags:
+  - rust
+  - cargo
+  - mise
+  - cli
+  - devtools
+---
+
+## About this series
+
+[The Rust Programming Language](https://doc.rust-lang.org/book/), known as "the Book", is Rust's official
+introductory book. It is free to read on the Rust website, and each chapter has you write and run code.
+
+This series works through the Book from the start, actually doing what it says. Rather than copying its text
+and code, these posts show what happened when I ran the Book's code, and what happened when I changed it on
+purpose. Rust's compiler errors are unusually helpful, so seeing "write this and it complains like that" is,
+I think, the best way to learn. The Book is licensed under MIT or Apache-2.0, at your option
+([COPYRIGHT in its repository](https://github.com/rust-lang/book/blob/main/COPYRIGHT)).
+
+This first post covers chapters 1 and 2 of the Book:
+
+- Chapter 1: install Rust, run Hello, World!, use Cargo
+- Chapter 2: build a guessing game
+
+The published Book's [title page](https://doc.rust-lang.org/book/title-page.html) assumes Rust 1.97.0 or later
+with `edition = "2024"`. Everything here was tried with Rust 1.99.1 and mise 2026.10.11, in PowerShell on
+Windows 11.
+
+## Installing Rust with mise
+
+The Book tells you to install Rust with [rustup](https://rustup.rs/), the official tool that installs Rust's
+compiler and tools by version and switches between them. This blog manages its tools with
+[mise](/en/blog/getting-started-with-mise), so Rust goes in through mise too.
+
+mise does not keep Rust itself, though. According to [mise's docs](https://mise.jdx.dev/lang/rust.html), mise
+installs Rust through rustup, installing rustup first if it is missing. Rust lands in rustup's homes (`~\.rustup`
+and `~\.cargo` by default), and mise only keeps a link to them.
+
+So as not to disturb my everyday setup, this recording pointed mise's and rustup's homes at a separate folder
+(`C:\Users\Jam\rust-demo\home`) and started from nothing. Where the output shows those paths, a normal setup
+would show `~\.cargo` and so on.
+
+### mise use -g rust
+
+`mise use -g rust` installs Rust globally. `-g` writes to the global configuration file, which applies in every
+folder. Without a version, you get the latest stable release.
+
+```console
+❯ mise use -g rust
+...
+  rust@1.99.1  Downloading rustup-init  115.7s  12.7/12.7 MB · 111 kB/s
+mise rust@1.99.1   1.99.1-x86_64-pc-windows-msvc installed - (timeout reading rustc version)
+mise rust@1.99.1 info: default toolchain set to 1.99.1-x86_64-pc-windows-msvc
+mise rust@1.99.1 info: checking for self-update (current version: 1.29.1)
+mise rust@1.99.1 rustc 1.99.1 (58cf8f9c3 2026-10-13)
+mise ✓ rust@1.99.1  136.0s
+mise ████████████████ 1/1 · installed 1 tool in 136.0s
+mise C:\Users\Jam\rust-demo\home\mise-config\config.toml tools: rust@1.99.1
+```
+
+It downloaded `rustup-init` (12.7 MB) and installed Rust 1.99.1. The rustup lines are mixed in because mise is
+calling rustup. The `timeout reading rustc version` on the `installed` line means rustup timed out reading the
+version of the rustc it had just installed; the following lines read it fine.
+
+The configuration file now says `latest`. In this recording its location was also moved, through the
+`MISE_GLOBAL_CONFIG_FILE` environment variable; normally it is `~\.config\mise\config.toml`.
+
+```console
+❯ Get-Content $env:MISE_GLOBAL_CONFIG_FILE
+[tools]
+rust = "latest"
+```
+
+### Checking what was installed
+
+`rustc` is the compiler, `cargo` the build and package tool, and `rustup` the version manager.
+
+```console
+❯ rustc --version
+rustc 1.99.1 (58cf8f9c3 2026-10-13)
+❯ cargo --version
+cargo 1.99.1 (5f94df478 2026-08-27)
+❯ rustup --version
+rustup 1.29.1 (d95a37b6a 2026-08-13)
+info: This is the version for the rustup toolchain manager, not the rustc compiler.
+info: the currently active `rustc` version is `rustc 1.99.1 (58cf8f9c3 2026-10-13)`
+❯ rustup toolchain list
+1.99.1-x86_64-pc-windows-msvc (active, default)
+```
+
+On mise's side, `mise ls rust` lists it as a "symlink".
+
+```console
+❯ mise ls rust
+rust  1.99.1 (symlink)  C:\Users\Jam\rust-demo\home\mise-config\config.toml  latest
+❯ Get-Item "$env:MISE_DATA_DIR\installs\rust\1.99.1" | Select-Object LinkType, Target | Format-List
+
+LinkType : Junction
+Target   : C:\Users\Jam\rust-demo\home\cargo\bin
+```
+
+mise's install directory is a junction (a Windows folder link) to rustup's `cargo\bin`. mise tells rustup which
+version to use through the `RUSTUP_TOOLCHAIN` environment variable.
+
+```console
+❯ mise env | Select-String RUSTUP_TOOLCHAIN
+
+${Env:RUSTUP_TOOLCHAIN}='1.99.1'
+```
+
+So even when installed through mise, it is rustup doing the work. What mise adds is that the version lives in
+the same configuration file as your other tools.
+
+### Windows needs a linker and Windows' libraries
+
+The `x86_64-pc-windows-msvc` in `rustup toolchain list` is the name of a Rust *target*: "build for 64-bit
+Windows, the way Microsoft's MSVC does". The Rust side of it is already in place after `mise use -g rust`.
+
+What is missing lives outside Rust. The MSVC target borrows two things from Visual Studio: the linker, which joins
+compiled pieces into an `.exe`, and Windows' standard libraries (the C runtime and the Windows SDK). The Book's
+[installation section](https://doc.rust-lang.org/book/ch01-01-installation.html) also says to install Visual
+Studio on Windows.
+
+The machine used here already had Visual Studio's C++ build tools. `vswhere`, which comes with the Visual Studio
+installer, shows that.
+
+```console
+❯ & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -products * -property displayName
+Visual Studio Build Tools 2026
+❯ & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+C:\Program Files (x86)\Microsoft Visual Studio\18\BuildTools
+```
+
+The second command looks for a Visual Studio that includes the C++ tools (`VC.Tools.x86.x64`). If it prints
+nothing, they are not installed.
+
+#### The standard way: winget
+
+mise's registry has no entry for Visual Studio's build tools. The standard way is the winget one-liner from
+rustup's [docs](https://rust-lang.github.io/rustup/installation/windows-msvc.html).
+
+```powershell
+winget install --id Microsoft.VisualStudio.Community --source winget --force --override "--add Microsoft.VisualStudio.Component.VC.Tools.x86.x64 --add Microsoft.VisualStudio.Component.VC.Tools.ARM64 --add Microsoft.VisualStudio.Component.Windows11SDK.22621 --addProductLang En-us"
+```
+
+It installs Visual Studio Community together with the C++ tools (x64 and ARM64), the Windows 11 SDK and the
+English language pack. Community is free for individuals. According to rustup's docs, if you already have a
+Visual Studio license you may replace `Community` with `BuildTools`. This machine already had the tools, so I
+did not run this command.
+
+#### Doing it with mise: xwin and rust-lld
+
+There is also a way to get by with mise alone, without installing Visual Studio.
+[xwin](https://github.com/Jake-Shadle/xwin) downloads just the MSVC C runtime and the Windows SDK libraries from
+Microsoft and unpacks them into a folder. The linker is `rust-lld`, which ships with Rust. It is not an official
+route, but in the recording environment it built and ran the guessing game.
+
+xwin is not in mise's registry, but the `github:` form, which installs from a GitHub release, works.
+
+```console
+❯ mise use -g github:Jake-Shadle/xwin
+...
+mise ✓ github:Jake-Shadle/xwin@0.10.0  19.7s  xwin-0.10.0-x86_64-pc-windows-msvc.tar.gz
+mise ████████████████ 1/1 · installed 1 tool in 19.7s
+mise C:\Users\Jam\rust-demo\home\mise-config\config.toml tools: github:Jake-Shadle/xwin@0.10.0
+❯ xwin --version
+xwin 0.10.0
+```
+
+`xwin splat` downloads the libraries and unpacks them. `--accept-license` means accepting Microsoft's license, so
+read it before adding the flag. `--disable-symlinks` skips the symbolic links xwin would add to paper over
+upper/lower-case differences: Windows file systems are case-insensitive, so they are not needed, and creating
+symbolic links on Windows can require extra privileges.
+
+```console
+❯ xwin --accept-license --cache-dir C:\Users\Jam\rust-demo\home\xwin-cache splat --disable-symlinks --output C:\Users\Jam\rust-demo\home\xwin
+❯ Get-ChildItem -Name xwin, xwin\crt\lib, xwin\sdk\lib
+crt
+sdk
+x86_64
+10.0.26100
+ucrt
+um
+```
+
+On this connection it took 666 seconds. The unpacked libraries come to 618 MB, plus 1.1 GB of download cache
+(in the `--cache-dir` folder), which can be deleted afterwards.
+
+What remains is telling Cargo about the linker and where the libraries are, in the project's
+`.cargo\config.toml`.
+
+```toml title=".cargo/config.toml"
+[target.x86_64-pc-windows-msvc]
+linker = "rust-lld"
+rustflags = [
+  "-Lnative=C:/Users/Jam/rust-demo/home/xwin/crt/lib/x86_64",
+  "-Lnative=C:/Users/Jam/rust-demo/home/xwin/sdk/lib/um/x86_64",
+  "-Lnative=C:/Users/Jam/rust-demo/home/xwin/sdk/lib/ucrt/x86_64",
+]
+```
+
+With that, `xwin_game`, a copy of the guessing game built later in this post, builds.
+
+```console
+❯ cargo build
+...
+   Compiling xwin_game v0.1.0 (C:\Users\Jam\rust-demo\work\xwin_game)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1m 20s
+❯ @("abc") + (1..100) | .\target\debug\xwin_game.exe | Select-Object -Last 2
+You guessed: 94
+You win!
+```
+
+It built and ran. This machine has Visual Studio as well, though, so it is worth checking that xwin was really
+the one used. `cargo build -v` prints the arguments Cargo passed. With unchanged sources it would not rebuild and
+would print nothing, so `main.rs` gets a fresh timestamp first.
+
+```console
+❯ (Get-Item src\main.rs).LastWriteTime = Get-Date
+❯ cargo build -v 2>&1 | Select-String -Pattern 'Running' | ForEach-Object { [regex]::Matches($_.Line, '-C linker=\S+|-Lnative=\S+') | ForEach-Object Value } | Select-Object -Unique
+-C linker=rust-lld
+-Lnative=C:/Users/Jam/rust-demo/home/xwin/crt/lib/x86_64
+-Lnative=C:/Users/Jam/rust-demo/home/xwin/sdk/lib/um/x86_64
+-Lnative=C:/Users/Jam/rust-demo/home/xwin/sdk/lib/ucrt/x86_64`
+```
+
+The linker was `rust-lld`. Asking the linker to report which libraries it read (`/verbose`) shows every one
+coming from the xwin folder, and not a single Visual Studio or Windows Kits path.
+
+```console
+❯ (Get-Item src\main.rs).LastWriteTime = Get-Date
+❯ $log = cargo rustc -v -- -C link-arg=/verbose 2>&1
+❯ $log | Select-String -Pattern 'Reading .*\.lib' | ForEach-Object { ($_.Line -replace '^.*Reading ', '') } | Sort-Object -Unique | Select-Object -First 8
+C:/Users/Jam/rust-demo/home/xwin/crt/lib/x86_64\msvcrt.lib
+C:/Users/Jam/rust-demo/home/xwin/crt/lib/x86_64\vcruntime.lib
+C:/Users/Jam/rust-demo/home/xwin/sdk/lib/ucrt/x86_64\ucrt.lib
+C:/Users/Jam/rust-demo/home/xwin/sdk/lib/um/x86_64\dbghelp.lib
+C:/Users/Jam/rust-demo/home/xwin/sdk/lib/um/x86_64\kernel32.lib
+C:/Users/Jam/rust-demo/home/xwin/sdk/lib/um/x86_64\ntdll.lib
+C:/Users/Jam/rust-demo/home/xwin/sdk/lib/um/x86_64\userenv.lib
+C:/Users/Jam/rust-demo/home/xwin/sdk/lib/um/x86_64\ws2_32.lib
+❯ ($log | Select-String -Pattern 'Microsoft Visual Studio|Windows Kits' | Measure-Object).Count
+0
+```
+
+#### Checking on a machine without Visual Studio
+
+Still, all of that ran on a machine with Visual Studio, so it does not show that the build works without it. To
+check that, I used a GitHub Actions Windows runner (`windows-latest`). The runner ships with Visual Studio, so
+the job first renames the Visual Studio, Windows Kits (Windows SDK) and LLVM folders to make them unusable. What
+follows are excerpts from that job's log.
+
+Before the rename, the runner had Visual Studio, LLVM's clang-cl, and a `link.exe` from Git.
+
+```text
+Visual Studio Enterprise 2026
+C:\Program Files\Git\usr\bin\link.exe
+C:\Program Files\LLVM\bin\clang-cl.exe
+```
+
+After it, `vswhere`, Windows Kits and LLVM are all gone, and neither `cl.exe` nor `clang-cl.exe` is on PATH.
+
+```text
+False
+False
+False
+cl.exe on PATH: False
+clang-cl.exe on PATH: False
+```
+
+In that state, mise installed Rust 1.99.1 and xwin, and the guessing game was first built without the
+`.cargo\config.toml`. It failed, as expected.
+
+```text
+error: linking with `link.exe` failed: exit code: 1
+  = note: link: extra operand 'D:\\a\\_temp\\work\\guess\\target\\debug\\build\\getrandom-a6217cf0cd42cfa1\\build_script_build-a6217cf0cd...
+          Try 'link --help' for more information.
+note: you may need to install Visual Studio build tools with the "C++ build tools" workload
+```
+
+The interesting part is that `link.exe` was not missing: a different `link.exe` from Git for Windows (the Unix
+command that links files) got called. It has nothing to do with Rust's linker, hence the confused
+`extra operand` error. A machine with Git but no Visual Studio may well hit this.
+
+Next, `xwin splat` unpacked the libraries (78 seconds on the runner), and with a `.cargo\config.toml` like the one
+above (only the xwin path changed for the runner) the build went through.
+
+```text
+   Compiling xwin_game v0.1.0 (D:\a\_temp\work\guess)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.20s
+You guessed: 87
+You win!
+libraries read:
+D:/a/_temp/xwin/crt/lib/x86_64\msvcrt.lib
+D:/a/_temp/xwin/crt/lib/x86_64\vcruntime.lib
+D:/a/_temp/xwin/sdk/lib/ucrt/x86_64\ucrt.lib
+D:/a/_temp/xwin/sdk/lib/um/x86_64\dbghelp.lib
+D:/a/_temp/xwin/sdk/lib/um/x86_64\kernel32.lib
+D:/a/_temp/xwin/sdk/lib/um/x86_64\ntdll.lib
+D:/a/_temp/xwin/sdk/lib/um/x86_64\userenv.lib
+D:/a/_temp/xwin/sdk/lib/um/x86_64\ws2_32.lib
+Visual Studio or Windows Kits paths: 0
+```
+
+On Windows without Visual Studio, mise, xwin and `rust-lld` alone built and ran the guessing game.
+
+#### Crates containing C code
+
+Every crate the guessing game uses is pure Rust. Some crates, though, contain C code and call a C compiler while
+building. xwin only provides libraries and headers; it has no C compiler.
+
+To check this, I made a small crate, `cdemo`, that calls one C function. `build.rs` is a script Cargo runs before
+building; here it uses the [cc](https://crates.io/crates/cc) crate to compile `greet.c`.
+
+```c title="src/greet.c"
+#include <string.h>
+
+int c_len(const char *text) {
+    return (int)strlen(text);
+}
+```
+
+```rust title="build.rs"
+fn main() {
+    cc::Build::new().file("src/greet.c").compile("greet");
+}
+```
+
+```rust title="src/main.rs"
+use std::ffi::{c_char, c_int};
+
+unsafe extern "C" {
+    fn c_len(text: *const c_char) -> c_int;
+}
+
+fn main() {
+    let len = unsafe { c_len(c"Hello from C".as_ptr()) };
+    println!("C says the text is {len} bytes long");
+}
+```
+
+`unsafe` and `extern "C"` are how Rust calls C functions, covered in the Book's chapter 20; the details do not
+matter here.
+
+On the same runner, with only the xwin configuration, this crate failed to build because no C compiler was found.
+
+```text
+  error occurred in cc-rs: failed to find tool "cl.exe": program not found
+```
+
+The C compiler can come from mise too. The `clang` in mise's registry (`conda:clang`, which installs the
+[conda-forge](https://conda-forge.org/) package) includes `clang-cl`, which compiles the MSVC way. For bundling the
+compiled C into a static library, `llvm-ar` from Rust's `llvm-tools` component does the job.
+
+```powershell
+mise use -g conda:clang
+rustup component add llvm-tools
+```
+
+Environment variables tell the cc crate which compiler to use and where the headers are. `/imsvc` is the clang-cl
+option that reads the folders xwin unpacked as system headers.
+
+```powershell
+$x = "C:/Users/Jam/rust-demo/home/xwin"
+$env:CC_x86_64_pc_windows_msvc = Join-Path (mise where conda:clang) "Library\bin\clang-cl.exe"
+$env:AR_x86_64_pc_windows_msvc = (Get-ChildItem -Recurse -Filter llvm-ar.exe (rustc --print sysroot)).FullName | Select-Object -First 1
+$env:CFLAGS_x86_64_pc_windows_msvc = "/imsvc $x/crt/include /imsvc $x/sdk/include/ucrt /imsvc $x/sdk/include/um /imsvc $x/sdk/include/shared"
+```
+
+On the runner, that built and ran the crate that calls C as well (xwin's folder there is `D:/a/_temp/xwin`).
+
+```text
+CC = C:\Users\runneradmin\AppData\Local\mise\installs\conda-clang\23.1.3\Library\bin\clang-cl.exe
+AR = C:\Users\runneradmin\.rustup\toolchains\1.99.1-x86_64-pc-windows-msvc\lib\rustlib\x86_64-pc-windows-msvc\bin\llvm-ar.exe
+   Compiling cdemo v0.1.0 (D:\a\_temp\work\cdemo)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.45s
+C says the text is 12 bytes long
+```
+
+#### Which to choose
+
+xwin's README describes it as a tool for compiling and linking Windows programs from a non-Windows platform, so
+using it on Windows is off its intended path. It worked for everything tried here, but larger crates and crates
+with C++ were not tried. When in doubt, installing Visual Studio with winget is the dependable choice; reach for
+xwin when you want everything from mise or would rather not install Visual Studio.
+
+### Reading the Book locally
+
+Rust installed through rustup ships with a copy of the Book. `rustup doc --book` opens it in a browser, and
+`--path` prints where it is instead of opening it.
+
+```console
+❯ rustup doc --path --book
+C:\Users\Jam\rust-demo\home\rustup\toolchains\1.99.1-x86_64-pc-windows-msvc\share\doc\rust\html\book/index.html
+```
+
+The local copy matches the installed Rust version and works offline.
+
+## Hello, World! (section 1.2)
+
+First, without Cargo, using the compiler `rustc` directly. In a folder called `hello_world`, write `main.rs`.
+
+```rust title="main.rs"
+fn main() {
+    println!("Hello, world!");
+}
+```
+
+`fn main()` is the function the program starts from. `rustc main.rs` compiles it.
+
+```console
+❯ rustc main.rs
+❯ Get-ChildItem -Name
+main.exe
+main.pdb
+main.rs
+❯ .\main.exe
+Hello, world!
+```
+
+It finished without printing anything and left `main.exe` and `main.pdb` behind. `main.exe` is the executable
+and `main.pdb` holds debugging information. Unlike JavaScript or Python, Rust compiles to an executable first and
+then runs that.
+
+```console
+❯ Get-ChildItem main.exe, main.pdb | Select-Object Name, Length | Format-Table -AutoSize
+
+Name      Length
+----      ------
+main.exe  134144
+main.pdb 1306624
+```
+
+The executable is about 131 KB.
+
+### Functions and macros
+
+The `!` at the end of `println!` marks it as a **macro**, not a function. JavaScript and Python have no macros,
+so a short explanation is in order.
+
+A **function** takes a fixed number of arguments of fixed types and is called while the program runs.
+`fn main()` is a function.
+
+A **macro** rewrites the code you wrote into other code before compilation. The Book's
+[macros section](https://doc.rust-lang.org/book/ch20-05-macros.html) calls it "writing code that writes other
+code". At compile time, `println!("Hello, world!")` expands into longer code that formats the text and writes it
+out. The compiler does the expanding, so you normally never see the expanded code.
+
+The difference shows most clearly in the number of arguments. A Rust function takes a fixed number of them. Here
+`greet` takes one argument and is given two.
+
+```rust title="fn_args.rs"
+fn greet(name: &str) {
+    println!("Hello, {name}!");
+}
+
+fn main() {
+    greet("Rust");
+    greet("Rust", 11);
+}
+```
+
+```console
+❯ rustc fn_args.rs
+error[E0061]: this function takes 1 argument but 2 arguments were supplied
+ --> fn_args.rs:7:5
+  |
+7 |     greet("Rust", 11);
+  |     ^^^^^         -- unexpected argument #2 of type `{integer}`
+  |
+note: function defined here
+ --> fn_args.rs:1:4
+  |
+1 | fn greet(name: &str) {
+  |    ^^^^^
+help: remove the extra argument
+  |
+7 -     greet("Rust", 11);
+7 +     greet("Rust");
+  |
+
+error: aborting due to 1 previous error
+
+For more information about this error, try `rustc --explain E0061`.
+```
+
+"This function takes 1 argument but 2 were supplied." Rust has no optional parameters like TypeScript's
+`name?: string`, and no variable-length parameters like JavaScript's `...args`.
+
+`println!`, on the other hand, takes any number of arguments.
+
+```rust title="varargs.rs"
+fn main() {
+    let name = "Rust";
+    let age = 11;
+    println!("Hello!");
+    println!("Hello, {name}!");
+    println!("Hello, {}! You are {} years old.", name, age);
+}
+```
+
+```console
+❯ rustc varargs.rs
+❯ .\varargs.exe
+Hello!
+Hello, Rust!
+Hello, Rust! You are 11 years old.
+```
+
+One argument or three, it works. As the second line shows, a variable's name can even go straight inside the
+string as `{name}`. A macro reads the code you wrote before it is compiled, which is what makes that possible.
+
+The other benefit is that mistakes surface at compile time. What if there are two `{}` but only one argument?
+
+```console
+❯ Get-Content too_few.rs
+fn main() {
+    let name = "Rust";
+    println!("Hello, {}! You are {} years old.", name);
+}
+❯ rustc too_few.rs
+error: 2 positional arguments in format string, but there is 1 argument
+ --> too_few.rs:3:22
+  |
+3 |     println!("Hello, {}! You are {} years old.", name);
+  |                      ^^          ^^              ----
+
+error: aborting due to 1 previous error
+```
+
+It stopped before the program ever ran: "two `{}` in the string, but one argument". While expanding, `println!`
+reads the format string and matches its `{}` against the arguments. With an ordinary function the compiler cannot
+see inside the string, so it could not do this.
+
+Macros come up again and again in this series, and the Book's chapter 20 covers writing your own. For now it is
+enough to know that a name ending in `!` is a macro, and that it expands into code before compilation.
+
+### Taking out the `!` in `println`
+
+To see what happens without the `!`, `no_bang.rs` changes it to `println(`.
+
+```console
+❯ Get-Content no_bang.rs
+fn main() {
+    println("Hello, world!");
+}
+❯ rustc no_bang.rs
+error[E0423]: cannot find function `println` in this scope
+ --> no_bang.rs:2:5
+  |
+2 |     println("Hello, world!");
+  |     ^^^^^^^ not found in this scope
+  |
+  = note: a macro named `println` exists in another namespace
+help: use `!` to invoke the macro
+  |
+2 |     println!("Hello, world!");
+  |            +
+
+error: aborting due to 1 previous error
+
+For more information about this error, try `rustc --explain E0423`.
+```
+
+"There is no function called `println`, but there is a macro by that name; add `!` to call it." It even shows
+the fix: the `+` line marks where the character goes. Errors carry codes like `E0423`, and
+`rustc --explain E0423` prints a longer explanation.
+
+### Taking out the trailing `;`
+
+Next, `no_semi.rs` drops the `;` at the end of the line.
+
+```console
+❯ Get-Content no_semi.rs
+fn main() {
+    println!("Hello, world!")
+}
+❯ rustc no_semi.rs
+❯ .\no_semi.exe
+Hello, world!
+```
+
+No error this time. In Rust the last expression in a block may go without `;`, and its value becomes the
+block's value. `println!` returns the "nothing" value `()`, which is also what `main` returns, so it is fine.
+Chapter 3 covers this properly, and the next post comes back to it.
+
+## Hello, Cargo! (section 1.3)
+
+Real Rust projects rarely call `rustc` directly; they use **Cargo**. Cargo builds, runs, tests and manages the
+packages a project depends on (in Rust, "crates"). In JavaScript terms it is npm and a build tool in one.
+
+`cargo new` creates a project.
+
+```console
+❯ cargo new hello_cargo
+    Creating binary (application) `hello_cargo` package
+note: see more `Cargo.toml` keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+❯ cd hello_cargo
+❯ Get-ChildItem -Force -Name
+.git
+src
+.gitignore
+Cargo.toml
+```
+
+The source goes under `src`, and a Git repository (`.git`) and `.gitignore` came with it. `.gitignore` lists
+only `/target`, where build output goes.
+
+```console
+❯ Get-Content Cargo.toml
+[package]
+name = "hello_cargo"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+❯ Get-Content src\main.rs
+fn main() {
+    println!("Hello, world!");
+}
+❯ Get-Content .gitignore
+/target
+```
+
+`Cargo.toml` is the project's configuration, the counterpart of npm's `package.json`. `edition = "2024"` selects
+the Rust language edition: every few years Rust groups changes that break compatibility into a new edition.
+`cargo new` defaults to 2024 ([cargo new docs](https://doc.rust-lang.org/cargo/commands/cargo-new.html)).
+`[dependencies]` is where crates go; that comes up shortly.
+
+### build, run and check
+
+![cargo build creates an executable, cargo run builds and runs it, and cargo check checks without creating an executable. Cargo calls rustc](/rust/cargo-commands.avif)
+
+`cargo build` builds the project.
+
+```console
+❯ cargo build
+   Compiling hello_cargo v0.1.0 (C:\Users\Jam\rust-demo\work\hello_cargo)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 4.06s
+❯ Get-ChildItem -Name
+src
+target
+.gitignore
+Cargo.lock
+Cargo.toml
+❯ .\target\debug\hello_cargo.exe
+Hello, world!
+```
+
+The executable is in `target\debug`. A `Cargo.lock` appeared as well; it pins the versions of dependencies,
+like npm's `package-lock.json`. With no dependencies yet, it only lists the project itself.
+
+```console
+❯ Get-Content Cargo.lock
+# This file is automatically @generated by Cargo.
+# It is not intended for manual editing.
+version = 4
+
+[[package]]
+name = "hello_cargo"
+version = "0.1.0"
+```
+
+`cargo run` builds and runs in one step.
+
+```console
+❯ cargo run
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.17s
+     Running `target\debug\hello_cargo.exe`
+Hello, world!
+```
+
+The source had not changed, so it skipped the build (no `Compiling` line) and ran the existing executable.
+After changing the text in `src\main.rs` to `Hello, Cargo!`, it builds again.
+
+```console
+❯ cargo run
+   Compiling hello_cargo v0.1.0 (C:\Users\Jam\rust-demo\work\hello_cargo)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 3.84s
+     Running `target\debug\hello_cargo.exe`
+Hello, Cargo!
+```
+
+`cargo check` only checks that the code compiles and produces no executable. That makes it faster, so it is
+the one to run over and over while writing.
+
+```console
+❯ cargo check
+    Checking hello_cargo v0.1.0 (C:\Users\Jam\rust-demo\work\hello_cargo)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.11s
+```
+
+### Cargo calls rustc for you
+
+`rustc` is the Rust compiler itself: it takes `.rs` files and produces executables and libraries. Cargo is not a
+compiler. It decides which files to compile, in what order and with which settings, and then calls `rustc`. In
+TypeScript terms, `rustc` is `tsc`, and Cargo is npm plus the scripts that call `tsc`.
+
+`cargo build -v` shows the commands Cargo actually runs.
+
+```console
+❯ cargo clean
+     Removed 25 files, 2.9MiB total
+❯ cargo build -v
+   Compiling hello_cargo v0.1.0 (C:\Users\Jam\rust-demo\work\hello_cargo)
+     Running `C:\Users\Jam\rust-demo\home\rustup\toolchains\1.99.1-x86_64-pc-windows-msvc\bin\rustc.exe --crate-name hello_cargo --edition=2024 src\main.rs --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --crate-type bin --emit=dep-info,link -C embed-bitcode=no -C debuginfo=2 --check-cfg cfg(docsrs,test) --check-cfg "cfg(feature, values())" -C metadata=cb559adae4f42d23 --out-dir C:\Users\Jam\rust-demo\work\hello_cargo\target\debug\deps -C incremental=C:\Users\Jam\rust-demo\work\hello_cargo\target\debug\incremental -L dependency=C:\Users\Jam\rust-demo\work\hello_cargo\target\debug\deps`
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 6.48s
+```
+
+At its core this is `rustc.exe ... src\main.rs`, the same thing as the `rustc main.rs` typed by hand earlier. The
+difference is everything around it: `edition = "2024"` from `Cargo.toml` becomes `--edition=2024`, and Cargo adds
+where the output goes (`--out-dir`) and the setting that lets it recompile only what changed
+(`-C incremental`). Nobody wants to type that every time, so Cargo does it.
+
+### Release builds
+
+`cargo build --release` builds with optimizations, for release.
+
+```console
+❯ cargo build --release
+   Compiling hello_cargo v0.1.0 (C:\Users\Jam\rust-demo\work\hello_cargo)
+    Finished `release` profile [optimized] target(s) in 2.38s
+❯ Get-ChildItem -Name target
+debug
+release
+.rustc_info.json
+CACHEDIR.TAG
+```
+
+`dev` and `release` go to `target\debug` and `target\release`. `dev` builds faster but runs slower; `release`
+is the other way round.
+
+## Building the guessing game (chapter 2)
+
+Chapter 2 builds a game where you guess a secret number between 1 and 100. The Book adds code a little at a
+time and touches most of Rust's basics on the way. This post follows the same order.
+
+```console
+❯ cargo new guessing_game
+    Creating binary (application) `guessing_game` package
+```
+
+The game reads numbers from standard input, so here they are piped in from PowerShell. That is why the input
+values themselves do not appear on screen.
+
+### Reading input
+
+The first version reads one line and prints it back.
+
+```rust title="src/main.rs"
+use std::io;
+
+fn main() {
+    println!("Guess the number!");
+
+    println!("Please input your guess.");
+
+    let mut guess = String::new();
+
+    io::stdin()
+        .read_line(&mut guess)
+        .expect("Failed to read line");
+
+    println!("You guessed: {guess}");
+}
+```
+
+```console
+❯ "42" | cargo run
+   Compiling guessing_game v0.1.0 (C:\Users\Jam\rust-demo\work\guessing_game)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 4.00s
+     Running `target\debug\guessing_game.exe`
+Guess the number!
+Please input your guess.
+You guessed: 42
+
+```
+
+The empty line at the end is there because `read_line` keeps the line's trailing newline in `guess`. That
+matters later.
+
+Three very Rust things are packed in here:
+
+- `let mut guess`: Rust variables are **immutable by default**; only `mut` makes them changeable
+- `&mut guess`: `guess` is passed to `read_line` as a reference it may modify. `&` makes a reference, which leads
+  into chapter 4's ownership
+- `.expect(...)`: `read_line` returns a `Result`, which says whether it succeeded. `expect` stops the program
+  with its message if it failed
+
+### Removing mut
+
+What if `let mut guess` becomes `let guess`?
+
+```console
+❯ cargo build
+   Compiling guessing_game v0.1.0 (C:\Users\Jam\rust-demo\work\guessing_game)
+error[E0596]: cannot borrow `guess` as mutable, as it is not declared as mutable
+  --> src\main.rs:11:20
+   |
+11 |         .read_line(&mut guess)
+   |                    ^^^^^^^^^^ cannot borrow as mutable
+   |
+help: consider changing this to be mutable
+   |
+ 8 |     let mut guess = String::new();
+   |         +++
+
+For more information about this error, try `rustc --explain E0596`.
+error: could not compile `guessing_game` (bin "guessing_game") due to 1 previous error
+```
+
+"It was not declared mutable, so it cannot be borrowed as mutable." TypeScript's `const` only stops you from
+assigning a different value to the variable; the object inside can still change. A Rust variable without `mut`
+cannot have its contents changed either.
+
+### Removing expect
+
+Now put `mut` back and delete the `.expect(...)` line.
+
+```console
+❯ cargo build
+   Compiling guessing_game v0.1.0 (C:\Users\Jam\rust-demo\work\guessing_game)
+warning: unused `Result` that must be used
+  --> src\main.rs:10:5
+   |
+10 | /     io::stdin()
+11 | |         .read_line(&mut guess);
+   | |______________________________^
+   |
+   = note: this `Result` may be an `Err` variant, which should be handled
+   = note: `#[warn(unused_must_use)]` (part of `#[warn(unused)]`) on by default
+help: use `let _ = ...` to ignore the resulting value
+   |
+10 |     let _ = io::stdin()
+   |     +++++++
+
+warning: `guessing_game` (bin "guessing_game") generated 1 warning
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 3.15s
+```
+
+A warning rather than an error, and the build went through. It says a `Result` that might be a failure is
+being thrown away unchecked, and suggests `let _ =` if ignoring it is really intended. Rust does not like
+failures being dropped silently.
+
+### Adding rand
+
+The secret number needs randomness, and according to the Book, Rust's standard library does not yet include
+random number functionality. So the game uses a crate called `rand`. As the Book does, add it by hand under
+`[dependencies]` in `Cargo.toml`.
+
+```toml title="Cargo.toml"
+[dependencies]
+rand = "0.10.1"
+```
+
+`cargo add rand` would also add it, but writes the newest version (it wrote `rand = "0.10.3"` when I tried).
+To match the Book, the build below keeps the hand-written `0.10.1`.
+
+```console
+❯ cargo build
+    Updating crates.io index
+     Locking 8 packages to highest Rust 1.99.1 compatible versions
+      Adding cfg-if v1.0.5
+      Adding chacha20 v0.10.2
+      Adding cpufeatures v0.3.1
+      Adding getrandom v0.4.3
+      Adding libc v0.2.191
+      Adding r-efi v6.0.0
+      Adding rand v0.10.3
+      Adding rand_core v0.10.1
+ Downloading crates ...
+  Downloaded cfg-if v1.0.5
+  Downloaded cpufeatures v0.3.1
+  Downloaded chacha20 v0.10.2
+  Downloaded getrandom v0.4.3
+  Downloaded rand_core v0.10.1
+  Downloaded rand v0.10.3
+   Compiling rand_core v0.10.1
+   Compiling getrandom v0.4.3
+   Compiling cfg-if v1.0.5
+   Compiling cpufeatures v0.3.1
+   Compiling chacha20 v0.10.2
+   Compiling rand v0.10.3
+   Compiling guessing_game v0.1.0 (C:\Users\Jam\rust-demo\work\guessing_game)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 14.86s
+```
+
+Cargo fetched rand and the crates it uses from crates.io (Rust's package registry, like npm's) and built them.
+
+Two things stand out. First, `0.10.1` was written but `rand v0.10.3` was installed. In Cargo, `"0.10.1"` means
+"0.10.1 or later, before 0.11.0" ([Cargo docs](https://doc.rust-lang.org/cargo/reference/specifying-dependencies.html)).
+It is the same idea as npm's `^0.10.1`: the newest compatible version wins. The chosen version is recorded in
+`Cargo.lock`, so later builds keep using it.
+
+```console
+❯ cargo build
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.27s
+❯ Select-String -Path Cargo.lock -Pattern '^name = "rand"' -Context 0,2 | ForEach-Object { $_.Line; $_.Context.PostContext }
+name = "rand"
+version = "0.10.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+```
+
+Second, it says `Locking 8 packages` but downloads and compiles only six. `libc` and `r-efi` are for other
+operating systems, so Windows does not need them. `cargo tree` shows the dependency tree.
+
+```console
+❯ cargo tree
+guessing_game v0.1.0 (C:\Users\Jam\rust-demo\work\guessing_game)
+└── rand v0.10.3
+    ├── chacha20 v0.10.2
+    │   ├── cfg-if v1.0.5
+    │   ├── cpufeatures v0.3.1
+    │   └── rand_core v0.10.1
+    ├── getrandom v0.4.3
+    │   ├── cfg-if v1.0.5
+    │   └── rand_core v0.10.1
+    └── rand_core v0.10.1
+```
+
+More dependencies mean more `rustc` calls. Here are just the crate names Cargo passed to `rustc`, taken from the
+`cargo build -v` output.
+
+```console
+❯ cargo clean
+     Removed 110 files, 13.4MiB total
+❯ cargo build -v 2>&1 | Select-String -Pattern '--crate-name (\S+)' | ForEach-Object { $_.Matches[0].Groups[1].Value }
+rand_core
+cpufeatures
+build_script_build
+cfg_if
+chacha20
+getrandom
+rand
+guessing_game
+```
+
+Cargo compiles the dependencies one by one, each before the crates that use it, and the game itself last.
+`build_script_build` is the build script (`build.rs`) that `getrandom` ships. Lining all of this up in dependency
+order is Cargo's job too.
+
+### Making the secret number
+
+`use rand::prelude::*;` brings in rand's commonly used items, and `rand::rng().random_range(1..=100)` makes a
+number from 1 to 100. `1..=100` includes 100 (`1..100` would not). For now the secret number is printed, to
+make checking easy.
+
+```rust title="src/main.rs"
+use std::io;
+
+use rand::prelude::*;
+
+fn main() {
+    println!("Guess the number!");
+
+    let secret_number = rand::rng().random_range(1..=100);
+
+    println!("The secret number is: {secret_number}");
+
+    // --snip--
+}
+```
+
+```console
+❯ "50" | cargo run
+   Compiling guessing_game v0.1.0 (C:\Users\Jam\rust-demo\work\guessing_game)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 3.38s
+     Running `target\debug\guessing_game.exe`
+Guess the number!
+The secret number is: 81
+Please input your guess.
+You guessed: 50
+
+```
+
+The secret number changes on every run.
+
+### Removing the use
+
+What happens without the `use rand::prelude::*;` line?
+
+```console
+❯ cargo build
+   Compiling guessing_game v0.1.0 (C:\Users\Jam\rust-demo\work\guessing_game)
+error[E0599]: no method named `random_range` found for struct `ThreadRng` in the current scope
+   --> src\main.rs:6:37
+    |
+  6 |     let secret_number = rand::rng().random_range(1..=100);
+    |                                     ^^^^^^^^^^^^
+    |
+   ::: C:\Users\Jam\rust-demo\home\cargo\registry\src\index.crates.io-1949cf8c6b5b557f\rand-0.10.3\src\rng.rs:163:8
+    |
+163 |     fn random_range<T, R>(&mut self, range: R) -> T
+    |        ------------ the method is available for `ThreadRng` here
+    |
+    = help: items from traits can only be used if the trait is in scope
+help: there is a method `random` with a similar name, but with different arguments
+   --> C:\Users\Jam\rust-demo\home\cargo\registry\src\index.crates.io-1949cf8c6b5b557f\rand-0.10.3\src\rng.rs:93:5
+    |
+ 93 | /     fn random<T>(&mut self) -> T
+ 94 | |     where
+ 95 | |         StandardUniform: Distribution<T>,
+    | |_________________________________________^
+help: trait `RngExt` which provides `random_range` is implemented but not in scope; perhaps you want to import it
+    |
+  1 + use rand::RngExt;
+    |
+
+For more information about this error, try `rustc --explain E0599`.
+error: could not compile `guessing_game` (bin "guessing_game") due to 1 previous error
+```
+
+`rand::rng()` works, yet the method `random_range` cannot be found. The `help` lines explain why:
+`random_range` belongs to a **trait** called `RngExt`, and a trait's methods are only usable once the trait is
+brought in with `use`. `rand::prelude::*` had been bringing in `RngExt` along with everything else. Traits are
+chapter 10's subject; for now, think of them as a way to add methods to a type, methods that only work once the
+trait is brought in with `use`.
+
+### Comparing: different types cannot be compared
+
+Now compare the guess with the secret number, using `std::cmp::Ordering` and a `match` that splits into
+"less", "greater" and "equal".
+
+```rust title="src/main.rs"
+use std::cmp::Ordering;
+
+// ...
+
+    println!("You guessed: {guess}");
+
+    match guess.cmp(&secret_number) {
+        Ordering::Less => println!("Too small!"),
+        Ordering::Greater => println!("Too big!"),
+        Ordering::Equal => println!("You win!"),
+    }
+```
+
+This does not compile. It is the high point of chapter 2.
+
+```console
+❯ cargo build
+   Compiling guessing_game v0.1.0 (C:\Users\Jam\rust-demo\work\guessing_game)
+error[E0308]: mismatched types
+  --> src\main.rs:23:21
+   |
+23 |     match guess.cmp(&secret_number) {
+   |                 --- ^^^^^^^^^^^^^^ expected `&String`, found `&{integer}`
+   |                 |
+   |                 arguments to this method are incorrect
+   |
+   = note: expected reference `&String`
+              found reference `&{integer}`
+note: method defined here
+  --> /rustc/58cf8f9c35b355199727627d07ae34a4e2846d67/library\core\src\cmp.rs:1012:7
+
+For more information about this error, try `rustc --explain E0308`.
+error: could not compile `guessing_game` (bin "guessing_game") due to 1 previous error
+```
+
+`guess` is the input as a string (`String`), and `secret_number` is an integer. A string and an integer cannot
+be compared. JavaScript would quietly turn `"50" < 81` into a numeric comparison; Rust never converts between
+types behind your back.
+
+### Turning the string into a number
+
+The fix is to convert the input before comparing. The Book does it by creating a new variable with the same
+name, `guess`.
+
+```rust title="src/main.rs"
+    let guess: u32 = guess.trim().parse().expect("Please type a number!");
+```
+
+Declaring a variable with the same name again hides the earlier one. This is called **shadowing**, and it saves
+inventing names like `guess_str` and `guess_num`. `trim()` removes surrounding whitespace and the newline,
+`parse()` converts to a number, and `u32` is an unsigned 32-bit integer.
+
+```console
+❯ "50" | cargo run
+   Compiling guessing_game v0.1.0 (C:\Users\Jam\rust-demo\work\guessing_game)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.28s
+     Running `target\debug\guessing_game.exe`
+Guess the number!
+The secret number is: 56
+Please input your guess.
+You guessed: 50
+Too small!
+```
+
+Now the comparison works, and the empty line after `You guessed: 50` is gone too, because `trim()` removed the
+newline.
+
+Interestingly, `secret_number` never had its type written down. Since `guess` is a `u32` and
+`guess.cmp(&secret_number)` compares the two, Rust infers that `secret_number` must be a `u32` as well.
+
+Input that is not a number stops the program with the `expect` message.
+
+```console
+❯ "abc" | cargo run -q
+Guess the number!
+The secret number is: 34
+Please input your guess.
+
+thread 'main' (836) panicked at src\main.rs:21:43:
+Please type a number!: ParseIntError { kind: InvalidDigit }
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+```
+
+`-q` hides Cargo's own output such as `Compiling`. Stopping like this is what Rust calls a **panic**.
+
+### Removing trim, then the type annotation
+
+Without `trim()`, even `50` stops the program.
+
+```console
+❯ "50" | cargo run -q
+Guess the number!
+The secret number is: 64
+Please input your guess.
+
+thread 'main' (15820) panicked at src\main.rs:21:36:
+Please type a number!: ParseIntError { kind: InvalidDigit }
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+```
+
+The newline `read_line` kept is still there, so it tried to convert "50 plus a newline" rather than `"50"`. The
+empty line from the very first run explains this failure.
+
+Without `: u32`, it does not compile at all.
+
+```console
+❯ cargo build
+   Compiling guessing_game v0.1.0 (C:\Users\Jam\rust-demo\work\guessing_game)
+error[E0282]: type annotations needed
+  --> src\main.rs:21:9
+   |
+21 |     let guess = guess.trim().parse().expect("Please type a number!");
+   |         ^^^^^
+...
+25 |     match guess.cmp(&secret_number) {
+   |           ----- type must be known at this point
+   |
+help: consider giving `guess` an explicit type
+   |
+21 |     let guess: /* Type */ = guess.trim().parse().expect("Please type a number!");
+   |              ++++++++++++
+
+For more information about this error, try `rustc --explain E0282`.
+error: could not compile `guessing_game` (bin "guessing_game") due to 1 previous error
+```
+
+`parse()` can produce many types, and with nothing saying which one is wanted, it asks for a type. Earlier, Rust
+inferred `secret_number`'s type, but when neither `guess` nor `secret_number` gives a clue there is nothing to
+infer from.
+
+### Looping, and shrugging off non-numbers
+
+![trim removes whitespace from the input string, then parse converts it to u32. Successful values are compared; failed conversions continue to the next input](/rust/guess-input.avif)
+
+Finally, let the player guess until they get it. The Book's final version wraps everything in `loop` and leaves
+with `break` on a correct guess. So that non-numbers no longer stop the program, a `match` on the result of
+`parse()` replaces `expect`. The secret number is no longer printed. This is the same code as the Book's
+listing 2-6.
+
+```rust title="src/main.rs"
+use std::cmp::Ordering;
+use std::io;
+
+use rand::prelude::*;
+
+fn main() {
+    println!("Guess the number!");
+
+    let secret_number = rand::rng().random_range(1..=100);
+
+    loop {
+        println!("Please input your guess.");
+
+        let mut guess = String::new();
+
+        io::stdin()
+            .read_line(&mut guess)
+            .expect("Failed to read line");
+
+        let guess: u32 = match guess.trim().parse() {
+            Ok(num) => num,
+            Err(_) => continue,
+        };
+
+        println!("You guessed: {guess}");
+
+        match guess.cmp(&secret_number) {
+            Ordering::Less => println!("Too small!"),
+            Ordering::Greater => println!("Too big!"),
+            Ordering::Equal => {
+                println!("You win!");
+                break;
+            }
+        }
+    }
+}
+```
+
+`parse()` returns a `Result`: `Ok(number)` on success, `Err(error)` on failure. `Ok(num) => num` takes the
+number out, and `Err(_) => continue` goes back to the top of the loop on failure. `_` means "I do not need the
+value".
+
+With the secret number hidden, the run below feeds in `abc` followed by 1 to 100 in order, until it hits.
+
+```console
+❯ $out = @("abc") + (1..100) | cargo run -q
+❯ $out | Select-Object -First 9
+Guess the number!
+Please input your guess.
+Please input your guess.
+You guessed: 1
+Too small!
+Please input your guess.
+You guessed: 2
+Too small!
+Please input your guess.
+❯ $out | Select-Object -Last 6
+Please input your guess.
+You guessed: 91
+Too small!
+Please input your guess.
+You guessed: 92
+You win!
+```
+
+The two `Please input your guess.` lines in a row are where `abc` was shrugged off. It won at 92, left the loop
+after `You win!` and finished; 93 to 100 were never read.
+
+## A trap I hit: the game never stops when input runs out
+
+Piping input in turned up one problem. If the input runs out before a correct guess, the program never stops.
+Here only `50` goes in, and only the first 8 lines are kept.
+
+```console
+❯ "50" | cargo run -q | Select-Object -First 8
+Guess the number!
+Please input your guess.
+You guessed: 50
+Too small!
+Please input your guess.
+Please input your guess.
+Please input your guess.
+Please input your guess.
+```
+
+Without `Select-Object -First 8` to cut it off, `Please input your guess.` keeps coming forever. Once input is
+exhausted, `read_line` does not fail; it succeeds having read 0 bytes. `guess` stays empty, `parse()` fails,
+`continue` loops back, `read_line` reads 0 bytes again, and so on. Playing from the keyboard normally avoids
+this. Feeding input in a test hits the same thing, and ending input with `Ctrl+Z` and Enter on Windows should
+hit it too, by the same logic (I did not try that case).
+
+Checking the byte count `read_line` returns and leaving the loop on 0 fixes it. To keep to the Book's flow,
+this post leaves it as is.
+
+## Commands at a glance
+
+| Command | Description |
+| --- | --- |
+| `mise use -g rust` | Install the latest stable Rust globally |
+| `rustc --version` / `cargo --version` | Check the versions |
+| `rustup doc --book` | Open the local copy of the Book |
+| `mise use -g github:Jake-Shadle/xwin` | Install xwin with mise |
+| `xwin --accept-license splat --disable-symlinks --output <dir>` | Unpack the MSVC and Windows SDK libraries |
+| `cargo new <name>` | Create a project |
+| `cargo build` / `cargo build --release` | Build (for development / for release) |
+| `cargo run` | Build and run |
+| `cargo check` | Only check that it compiles |
+| `cargo add <crate>` | Add a dependency to `Cargo.toml` |
+| `cargo tree` | Show the dependency tree |
+| `rustc --explain <error code>` | Read the longer explanation of an error |
+
+## Summary
+
+- Installing Rust through mise still runs rustup underneath; mise passes the version on through
+  `RUSTUP_TOOLCHAIN`
+- On Windows, the linker and Windows' libraries come from Visual Studio's C++ build tools, normally installed
+  with winget. Using only tools from mise, xwin and `rust-lld` built and ran the game on a Windows runner with
+  Visual Studio removed, and `conda:clang`'s clang-cl handled a crate with C code
+- `rustc` on its own compiles to an executable (`.exe`); day to day, Cargo's `build`, `run` and `check` do the work
+- `Cargo.toml` is `package.json` and `Cargo.lock` is `package-lock.json`; `"0.10.1"` means "at least 0.10.1,
+  below 0.11.0"
+- Variables are immutable by default, an ignored `Result` draws a warning, trait methods need a `use`, and
+  values of different types cannot be compared
+- Compiler errors say not only what is wrong but how to fix it; breaking code and reading them is the best
+  teacher
+
+The next post covers chapter 3 of the Book: variables, data types, functions and control flow, including why
+the program still ran without that `;`.

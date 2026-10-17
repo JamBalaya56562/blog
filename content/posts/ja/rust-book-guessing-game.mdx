@@ -1,0 +1,1154 @@
+---
+title: Rust を Book で学ぶ：インストールから数当てゲームまで
+image: /thumbnails/rust-book-guessing-game.avif
+date: "2026-10-17"
+description: Rust の公式の入門書 The Rust Programming Language を、手を動かして少しずつ進めるシリーズの 1 本目。mise で Rust を入れて、rustc と Cargo で Hello, World! を動かし、2 章の数当てゲームを作る。わざとコードを壊して、コンパイラが何と言うかも読む
+tags:
+  - rust
+  - cargo
+  - mise
+  - cli
+  - devtools
+---
+
+## このシリーズについて
+
+[The Rust Programming Language](https://doc.rust-lang.org/book/)（通称「the Book」）は、Rust の公式の入門書です。Rust の公式サイトから無料で読めて、章ごとに実際にコードを書いて動かすように作られています。
+
+このシリーズでは、Book を頭から順に、実際に手を動かして進めます。Book の文章やコードをそのまま写すのではなく、Book のとおりに動かした結果と、わざと書き換えて試した結果を載せます。Rust はコンパイラのエラーメッセージがとても丁寧なので、「こう書くとこう怒られる」を見るのが、いちばんの勉強になると思っています。Book のライセンスは MIT か Apache-2.0 の選択式です（[リポジトリの COPYRIGHT](https://github.com/rust-lang/book/blob/main/COPYRIGHT)）。
+
+1 本目のこの記事は、Book の 1 章と 2 章です。
+
+- 1 章：Rust を入れて、Hello, World! を動かす。Cargo を使う
+- 2 章：数当てゲームを作る
+
+公開中の Book は、[表紙](https://doc.rust-lang.org/book/title-page.html)で「Rust 1.97.0 以降、`edition = "2024"`」を前提にしています。この記事は Rust 1.99.1、mise 2026.10.11、Windows 11 の PowerShell で試しています。
+
+## mise で Rust を入れる
+
+Book は、Rust を [rustup](https://rustup.rs/) で入れるように案内しています。rustup は、Rust のコンパイラやツールを版ごとに入れて切り替える公式の道具です。このブログではツールを [mise](/ja/blog/getting-started-with-mise) でまとめて管理しているので、Rust も mise で入れます。
+
+ただし、mise は Rust を自分で持つわけではありません。[mise の文書](https://mise.jdx.dev/lang/rust.html)によると、mise は裏で rustup を使って Rust を入れます。rustup が無ければ、まず rustup を入れます。Rust の本体は rustup の置き場所（既定では `~\.rustup` と `~\.cargo`）に入り、mise はそこへのリンクを持つだけです。
+
+この記事の録画は、普段の環境を汚さないように、mise と rustup の置き場所を別のフォルダー（`C:\Users\Jam\rust-demo\home`）に向けて、まっさらな状態から撮りました。出力に出てくるパスは、普段なら `~\.cargo` などになります。
+
+### mise use -g rust
+
+`mise use -g rust` で、Rust をグローバルに入れます。`-g` は、どのフォルダーでも使える設定（グローバルの設定ファイル）に書くという意味です。版を書かないと、最新の安定版になります。
+
+```console
+❯ mise use -g rust
+...
+  rust@1.99.1  Downloading rustup-init  115.7s  12.7/12.7 MB · 111 kB/s
+mise rust@1.99.1   1.99.1-x86_64-pc-windows-msvc installed - (timeout reading rustc version)
+mise rust@1.99.1 info: default toolchain set to 1.99.1-x86_64-pc-windows-msvc
+mise rust@1.99.1 info: checking for self-update (current version: 1.29.1)
+mise rust@1.99.1 rustc 1.99.1 (58cf8f9c3 2026-10-13)
+mise ✓ rust@1.99.1  136.0s
+mise ████████████████ 1/1 · installed 1 tool in 136.0s
+mise C:\Users\Jam\rust-demo\home\mise-config\config.toml tools: rust@1.99.1
+```
+
+途中で `rustup-init`（12.7 MB）をダウンロードして、Rust 1.99.1 を入れています。`rustup` の行が混ざっているのは、mise が rustup を呼んでいるからです。`installed` の行の `timeout reading rustc version` は、mise が、rustup が入れた直後の rustc の版を読みにいって時間切れになったという意味で、そのあとの行で版はちゃんと読めています。
+
+設定ファイルには、`latest` と書かれました。録画では設定ファイルの場所も環境変数 `MISE_GLOBAL_CONFIG_FILE` で別にしています。普段なら `~\.config\mise\config.toml` です。
+
+```console
+❯ Get-Content $env:MISE_GLOBAL_CONFIG_FILE
+[tools]
+rust = "latest"
+```
+
+### 入ったものを確かめる
+
+`rustc` がコンパイラ、`cargo` がビルドとパッケージ管理の道具、`rustup` が版の管理の道具です。
+
+```console
+❯ rustc --version
+rustc 1.99.1 (58cf8f9c3 2026-10-13)
+❯ cargo --version
+cargo 1.99.1 (5f94df478 2026-08-27)
+❯ rustup --version
+rustup 1.29.1 (d95a37b6a 2026-08-13)
+info: This is the version for the rustup toolchain manager, not the rustc compiler.
+info: the currently active `rustc` version is `rustc 1.99.1 (58cf8f9c3 2026-10-13)`
+❯ rustup toolchain list
+1.99.1-x86_64-pc-windows-msvc (active, default)
+```
+
+`mise ls rust` を見ると、mise の側では「symlink」になっています。
+
+```console
+❯ mise ls rust
+rust  1.99.1 (symlink)  C:\Users\Jam\rust-demo\home\mise-config\config.toml  latest
+❯ Get-Item "$env:MISE_DATA_DIR\installs\rust\1.99.1" | Select-Object LinkType, Target | Format-List
+
+LinkType : Junction
+Target   : C:\Users\Jam\rust-demo\home\cargo\bin
+```
+
+mise のインストール先は、rustup が使う `cargo\bin` へのジャンクション（Windows のフォルダーのリンク）でした。mise は、どの版を使うかを `RUSTUP_TOOLCHAIN` という環境変数で rustup に伝えます。
+
+```console
+❯ mise env | Select-String RUSTUP_TOOLCHAIN
+
+${Env:RUSTUP_TOOLCHAIN}='1.99.1'
+```
+
+つまり、mise で入れても、中で動いているのは rustup です。mise を使う利点は、ほかのツールと同じ設定ファイルで版を決められることです。
+
+### Windows ではリンカーと Windows のライブラリが要る
+
+`rustup toolchain list` に出ていた `x86_64-pc-windows-msvc` は、Rust の「ターゲット」の名前です。「64 ビットの Windows 向けに、Microsoft の MSVC の作法でビルドする」という意味で、Rust の側は `mise use -g rust` でもう揃っています。
+
+足りなくなるのは、Rust の外にあるものです。MSVC のターゲットは、コンパイルした部品をつなぎ合わせて `.exe` にする「リンカー」と、Windows の標準のライブラリ（C のランタイムと Windows SDK）を、Visual Studio のものから借ります。Book の[インストールの節](https://doc.rust-lang.org/book/ch01-01-installation.html)にも、Windows では Visual Studio を入れるように書かれています。
+
+この記事を試したマシンには、Visual Studio の C++ ビルドツールがすでに入っていました。Visual Studio のインストーラーに付いてくる `vswhere` で確かめられます。
+
+```console
+❯ & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -products * -property displayName
+Visual Studio Build Tools 2026
+❯ & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+C:\Program Files (x86)\Microsoft Visual Studio\18\BuildTools
+```
+
+2 つ目のコマンドは、C++ のツール（`VC.Tools.x86.x64`）を含む Visual Studio を探しています。何も出なければ、入っていません。
+
+#### 基本の入れ方：winget
+
+mise の登録ツールには、Visual Studio のビルドツールはありません。基本は、rustup の[文書](https://rust-lang.github.io/rustup/installation/windows-msvc.html)にある winget の 1 行で入れます。
+
+```powershell
+winget install --id Microsoft.VisualStudio.Community --source winget --force --override "--add Microsoft.VisualStudio.Component.VC.Tools.x86.x64 --add Microsoft.VisualStudio.Component.VC.Tools.ARM64 --add Microsoft.VisualStudio.Component.Windows11SDK.22621 --addProductLang En-us"
+```
+
+C++ のツール（x64 と ARM64）と Windows 11 SDK、英語の言語パックを、Visual Studio Community と一緒に入れるコマンドです。Community は個人なら無料で使えます。rustup の文書によると、すでに Visual Studio のライセンスを持っているなら、`Community` を `BuildTools` に置き換えてもかまいません。このマシンにはすでに入っていたので、このコマンドは実行していません。
+
+#### mise で揃えるなら：xwin と rust-lld
+
+Visual Studio を入れずに、mise だけで揃える方法もあります。[xwin](https://github.com/Jake-Shadle/xwin) は、MSVC の C のランタイムと Windows SDK のライブラリとヘッダーだけを Microsoft から取ってきて、フォルダーに展開する道具です。リンカーには、Rust に同梱されている `rust-lld` を使います。公式の手順ではありませんが、録画用の環境で試したところ、数当てゲームをビルドして動かせました。
+
+xwin は mise の登録ツールにはありませんが、GitHub のリリースから入れる `github:` の書き方で入ります。
+
+```console
+❯ mise use -g github:Jake-Shadle/xwin
+...
+mise ✓ github:Jake-Shadle/xwin@0.10.0  19.7s  xwin-0.10.0-x86_64-pc-windows-msvc.tar.gz
+mise ████████████████ 1/1 · installed 1 tool in 19.7s
+mise C:\Users\Jam\rust-demo\home\mise-config\config.toml tools: github:Jake-Shadle/xwin@0.10.0
+❯ xwin --version
+xwin 0.10.0
+```
+
+`xwin splat` で、ライブラリをダウンロードして展開します。`--accept-license` は Microsoft のライセンスに同意するという意味なので、内容を確かめてから付けてください。`--disable-symlinks` は、大文字と小文字の違いを吸収するためのシンボリックリンクを作らない指定です。Windows のファイルシステムは大文字と小文字を区別しないので要りませんし、Windows でシンボリックリンクを作るには、権限が要ることがあります。
+
+```console
+❯ xwin --accept-license --cache-dir C:\Users\Jam\rust-demo\home\xwin-cache splat --disable-symlinks --output C:\Users\Jam\rust-demo\home\xwin
+❯ Get-ChildItem -Name xwin, xwin\crt\lib, xwin\sdk\lib
+crt
+sdk
+x86_64
+10.0.26100
+ucrt
+um
+```
+
+この回線では、終わるまでに 666 秒かかりました。展開したライブラリは 618 MB で、ダウンロードのキャッシュ（`--cache-dir` の場所）がほかに 1.1 GB あります。キャッシュは、終わったら消してかまいません。
+
+あとは、Cargo にリンカーとライブラリの場所を教えます。プロジェクトの `.cargo\config.toml` に書きます。
+
+```toml title=".cargo/config.toml"
+[target.x86_64-pc-windows-msvc]
+linker = "rust-lld"
+rustflags = [
+  "-Lnative=C:/Users/Jam/rust-demo/home/xwin/crt/lib/x86_64",
+  "-Lnative=C:/Users/Jam/rust-demo/home/xwin/sdk/lib/um/x86_64",
+  "-Lnative=C:/Users/Jam/rust-demo/home/xwin/sdk/lib/ucrt/x86_64",
+]
+```
+
+この設定で、後半で作る数当てゲームのコピー（`xwin_game`）をビルドします。
+
+```console
+❯ cargo build
+...
+   Compiling xwin_game v0.1.0 (C:\Users\Jam\rust-demo\work\xwin_game)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1m 20s
+❯ @("abc") + (1..100) | .\target\debug\xwin_game.exe | Select-Object -Last 2
+You guessed: 94
+You win!
+```
+
+ビルドでき、動きました。ただ、このマシンには Visual Studio も入っているので、本当に xwin のほうを使ったのかを確かめます。`cargo build -v` は、Cargo が渡した引数を表示します。ソースが変わっていないとビルドし直さず何も表示されないので、先に `main.rs` の更新日時を新しくします。
+
+```console
+❯ (Get-Item src\main.rs).LastWriteTime = Get-Date
+❯ cargo build -v 2>&1 | Select-String -Pattern 'Running' | ForEach-Object { [regex]::Matches($_.Line, '-C linker=\S+|-Lnative=\S+') | ForEach-Object Value } | Select-Object -Unique
+-C linker=rust-lld
+-Lnative=C:/Users/Jam/rust-demo/home/xwin/crt/lib/x86_64
+-Lnative=C:/Users/Jam/rust-demo/home/xwin/sdk/lib/um/x86_64
+-Lnative=C:/Users/Jam/rust-demo/home/xwin/sdk/lib/ucrt/x86_64`
+```
+
+リンカーは `rust-lld` でした。リンカーにどのライブラリを読んだかを表示させる（`/verbose`）と、すべて xwin の場所から読んでいて、Visual Studio や Windows Kits のパスは 1 つも出てきませんでした。
+
+```console
+❯ (Get-Item src\main.rs).LastWriteTime = Get-Date
+❯ $log = cargo rustc -v -- -C link-arg=/verbose 2>&1
+❯ $log | Select-String -Pattern 'Reading .*\.lib' | ForEach-Object { ($_.Line -replace '^.*Reading ', '') } | Sort-Object -Unique | Select-Object -First 8
+C:/Users/Jam/rust-demo/home/xwin/crt/lib/x86_64\msvcrt.lib
+C:/Users/Jam/rust-demo/home/xwin/crt/lib/x86_64\vcruntime.lib
+C:/Users/Jam/rust-demo/home/xwin/sdk/lib/ucrt/x86_64\ucrt.lib
+C:/Users/Jam/rust-demo/home/xwin/sdk/lib/um/x86_64\dbghelp.lib
+C:/Users/Jam/rust-demo/home/xwin/sdk/lib/um/x86_64\kernel32.lib
+C:/Users/Jam/rust-demo/home/xwin/sdk/lib/um/x86_64\ntdll.lib
+C:/Users/Jam/rust-demo/home/xwin/sdk/lib/um/x86_64\userenv.lib
+C:/Users/Jam/rust-demo/home/xwin/sdk/lib/um/x86_64\ws2_32.lib
+❯ ($log | Select-String -Pattern 'Microsoft Visual Studio|Windows Kits' | Measure-Object).Count
+0
+```
+
+#### Visual Studio の無いマシンで確かめる
+
+とはいえ、ここまでの確認は Visual Studio も入っているマシンでのものなので、「Visual Studio が無くても動く」とまでは言えません。そこで、GitHub Actions の Windows のランナー（`windows-latest`）で確かめました。ランナーには Visual Studio が入っているので、ジョブの最初で Visual Studio、Windows Kits（Windows SDK）、LLVM のフォルダーの名前を変えて、使えない状態にしてから試しています。以下は、そのジョブのログからの抜き出しです。
+
+名前を変える前のランナーには、Visual Studio と LLVM の clang-cl、それに Git の `link.exe` がありました。
+
+```text
+Visual Studio Enterprise 2026
+C:\Program Files\Git\usr\bin\link.exe
+C:\Program Files\LLVM\bin\clang-cl.exe
+```
+
+名前を変えたあとは、`vswhere`、Windows Kits、LLVM のどれも見つからず、`cl.exe` も `clang-cl.exe` も PATH にありません。
+
+```text
+False
+False
+False
+cl.exe on PATH: False
+clang-cl.exe on PATH: False
+```
+
+この状態で mise から Rust 1.99.1 と xwin を入れ、まず `.cargo\config.toml` を置かずに数当てゲームをビルドしました。予想どおり失敗します。
+
+```text
+error: linking with `link.exe` failed: exit code: 1
+  = note: link: extra operand 'D:\\a\\_temp\\work\\guess\\target\\debug\\build\\getrandom-a6217cf0cd42cfa1\\build_script_build-a6217cf0cd...
+          Try 'link --help' for more information.
+note: you may need to install Visual Studio build tools with the "C++ build tools" workload
+```
+
+面白いのは、`link.exe` が見つからないのではなく、Git for Windows に入っている別の `link.exe`（ファイルをリンクする Unix のコマンド）が呼ばれてしまったことです。MSVC のリンカーとは全く別物なので、`extra operand` という見当違いのエラーになりました。Visual Studio が無いのに Git が入っているマシンでは、このエラーに出会うかもしれません。
+
+次に `xwin splat` で展開し（ランナーでは 78 秒でした）、上と同じ内容の `.cargo\config.toml`（xwin の場所だけランナーに合わせたもの）を置いてビルドしました。
+
+```text
+   Compiling xwin_game v0.1.0 (D:\a\_temp\work\guess)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.20s
+You guessed: 87
+You win!
+libraries read:
+D:/a/_temp/xwin/crt/lib/x86_64\msvcrt.lib
+D:/a/_temp/xwin/crt/lib/x86_64\vcruntime.lib
+D:/a/_temp/xwin/sdk/lib/ucrt/x86_64\ucrt.lib
+D:/a/_temp/xwin/sdk/lib/um/x86_64\dbghelp.lib
+D:/a/_temp/xwin/sdk/lib/um/x86_64\kernel32.lib
+D:/a/_temp/xwin/sdk/lib/um/x86_64\ntdll.lib
+D:/a/_temp/xwin/sdk/lib/um/x86_64\userenv.lib
+D:/a/_temp/xwin/sdk/lib/um/x86_64\ws2_32.lib
+Visual Studio or Windows Kits paths: 0
+```
+
+Visual Studio の無い Windows でも、mise と xwin と `rust-lld` だけで、数当てゲームをビルドして動かせました。
+
+#### C のコードを含むクレート
+
+数当てゲームが使うクレートは、すべて Rust だけで書かれています。ところが、世の中のクレートには、中に C のコードを含んでいて、ビルドのときに C のコンパイラを呼ぶものがあります。xwin が用意するのはライブラリとヘッダーだけで、C のコンパイラは入っていません。
+
+確かめるために、C の関数を 1 つ呼ぶだけの小さなクレート `cdemo` を作りました。`build.rs` は、ビルドの前に Cargo が実行するスクリプトです。ここでは [cc](https://crates.io/crates/cc) クレートを使って、`greet.c` をコンパイルしています。
+
+```c title="src/greet.c"
+#include <string.h>
+
+int c_len(const char *text) {
+    return (int)strlen(text);
+}
+```
+
+```rust title="build.rs"
+fn main() {
+    cc::Build::new().file("src/greet.c").compile("greet");
+}
+```
+
+```rust title="src/main.rs"
+use std::ffi::{c_char, c_int};
+
+unsafe extern "C" {
+    fn c_len(text: *const c_char) -> c_int;
+}
+
+fn main() {
+    let len = unsafe { c_len(c"Hello from C".as_ptr()) };
+    println!("C says the text is {len} bytes long");
+}
+```
+
+`unsafe` や `extern "C"` は、Book の 20 章で出てくる、C の関数を呼ぶための書き方です。ここでは中身は気にしなくてかまいません。
+
+同じランナーで、xwin の設定だけでこのクレートをビルドすると、C のコンパイラが見つからずに失敗しました。
+
+```text
+  error occurred in cc-rs: failed to find tool "cl.exe": program not found
+```
+
+C のコンパイラも mise で入れます。mise の登録ツールにある `clang`（[conda-forge](https://conda-forge.org/) のパッケージを入れる `conda:clang`）に、MSVC と同じ作法でコンパイルする `clang-cl` が入っています。静的ライブラリを作る道具は、Rust の `llvm-tools` コンポーネントの `llvm-ar` を使います。
+
+```powershell
+mise use -g conda:clang
+rustup component add llvm-tools
+```
+
+cc クレートには、どのコンパイラと、静的ライブラリにまとめる道具を使い、どこのヘッダーを読むかを環境変数で教えます。`/imsvc` は、xwin が展開したヘッダーのフォルダーを、システムのヘッダーとして読ませる clang-cl のオプションです。
+
+```powershell
+$x = "C:/Users/Jam/rust-demo/home/xwin"
+$env:CC_x86_64_pc_windows_msvc = Join-Path (mise where conda:clang) "Library\bin\clang-cl.exe"
+$env:AR_x86_64_pc_windows_msvc = (Get-ChildItem -Recurse -Filter llvm-ar.exe (rustc --print sysroot)).FullName | Select-Object -First 1
+$env:CFLAGS_x86_64_pc_windows_msvc = "/imsvc $x/crt/include /imsvc $x/sdk/include/ucrt /imsvc $x/sdk/include/um /imsvc $x/sdk/include/shared"
+```
+
+ランナーでは、これで C の関数を呼ぶクレートもビルドして動かせました（ランナーでの xwin の場所は `D:/a/_temp/xwin` です）。
+
+```text
+CC = C:\Users\runneradmin\AppData\Local\mise\installs\conda-clang\23.1.3\Library\bin\clang-cl.exe
+AR = C:\Users\runneradmin\.rustup\toolchains\1.99.1-x86_64-pc-windows-msvc\lib\rustlib\x86_64-pc-windows-msvc\bin\llvm-ar.exe
+   Compiling cdemo v0.1.0 (D:\a\_temp\work\cdemo)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.45s
+C says the text is 12 bytes long
+```
+
+#### どちらを選ぶか
+
+xwin の README には、Windows 以外の環境から Windows 向けにコンパイルしてリンクするための道具だと書かれています。Windows の上で使うのは、本来の用途ではありません。ここで試した範囲では動きましたが、もっと大きなクレートや、C++ を含むクレートまでは試していません。迷ったら、winget で Visual Studio を入れるのが確実です。mise だけで揃えたい、Visual Studio を入れたくない、という場合に xwin を試してみてください。
+
+### Book を手元で読む
+
+rustup で入れた Rust には、Book が一緒に入っています。`rustup doc --book` を実行するとブラウザで開きます。`--path` を付けると、開かずに場所だけ表示します。
+
+```console
+❯ rustup doc --path --book
+C:\Users\Jam\rust-demo\home\rustup\toolchains\1.99.1-x86_64-pc-windows-msvc\share\doc\rust\html\book/index.html
+```
+
+手元の Book は、入れた Rust の版に合わせたものです。オフラインでも読めます。
+
+## Hello, World!（1.2 節）
+
+まずは Cargo を使わずに、コンパイラの `rustc` を直接使います。`hello_world` というフォルダーを作って、`main.rs` を書きます。
+
+```rust title="main.rs"
+fn main() {
+    println!("Hello, world!");
+}
+```
+
+`fn main()` が、プログラムが始まる関数です。`rustc main.rs` でコンパイルします。
+
+```console
+❯ rustc main.rs
+❯ Get-ChildItem -Name
+main.exe
+main.pdb
+main.rs
+❯ .\main.exe
+Hello, world!
+```
+
+何も表示されずに終わり、`main.exe` と `main.pdb` ができました。`main.exe` が実行ファイルで、`main.pdb` はデバッグ用の情報です。JavaScript や Python と違って、Rust はコンパイルして実行ファイルを作ってから動かします。
+
+```console
+❯ Get-ChildItem main.exe, main.pdb | Select-Object Name, Length | Format-Table -AutoSize
+
+Name      Length
+----      ------
+main.exe  134144
+main.pdb 1306624
+```
+
+実行ファイルは 131 KB ほどです。
+
+### 関数とマクロの違い
+
+`println!` の最後の `!` は、これが関数ではなく**マクロ**だという印です。JavaScript や Python にはマクロが無いので、少し説明します。
+
+**関数**は、決まった数と型の引数を受け取って、プログラムが動いているときに呼ばれるものです。`fn main()` も関数です。
+
+**マクロ**は、コンパイルの前に、書いたコードを別のコードに書き換える仕組みです。Book の[マクロの節](https://doc.rust-lang.org/book/ch20-05-macros.html)は「コードを書くコード」と説明しています。`println!("Hello, world!")` は、コンパイルのときに、文字列を組み立てて画面に出すための、もっと長いコードに展開されます。展開はコンパイラが勝手にやるので、ふだん展開されたコードを見ることはありません。
+
+違いが分かりやすいのは、引数の数です。Rust の関数は、引数の数が決まっています。引数を 1 つ受け取る関数 `greet` に、2 つ渡してみます。
+
+```rust title="fn_args.rs"
+fn greet(name: &str) {
+    println!("Hello, {name}!");
+}
+
+fn main() {
+    greet("Rust");
+    greet("Rust", 11);
+}
+```
+
+```console
+❯ rustc fn_args.rs
+error[E0061]: this function takes 1 argument but 2 arguments were supplied
+ --> fn_args.rs:7:5
+  |
+7 |     greet("Rust", 11);
+  |     ^^^^^         -- unexpected argument #2 of type `{integer}`
+  |
+note: function defined here
+ --> fn_args.rs:1:4
+  |
+1 | fn greet(name: &str) {
+  |    ^^^^^
+help: remove the extra argument
+  |
+7 -     greet("Rust", 11);
+7 +     greet("Rust");
+  |
+
+error: aborting due to 1 previous error
+
+For more information about this error, try `rustc --explain E0061`.
+```
+
+「1 つしか受け取らない関数に 2 つ渡している」と怒られました。Rust には、TypeScript の省略できる引数（`name?: string`）や、JavaScript の `...args` のような、数が変わる引数の関数はありません。
+
+ところが、`println!` は引数がいくつでも書けます。
+
+```rust title="varargs.rs"
+fn main() {
+    let name = "Rust";
+    let age = 11;
+    println!("Hello!");
+    println!("Hello, {name}!");
+    println!("Hello, {}! You are {} years old.", name, age);
+}
+```
+
+```console
+❯ rustc varargs.rs
+❯ .\varargs.exe
+Hello!
+Hello, Rust!
+Hello, Rust! You are 11 years old.
+```
+
+引数が 1 つでも 3 つでも動きました。2 つ目の `println!` のように、文字列の中に `{name}` と変数の名前を直接書くこともできます。マクロはコンパイルの前に書いたコードそのものを読むので、こういうことができます。
+
+もう 1 つの利点は、間違いがコンパイルのときに見つかることです。`{}` が 2 つあるのに、引数を 1 つしか渡さないとどうなるでしょうか。
+
+```console
+❯ Get-Content too_few.rs
+fn main() {
+    let name = "Rust";
+    println!("Hello, {}! You are {} years old.", name);
+}
+❯ rustc too_few.rs
+error: 2 positional arguments in format string, but there is 1 argument
+ --> too_few.rs:3:22
+  |
+3 |     println!("Hello, {}! You are {} years old.", name);
+  |                      ^^          ^^              ----
+
+error: aborting due to 1 previous error
+```
+
+実行する前に、コンパイルの段階で「`{}` は 2 つなのに、引数は 1 つ」と止められました。`println!` は、展開するときに書式の文字列を読んで、`{}` と引数の数を突き合わせているのです。ふつうの関数では、文字列の中身まではコンパイラに見えないので、こうはいきません。
+
+マクロはこのシリーズで何度も出てきます。自分でマクロを書く方法は、Book の 20 章で扱います。ここでは「名前の最後に `!` があればマクロで、コンパイルの前にコードに展開される」とだけ覚えておけば十分です。
+
+### ! を消してみる
+
+`!` を消すとどうなるか、`println(` に書き換えた `no_bang.rs` で試します。
+
+```console
+❯ Get-Content no_bang.rs
+fn main() {
+    println("Hello, world!");
+}
+❯ rustc no_bang.rs
+error[E0423]: cannot find function `println` in this scope
+ --> no_bang.rs:2:5
+  |
+2 |     println("Hello, world!");
+  |     ^^^^^^^ not found in this scope
+  |
+  = note: a macro named `println` exists in another namespace
+help: use `!` to invoke the macro
+  |
+2 |     println!("Hello, world!");
+  |            +
+
+error: aborting due to 1 previous error
+
+For more information about this error, try `rustc --explain E0423`.
+```
+
+「`println` という関数は無い。`println` という名前のマクロならある。`!` を付けて呼べ」と、直し方まで教えてくれます。`+` の行が、足すべき文字の位置です。エラーには `E0423` のような番号が付いていて、`rustc --explain E0423` で詳しい説明を読めます。
+
+### ; を消してみる
+
+今度は、行の最後の `;` を消した `no_semi.rs` です。
+
+```console
+❯ Get-Content no_semi.rs
+fn main() {
+    println!("Hello, world!")
+}
+❯ rustc no_semi.rs
+❯ .\no_semi.exe
+Hello, world!
+```
+
+これはエラーになりませんでした。Rust では、ブロックの最後の式は `;` が無くてもよく、その値がブロックの値になります。`println!` が返すのは「何もない」という値（`()`）で、`main` が返すのもそれなので、問題になりません。この話は 3 章でちゃんと出てくるので、そこでまた試します。
+
+## Hello, Cargo!（1.3 節）
+
+実際の Rust のプロジェクトでは、`rustc` を直接呼ぶことはほとんどなく、**Cargo** を使います。Cargo は、ビルド、実行、テスト、依存するパッケージ（Rust では「クレート」と呼びます）の管理までを 1 つでこなす道具です。JavaScript で言えば、npm とビルドの道具を合わせたようなものです。
+
+`cargo new` で、新しいプロジェクトを作ります。
+
+```console
+❯ cargo new hello_cargo
+    Creating binary (application) `hello_cargo` package
+note: see more `Cargo.toml` keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+❯ cd hello_cargo
+❯ Get-ChildItem -Force -Name
+.git
+src
+.gitignore
+Cargo.toml
+```
+
+`src` の下にソースコードが入り、Git のリポジトリ（`.git`）と `.gitignore` も一緒にできました。`.gitignore` には、ビルドの成果物が入る `/target` だけが書かれています。
+
+```console
+❯ Get-Content Cargo.toml
+[package]
+name = "hello_cargo"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+❯ Get-Content src\main.rs
+fn main() {
+    println!("Hello, world!");
+}
+❯ Get-Content .gitignore
+/target
+```
+
+`Cargo.toml` がプロジェクトの設定で、npm の `package.json` にあたります。`edition = "2024"` は、Rust の言語の「エディション」です。Rust は数年ごとに edition を区切って、互換性を壊す変更をその単位でまとめます。`cargo new` の既定は 2024 です（[cargo new の文書](https://doc.rust-lang.org/cargo/commands/cargo-new.html)）。`[dependencies]` には、このあと使うクレートを書きます。
+
+### build、run、check
+
+![cargo build は実行ファイルを作り、cargo run はビルドして実行し、cargo check は実行ファイルを作らず確認する。Cargo が rustc を呼び出す](/rust/cargo-commands.avif)
+
+`cargo build` でビルドします。
+
+```console
+❯ cargo build
+   Compiling hello_cargo v0.1.0 (C:\Users\Jam\rust-demo\work\hello_cargo)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 4.06s
+❯ Get-ChildItem -Name
+src
+target
+.gitignore
+Cargo.lock
+Cargo.toml
+❯ .\target\debug\hello_cargo.exe
+Hello, world!
+```
+
+実行ファイルは `target\debug` にできました。`Cargo.lock` もできています。依存の版を固定するファイルで、npm の `package-lock.json` にあたります。今は依存が無いので、自分自身しか書かれていません。
+
+```console
+❯ Get-Content Cargo.lock
+# This file is automatically @generated by Cargo.
+# It is not intended for manual editing.
+version = 4
+
+[[package]]
+name = "hello_cargo"
+version = "0.1.0"
+```
+
+`cargo run` は、ビルドしてから実行までを 1 回でやります。
+
+```console
+❯ cargo run
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.17s
+     Running `target\debug\hello_cargo.exe`
+Hello, world!
+```
+
+ソースが変わっていないので、ビルドはせずに（`Compiling` の行が無い）、前回の実行ファイルをそのまま動かしています。`src\main.rs` の文字を `Hello, Cargo!` に変えてから実行すると、今度はビルドし直します。
+
+```console
+❯ cargo run
+   Compiling hello_cargo v0.1.0 (C:\Users\Jam\rust-demo\work\hello_cargo)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 3.84s
+     Running `target\debug\hello_cargo.exe`
+Hello, Cargo!
+```
+
+`cargo check` は、コンパイルできるかどうかだけを確かめて、実行ファイルは作りません。そのぶん速いので、書きながら何度も確かめるときに使います。
+
+```console
+❯ cargo check
+    Checking hello_cargo v0.1.0 (C:\Users\Jam\rust-demo\work\hello_cargo)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.11s
+```
+
+### Cargo は裏で rustc を呼んでいる
+
+`rustc` は Rust のコンパイラそのもので、`.rs` のファイルを受け取って実行ファイルやライブラリを作ります。Cargo はコンパイラではありません。どのファイルを、どの順で、どんな設定でコンパイルするかを決めて、`rustc` を呼ぶ役です。TypeScript で言えば、`rustc` が `tsc`、Cargo が npm と `tsc` を呼ぶスクリプトをまとめたもの、という関係です。
+
+`-v` を付けて `cargo build -v` とすると、Cargo が実際に打っているコマンドが見えます。
+
+```console
+❯ cargo clean
+     Removed 25 files, 2.9MiB total
+❯ cargo build -v
+   Compiling hello_cargo v0.1.0 (C:\Users\Jam\rust-demo\work\hello_cargo)
+     Running `C:\Users\Jam\rust-demo\home\rustup\toolchains\1.99.1-x86_64-pc-windows-msvc\bin\rustc.exe --crate-name hello_cargo --edition=2024 src\main.rs --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --crate-type bin --emit=dep-info,link -C embed-bitcode=no -C debuginfo=2 --check-cfg cfg(docsrs,test) --check-cfg "cfg(feature, values())" -C metadata=cb559adae4f42d23 --out-dir C:\Users\Jam\rust-demo\work\hello_cargo\target\debug\deps -C incremental=C:\Users\Jam\rust-demo\work\hello_cargo\target\debug\incremental -L dependency=C:\Users\Jam\rust-demo\work\hello_cargo\target\debug\deps`
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 6.48s
+```
+
+中身は `rustc.exe ... src\main.rs` で、さっき手で打った `rustc main.rs` と同じことをしています。違うのは、`Cargo.toml` の `edition = "2024"` を `--edition=2024` として渡し、成果物の置き場所（`--out-dir`）や、変わったところだけをコンパイルし直すための設定（`-C incremental`）まで付けているところです。これを毎回手で書くのは無理なので、Cargo に任せます。
+
+### release ビルド
+
+`cargo build --release` は、最適化をかけた本番用のビルドです。
+
+```console
+❯ cargo build --release
+   Compiling hello_cargo v0.1.0 (C:\Users\Jam\rust-demo\work\hello_cargo)
+    Finished `release` profile [optimized] target(s) in 2.38s
+❯ Get-ChildItem -Name target
+debug
+release
+.rustc_info.json
+CACHEDIR.TAG
+```
+
+`dev` と `release` で、置き場所が `target\debug` と `target\release` に分かれます。`dev` はビルドが速いかわりに実行は遅め、`release` はその逆です。
+
+## 数当てゲームを作る（2 章）
+
+2 章では、1 から 100 までの秘密の数を当てるゲームを作ります。Book は、少しずつコードを足しながら、Rust の基本をひととおり見せてくれます。ここでも同じ順に進めます。
+
+```console
+❯ cargo new guessing_game
+    Creating binary (application) `guessing_game` package
+```
+
+ゲームは標準入力から数を読むので、この記事では PowerShell で入力をパイプで流して動かしています。そのため、入力した値そのものは画面に出ません。
+
+### 入力を読む
+
+最初は、入力を 1 行読んで、そのまま表示するだけです。
+
+```rust title="src/main.rs"
+use std::io;
+
+fn main() {
+    println!("Guess the number!");
+
+    println!("Please input your guess.");
+
+    let mut guess = String::new();
+
+    io::stdin()
+        .read_line(&mut guess)
+        .expect("Failed to read line");
+
+    println!("You guessed: {guess}");
+}
+```
+
+```console
+❯ "42" | cargo run
+   Compiling guessing_game v0.1.0 (C:\Users\Jam\rust-demo\work\guessing_game)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 4.00s
+     Running `target\debug\guessing_game.exe`
+Guess the number!
+Please input your guess.
+You guessed: 42
+
+```
+
+最後に空の行が出ているのは、`read_line` が読んだ行の最後の改行まで `guess` に入れているからです。これはあとで効いてきます。
+
+ここには、Rust らしいところが 3 つ詰まっています。
+
+- `let mut guess`：Rust の変数は、既定では**変更できません**。`mut` を付けたときだけ変更できます
+- `&mut guess`：`read_line` に、`guess` を「書き換えてよい参照」として渡しています。`&` が参照で、4 章の所有権の話につながります
+- `.expect(...)`：`read_line` は、成功か失敗かを表す `Result` を返します。`expect` は、失敗だったらそのメッセージでプログラムを止めます
+
+### mut を消してみる
+
+`let mut guess` を `let guess` にすると、どうなるでしょうか。
+
+```console
+❯ cargo build
+   Compiling guessing_game v0.1.0 (C:\Users\Jam\rust-demo\work\guessing_game)
+error[E0596]: cannot borrow `guess` as mutable, as it is not declared as mutable
+  --> src\main.rs:11:20
+   |
+11 |         .read_line(&mut guess)
+   |                    ^^^^^^^^^^ cannot borrow as mutable
+   |
+help: consider changing this to be mutable
+   |
+ 8 |     let mut guess = String::new();
+   |         +++
+
+For more information about this error, try `rustc --explain E0596`.
+error: could not compile `guessing_game` (bin "guessing_game") due to 1 previous error
+```
+
+「変更できると宣言していないので、変更できる形では借りられない」というエラーです。TypeScript の `const` は「変数に別の値を入れ直せない」だけで、中身のオブジェクトは書き換えられます。Rust の `mut` が無い変数は、中身も書き換えられません。
+
+### expect を消してみる
+
+今度は `mut` を戻して、`.expect(...)` の行を消します。
+
+```console
+❯ cargo build
+   Compiling guessing_game v0.1.0 (C:\Users\Jam\rust-demo\work\guessing_game)
+warning: unused `Result` that must be used
+  --> src\main.rs:10:5
+   |
+10 | /     io::stdin()
+11 | |         .read_line(&mut guess);
+   | |______________________________^
+   |
+   = note: this `Result` may be an `Err` variant, which should be handled
+   = note: `#[warn(unused_must_use)]` (part of `#[warn(unused)]`) on by default
+help: use `let _ = ...` to ignore the resulting value
+   |
+10 |     let _ = io::stdin()
+   |     +++++++
+
+warning: `guessing_game` (bin "guessing_game") generated 1 warning
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 3.15s
+```
+
+今度はエラーではなく警告で、ビルドは通りました。「失敗するかもしれない `Result` を、確かめずに捨てている」と言われています。本当に無視したいなら `let _ =` と書け、という提案付きです。失敗を黙って見逃すことを、Rust は嫌います。
+
+### rand を入れる
+
+秘密の数を作るには乱数が要りますが、Book によると、Rust の標準ライブラリにはまだ乱数の機能がありません。そこで、`rand` というクレートを使います。Book のとおり、`Cargo.toml` の `[dependencies]` の下に手で書き足します。
+
+```toml title="Cargo.toml"
+[dependencies]
+rand = "0.10.1"
+```
+
+`cargo add rand` でも足せますが、そのときは最新の版が書かれます（試したときは `rand = "0.10.3"` でした）。ここでは Book に合わせて、手で書いた `0.10.1` のままビルドします。
+
+```console
+❯ cargo build
+    Updating crates.io index
+     Locking 8 packages to highest Rust 1.99.1 compatible versions
+      Adding cfg-if v1.0.5
+      Adding chacha20 v0.10.2
+      Adding cpufeatures v0.3.1
+      Adding getrandom v0.4.3
+      Adding libc v0.2.191
+      Adding r-efi v6.0.0
+      Adding rand v0.10.3
+      Adding rand_core v0.10.1
+ Downloading crates ...
+  Downloaded cfg-if v1.0.5
+  Downloaded cpufeatures v0.3.1
+  Downloaded chacha20 v0.10.2
+  Downloaded getrandom v0.4.3
+  Downloaded rand_core v0.10.1
+  Downloaded rand v0.10.3
+   Compiling rand_core v0.10.1
+   Compiling getrandom v0.4.3
+   Compiling cfg-if v1.0.5
+   Compiling cpufeatures v0.3.1
+   Compiling chacha20 v0.10.2
+   Compiling rand v0.10.3
+   Compiling guessing_game v0.1.0 (C:\Users\Jam\rust-demo\work\guessing_game)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 14.86s
+```
+
+crates.io（Rust のパッケージの公開場所で、npm のレジストリにあたる）から、rand と、rand が使うクレートを取ってきてビルドしました。
+
+2 つ気になるところがあります。1 つは、`0.10.1` と書いたのに、入ったのは `rand v0.10.3` だということです。Cargo では、`"0.10.1"` は「0.10.1 以上で、0.11.0 より前」という意味になります（[Cargo の文書](https://doc.rust-lang.org/cargo/reference/specifying-dependencies.html)）。npm の `^0.10.1` と同じ考え方で、互換性のある範囲で一番新しい版が選ばれます。どの版を選んだかは `Cargo.lock` に記録されるので、次からは、この版がそのまま使われます。
+
+```console
+❯ cargo build
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.27s
+❯ Select-String -Path Cargo.lock -Pattern '^name = "rand"' -Context 0,2 | ForEach-Object { $_.Line; $_.Context.PostContext }
+name = "rand"
+version = "0.10.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+```
+
+もう 1 つは、`Locking 8 packages` なのに、ダウンロードとコンパイルは 6 つだということです。`libc` と `r-efi` は、ほかの OS で使うクレートで、Windows では要らないので取ってきていません。依存の木は `cargo tree` で見られます。
+
+```console
+❯ cargo tree
+guessing_game v0.1.0 (C:\Users\Jam\rust-demo\work\guessing_game)
+└── rand v0.10.3
+    ├── chacha20 v0.10.2
+    │   ├── cfg-if v1.0.5
+    │   ├── cpufeatures v0.3.1
+    │   └── rand_core v0.10.1
+    ├── getrandom v0.4.3
+    │   ├── cfg-if v1.0.5
+    │   └── rand_core v0.10.1
+    └── rand_core v0.10.1
+```
+
+依存が増えると、Cargo が `rustc` を呼ぶ回数も増えます。`cargo build -v` の出力から、`rustc` に渡したクレートの名前だけを抜き出してみます。
+
+```console
+❯ cargo clean
+     Removed 110 files, 13.4MiB total
+❯ cargo build -v 2>&1 | Select-String -Pattern '--crate-name (\S+)' | ForEach-Object { $_.Matches[0].Groups[1].Value }
+rand_core
+cpufeatures
+build_script_build
+cfg_if
+chacha20
+getrandom
+rand
+guessing_game
+```
+
+依存のクレートを 1 つずつ、使われる側から先にコンパイルして、最後に自分のゲームをコンパイルしています。`build_script_build` は、`getrandom` が持っているビルドスクリプト（`build.rs`）です。これを依存の順に並べて呼ぶのも、Cargo の仕事です。
+
+### 秘密の数を作る
+
+`use rand::prelude::*;` で rand のよく使うものを読み込み、`rand::rng().random_range(1..=100)` で 1 から 100 までの数を作ります。`1..=100` は、100 を含む範囲です（`1..100` だと 100 を含みません）。確かめやすいように、いったん秘密の数を表示します。
+
+```rust title="src/main.rs"
+use std::io;
+
+use rand::prelude::*;
+
+fn main() {
+    println!("Guess the number!");
+
+    let secret_number = rand::rng().random_range(1..=100);
+
+    println!("The secret number is: {secret_number}");
+
+    // --snip--
+}
+```
+
+```console
+❯ "50" | cargo run
+   Compiling guessing_game v0.1.0 (C:\Users\Jam\rust-demo\work\guessing_game)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 3.38s
+     Running `target\debug\guessing_game.exe`
+Guess the number!
+The secret number is: 81
+Please input your guess.
+You guessed: 50
+
+```
+
+実行するたびに、秘密の数は変わります。
+
+### use を消してみる
+
+`use rand::prelude::*;` の行を消すと、どうなるでしょうか。
+
+```console
+❯ cargo build
+   Compiling guessing_game v0.1.0 (C:\Users\Jam\rust-demo\work\guessing_game)
+error[E0599]: no method named `random_range` found for struct `ThreadRng` in the current scope
+   --> src\main.rs:6:37
+    |
+  6 |     let secret_number = rand::rng().random_range(1..=100);
+    |                                     ^^^^^^^^^^^^
+    |
+   ::: C:\Users\Jam\rust-demo\home\cargo\registry\src\index.crates.io-1949cf8c6b5b557f\rand-0.10.3\src\rng.rs:163:8
+    |
+163 |     fn random_range<T, R>(&mut self, range: R) -> T
+    |        ------------ the method is available for `ThreadRng` here
+    |
+    = help: items from traits can only be used if the trait is in scope
+help: there is a method `random` with a similar name, but with different arguments
+   --> C:\Users\Jam\rust-demo\home\cargo\registry\src\index.crates.io-1949cf8c6b5b557f\rand-0.10.3\src\rng.rs:93:5
+    |
+ 93 | /     fn random<T>(&mut self) -> T
+ 94 | |     where
+ 95 | |         StandardUniform: Distribution<T>,
+    | |_________________________________________^
+help: trait `RngExt` which provides `random_range` is implemented but not in scope; perhaps you want to import it
+    |
+  1 + use rand::RngExt;
+    |
+
+For more information about this error, try `rustc --explain E0599`.
+error: could not compile `guessing_game` (bin "guessing_game") due to 1 previous error
+```
+
+`rand::rng()` は呼べているのに、`random_range` というメソッドが見つからない、と言われています。理由は `help` の行に書いてあります。`random_range` は `RngExt` という**トレイト**のメソッドで、トレイトのメソッドは、そのトレイトを `use` しないと使えません。`rand::prelude::*` は、この `RngExt` も一緒に読み込んでいたのです。トレイトは 10 章のテーマで、ここでは「メソッドを後から足す仕組みで、使うには `use` が要る」とだけ覚えておきます。
+
+### 比べる：型が違うと比べられない
+
+入力した数と秘密の数を比べます。`std::cmp::Ordering` を使い、`match` で「小さい」「大きい」「同じ」に分けます。
+
+```rust title="src/main.rs"
+use std::cmp::Ordering;
+
+// ...
+
+    println!("You guessed: {guess}");
+
+    match guess.cmp(&secret_number) {
+        Ordering::Less => println!("Too small!"),
+        Ordering::Greater => println!("Too big!"),
+        Ordering::Equal => println!("You win!"),
+    }
+```
+
+ところが、これはコンパイルできません。2 章の山場です。
+
+```console
+❯ cargo build
+   Compiling guessing_game v0.1.0 (C:\Users\Jam\rust-demo\work\guessing_game)
+error[E0308]: mismatched types
+  --> src\main.rs:23:21
+   |
+23 |     match guess.cmp(&secret_number) {
+   |                 --- ^^^^^^^^^^^^^^ expected `&String`, found `&{integer}`
+   |                 |
+   |                 arguments to this method are incorrect
+   |
+   = note: expected reference `&String`
+              found reference `&{integer}`
+note: method defined here
+  --> /rustc/58cf8f9c35b355199727627d07ae34a4e2846d67/library\core\src\cmp.rs:1012:7
+
+For more information about this error, try `rustc --explain E0308`.
+error: could not compile `guessing_game` (bin "guessing_game") due to 1 previous error
+```
+
+`guess` は入力をそのまま入れた文字列（`String`）で、`secret_number` は整数です。文字列と整数は比べられない、と言われています。JavaScript なら `"50" < 81` は勝手に数に変えて比べてくれますが、Rust は型が違うものを黙って変換しません。
+
+### 文字列を数に変える
+
+入力を数に変えてから比べます。Book は、`guess` という同じ名前で新しい変数を作り直します。
+
+```rust title="src/main.rs"
+    let guess: u32 = guess.trim().parse().expect("Please type a number!");
+```
+
+同じ名前の変数を `let` でもう一度作ると、前の変数は隠れます。これを**シャドーイング**と呼びます。`guess_str` と `guess_num` のように名前を分けなくて済みます。`trim()` で前後の空白と改行を取り、`parse()` で数に変えます。`u32` は 32 ビットの符号なし整数です。
+
+```console
+❯ "50" | cargo run
+   Compiling guessing_game v0.1.0 (C:\Users\Jam\rust-demo\work\guessing_game)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.28s
+     Running `target\debug\guessing_game.exe`
+Guess the number!
+The secret number is: 56
+Please input your guess.
+You guessed: 50
+Too small!
+```
+
+今度は比べられました。`You guessed: 50` のあとの空行も消えています。`trim()` で改行を取ったからです。
+
+ここで面白いのは、`secret_number` の型をどこにも書いていないことです。`guess` を `u32` にして `guess.cmp(&secret_number)` で比べたので、Rust は「`secret_number` も `u32` のはずだ」と推論しています。
+
+数でないものを入れると、`expect` のメッセージで止まります。
+
+```console
+❯ "abc" | cargo run -q
+Guess the number!
+The secret number is: 34
+Please input your guess.
+
+thread 'main' (836) panicked at src\main.rs:21:43:
+Please type a number!: ParseIntError { kind: InvalidDigit }
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+```
+
+`-q` は、Cargo 自身の `Compiling` などの表示を消すオプションです。Rust では、このようにプログラムが止まることを **panic** と呼びます。
+
+### trim や型の注釈を消してみる
+
+`trim()` を消すと、`50` を入れても止まります。
+
+```console
+❯ "50" | cargo run -q
+Guess the number!
+The secret number is: 64
+Please input your guess.
+
+thread 'main' (15820) panicked at src\main.rs:21:36:
+Please type a number!: ParseIntError { kind: InvalidDigit }
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+```
+
+`read_line` が入れた改行が残っていて、`"50"` ではなく改行付きの文字列を数に変えようとしたからです。最初に見た空行の正体が、ここで効いてきました。
+
+`: u32` を消すと、今度はコンパイルできません。
+
+```console
+❯ cargo build
+   Compiling guessing_game v0.1.0 (C:\Users\Jam\rust-demo\work\guessing_game)
+error[E0282]: type annotations needed
+  --> src\main.rs:21:9
+   |
+21 |     let guess = guess.trim().parse().expect("Please type a number!");
+   |         ^^^^^
+...
+25 |     match guess.cmp(&secret_number) {
+   |           ----- type must be known at this point
+   |
+help: consider giving `guess` an explicit type
+   |
+21 |     let guess: /* Type */ = guess.trim().parse().expect("Please type a number!");
+   |              ++++++++++++
+
+For more information about this error, try `rustc --explain E0282`.
+error: could not compile `guessing_game` (bin "guessing_game") due to 1 previous error
+```
+
+`parse()` は、いろいろな型に変換できます。何に変えたいのかが分からないので、型を書け、と言われています。さっきは `secret_number` の型を推論してくれましたが、`guess` にも `secret_number` にも型の手がかりが無いと、推論しようがありません。
+
+### 繰り返して、数字以外は受け流す
+
+![入力文字列の空白と改行を trim で除き、parse で u32 に変換する。成功した数値は比較し、変換に失敗した入力は continue で受け流す](/rust/guess-input.avif)
+
+最後に、当たるまで何度でも入力できるようにします。Book の完成形は、全体を `loop` で囲み、当たったら `break` で抜けます。数でないものを入れても止まらないように、`expect` の代わりに `match` で `parse()` の結果を分けます。秘密の数の表示も消します。Book のリスト 2-6 と同じコードです。
+
+```rust title="src/main.rs"
+use std::cmp::Ordering;
+use std::io;
+
+use rand::prelude::*;
+
+fn main() {
+    println!("Guess the number!");
+
+    let secret_number = rand::rng().random_range(1..=100);
+
+    loop {
+        println!("Please input your guess.");
+
+        let mut guess = String::new();
+
+        io::stdin()
+            .read_line(&mut guess)
+            .expect("Failed to read line");
+
+        let guess: u32 = match guess.trim().parse() {
+            Ok(num) => num,
+            Err(_) => continue,
+        };
+
+        println!("You guessed: {guess}");
+
+        match guess.cmp(&secret_number) {
+            Ordering::Less => println!("Too small!"),
+            Ordering::Greater => println!("Too big!"),
+            Ordering::Equal => {
+                println!("You win!");
+                break;
+            }
+        }
+    }
+}
+```
+
+`parse()` は `Result` を返し、成功なら `Ok(数)`、失敗なら `Err(エラー)` です。`Ok(num) => num` で数を取り出し、`Err(_) => continue` で、失敗したらループの最初に戻ります。`_` は「中身は使わない」という意味です。
+
+秘密の数が見えなくなったので、`abc` のあとに 1 から 100 までを順に流して、当たるまで動かします。
+
+```console
+❯ $out = @("abc") + (1..100) | cargo run -q
+❯ $out | Select-Object -First 9
+Guess the number!
+Please input your guess.
+Please input your guess.
+You guessed: 1
+Too small!
+Please input your guess.
+You guessed: 2
+Too small!
+Please input your guess.
+❯ $out | Select-Object -Last 6
+Please input your guess.
+You guessed: 91
+Too small!
+Please input your guess.
+You guessed: 92
+You win!
+```
+
+`Please input your guess.` が 2 回続いているところが、`abc` を受け流した跡です。92 で当たって、`You win!` のあとはループを抜けて終わりました。残りの 93 から 100 は、読まれずに捨てられています。
+
+## 実際に踏んだ罠：入力が尽きると止まらない
+
+入力をパイプで流していて、困ったことが 1 つありました。当たる前に入力が尽きると、プログラムが止まらなくなります。`50` だけを流して、最初の 8 行だけを見ます。
+
+```console
+❯ "50" | cargo run -q | Select-Object -First 8
+Guess the number!
+Please input your guess.
+You guessed: 50
+Too small!
+Please input your guess.
+Please input your guess.
+Please input your guess.
+Please input your guess.
+```
+
+`Select-Object -First 8` で切らなければ、`Please input your guess.` が延々と出続けます。入力が尽きると、`read_line` は失敗ではなく「0 バイト読んだ」という成功を返します。`guess` は空のままなので、`parse()` が失敗して `continue` し、また `read_line` が 0 バイトを返す、を繰り返すのです。キーボードから遊ぶぶんには、ふつうは起きません。ただ、テストで入力を流すときは同じことが起きますし、Windows で `Ctrl+Z` と Enter で入力を終わらせたときも、同じ理屈で起きるはずです（こちらは試していません）。
+
+`read_line` が返す読んだバイト数を見て、0 なら抜ける、と書けば直ります。ただ、Book の流れを崩さないように、この記事では直さずにおきます。
+
+## よく使うコマンド
+
+| コマンド | 説明 |
+| --- | --- |
+| `mise use -g rust` | 最新の安定版の Rust をグローバルに入れる |
+| `rustc --version` / `cargo --version` | 版を確かめる |
+| `rustup doc --book` | 手元の Book をブラウザで開く |
+| `mise use -g github:Jake-Shadle/xwin` | xwin を mise で入れる |
+| `xwin --accept-license splat --disable-symlinks --output <場所>` | MSVC と Windows SDK のライブラリを展開する |
+| `cargo new <名前>` | 新しいプロジェクトを作る |
+| `cargo build` / `cargo build --release` | ビルドする（開発用 / 本番用） |
+| `cargo run` | ビルドして実行する |
+| `cargo check` | コンパイルできるかだけを確かめる |
+| `cargo add <クレート>` | 依存を `Cargo.toml` に足す |
+| `cargo tree` | 依存の木を表示する |
+| `rustc --explain <エラー番号>` | エラーの詳しい説明を読む |
+
+## まとめ
+
+- mise で Rust を入れても、中で動いているのは rustup。mise は `RUSTUP_TOOLCHAIN` で版を伝える
+- Windows では、リンカーと Windows のライブラリのために Visual Studio の C++ ビルドツールが要る。基本は winget で入れる。mise だけで揃えるなら、xwin と `rust-lld` で、Visual Studio を消した Windows のランナーでもビルドして動かせた。C のコードを含むクレートは、`conda:clang` の clang-cl と `llvm-tools` の llvm-ar を足し、環境変数で教えればビルドできた
+- `rustc` で直接コンパイルすると、実行ファイル（`.exe`）ができる。ふだんは Cargo の `build` / `run` / `check` を使う
+- `Cargo.toml` は `package.json`、`Cargo.lock` は `package-lock.json`。`"0.10.1"` は「0.10.1 以上、0.11.0 未満」
+- 変数は既定で変更できない。`Result` を無視すると警告、トレイトは `use` しないとメソッドが使えない、型が違うものは比べられない
+- コンパイラのエラーは、何が悪いかだけでなく、直し方まで教えてくれる。壊して読むのがいちばんの勉強になる
+
+次回は Book の 3 章で、変数、データ型、関数、制御フローを見ていきます。今回 `;` を消しても動いた理由も、そこで確かめます。
