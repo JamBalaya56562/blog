@@ -816,7 +816,8 @@ error: could not compile `guessing_game` (bin "guessing_game") due to 1 previous
 
 "It was not declared mutable, so it cannot be borrowed as mutable." TypeScript's `const` only stops you from
 assigning a different value to the variable; the object inside can still change. A Rust variable without `mut`
-cannot have its contents changed either.
+cannot have its contents changed either (types such as `Cell` deliberately allow it; the Book covers them in
+chapter 15).
 
 ### Removing expect
 
@@ -940,7 +941,8 @@ rand
 guessing_game
 ```
 
-Cargo compiles the dependencies one by one, each before the crates that use it, and the game itself last.
+Cargo compiles each dependency before the crates that use it, and the game itself last. Crates that do not
+depend on each other compile in parallel, so the order shifts a little from run to run.
 `build_script_build` is the build script (`build.rs`) that `getrandom` ships. Lining all of this up in dependency
 order is Cargo's job too.
 

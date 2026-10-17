@@ -721,7 +721,7 @@ For more information about this error, try `rustc --explain E0596`.
 error: could not compile `guessing_game` (bin "guessing_game") due to 1 previous error
 ```
 
-「変更できると宣言していないので、変更できる形では借りられない」というエラーです。TypeScript の `const` は「変数に別の値を入れ直せない」だけで、中身のオブジェクトは書き換えられます。Rust の `mut` が無い変数は、中身も書き換えられません。
+「変更できると宣言していないので、変更できる形では借りられない」というエラーです。TypeScript の `const` は「変数に別の値を入れ直せない」だけで、中身のオブジェクトは書き換えられます。Rust の `mut` が無い変数は、中身も書き換えられません（`Cell` のように、わざと中身の書き換えを許す型は別で、Book の 15 章で出てきます）。
 
 ### expect を消してみる
 
@@ -835,7 +835,7 @@ rand
 guessing_game
 ```
 
-依存のクレートを 1 つずつ、使われる側から先にコンパイルして、最後に自分のゲームをコンパイルしています。`build_script_build` は、`getrandom` が持っているビルドスクリプト（`build.rs`）です。これを依存の順に並べて呼ぶのも、Cargo の仕事です。
+使われる側のクレートが先になる順番を守ってコンパイルして、最後に自分のゲームをコンパイルしています。互いに関係のないクレートは並行してコンパイルするので、並び順は実行するたびに少し変わります。`build_script_build` は、`getrandom` が持っているビルドスクリプト（`build.rs`）です。これを依存の順に並べて呼ぶのも、Cargo の仕事です。
 
 ### 秘密の数を作る
 
