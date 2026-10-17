@@ -1,0 +1,990 @@
+---
+title: Getting Started with EmDash
+image: /thumbnails/getting-started-with-emdash.avif
+date: "2026-10-17"
+description: EmDash is the CMS Cloudflare built as a successor to WordPress. This guide runs the two side by side and compares them, covering what the plugin sandbox actually stops, how a post is stored, what is lost when you import from WordPress, passkeys and the built-in MCP server, and when WordPress is still the better choice
+tags:
+  - emdash
+  - wordpress
+  - cms
+  - astro
+  - cloudflare
+---
+
+## What EmDash is
+
+[EmDash](https://emdashcms.com/) is a CMS (content management system) built by Cloudflare. It gives you the
+whole stack for a blog or a company site: an admin screen where you write posts and a site that publishes
+them. It is the same kind of tool as WordPress.
+
+Cloudflare announced EmDash on 1 April 2026 as
+"[the spiritual successor to WordPress](https://blog.cloudflare.com/emdash-wordpress/)". That first release
+was a v0.1.0 preview. [1.0 followed](https://blog.cloudflare.com/emdash-cms-plugin-registry/) on
+28 September 2026, and the README now calls it stable and ready for production. In August the Cloudflare
+blog itself [moved to EmDash](https://blog.cloudflare.com/cloudflare-blog-uses-emdash/).
+
+It is written in TypeScript on top of [Astro](https://astro.build/), under the MIT license
+([GitHub](https://github.com/emdash-cms/emdash)). None of WordPress's code is used, so WordPress's GPL does
+not apply to it.
+
+This blog has used EmDash before, as the subject of the [Docker build post](/en/blog/docker-build) and the
+[Docker Compose post](/en/blog/docker-compose). Those posts were about putting it in a container and said
+very little about EmDash itself. This one runs EmDash and WordPress side by side on the same machine and
+checks how they differ.
+
+Everything here was checked with EmDash 1.3.0, WordPress 7.1.3 and Node.js 26.12.0, in PowerShell on
+Windows 11.
+
+## What EmDash wants to change about WordPress
+
+WordPress is still the most widely used CMS on the web. According to
+[W3Techs](https://w3techs.com/technologies/details/cm-wordpress), 39.6% of all websites ran on WordPress
+as of 17 October 2026.
+
+EmDash sets out to change three things in particular:
+
+- **Plugins can do anything.** A WordPress plugin runs in the same PHP process as WordPress itself. It can
+  reach the database, the file system and the network without restriction
+- **Posts are stored as HTML.** The block editor saves a post as HTML with the block boundaries embedded in
+  comments
+  ([block editor docs](https://developer.wordpress.org/block-editor/explanations/architecture/data-flow/))
+- **You need a PHP and MySQL server.** WordPress recommends PHP 8.3 or later and MySQL 8.0 or later, or
+  MariaDB 10.11 or later ([requirements](https://wordpress.org/about/requirements/))
+
+The first is the biggest problem. The
+[2026 report](https://patchstack.com/whitepaper/state-of-wordpress-security-in-2026/) from the WordPress
+security company Patchstack counts 11,334 new vulnerabilities in the WordPress ecosystem in 2025, 91% of
+them in plugins and 9% in themes. The holes turn up in plugins, not in WordPress itself, and because a
+plugin can do anything, one hole in one plugin is a hole in the whole site.
+
+The rest of this post runs both systems to see what EmDash does about each of the three.
+
+## Bringing both up
+
+### WordPress in Docker
+
+WordPress comes up with Docker Compose, from the official `wordpress` image and a MySQL image. The
+[earlier post](/en/blog/docker-compose) explains Compose, so here is just the `compose.yaml`. `cli` is a
+container for wp-cli, which drives WordPress from the command line. Because it has a `profiles` entry,
+`docker compose up` leaves it alone and it only runs when called with `docker compose run`.
+
+```yaml title="compose.yaml"
+services:
+  wordpress:
+    image: wordpress:latest
+    ports:
+      - "8080:80"
+    environment:
+      WORDPRESS_DB_HOST: db
+      WORDPRESS_DB_USER: wordpress
+      WORDPRESS_DB_PASSWORD: wordpress
+      WORDPRESS_DB_NAME: wordpress
+    volumes:
+      - wp-html:/var/www/html
+    depends_on:
+      - db
+  db:
+    image: mysql:8.4
+    environment:
+      MYSQL_DATABASE: wordpress
+      MYSQL_USER: wordpress
+      MYSQL_PASSWORD: wordpress
+      MYSQL_RANDOM_ROOT_PASSWORD: "1"
+    volumes:
+      - wp-db:/var/lib/mysql
+  cli:
+    image: wordpress:cli
+    profiles: ["cli"]
+    user: "33:33"
+    environment:
+      WORDPRESS_DB_HOST: db
+      WORDPRESS_DB_USER: wordpress
+      WORDPRESS_DB_PASSWORD: wordpress
+      WORDPRESS_DB_NAME: wordpress
+    volumes:
+      - wp-html:/var/www/html
+    depends_on:
+      - db
+
+volumes:
+  wp-html:
+  wp-db:
+```
+
+`docker compose up -d` starts it.
+
+```console
+❯ docker compose up -d
+...
+ Container wordpress-db-1 Started
+ Container wordpress-wordpress-1 Starting
+ Container wordpress-wordpress-1 Started
+❯ docker compose ps --format '{{.Service}} {{.Image}} {{.Status}}'
+db mysql:8.4 Up 3 seconds
+wordpress wordpress:latest Up 2 seconds
+```
+
+Opening it in a browser would show the installer. wp-cli's `wp core install` does the same job here, with
+a throwaway admin password.
+
+```console
+❯ docker compose run --rm cli wp core install --url=http://localhost:8080 --title="WordPress Demo" --admin_user=admin --admin_password=... --admin_email=admin@example.test --skip-email
+Success: WordPress installed successfully.
+❯ docker compose run --rm cli wp core version
+7.1.3
+❯ docker compose exec wordpress php -v
+PHP 8.3.35 (cli) (built: Oct  6 2026 01:28:49) (NTS)
+```
+
+WordPress 7.1.3 is running on PHP 8.3.35. Running WordPress takes three things: a web server, PHP and
+MySQL.
+
+### EmDash with npm create
+
+An EmDash project starts with `npm create emdash`. `--template node:blog` asks for the blog template for
+Node.js. With `--yes` alone you get the default, which targets Cloudflare, so the `node:` prefix matters.
+
+```console
+❯ npm create emdash@latest my-emdash -- --template node:blog --pm npm --yes
+
+  — E M D A S H —
+
+┌  Create a new EmDash project
+│
+◇  Project created!
+│
+●  Wrote EMDASH_ENCRYPTION_KEY to .env.
+│
+●  Installing dependencies with npm...
+...
+added 631 packages, and audited 632 packages in 7m
+...
+◆  Dependencies installed!
+│
+◇  Next steps ───╮
+│                │
+│  cd my-emdash  │
+│  npm run dev   │
+│                │
+├────────────────╯
+│
+└  Done! Your EmDash project is ready at my-emdash
+```
+
+It also wrote `EMDASH_ENCRYPTION_KEY`, the key that encrypts plugin secrets, to `.env`. The
+[Docker build post](/en/blog/docker-build) had to generate that key with `emdash secrets generate` and pass
+it as an environment variable; `npm create` takes care of it.
+
+`npm run dev` starts the development server.
+
+```console
+❯ npm run dev
+...
+  — E M D A S H —  v1.3.0
+
+  › Admin UI    http://localhost:4321/_emdash/admin
+  › MCP server  http://localhost:4321/_emdash/api/mcp
+  › Dev bypass  http://localhost:4321/_emdash/api/setup/dev-bypass?redirect=/_emdash/admin
+    Skips passkey setup/auth and signs you in as a dev admin
+```
+
+Next to the admin screen it prints the URL of an MCP server, which comes up again later. `Dev bypass` is an
+entrance that only exists on the development server: it skips passkey registration and signs you in as an
+administrator. Every visit to the admin screen in this post went through it.
+
+Once it is running, the project looks like this.
+
+```console
+❯ Get-ChildItem -Force -Name -Exclude node_modules
+.agents
+.astro
+.claude
+.cursor
+.vscode
+seed
+src
+uploads
+.env
+.gitignore
+.mcp.json
+AGENTS.md
+astro.config.mjs
+data.db
+data.db-shm
+data.db-wal
+emdash-env.d.ts
+package-lock.json
+package.json
+pnpm-workspace.yaml
+README.md
+tsconfig.json
+```
+
+The database is the SQLite file `data.db` and uploaded images go in `uploads`. There is no MySQL and no
+PHP. EmDash is an Astro integration, so the admin screen, the public pages and the API are all served by
+this one Node.js process.
+
+The configuration is in `astro.config.mjs`. The parts that concern EmDash are these.
+
+```js title="astro.config.mjs"
+import emdash, { local } from "emdash/astro";
+import { sqlite } from "emdash/db";
+
+export default defineConfig({
+  output: "server",
+  integrations: [
+    react(),
+    emdash({
+      database: sqlite({ url: "file:./data.db" }),
+      storage: local({
+        directory: "./uploads",
+        baseUrl: "/_emdash/api/media/file",
+      }),
+    }),
+  ],
+})
+```
+
+Swapping `database` and `storage` moves the data elsewhere. Per the
+[README](https://github.com/emdash-cms/emdash/blob/main/README.md), the database can be Cloudflare D1,
+SQLite, Turso/libSQL or PostgreSQL, and files can go to R2, any S3-compatible storage or the local disk.
+The [Compose post](/en/blog/docker-compose) switched this to PostgreSQL.
+
+`AGENTS.md`, `.agents` and `.mcp.json` are for AI coding agents, which also come up later.
+
+## What EmDash stops a plugin from doing
+
+![Sandboxed EmDash plugins access only declared capabilities and hosts. Native plugins run outside the sandbox and can use direct fetch and environment variables](/emdash/plugin-permissions.avif)
+
+EmDash's headline feature is its plugin sandbox. To compare, the same probing plugin goes into both
+systems.
+
+### A WordPress plugin can do anything
+
+First, a WordPress plugin. It adds `/probe/v1/run` to the REST API and tries the following there:
+
+- make an HTTP request to an outside site (`httpbin.org`)
+- see whether the database password `DB_PASSWORD` is visible
+- read the users table
+- read the administrator's password hash
+- check whether `wp-config.php` is writable
+
+```php title="wp-content/plugins/outbound-probe/outbound-probe.php"
+<?php
+/**
+ * Plugin Name: Outbound Probe
+ * Description: Shows what any active plugin can reach.
+ */
+
+add_action('rest_api_init', function () {
+    register_rest_route('probe/v1', '/run', [
+        'methods' => 'GET',
+        'permission_callback' => '__return_true',
+        'callback' => function () {
+            global $wpdb;
+            $response = wp_remote_get('https://httpbin.org/get');
+            return [
+                'wp_remote_get httpbin.org' => wp_remote_retrieve_response_code($response),
+                'DB_PASSWORD visible' => defined('DB_PASSWORD'),
+                'users table rows' => (int) $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->users}"),
+                'admin password hash prefix' => substr($wpdb->get_var("SELECT user_pass FROM {$wpdb->users} LIMIT 1"), 0, 4),
+                'can write wp-config.php' => is_writable(ABSPATH . 'wp-config.php'),
+            ];
+        },
+    ]);
+});
+```
+
+The file goes in WordPress's `wp-content/plugins`, and `wp plugin activate` turns it on.
+
+```console
+❯ docker compose run --rm cli wp plugin activate outbound-probe
+Success: Activated 1 of 1 plugins.
+❯ curl.exe -s "http://localhost:8080/?rest_route=/probe/v1/run" | ConvertFrom-Json | Format-List
+wp_remote_get httpbin.org  : 200
+DB_PASSWORD visible        : True
+users table rows           : 1
+admin password hash prefix : $wp$
+can write wp-config.php    : True
+```
+
+Every one of them worked. The plugin reached an outside site, saw the database password, read the
+administrator's password hash out of the users table, and could write the configuration file. WordPress
+plugins have no notion of permissions: once activated, a plugin can do everything WordPress itself can.
+
+That is not this plugin's fault; it is how WordPress works. Installing a plugin means trusting whoever
+wrote it.
+
+### An EmDash plugin gets only what it declares
+
+Now the same probe as an EmDash plugin. `init` from `@emdash-cms/plugin-cli` scaffolds it. `--publisher`
+takes the AT Protocol DID used by the plugin registry; this plugin is never published, so a dummy DID will
+do.
+
+```console
+❯ npx @emdash-cms/plugin-cli@latest init outbound-probe --yes --publisher=did:plc:aaaaaaaaaaaaaaaaaaaaaaaa --author-name=Demo --security-email=security@example.com --description="Tries outbound requests from a sandboxed plugin" --package-manager=npm
+...
+✔ Scaffolded 13 files in C:\Users\Jam\emdash-demo\outbound-probe
+```
+
+Permissions live in `emdash-plugin.jsonc`. The scaffold leaves `capabilities` and `allowedHosts` empty, so
+the plugin starts with no permissions at all. Here it gets outbound requests (`network:request`), and
+`example.com` as the only host it may reach.
+
+```jsonc title="emdash-plugin.jsonc"
+{
+  "$schema": "./node_modules/@emdash-cms/plugin-cli/schemas/emdash-plugin.schema.json",
+
+  "slug": "outbound-probe",
+  "publisher": "did:plc:aaaaaaaaaaaaaaaaaaaaaaaa",
+
+  "license": "MIT",
+  "author": { "name": "Demo" },
+  "security": { "email": "security@example.com" },
+  "description": "Tries outbound requests from a sandboxed plugin",
+
+  "capabilities": ["network:request"],
+  "allowedHosts": ["example.com"],
+  "storage": {}
+}
+```
+
+Other capabilities include `content:read` to read posts, `content:write` to change them and `email:send`
+to send mail ([list](https://docs.emdashcms.com/plugins/creating-plugins/capabilities/)). Anything not
+listed is unavailable.
+
+The plugin itself adds one route that tries the following:
+
+- reach `example.com` and `httpbin.org` with `ctx.http.fetch`, which EmDash hands the plugin
+- reach `httpbin.org` with plain `fetch()`
+- check whether `process` exists and whether the encryption key is visible in `process.env`
+
+```ts title="src/plugin.ts"
+import type { SandboxedPlugin } from "emdash/plugin";
+
+async function attempt(label: string, run: () => Promise<Response>) {
+  try {
+    const res = await run();
+    if (res.ok) {
+      return `${label}: ${res.status}`;
+    }
+    return `${label}: ${res.status} ${(await res.text()).slice(0, 200)}`;
+  } catch (error) {
+    return `${label}: ${(error as Error).message}`;
+  }
+}
+
+const plugin: SandboxedPlugin = {
+  routes: {
+    probe: {
+      handler: async (_routeCtx, ctx) => {
+        const http = ctx.http;
+        return {
+          results: [
+            http
+              ? await attempt("ctx.http.fetch example.com", () => http.fetch("https://example.com/"))
+              : "ctx.http: undefined",
+            http
+              ? await attempt("ctx.http.fetch httpbin.org", () => http.fetch("https://httpbin.org/get"))
+              : "ctx.http: undefined",
+            await attempt("fetch httpbin.org", () => fetch("https://httpbin.org/get")),
+            `typeof process: ${typeof (globalThis as { process?: unknown }).process}`,
+            `EMDASH_ENCRYPTION_KEY visible: ${Boolean((globalThis as { process?: { env: Record<string, string | undefined> } }).process?.env.EMDASH_ENCRYPTION_KEY)}`,
+          ],
+        };
+      },
+    },
+  },
+};
+
+export default plugin;
+```
+
+`npm run build` produces the plugin's descriptor in `dist/index.mjs`, with the declared permissions copied
+in.
+
+```console
+❯ npm run build
+...
+✔ Plugin built: did:plc:aaaaaaaaaaaaaaaaaaaaaaaa/outbound-probe@0.1.0
+❯ Get-Content dist/index.mjs
+...
+const descriptor = Object.freeze({
+	"id": "outbound-probe",
+	"version": "0.1.0",
+	"format": "standard",
+	"entrypoint": "outbound-probe/sandbox",
+	"capabilities": [
+		"network:request"
+	],
+	"allowedHosts": [
+		"example.com"
+	],
+	"storage": {},
+	"hooks": [],
+	"routes": [
+		"probe"
+	]
+});
+
+export default descriptor;
+```
+
+### Turning the sandbox on under Node.js
+
+When EmDash runs on Node.js, the sandbox is **off until you turn it on**
+([docs](https://docs.emdashcms.com/deployment/plugin-sandbox/)). EmDash starts
+[workerd](https://github.com/cloudflare/workerd), the runtime behind Cloudflare Workers, as a child
+process and runs each plugin inside it. On the development server (`astro dev`), Miniflare, which wraps
+workerd, plays that part; the results below come from the development server. The runner package and the
+plugin go in first.
+
+```console
+❯ npm install @emdash-cms/sandbox-workerd workerd ../outbound-probe
+...
+npm warn install-scripts 2 packages have install scripts not yet covered by allowScripts:
+npm warn install-scripts   workerd@1.20261016.1 (postinstall: node install.js)
+npm warn install-scripts   workerd@1.20260730.1 (postinstall: node install.js)
+```
+
+npm 11.20 skips dependency `postinstall` scripts nobody has approved and warns about them instead. The
+workerd binary comes from a per-platform package (`@cloudflare/workerd-windows-64` on Windows), so it
+worked regardless.
+
+In `astro.config.mjs`, `sandboxRunner` names the workerd runner and the plugin goes in `sandboxed`.
+
+```js title="astro.config.mjs"
+import emdash, { local } from "emdash/astro";
+import { sqlite } from "emdash/db";
+import outboundProbe from "outbound-probe";
+
+export default defineConfig({
+  integrations: [
+    react(),
+    emdash({
+      database: sqlite({ url: "file:./data.db" }),
+      storage: local({
+        directory: "./uploads",
+        baseUrl: "/_emdash/api/media/file",
+      }),
+      sandboxRunner: "@emdash-cms/sandbox-workerd/sandbox",
+      sandboxed: [outboundProbe],
+    }),
+  ],
+})
+```
+
+After a restart, the development server loads the plugin with the permissions it declared.
+
+```console
+❯ npm run dev
+...
+EmDash: Loaded sandboxed plugin outbound-probe:0.1.0 with capabilities: [network:request]
+```
+
+Plugin routes live at `/_emdash/api/plugins/<plugin ID>/<route name>`. They need a signed-in user, so
+`curl.exe` goes through the development entrance first to collect a cookie, then sends it along. The
+`X-EmDash-Request` header is CSRF protection; without it the request is refused with `CSRF_REJECTED`.
+
+```console
+❯ curl.exe -s -c cookies.txt -o NUL "http://localhost:4321/_emdash/api/setup/dev-bypass"
+❯ (curl.exe -s -b cookies.txt -H "X-EmDash-Request: 1" http://localhost:4321/_emdash/api/plugins/outbound-probe/probe | ConvertFrom-Json).data.results
+ctx.http.fetch example.com: 200
+ctx.http.fetch httpbin.org: Bridge call http/fetch failed: {"error":"Plugin \"outbound-probe\" is not allowed to fetch from host \"httpbin.org\". Allowed hosts: example.com"}
+fetch httpbin.org: 403 Direct fetch() blocked in sandbox. Plugin "outbound-probe" must use ctx.http.fetch() (requires network:request capability).
+typeof process: undefined
+EMDASH_ENCRYPTION_KEY visible: false
+```
+
+Line by line:
+
+- the declared `example.com` was reachable
+- the undeclared `httpbin.org` was not, even through `ctx.http.fetch`; the answer says `example.com` is the
+  only allowed host
+- plain `fetch()` was stopped by the sandbox with a 403 that says to use `ctx.http.fetch()`
+- there is no `process`, so the encryption key in the environment is out of sight
+
+A sandboxed plugin cannot touch the database directly either. To read posts it declares `content:read` and
+goes through the API EmDash provides. Node.js built-in modules are unavailable too, so it cannot reach the
+file system ([install methods compared](https://docs.emdashcms.com/plugins/installing/)). Everything the
+WordPress plugin did freely is off limits here unless declared.
+
+### Native plugins can do anything again
+
+EmDash has a second plugin format, **native**. A plugin listed under `plugins` instead of `sandboxed` skips
+the sandbox and runs in the same process as EmDash. Native is required for things like adding React pages
+to the admin screen or changing how Portable Text renders
+([plugin overview](https://docs.emdashcms.com/plugins/overview/)).
+
+Here is the same plugin moved to `plugins` and called again.
+
+```js title="astro.config.mjs"
+      sandboxRunner: "@emdash-cms/sandbox-workerd/sandbox",
+      plugins: [outboundProbe],
+```
+
+```console
+❯ (curl.exe -s -b cookies.txt -H "X-EmDash-Request: 1" http://localhost:4321/_emdash/api/plugins/outbound-probe/probe | ConvertFrom-Json).data.results
+ctx.http.fetch example.com: 200
+ctx.http.fetch httpbin.org: Plugin "outbound-probe" is not allowed to fetch from host "httpbin.org". Allowed hosts: example.com
+fetch httpbin.org: 200
+typeof process: object
+EMDASH_ENCRYPTION_KEY visible: true
+```
+
+`ctx.http.fetch` still refuses `httpbin.org`, but only because `ctx.http.fetch` checks for itself. Plain
+`fetch()` got through, and `process.env` handed over the encryption key. A native plugin is just like a
+WordPress plugin: once installed, it can do whatever the site can.
+
+So an EmDash plugin is only safe **when it is sandboxed**, and which list it goes in is up to whoever
+builds the site. Plugins installed from the registry through the admin screen always run in the sandbox,
+and installing one shows the permissions it asks for so an administrator can approve them
+([1.0 announcement](https://blog.cloudflare.com/emdash-cms-plugin-registry/)).
+
+### Cloudflare and Node.js enforce different limits
+
+The sandbox also limits each plugin invocation, but which limits apply depends on where EmDash runs
+([docs](https://docs.emdashcms.com/deployment/plugin-sandbox/)).
+
+| Limit | Value | Cloudflare Workers | Node.js |
+| --- | --- | --- | --- |
+| CPU time | 50 ms | Enforced | Not enforced |
+| Subrequests | 10 | Enforced | Not enforced |
+| Wall time | 30 s | Enforced | Enforced |
+| Memory | 128 MB | Not enforced per plugin | Not enforced |
+
+Going by this table, a plugin stuck in an infinite loop on Node.js keeps the CPU busy until the 30 seconds
+run out (not something tried here). The permission boundary is the same on both, but Cloudflare is
+stricter about resources.
+
+On the other hand, the sandbox on Cloudflare needs the Workers Paid plan, because the Dynamic Workers it
+creates for each plugin are a paid-plan feature. The Cloudflare templates ship with that setting commented
+out, so a site on the free plan runs no sandboxed plugins at all.
+
+## How a post is stored
+
+![WordPress stores HTML and comments; EmDash stores Portable Text JSON. Dynamic blocks need rebuilding when migrating](/emdash/content-storage.avif)
+
+Next, storage. The plan is to write one post in WordPress, import it into EmDash and look inside both
+databases.
+
+### WordPress stores HTML and comments
+
+First a post in WordPress: a paragraph, a heading, a list and some code, then a "Latest Posts" block at the
+end. That block's contents are never stored; PHP builds the list of recent posts every time the page is
+shown.
+`post.html` holds the same HTML the block editor would save, and `wp post create -` reads it from standard
+input.
+
+```console
+❯ Get-Content -Raw post.html | docker compose run --rm -T cli wp post create - --post_title="Hello from WordPress" --post_status=publish --post_author=1 --porcelain
+7
+```
+
+The post got ID 7. Here is its stored body, straight from MySQL.
+
+```console
+❯ docker compose exec db mysql -uwordpress -pwordpress wordpress -e "SELECT post_content FROM wp_posts WHERE ID = 7\G"
+mysql: [Warning] Using a password on the command line interface can be insecure.
+*************************** 1. row ***************************
+post_content: <!-- wp:paragraph -->
+<p>This post was written in <strong>WordPress</strong> and moved to <a href="https://emdashcms.com/">EmDash</a>.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:heading -->
+<h2 class="wp-block-heading">What moves</h2>
+<!-- /wp:heading -->
+
+<!-- wp:list -->
+<ul class="wp-block-list"><!-- wp:list-item -->
+<li>Paragraphs and headings</li>
+<!-- /wp:list-item -->
+
+<!-- wp:list-item -->
+<li>Lists and links</li>
+<!-- /wp:list-item --></ul>
+<!-- /wp:list -->
+
+<!-- wp:code -->
+<pre class="wp-block-code"><code>npm create emdash@latest</code></pre>
+<!-- /wp:code -->
+
+<!-- wp:latest-posts {"postsToShow":3} /-->
+```
+
+The body is a single HTML string. Comments such as `<!-- wp:paragraph -->` mark where each block starts and
+what kind it is, and block settings sit inside the comment as JSON, like `{"postsToShow":3}`. The final
+"Latest Posts" block is only a comment, with nothing inside.
+
+Being HTML, it can go straight to a browser. Using it anywhere else means parsing the HTML again: to show
+the post in an app, the receiving side has to decide what to do with `<strong>` and
+`class="wp-block-list"`.
+
+### Exporting WXR and importing it into EmDash
+
+WordPress can export posts as XML, in a format called WXR (WordPress eXtended RSS). wp-cli produces the
+same file as Tools → Export in the admin screen.
+
+```console
+❯ docker compose run --rm -T cli wp export --stdout --post_type=post > export.xml
+❯ (Select-String -Path export.xml -Pattern "<item>").Count
+2
+```
+
+It holds two posts: the default "Hello world!" and the one just written.
+
+In the EmDash admin screen, "Import from WordPress" (`/_emdash/admin/import/wordpress`) takes this
+`export.xml` as an upload. The alternative is to install the EmDash Exporter plugin on the WordPress site
+and import over a connection, which also carries SEO settings and ACF custom fields
+([migration docs](https://docs.emdashcms.com/migration/from-wordpress/)).
+
+After the upload, EmDash shows what it will import: WordPress's `post` into EmDash's `posts` collection.
+The admin screen followed the browser's language, so the screenshots are in Japanese.
+
+![The review step of the EmDash "Import from WordPress" screen. Under the site name WordPress Demo and http://localhost:8080, the content to import lists post, 2 items into posts, marked ready. A Start import button sits at the bottom](/emdash/import-review.avif)
+
+The next step maps WordPress authors to EmDash users, and then the import runs. When it finishes, it reports
+two items imported.
+
+![The import complete screen, reporting 2 items imported and, by content type, posts: 2](/emdash/import-done.avif)
+
+### EmDash stores Portable Text JSON
+
+EmDash's CLI shows the imported post. `emdash content get` renders the body as Markdown.
+
+```console
+❯ npx emdash content get posts hello-from-wordpress
+{
+  "id": "01M53TBZAZENP270NTT1NMA5VZ",
+  "type": "posts",
+  "slug": "hello-from-wordpress",
+  "status": "published",
+  "data": {
+    "title": "Hello from WordPress",
+    "content": "This post was written in **WordPress** and moved to [EmDash](https://emdashcms.com/).\n\n## What moves\n\n- Paragraphs and headings\n- Lists and links\n\n```\nnpm create emdash@latest\n```\n\n<!--ec:block {\"_type\":\"htmlBlock\",\"_key\":\"key-15-bfs6l\",\"html\":\"<!-- wp:latest-posts {\\\"postsToShow\\\":3} /-->\",\"originalBlockName\":\"core/latest-posts\",\"originalAttrs\":{\"postsToShow\":3}} -->\n"
+  },
+  "authorId": "01M53NMH9M5JNF1H8TDX5YYEZX",
+...
+}
+```
+
+That is a conversion for display. `--raw` prints the stored form itself.
+
+```console
+❯ npx emdash content get posts hello-from-wordpress --raw
+...
+    "content": [
+      {
+        "_type": "block",
+        "_key": "key-7-188p7",
+        "style": "normal",
+        "children": [
+          { "_type": "span", "_key": "key-1-f3yvm", "text": "This post was written in " },
+          { "_type": "span", "_key": "key-2-qmvfx", "text": "WordPress", "marks": ["strong"] },
+          { "_type": "span", "_key": "key-3-1otn9", "text": " and moved to " },
+          { "_type": "span", "_key": "key-5-8l3lu", "text": "EmDash", "marks": ["key-4-nyuvd"] },
+          { "_type": "span", "_key": "key-6-kndu0", "text": "." }
+        ],
+        "markDefs": [
+          { "_type": "link", "_key": "key-4-nyuvd", "href": "https://emdashcms.com/" }
+        ]
+      },
+      {
+        "_type": "block",
+        "_key": "key-9-nkz11",
+        "style": "h2",
+        "children": [{ "_type": "span", "_key": "key-8-dc6we", "text": "What moves" }]
+      },
+      {
+        "_type": "block",
+        "_key": "key-11-bhzzy",
+        "style": "normal",
+        "listItem": "bullet",
+        "level": 1,
+        "children": [{ "_type": "span", "_key": "key-10-y2hci", "text": "Paragraphs and headings" }]
+      },
+      {
+        "_type": "block",
+        "_key": "key-13-mxxbk",
+        "style": "normal",
+        "listItem": "bullet",
+        "level": 1,
+        "children": [{ "_type": "span", "_key": "key-12-d1qu1", "text": "Lists and links" }]
+      },
+      {
+        "_type": "code",
+        "_key": "key-14-o3k5t",
+        "code": "npm create emdash@latest"
+      },
+      {
+        "_type": "htmlBlock",
+        "_key": "key-15-bfs6l",
+        "html": "<!-- wp:latest-posts {\"postsToShow\":3} /-->",
+        "originalBlockName": "core/latest-posts",
+        "originalAttrs": { "postsToShow": 3 }
+      }
+    ]
+...
+```
+
+(Short elements are folded onto one line for readability.)
+
+This is [Portable Text](https://www.portabletext.org/). The body is an array of blocks, not a string of
+HTML:
+
+- a paragraph is `"_type": "block"`, with its text split into `span`s; bold is `"marks": ["strong"]`
+- a link keeps its URL in `markDefs`, and the `span` points to it by key
+- a heading is `"style": "h2"` and a list item is `"listItem": "bullet"`
+- code is a separate block type, `"_type": "code"`
+
+There are no HTML tags or class names. How it looks is up to whoever receives it: the EmDash theme turns it
+into HTML with `<PortableText value={post.data.content} />`, and an app could turn it into its own
+components.
+
+### Dynamic blocks come out empty
+
+Look at the last block. WordPress's "Latest Posts" became an `htmlBlock` that carries the original HTML
+comment as it was. In WordPress, PHP built that list on every page view; EmDash has no such PHP, so it has
+nothing to rebuild the list with.
+
+The two public pages side by side show the difference. In WordPress, a list of posts follows the code.
+
+![The Hello from WordPress post as WordPress shows it. Under Written by admin in Uncategorized come the paragraph, the What moves heading, two bullet points and the npm create emdash@latest code, followed by a list of two links, Hello from WordPress and Hello world!](/emdash/wp-post.avif)
+
+In EmDash, nothing follows the code; the comment section starts right after it.
+
+![The same post in EmDash. Up to the paragraph, the What moves heading, the two bullet points and the npm create emdash@latest code it matches, but below that is empty space and then the DISCUSSION section with No comments yet](/emdash/emdash-post.avif)
+
+The page's HTML has nothing there but an empty `<div class="emdash-html-block"></div>`. The
+[migration docs](https://docs.emdashcms.com/migration/from-wordpress/) say as much: server-rendered and
+plugin blocks become HTML blocks that show nothing on the site. The docs also list these:
+
+- scheduled and private posts become drafts, and scheduled dates are not rebuilt
+- a WXR import does not carry arbitrary custom fields (the Exporter plugin does)
+- ACF relationship and image fields keep their WordPress IDs and URLs
+
+Static blocks such as paragraphs and headings move cleanly. Anything that leans on plugins or shortcodes
+has to be rebuilt on the EmDash side.
+
+### Collections are real tables
+
+One more difference is how content types are kept. WordPress puts posts, pages and custom post types alike
+into a single `wp_posts` table, with extra fields as key-value rows in `wp_postmeta`.
+
+EmDash gives every collection (content type) a real SQL table of its own
+([content model](https://docs.emdashcms.com/concepts/content-model/)). The `posts` collection is
+`ec_posts`. Node.js's built-in `node:sqlite` lists its columns.
+
+```console
+❯ node -e "const { DatabaseSync } = require('node:sqlite'); const db = new DatabaseSync('data.db', { readOnly: true }); console.log(db.prepare('PRAGMA table_info(ec_posts)').all().map((c) => c.name + ' ' + c.type).join('\n'))"
+id TEXT
+slug TEXT
+status TEXT
+author_id TEXT
+primary_byline_id TEXT
+created_at TEXT
+updated_at TEXT
+published_at TEXT
+scheduled_at TEXT
+deleted_at TEXT
+version INTEGER
+live_revision_id TEXT
+draft_revision_id TEXT
+locale TEXT
+translation_group TEXT
+title TEXT
+featured_image TEXT
+content json
+excerpt TEXT
+```
+
+The columns at the top belong to EmDash; `title`, `featured_image`, `content` and `excerpt` are the fields
+the blog template defined. Adding a field in the admin screen adds a column here. `content` has the type
+`json`, and that is where the Portable Text above lives.
+
+After adding fields, `npx emdash types` regenerates the TypeScript types, so theme code reading a post can
+write `post.data.title` with types attached.
+
+## A theme is just an Astro project
+
+A WordPress theme is `functions.php` plus a set of PHP template files. `functions.php` is PHP that loads on
+every request while the theme is active, so like a plugin it can do anything.
+
+An EmDash theme is the Astro project that `npm create emdash` produced
+([theme docs](https://docs.emdashcms.com/themes/overview/)). The project's `src/pages` are the site's pages.
+
+```console
+❯ Get-ChildItem -Name src\pages, src\pages\posts
+category
+pages
+posts
+tag
+404.astro
+index.astro
+rss.xml.ts
+search.astro
+[slug].astro
+index.astro
+```
+
+The post page, `src/pages/posts/[slug].astro`, just reads the post from EmDash and renders its Portable
+Text.
+
+```astro title="src/pages/posts/[slug].astro"
+---
+import { getEmDashEntry } from "emdash";
+import { PortableText } from "emdash/ui";
+
+const { entry: post } = await getEmDashEntry("posts", slug);
+---
+<PortableText value={post.data.content} />
+```
+
+There is no such thing as switching themes. The docs say there is no runtime theme package and no template
+hierarchy. The generated files are your site's own code, and you edit them like any Astro site. Unlike
+WordPress, no distributed theme PHP is loaded on the production server on every request. Astro pages do
+run on the server, though, so what goes in them is your responsibility: the sandbox protects against
+plugins, not themes.
+
+## Signing in with passkeys
+
+WordPress signs you in with a username and password. EmDash defaults to passkeys (WebAuthn)
+([authentication docs](https://docs.emdashcms.com/guides/authentication/)). First-run setup asks for a site
+name and an email address, then registers a passkey; on Windows, that brings up the Windows Hello dialog
+(the [Docker build post](/en/blog/docker-build) walked through it).
+
+EmDash users have no password to begin with, so there is nothing to reuse and nothing to leak. GitHub, Google and
+Microsoft sign-in, single-use email links that expire after 15 minutes, and Cloudflare Access are also
+available. The four roles, Administrator, Editor, Author and Contributor, closely match WordPress's.
+
+## Driving it from an AI agent
+
+EmDash is built on the assumption that AI agents will use it.
+
+### A built-in MCP server
+
+The `/_emdash/api/mcp` that the development server printed at startup is a built-in MCP server
+([MCP server docs](https://docs.emdashcms.com/reference/mcp-server/)). Connect an MCP client such as Claude
+Code and an agent can read and write posts.
+
+MCP speaks JSON-RPC. `create.json` holds a request that calls `content_create`, the tool that creates a
+post.
+
+```json title="create.json"
+{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"content_create","arguments":{"collection":"posts","data":{"title":"x"}}}}
+```
+
+Sent without credentials, it gets a 401.
+
+```console
+❯ curl.exe -s -i http://localhost:4321/_emdash/api/mcp -H "Content-Type: application/json" -d "@create.json" | Select-String "HTTP/|www-authenticate"
+HTTP/1.1 401 Unauthorized
+www-authenticate: Bearer resource_metadata="http://localhost:4321/.well-known/oauth-protected-resource"
+```
+
+Authentication is OAuth 2.1, or a personal access token created under Settings → API tokens in the admin
+screen. Tokens carry scopes. Here a read-only `content:read` token went into `$env:EMDASH_TOKEN`, and the
+same `create.json` was sent with it.
+
+```console
+❯ curl.exe -s http://localhost:4321/_emdash/api/mcp -H "Authorization: Bearer $env:EMDASH_TOKEN" -H "Accept: application/json, text/event-stream" -H "Content-Type: application/json" -d "@create.json"
+event: message
+data: {"result":{"_meta":{"code":"INSUFFICIENT_SCOPE"},"content":[{"type":"text","text":"[INSUFFICIENT_SCOPE] Insufficient scope: requires content:write"}],"isError":true},"jsonrpc":"2.0","id":1}
+```
+
+Without `content:write`, the call is refused. Hand an agent a read-only token and it cannot rewrite a post
+by mistake: the same idea as plugin permissions.
+
+### The CLI and Agent Skills
+
+The `emdash` CLI covers posts, schema, media, menus and more
+([CLI docs](https://docs.emdashcms.com/reference/cli/)); `emdash content get` above was one of its
+commands.
+
+A project made with `npm create emdash` also ships three guides for agents (Agent Skills).
+
+```console
+❯ Get-ChildItem -Name .agents\skills
+building-emdash-site
+creating-plugins
+emdash-cli
+```
+
+`AGENTS.md` describes the project's layout and rules. `.mcp.json` registers `https://docs.emdashcms.com/mcp`,
+an MCP server that searches the EmDash docs, and Claude Code picks it up automatically. Skills for moving a
+WordPress theme or plugin to EmDash are published in [emdash-cms/skills](https://docs.emdashcms.com/agent-skills/).
+
+There is also `@emdash-cms/x402`, which asks AI crawlers to pay with an HTTP 402 response
+([x402 docs](https://docs.emdashcms.com/guides/x402-payments/)). Its bot-only mode depends on Cloudflare's
+Bot Management.
+
+## WordPress and EmDash compared
+
+The differences so far, in one table:
+
+| | WordPress | EmDash |
+| --- | --- | --- |
+| Language | PHP | TypeScript (Astro) |
+| License | GPLv2 or later | MIT |
+| Runs on | A PHP and MySQL/MariaDB server | Cloudflare Workers or Node.js |
+| Database | MySQL, MariaDB | D1, SQLite, libSQL, PostgreSQL |
+| Post body | HTML with delimiter comments | Portable Text (JSON) |
+| Content types | One `wp_posts` table plus `wp_postmeta` | A table per collection |
+| Plugins | Can do anything WordPress can | Only declared permissions when sandboxed; anything when native |
+| Themes | PHP templates and `functions.php` | An Astro project |
+| Sign-in | Password | Passkeys, OAuth, email links |
+| For AI | Added through plugins | MCP server, CLI and Agent Skills included |
+
+## When WordPress is still the better choice
+
+EmDash is designed with WordPress's weak spots firmly in mind. Even so, there are plenty of cases where
+moving off WordPress today is not the right call.
+
+- **The plugin catalogue is far larger.** The WordPress.org plugin directory listed 71,902 plugins on
+  17 October 2026 (the count from the
+  [plugin API](https://api.wordpress.org/plugins/info/1.2/?action=query_plugins&request[per_page]=1)).
+  EmDash's registry only started with 1.0 and offers free plugins only for now
+- **Writers never have to touch code.** In WordPress you pick a theme in the admin screen and shape the
+  look in the block editor. An EmDash theme is an Astro project, so changing the look means writing code,
+  building and deploying again
+- **Sites built on dynamic blocks or shortcodes have to be rebuilt.** As shown above, only static content
+  comes across
+- **How well you are protected depends on where you run.** The sandbox on Cloudflare needs Workers Paid;
+  on Node.js, CPU time and other limits are not enforced; native plugins have no sandbox at all
+- **The tooling around it is young.** `@emdash-cms/plugin-cli`, which scaffolds plugins, is at 0.13.4, and
+  the `package.json` it generated pinned `emdash` to `<1.0.0` in its dev dependencies. The core is past 1.0,
+  but the plugin tooling is still 0.x
+
+On the other hand, for a new site written by its own team, with someone who can work on the code, EmDash
+is a serious candidate. Not having to trust every plugin author, keeping posts as JSON and letting agents
+work on the site safely are things WordPress does not offer.
+
+## Commands at a glance
+
+| Command | Description |
+| --- | --- |
+| `npm create emdash@latest <name> -- --template node:blog` | Create a blog project for Node.js |
+| `npm run dev` | Start the development server |
+| `npx emdash types` | Generate TypeScript types from the collections |
+| `npx emdash content list <collection>` | List posts |
+| `npx emdash content get <collection> <slug> --raw` | Print a post as raw Portable Text |
+| `npx emdash secrets generate` | Generate an encryption key |
+| `npx @emdash-cms/plugin-cli init <name>` | Scaffold a sandboxed plugin |
+| `npm run build` (in the plugin) | Build the plugin |
+
+## Summary
+
+- EmDash is Cloudflare's TypeScript CMS built on Astro. 1.0 came out in September 2026, under the MIT
+  license
+- A WordPress plugin, once activated, could read the database password and the administrator's password
+  hash, and write the configuration file
+- A sandboxed EmDash plugin only reaches the permissions and hosts it declares; plain `fetch()` and
+  `process` were both unavailable
+- A native plugin skips the sandbox, and there plain `fetch()` and the environment variables were both
+  available. On Node.js the sandbox needs `sandboxRunner`, and the CPU-time limit is only enforced on
+  Cloudflare
+- WordPress stores a body as HTML with comments; EmDash stores Portable Text JSON, in a real table per
+  collection
+- Importing WXR moved static blocks cleanly and turned dynamic ones such as "Latest Posts" into empty HTML
+  blocks
+- Sign-in uses passkeys, and the built-in MCP server lets an agent work through a token with narrowed scopes

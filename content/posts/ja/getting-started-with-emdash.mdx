@@ -1,0 +1,844 @@
+---
+title: EmDash 入門ガイド
+image: /thumbnails/getting-started-with-emdash.avif
+date: "2026-10-17"
+description: Cloudflare が「WordPress の後継」として作った CMS、EmDash を WordPress と並べて動かして比べる。プラグインのサンドボックスで何が止まるのか、記事がどんな形で保存されるのか、WordPress から取り込むと何が落ちるのか、パスキーと MCP サーバー、まだ WordPress を選ぶ場面まで
+tags:
+  - emdash
+  - wordpress
+  - cms
+  - astro
+  - cloudflare
+---
+
+## EmDash とは
+
+[EmDash](https://emdashcms.com/) は、Cloudflare が作っている CMS（コンテンツ管理システム）です。ブログや会社のサイトのように、管理画面で記事を書いて公開する仕組みを丸ごと提供します。WordPress と同じ種類の道具です。
+
+Cloudflare は、2026 年 4 月 1 日に EmDash を「[WordPress の精神的な後継](https://blog.cloudflare.com/emdash-wordpress/)」として発表しました。そのときはプレビュー版の v0.1.0 でした。2026 年 9 月 28 日に[1.0 が出て](https://blog.cloudflare.com/emdash-cms-plugin-registry/)、README には「安定していて本番で使える」と書かれています。8 月には、Cloudflare のブログそのものが [EmDash に移りました](https://blog.cloudflare.com/cloudflare-blog-uses-emdash/)。
+
+中身は、[Astro](https://astro.build/) の上に TypeScript で書かれています。ライセンスは MIT です（[GitHub](https://github.com/emdash-cms/emdash)）。WordPress のコードは 1 行も使っていないので、WordPress の GPL に縛られません。
+
+このブログでは、[Docker のビルドの記事](/ja/blog/docker-build)と [Docker Compose の記事](/ja/blog/docker-compose)で、EmDash を題材に使いました。そのときは、コンテナに入れて動かすことが目的で、EmDash そのものの話はほとんどしていません。この記事では、EmDash と WordPress を手元で並べて動かして、何が違うのかを確かめます。
+
+この記事は EmDash 1.3.0、WordPress 7.1.3、Node.js 26.12.0、Windows 11 の PowerShell で確かめています。
+
+## WordPress の何を変えようとしているのか
+
+WordPress は、いまでも Web で一番使われている CMS です。[W3Techs](https://w3techs.com/technologies/details/cm-wordpress) によると、2026 年 10 月 17 日の時点で、全サイトの 39.6% が WordPress で動いています。
+
+EmDash が変えようとしているのは、主に次の 3 つです。
+
+- **プラグインが何でもできる**。WordPress のプラグインは、WordPress 本体と同じ PHP のプロセスで動きます。データベースにも、ファイルにも、外のネットワークにも、制限なく触れます
+- **記事が HTML として保存される**。ブロックエディターの記事は、HTML の中にコメントでブロックの区切りを埋め込んだ形で保存されます（[ブロックエディターの文書](https://developer.wordpress.org/block-editor/explanations/architecture/data-flow/)）
+- **PHP と MySQL のサーバーが要る**。WordPress を動かすには、PHP 8.3 以上と、MySQL 8.0 以上か MariaDB 10.11 以上が推奨されています（[動作環境](https://wordpress.org/about/requirements/)）
+
+1 つ目が一番大きな問題です。WordPress のセキュリティ会社 Patchstack の[2026 年版のレポート](https://patchstack.com/whitepaper/state-of-wordpress-security-in-2026/)によると、2025 年に WordPress のまわりで見つかった脆弱性は 11,334 件で、そのうち 91% がプラグイン、9% がテーマでした。穴が見つかるのは、本体ではなくプラグインです。そして、そのプラグインが何でもできてしまうので、1 つの穴がサイト全体の穴になります。
+
+以下では、この 3 つが EmDash でどう変わったのかを、実際に動かして見ていきます。
+
+## 2 つを並べて起こす
+
+### WordPress を Docker で起こす
+
+WordPress は、公式の `wordpress` イメージと MySQL のイメージを Docker Compose で起こします。Compose については[前の記事](/ja/blog/docker-compose)で説明したので、ここでは `compose.yaml` だけ示します。`cli` は、WordPress をコマンドで操作する wp-cli のコンテナです。`profiles` を付けたので、`docker compose up` では起きず、`docker compose run` で呼んだときだけ動きます。
+
+```yaml title="compose.yaml"
+services:
+  wordpress:
+    image: wordpress:latest
+    ports:
+      - "8080:80"
+    environment:
+      WORDPRESS_DB_HOST: db
+      WORDPRESS_DB_USER: wordpress
+      WORDPRESS_DB_PASSWORD: wordpress
+      WORDPRESS_DB_NAME: wordpress
+    volumes:
+      - wp-html:/var/www/html
+    depends_on:
+      - db
+  db:
+    image: mysql:8.4
+    environment:
+      MYSQL_DATABASE: wordpress
+      MYSQL_USER: wordpress
+      MYSQL_PASSWORD: wordpress
+      MYSQL_RANDOM_ROOT_PASSWORD: "1"
+    volumes:
+      - wp-db:/var/lib/mysql
+  cli:
+    image: wordpress:cli
+    profiles: ["cli"]
+    user: "33:33"
+    environment:
+      WORDPRESS_DB_HOST: db
+      WORDPRESS_DB_USER: wordpress
+      WORDPRESS_DB_PASSWORD: wordpress
+      WORDPRESS_DB_NAME: wordpress
+    volumes:
+      - wp-html:/var/www/html
+    depends_on:
+      - db
+
+volumes:
+  wp-html:
+  wp-db:
+```
+
+`docker compose up -d` で起こします。
+
+```console
+❯ docker compose up -d
+...
+ Container wordpress-db-1 Started
+ Container wordpress-wordpress-1 Starting
+ Container wordpress-wordpress-1 Started
+❯ docker compose ps --format '{{.Service}} {{.Image}} {{.Status}}'
+db mysql:8.4 Up 3 seconds
+wordpress wordpress:latest Up 2 seconds
+```
+
+ブラウザで開くとインストールの画面になりますが、ここでは wp-cli の `wp core install` で済ませます。管理者のパスワードは、使い捨てのものを渡しています。
+
+```console
+❯ docker compose run --rm cli wp core install --url=http://localhost:8080 --title="WordPress Demo" --admin_user=admin --admin_password=... --admin_email=admin@example.test --skip-email
+Success: WordPress installed successfully.
+❯ docker compose run --rm cli wp core version
+7.1.3
+❯ docker compose exec wordpress php -v
+PHP 8.3.35 (cli) (built: Oct  6 2026 01:28:49) (NTS)
+```
+
+WordPress 7.1.3 が、PHP 8.3.35 の上で動いています。WordPress を動かすには、Web サーバーと PHP と MySQL の 3 つが要ります。
+
+### EmDash を npm create で作る
+
+EmDash は、`npm create emdash` でプロジェクトを作ります。`--template node:blog` は、Node.js で動かすブログのテンプレートという意味です。`--yes` だけにすると、既定の Cloudflare 向けのテンプレートになるので、`node:` を付けています。
+
+```console
+❯ npm create emdash@latest my-emdash -- --template node:blog --pm npm --yes
+
+  — E M D A S H —
+
+┌  Create a new EmDash project
+│
+◇  Project created!
+│
+●  Wrote EMDASH_ENCRYPTION_KEY to .env.
+│
+●  Installing dependencies with npm...
+...
+added 631 packages, and audited 632 packages in 7m
+...
+◆  Dependencies installed!
+│
+◇  Next steps ───╮
+│                │
+│  cd my-emdash  │
+│  npm run dev   │
+│                │
+├────────────────╯
+│
+└  Done! Your EmDash project is ready at my-emdash
+```
+
+プラグインの秘密情報を暗号化する鍵 `EMDASH_ENCRYPTION_KEY` も、`.env` に書き込まれました。[Docker のビルドの記事](/ja/blog/docker-build)では、この鍵を `emdash secrets generate` で作って環境変数で渡していましたが、`npm create` ならそれも済んでいます。
+
+`npm run dev` で開発サーバーを起こします。
+
+```console
+❯ npm run dev
+...
+  — E M D A S H —  v1.3.0
+
+  › Admin UI    http://localhost:4321/_emdash/admin
+  › MCP server  http://localhost:4321/_emdash/api/mcp
+  › Dev bypass  http://localhost:4321/_emdash/api/setup/dev-bypass?redirect=/_emdash/admin
+    Skips passkey setup/auth and signs you in as a dev admin
+```
+
+管理画面と並んで、MCP サーバーの URL が出ています。これは後で使います。`Dev bypass` は、開発サーバーでだけ使える入口で、パスキーの登録を飛ばして管理者としてログインします。この記事では、管理画面にはすべてこの入口から入っています。
+
+起こしたあとのプロジェクトの中身はこうです。
+
+```console
+❯ Get-ChildItem -Force -Name -Exclude node_modules
+.agents
+.astro
+.claude
+.cursor
+.vscode
+seed
+src
+uploads
+.env
+.gitignore
+.mcp.json
+AGENTS.md
+astro.config.mjs
+data.db
+data.db-shm
+data.db-wal
+emdash-env.d.ts
+package-lock.json
+package.json
+pnpm-workspace.yaml
+README.md
+tsconfig.json
+```
+
+データベースは SQLite の `data.db`、アップロードした画像は `uploads` に入ります。MySQL も PHP も要りません。EmDash は Astro の integration なので、管理画面も公開ページも API も、この 1 つの Node.js のプロセスが返します。
+
+設定は `astro.config.mjs` にあります。EmDash に関係するところを抜き出すと、こうです。
+
+```js title="astro.config.mjs"
+import emdash, { local } from "emdash/astro";
+import { sqlite } from "emdash/db";
+
+export default defineConfig({
+  output: "server",
+  integrations: [
+    react(),
+    emdash({
+      database: sqlite({ url: "file:./data.db" }),
+      storage: local({
+        directory: "./uploads",
+        baseUrl: "/_emdash/api/media/file",
+      }),
+    }),
+  ],
+})
+```
+
+`database` と `storage` を差し替えれば、置き場所を変えられます。[README](https://github.com/emdash-cms/emdash/blob/main/README.md) によると、データベースは Cloudflare の D1 のほかに SQLite、Turso/libSQL、PostgreSQL、ファイルの置き場所は R2 のほかに S3 互換のストレージとローカルのファイルが使えます。[Compose の記事](/ja/blog/docker-compose)では、ここを PostgreSQL にしていました。
+
+`AGENTS.md` と `.agents`、`.mcp.json` は、AI のコーディングエージェント向けのファイルです。これも後で触れます。
+
+## プラグインに何をさせないのか
+
+![EmDash の sandboxed プラグインは宣言した権限とホストの範囲でアクセスする。native プラグインはサンドボックスの外で動き、素の fetch や環境変数にアクセスできる](/emdash/plugin-permissions.avif)
+
+EmDash の一番の売りは、プラグインのサンドボックスです。同じことをするプラグインを両方に書いて、何ができて何ができないのかを比べます。
+
+### WordPress のプラグインは何でもできる
+
+WordPress のプラグインを 1 つ書きます。REST API に `/probe/v1/run` を足して、そこで次のことを試します。
+
+- 外のサイト（`httpbin.org`）に HTTP でアクセスできるか
+- データベースのパスワード `DB_PASSWORD` が見えるか
+- ユーザーのテーブルを読めるか
+- 管理者のパスワードのハッシュを読めるか
+- `wp-config.php` に書き込めるか
+
+```php title="wp-content/plugins/outbound-probe/outbound-probe.php"
+<?php
+/**
+ * Plugin Name: Outbound Probe
+ * Description: Shows what any active plugin can reach.
+ */
+
+add_action('rest_api_init', function () {
+    register_rest_route('probe/v1', '/run', [
+        'methods' => 'GET',
+        'permission_callback' => '__return_true',
+        'callback' => function () {
+            global $wpdb;
+            $response = wp_remote_get('https://httpbin.org/get');
+            return [
+                'wp_remote_get httpbin.org' => wp_remote_retrieve_response_code($response),
+                'DB_PASSWORD visible' => defined('DB_PASSWORD'),
+                'users table rows' => (int) $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->users}"),
+                'admin password hash prefix' => substr($wpdb->get_var("SELECT user_pass FROM {$wpdb->users} LIMIT 1"), 0, 4),
+                'can write wp-config.php' => is_writable(ABSPATH . 'wp-config.php'),
+            ];
+        },
+    ]);
+});
+```
+
+このファイルを WordPress の `wp-content/plugins` に置いて、`wp plugin activate` で有効にします。
+
+```console
+❯ docker compose run --rm cli wp plugin activate outbound-probe
+Success: Activated 1 of 1 plugins.
+❯ curl.exe -s "http://localhost:8080/?rest_route=/probe/v1/run" | ConvertFrom-Json | Format-List
+wp_remote_get httpbin.org  : 200
+DB_PASSWORD visible        : True
+users table rows           : 1
+admin password hash prefix : $wp$
+can write wp-config.php    : True
+```
+
+全部できました。外のサイトにアクセスでき、データベースのパスワードが見え、ユーザーのテーブルから管理者のパスワードのハッシュまで読めて、設定ファイルにも書き込めます。WordPress のプラグインには、権限という考え方がありません。有効にした時点で、WordPress 本体と同じことが全部できます。
+
+これはこのプラグインが悪いのではなく、WordPress の仕組みがそうなっています。だから、プラグインを入れるときは、そのプラグインの作者を信用するしかありません。
+
+### EmDash のプラグインは宣言した分だけ
+
+EmDash でも、同じことを試すプラグインを書きます。プラグインの雛形は、`@emdash-cms/plugin-cli` の `init` で作ります。`--publisher` には、プラグインのレジストリで使う AT Protocol の DID を渡します。ここではレジストリに公開しないので、ダミーの DID にしています。
+
+```console
+❯ npx @emdash-cms/plugin-cli@latest init outbound-probe --yes --publisher=did:plc:aaaaaaaaaaaaaaaaaaaaaaaa --author-name=Demo --security-email=security@example.com --description="Tries outbound requests from a sandboxed plugin" --package-manager=npm
+...
+✔ Scaffolded 13 files in C:\Users\Jam\emdash-demo\outbound-probe
+```
+
+権限は、`emdash-plugin.jsonc` に書きます。雛形では `capabilities` と `allowedHosts` が空で、何の権限も持っていません。ここでは、外へのアクセス `network:request` と、アクセスしてよいホストとして `example.com` だけを足します。
+
+```jsonc title="emdash-plugin.jsonc"
+{
+  "$schema": "./node_modules/@emdash-cms/plugin-cli/schemas/emdash-plugin.schema.json",
+
+  "slug": "outbound-probe",
+  "publisher": "did:plc:aaaaaaaaaaaaaaaaaaaaaaaa",
+
+  "license": "MIT",
+  "author": { "name": "Demo" },
+  "security": { "email": "security@example.com" },
+  "description": "Tries outbound requests from a sandboxed plugin",
+
+  "capabilities": ["network:request"],
+  "allowedHosts": ["example.com"],
+  "storage": {}
+}
+```
+
+`capabilities` に書ける権限には、記事を読む `content:read`、書く `content:write`、メールを送る `email:send` などがあります（[一覧](https://docs.emdashcms.com/plugins/creating-plugins/capabilities/)）。書いていない権限は使えません。
+
+プラグインの本体では、ルートを 1 つ作って、次のことを試します。
+
+- EmDash が渡す `ctx.http.fetch` で、`example.com` と `httpbin.org` にアクセスできるか
+- 素の `fetch()` で `httpbin.org` にアクセスできるか
+- `process` があるか、`process.env` から暗号化の鍵が見えるか
+
+```ts title="src/plugin.ts"
+import type { SandboxedPlugin } from "emdash/plugin";
+
+async function attempt(label: string, run: () => Promise<Response>) {
+  try {
+    const res = await run();
+    if (res.ok) {
+      return `${label}: ${res.status}`;
+    }
+    return `${label}: ${res.status} ${(await res.text()).slice(0, 200)}`;
+  } catch (error) {
+    return `${label}: ${(error as Error).message}`;
+  }
+}
+
+const plugin: SandboxedPlugin = {
+  routes: {
+    probe: {
+      handler: async (_routeCtx, ctx) => {
+        const http = ctx.http;
+        return {
+          results: [
+            http
+              ? await attempt("ctx.http.fetch example.com", () => http.fetch("https://example.com/"))
+              : "ctx.http: undefined",
+            http
+              ? await attempt("ctx.http.fetch httpbin.org", () => http.fetch("https://httpbin.org/get"))
+              : "ctx.http: undefined",
+            await attempt("fetch httpbin.org", () => fetch("https://httpbin.org/get")),
+            `typeof process: ${typeof (globalThis as { process?: unknown }).process}`,
+            `EMDASH_ENCRYPTION_KEY visible: ${Boolean((globalThis as { process?: { env: Record<string, string | undefined> } }).process?.env.EMDASH_ENCRYPTION_KEY)}`,
+          ],
+        };
+      },
+    },
+  },
+};
+
+export default plugin;
+```
+
+`npm run build` でビルドすると、`dist/index.mjs` にプラグインの説明（descriptor）ができます。宣言した権限が、そのまま入っています。
+
+```console
+❯ npm run build
+...
+✔ Plugin built: did:plc:aaaaaaaaaaaaaaaaaaaaaaaa/outbound-probe@0.1.0
+❯ Get-Content dist/index.mjs
+...
+const descriptor = Object.freeze({
+	"id": "outbound-probe",
+	"version": "0.1.0",
+	"format": "standard",
+	"entrypoint": "outbound-probe/sandbox",
+	"capabilities": [
+		"network:request"
+	],
+	"allowedHosts": [
+		"example.com"
+	],
+	"storage": {},
+	"hooks": [],
+	"routes": [
+		"probe"
+	]
+});
+
+export default descriptor;
+```
+
+### Node.js でサンドボックスを有効にする
+
+Node.js で EmDash を動かすときは、サンドボックスは**自分で有効にしないと使えません**（[文書](https://docs.emdashcms.com/deployment/plugin-sandbox/)）。Cloudflare Workers の実行環境である [workerd](https://github.com/cloudflare/workerd) を子プロセスとして起こし、その中でプラグインを動かします。開発サーバー（`astro dev`）では、workerd を内蔵した Miniflare がその役をします。この記事の結果は、開発サーバーで取ったものです。まず、ランナーのパッケージと、作ったプラグインを入れます。
+
+```console
+❯ npm install @emdash-cms/sandbox-workerd workerd ../outbound-probe
+...
+npm warn install-scripts 2 packages have install scripts not yet covered by allowScripts:
+npm warn install-scripts   workerd@1.20261016.1 (postinstall: node install.js)
+npm warn install-scripts   workerd@1.20260730.1 (postinstall: node install.js)
+```
+
+npm 11.20 は、許していない依存の `postinstall` を動かさずに警告します。workerd の実行ファイルは、OS ごとのパッケージ（Windows なら `@cloudflare/workerd-windows-64`）から入るので、このままで動きました。
+
+`astro.config.mjs` で、`sandboxRunner` に workerd のランナーを指定して、プラグインを `sandboxed` に並べます。
+
+```js title="astro.config.mjs"
+import emdash, { local } from "emdash/astro";
+import { sqlite } from "emdash/db";
+import outboundProbe from "outbound-probe";
+
+export default defineConfig({
+  integrations: [
+    react(),
+    emdash({
+      database: sqlite({ url: "file:./data.db" }),
+      storage: local({
+        directory: "./uploads",
+        baseUrl: "/_emdash/api/media/file",
+      }),
+      sandboxRunner: "@emdash-cms/sandbox-workerd/sandbox",
+      sandboxed: [outboundProbe],
+    }),
+  ],
+})
+```
+
+開発サーバーを起こし直すと、宣言した権限つきでプラグインが読み込まれます。
+
+```console
+❯ npm run dev
+...
+EmDash: Loaded sandboxed plugin outbound-probe:0.1.0 with capabilities: [network:request]
+```
+
+プラグインのルートは `/_emdash/api/plugins/<プラグインの ID>/<ルート名>` です。ログインしていないと呼べないので、`curl.exe` で開発用の入口を通ってクッキーを受け取り、それを付けて呼びます。`X-EmDash-Request` ヘッダーは CSRF 対策で、付けないと `CSRF_REJECTED` で断られます。
+
+```console
+❯ curl.exe -s -c cookies.txt -o NUL "http://localhost:4321/_emdash/api/setup/dev-bypass"
+❯ (curl.exe -s -b cookies.txt -H "X-EmDash-Request: 1" http://localhost:4321/_emdash/api/plugins/outbound-probe/probe | ConvertFrom-Json).data.results
+ctx.http.fetch example.com: 200
+ctx.http.fetch httpbin.org: Bridge call http/fetch failed: {"error":"Plugin \"outbound-probe\" is not allowed to fetch from host \"httpbin.org\". Allowed hosts: example.com"}
+fetch httpbin.org: 403 Direct fetch() blocked in sandbox. Plugin "outbound-probe" must use ctx.http.fetch() (requires network:request capability).
+typeof process: undefined
+EMDASH_ENCRYPTION_KEY visible: false
+```
+
+1 行ずつ読みます。
+
+- 宣言した `example.com` には届いた
+- 宣言していない `httpbin.org` には、`ctx.http.fetch` でも届かなかった。許されているホストは `example.com` だけ、と返ってきている
+- 素の `fetch()` は、サンドボックスが 403 を返して止めた。外へ出るなら `ctx.http.fetch()` を使え、と書いてある
+- `process` が無いので、環境変数に置いた暗号化の鍵も見えない
+
+サンドボックスの中のプラグインは、データベースにも直接は触れません。記事を読むなら `content:read` を宣言して、EmDash が渡す API を通します。Node.js の組み込みモジュールも使えないので、ファイルにも触れません（[インストール方法の比較](https://docs.emdashcms.com/plugins/installing/)）。WordPress では全部できたことが、ここでは宣言しない限りできません。
+
+### native にすると、また何でもできる
+
+EmDash のプラグインには、もう 1 つ **native** という形があります。`sandboxed` ではなく `plugins` に並べると、サンドボックスに入らず、EmDash と同じプロセスで動きます。管理画面に React のページを足したり、Portable Text の描画を変えたりするには native が要ります（[プラグインの概要](https://docs.emdashcms.com/plugins/overview/)）。
+
+同じプラグインを `plugins` に移して、もう一度呼びます。
+
+```js title="astro.config.mjs"
+      sandboxRunner: "@emdash-cms/sandbox-workerd/sandbox",
+      plugins: [outboundProbe],
+```
+
+```console
+❯ (curl.exe -s -b cookies.txt -H "X-EmDash-Request: 1" http://localhost:4321/_emdash/api/plugins/outbound-probe/probe | ConvertFrom-Json).data.results
+ctx.http.fetch example.com: 200
+ctx.http.fetch httpbin.org: Plugin "outbound-probe" is not allowed to fetch from host "httpbin.org". Allowed hosts: example.com
+fetch httpbin.org: 200
+typeof process: object
+EMDASH_ENCRYPTION_KEY visible: true
+```
+
+`ctx.http.fetch` の制限は残っていますが、それは `ctx.http.fetch` が自分で確かめているだけです。素の `fetch()` を使えば `httpbin.org` に届き、`process.env` から暗号化の鍵まで見えました。native のプラグインは、WordPress のプラグインと同じで、入れた時点でサイトと同じことができます。
+
+だから、EmDash のプラグインが安全なのは、**サンドボックスに入れたときだけ**です。どちらに並べるかは、サイトを作る人が決めます。管理画面のレジストリから入れるプラグインは、必ずサンドボックスで動きます。レジストリから入れるときは、プラグインが求める権限が表示されて、管理者が承認します（[1.0 の発表](https://blog.cloudflare.com/emdash-cms-plugin-registry/)）。
+
+### Cloudflare と Node.js で効く制限が違う
+
+サンドボックスには、プラグインを 1 回呼ぶごとの制限もあります。ただし、どれが効くかは動かす場所で違います（[文書](https://docs.emdashcms.com/deployment/plugin-sandbox/)）。
+
+| 制限 | 値 | Cloudflare Workers | Node.js |
+| --- | --- | --- | --- |
+| CPU 時間 | 50 ms | 効く | 効かない |
+| サブリクエストの数 | 10 | 効く | 効かない |
+| 実時間 | 30 秒 | 効く | 効く |
+| メモリ | 128 MB | プラグインごとには効かない | 効かない |
+
+この表のとおりなら、Node.js では、無限ループするプラグインがあっても、30 秒経つまで CPU を使い続けられることになります（ここは試していません）。権限の境界は同じですが、資源の制限は Cloudflare のほうが厳しいです。
+
+逆に、Cloudflare でサンドボックスを使うには、Workers の有料プラン（Workers Paid）が要ります。プラグインごとの Worker を作る Dynamic Workers が、有料プランの機能だからです。Cloudflare 向けのテンプレートは、この設定をコメントアウトした状態で作られるので、無料プランのままだと、サンドボックスのプラグインは動きません。
+
+## 記事はどんな形で保存されるのか
+
+![WordPress は本文を HTML とコメントとして保存し、EmDash は Portable Text の JSON として保存する。動的ブロックの移行には再実装が必要](/emdash/content-storage.avif)
+
+次は、記事の保存のされ方を比べます。WordPress で 1 本書いて、それを EmDash に取り込み、両方のデータベースの中を見ます。
+
+### WordPress は HTML とコメント
+
+WordPress に記事を 1 本作ります。段落、見出し、箇条書き、コードに加えて、最後に「最新の投稿」のブロックを置きました。このブロックの中身は保存されず、表示するたびに PHP が最新の記事の一覧を作ります。ブロックエディターが保存するのと同じ形の HTML を `post.html` に書いておき、`wp post create -` に標準入力で渡します。
+
+```console
+❯ Get-Content -Raw post.html | docker compose run --rm -T cli wp post create - --post_title="Hello from WordPress" --post_status=publish --post_author=1 --porcelain
+7
+```
+
+記事の ID は 7 になりました。MySQL で、保存された本文を見ます。
+
+```console
+❯ docker compose exec db mysql -uwordpress -pwordpress wordpress -e "SELECT post_content FROM wp_posts WHERE ID = 7\G"
+mysql: [Warning] Using a password on the command line interface can be insecure.
+*************************** 1. row ***************************
+post_content: <!-- wp:paragraph -->
+<p>This post was written in <strong>WordPress</strong> and moved to <a href="https://emdashcms.com/">EmDash</a>.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:heading -->
+<h2 class="wp-block-heading">What moves</h2>
+<!-- /wp:heading -->
+
+<!-- wp:list -->
+<ul class="wp-block-list"><!-- wp:list-item -->
+<li>Paragraphs and headings</li>
+<!-- /wp:list-item -->
+
+<!-- wp:list-item -->
+<li>Lists and links</li>
+<!-- /wp:list-item --></ul>
+<!-- /wp:list -->
+
+<!-- wp:code -->
+<pre class="wp-block-code"><code>npm create emdash@latest</code></pre>
+<!-- /wp:code -->
+
+<!-- wp:latest-posts {"postsToShow":3} /-->
+```
+
+本文は、1 つの HTML の文字列です。`<!-- wp:paragraph -->` のようなコメントが、ブロックの区切りと種類を表しています。ブロックの設定は、`{"postsToShow":3}` のように、コメントの中に JSON で書かれます。最後の「最新の投稿」は、コメントだけで中身がありません。
+
+HTML なので、ブラウザにはそのまま出せます。そのかわり、別のところで使うには HTML を解析し直す必要があります。たとえば、アプリに記事を出したいとき、`<strong>` や `class="wp-block-list"` をどう扱うかを、受け取る側が決めなければいけません。
+
+### WXR で書き出して EmDash に取り込む
+
+WordPress には、記事を XML で書き出す機能があります。この形式を WXR（WordPress eXtended RSS）と呼びます。管理画面の「ツール」→「エクスポート」と同じものを、wp-cli で書き出します。
+
+```console
+❯ docker compose run --rm -T cli wp export --stdout --post_type=post > export.xml
+❯ (Select-String -Path export.xml -Pattern "<item>").Count
+2
+```
+
+最初からある「Hello world!」と、さっき作った記事の 2 本が入っています。
+
+EmDash の管理画面で「WordPress からインポート」（`/_emdash/admin/import/wordpress`）を開き、この `export.xml` をアップロードします。WordPress のサイトに EmDash Exporter プラグインを入れて、つないで取り込む方法もあります。こちらは、SEO の設定や ACF のカスタムフィールドまで運べます（[移行の文書](https://docs.emdashcms.com/migration/from-wordpress/)）。
+
+アップロードすると、何を取り込むかの確認になります。WordPress の `post` を、EmDash の `posts` コレクションに入れる、と出ています。
+
+![EmDash の管理画面の「WordPress からインポート」の確認画面。サイト名 WordPress Demo と http://localhost:8080 の下に、インポートするコンテンツとして post 2 件が posts に入ることと、準備完了の表示がある。下にインポートを開始のボタン](/emdash/import-review.avif)
+
+次に、WordPress の投稿者を EmDash のユーザーに割り当てて、取り込みを続けます。終わると、2 件を取り込んだと出ます。
+
+![インポート完了の画面。2 件のコンテンツをインポート、コンテンツタイプ別の件数として posts が 2 件と表示されている](/emdash/import-done.avif)
+
+### EmDash は Portable Text の JSON
+
+取り込んだ記事を、EmDash の CLI で見ます。`emdash content get` は、本文を Markdown にして見せます。
+
+```console
+❯ npx emdash content get posts hello-from-wordpress
+{
+  "id": "01M53TBZAZENP270NTT1NMA5VZ",
+  "type": "posts",
+  "slug": "hello-from-wordpress",
+  "status": "published",
+  "data": {
+    "title": "Hello from WordPress",
+    "content": "This post was written in **WordPress** and moved to [EmDash](https://emdashcms.com/).\n\n## What moves\n\n- Paragraphs and headings\n- Lists and links\n\n```\nnpm create emdash@latest\n```\n\n<!--ec:block {\"_type\":\"htmlBlock\",\"_key\":\"key-15-bfs6l\",\"html\":\"<!-- wp:latest-posts {\\\"postsToShow\\\":3} /-->\",\"originalBlockName\":\"core/latest-posts\",\"originalAttrs\":{\"postsToShow\":3}} -->\n"
+  },
+  "authorId": "01M53NMH9M5JNF1H8TDX5YYEZX",
+...
+}
+```
+
+これは表示のための変換です。`--raw` を付けると、保存されている形そのものが出ます。
+
+```console
+❯ npx emdash content get posts hello-from-wordpress --raw
+...
+    "content": [
+      {
+        "_type": "block",
+        "_key": "key-7-188p7",
+        "style": "normal",
+        "children": [
+          { "_type": "span", "_key": "key-1-f3yvm", "text": "This post was written in " },
+          { "_type": "span", "_key": "key-2-qmvfx", "text": "WordPress", "marks": ["strong"] },
+          { "_type": "span", "_key": "key-3-1otn9", "text": " and moved to " },
+          { "_type": "span", "_key": "key-5-8l3lu", "text": "EmDash", "marks": ["key-4-nyuvd"] },
+          { "_type": "span", "_key": "key-6-kndu0", "text": "." }
+        ],
+        "markDefs": [
+          { "_type": "link", "_key": "key-4-nyuvd", "href": "https://emdashcms.com/" }
+        ]
+      },
+      {
+        "_type": "block",
+        "_key": "key-9-nkz11",
+        "style": "h2",
+        "children": [{ "_type": "span", "_key": "key-8-dc6we", "text": "What moves" }]
+      },
+      {
+        "_type": "block",
+        "_key": "key-11-bhzzy",
+        "style": "normal",
+        "listItem": "bullet",
+        "level": 1,
+        "children": [{ "_type": "span", "_key": "key-10-y2hci", "text": "Paragraphs and headings" }]
+      },
+      {
+        "_type": "block",
+        "_key": "key-13-mxxbk",
+        "style": "normal",
+        "listItem": "bullet",
+        "level": 1,
+        "children": [{ "_type": "span", "_key": "key-12-d1qu1", "text": "Lists and links" }]
+      },
+      {
+        "_type": "code",
+        "_key": "key-14-o3k5t",
+        "code": "npm create emdash@latest"
+      },
+      {
+        "_type": "htmlBlock",
+        "_key": "key-15-bfs6l",
+        "html": "<!-- wp:latest-posts {\"postsToShow\":3} /-->",
+        "originalBlockName": "core/latest-posts",
+        "originalAttrs": { "postsToShow": 3 }
+      }
+    ]
+...
+```
+
+（読みやすいように、短い要素は 1 行にまとめています）
+
+これが [Portable Text](https://www.portabletext.org/) です。本文は HTML の文字列ではなく、ブロックの配列になっています。
+
+- 段落は `"_type": "block"` で、文字は `span` に分かれる。太字は `"marks": ["strong"]`
+- リンクは、`markDefs` に URL を置いて、`span` からキーで指す
+- 見出しは `"style": "h2"`、箇条書きは `"listItem": "bullet"`
+- コードは `"_type": "code"` という別の種類のブロック
+
+HTML のタグもクラス名もありません。どう表示するかは、受け取った側が決めます。EmDash のテーマは、これを `<PortableText value={post.data.content} />` で HTML にしています。アプリに出すなら、アプリの部品にすればよいです。
+
+### 動的なブロックは中身が無くなる
+
+最後のブロックを見てください。WordPress の「最新の投稿」は、`htmlBlock` になって、もとの HTML のコメントがそのまま入っています。このブロックは、WordPress では PHP が表示のたびに一覧を作っていました。EmDash にはその PHP が無いので、作り直しようがありません。
+
+両方の公開ページを並べると、違いが見えます。WordPress では、コードの下に記事の一覧が出ています。
+
+![WordPress で表示した Hello from WordPress の記事。Written by admin in Uncategorized の下に、本文の段落、What moves の見出し、2 つの箇条書き、npm create emdash@latest のコードが並び、その下に Hello from WordPress と Hello world! の 2 つのリンクが一覧として出ている](/emdash/wp-post.avif)
+
+EmDash では、コードの下に何も出ず、すぐにコメント欄になります。
+
+![EmDash で表示した同じ記事。本文の段落、What moves の見出し、2 つの箇条書き、npm create emdash@latest のコードまでは同じだが、その下は空白で、すぐに DISCUSSION と No comments yet のコメント欄になっている](/emdash/emdash-post.avif)
+
+ページの HTML を見ると、そこには空の `<div class="emdash-html-block"></div>` があるだけでした。[移行の文書](https://docs.emdashcms.com/migration/from-wordpress/)にも、サーバーで描画するブロックやプラグインのブロックは、サイトに何も出ない HTML ブロックになると書かれています。ほかに、文書には次のことも書かれています。
+
+- 予約投稿や非公開の記事は、下書きになる。予約の日時は作り直されない
+- WXR での取り込みでは、任意のカスタムフィールドは運ばれない（Exporter プラグインなら運べる）
+- ACF の関連や画像のフィールドは、WordPress の ID や URL のまま残る
+
+段落や見出しのような静的なブロックはきれいに移りますが、プラグインやショートコードに頼った部分は、EmDash 側で作り直す必要があります。
+
+### コレクションは本物のテーブル
+
+もう 1 つの違いは、記事の種類の持ち方です。WordPress は、投稿も固定ページもカスタム投稿タイプも、全部 `wp_posts` という 1 つのテーブルに入れて、追加の項目は `wp_postmeta` にキーと値で入れます。
+
+EmDash では、コレクション（記事の種類）ごとに、本物の SQL のテーブルができます（[コンテンツモデル](https://docs.emdashcms.com/concepts/content-model/)）。`posts` コレクションなら `ec_posts` です。Node.js の組み込みの `node:sqlite` で、列を見ます。
+
+```console
+❯ node -e "const { DatabaseSync } = require('node:sqlite'); const db = new DatabaseSync('data.db', { readOnly: true }); console.log(db.prepare('PRAGMA table_info(ec_posts)').all().map((c) => c.name + ' ' + c.type).join('\n'))"
+id TEXT
+slug TEXT
+status TEXT
+author_id TEXT
+primary_byline_id TEXT
+created_at TEXT
+updated_at TEXT
+published_at TEXT
+scheduled_at TEXT
+deleted_at TEXT
+version INTEGER
+live_revision_id TEXT
+draft_revision_id TEXT
+locale TEXT
+translation_group TEXT
+title TEXT
+featured_image TEXT
+content json
+excerpt TEXT
+```
+
+上の方は EmDash が管理する列で、`title`、`featured_image`、`content`、`excerpt` が、ブログのテンプレートが定義した項目です。管理画面で項目を足すと、この表に列が増えます。`content` の型が `json` になっていて、さっきの Portable Text がここに入っています。
+
+項目を足したら、`npx emdash types` で TypeScript の型を作り直せます。テーマのコードから記事を読むとき、`post.data.title` が型つきで書けます。
+
+## テーマは Astro のプロジェクトそのもの
+
+WordPress のテーマは、`functions.php` と、テンプレートの PHP ファイルの集まりです。`functions.php` はテーマが有効なあいだ毎回読み込まれる PHP なので、プラグインと同じで何でもできます。
+
+EmDash のテーマは、`npm create emdash` で作られた Astro のプロジェクトそのものです（[テーマの文書](https://docs.emdashcms.com/themes/overview/)）。さっき作ったプロジェクトの `src/pages` が、そのままサイトのページになっています。
+
+```console
+❯ Get-ChildItem -Name src\pages, src\pages\posts
+category
+pages
+posts
+tag
+404.astro
+index.astro
+rss.xml.ts
+search.astro
+[slug].astro
+index.astro
+```
+
+記事のページ `src/pages/posts/[slug].astro` は、EmDash から記事を読んで、Portable Text を描画しているだけです。
+
+```astro title="src/pages/posts/[slug].astro"
+---
+import { getEmDashEntry } from "emdash";
+import { PortableText } from "emdash/ui";
+
+const { entry: post } = await getEmDashEntry("posts", slug);
+---
+<PortableText value={post.data.content} />
+```
+
+テーマを「切り替える」という仕組みはありません。文書にも、実行時に読み込むテーマのパッケージや、テンプレートの階層は無いと書かれています。作られたファイルは自分のサイトのコードで、普通の Astro のサイトとして書き換えます。WordPress のように、配布されたテーマの PHP が本番のサーバーで毎回読み込まれる、ということはありません。ただし、Astro のページはサーバーで動くコードなので、そこに何を書くかは自分の責任です。サンドボックスで守られるのはプラグインで、テーマではありません。
+
+## ログインはパスキー
+
+WordPress のログインは、ユーザー名とパスワードです。EmDash は、パスキー（WebAuthn）が基本です（[認証の文書](https://docs.emdashcms.com/guides/authentication/)）。最初のセットアップでは、サイト名とメールアドレスを入れて、パスキーを登録します。Windows なら Windows Hello のダイアログが出ます（[Docker のビルドの記事](/ja/blog/docker-build)で通った手順です）。
+
+EmDash のユーザーは、そもそもパスワードを持っていません。だから、パスワードの使い回しや、流出したパスワードでのログインが起きません。ほかに、GitHub、Google、Microsoft でのログイン、メールで届く 1 回限りのリンク（15 分で切れる）、Cloudflare Access も使えます。ユーザーの役割は、管理者、編集者、投稿者、寄稿者の 4 つで、WordPress とほぼ同じです。
+
+## AI のエージェントから操作する
+
+EmDash は、AI のエージェントから使われることを前提に作られています。
+
+### MCP サーバーが入っている
+
+開発サーバーを起こしたときに出ていた `/_emdash/api/mcp` が、組み込みの MCP サーバーです（[MCP サーバーの文書](https://docs.emdashcms.com/reference/mcp-server/)）。Claude Code のような MCP のクライアントをつなぐと、エージェントが記事を読んだり書いたりできます。
+
+MCP は JSON-RPC でやりとりします。記事を作るツール `content_create` を呼ぶリクエストを、`create.json` に書いておきます。
+
+```json title="create.json"
+{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"content_create","arguments":{"collection":"posts","data":{"title":"x"}}}}
+```
+
+まず、認証なしで送ります。401 が返ります。
+
+```console
+❯ curl.exe -s -i http://localhost:4321/_emdash/api/mcp -H "Content-Type: application/json" -d "@create.json" | Select-String "HTTP/|www-authenticate"
+HTTP/1.1 401 Unauthorized
+www-authenticate: Bearer resource_metadata="http://localhost:4321/.well-known/oauth-protected-resource"
+```
+
+認証は、OAuth 2.1 か、管理画面の「設定」→「API トークン」で作る個人用のトークンです。トークンには範囲（スコープ）を付けます。ここでは、読むだけの `content:read` のトークンを作って、`$env:EMDASH_TOKEN` に入れました。同じ `create.json` を、このトークンを付けて送ります。
+
+```console
+❯ curl.exe -s http://localhost:4321/_emdash/api/mcp -H "Authorization: Bearer $env:EMDASH_TOKEN" -H "Accept: application/json, text/event-stream" -H "Content-Type: application/json" -d "@create.json"
+event: message
+data: {"result":{"_meta":{"code":"INSUFFICIENT_SCOPE"},"content":[{"type":"text","text":"[INSUFFICIENT_SCOPE] Insufficient scope: requires content:write"}],"isError":true},"jsonrpc":"2.0","id":1}
+```
+
+`content:write` が無いので断られました。エージェントに渡すトークンを読むだけにしておけば、エージェントが間違って記事を書き換えることはありません。プラグインの権限と同じ考え方です。
+
+### CLI と Agent Skills
+
+`emdash` の CLI でも、記事、スキーマ、画像、メニューなどを操作できます（[CLI の文書](https://docs.emdashcms.com/reference/cli/)）。さっきの `emdash content get` がその 1 つです。
+
+`npm create emdash` で作ったプロジェクトには、エージェント向けの手引き（Agent Skills）が 3 つ入っています。
+
+```console
+❯ Get-ChildItem -Name .agents\skills
+building-emdash-site
+creating-plugins
+emdash-cli
+```
+
+`AGENTS.md` には、プロジェクトの構成とルールが書いてあります。`.mcp.json` には、EmDash の文書を検索する MCP サーバー `https://docs.emdashcms.com/mcp` が登録されていて、Claude Code はこれを自動で見つけます。WordPress のテーマやプラグインを EmDash に移すための Skill も、[emdash-cms/skills](https://docs.emdashcms.com/agent-skills/) で配られています。
+
+ほかに、AI のクローラーに HTTP 402 で料金を求める `@emdash-cms/x402` もあります（[x402 の文書](https://docs.emdashcms.com/guides/x402-payments/)）。ボットだけに料金を求めるモードは、Cloudflare の Bot Management が前提です。
+
+## WordPress と EmDash の比較
+
+ここまでの違いをまとめます。
+
+| | WordPress | EmDash |
+| --- | --- | --- |
+| 言語 | PHP | TypeScript（Astro） |
+| ライセンス | GPLv2 以降 | MIT |
+| 動かす場所 | PHP と MySQL/MariaDB のサーバー | Cloudflare Workers、または Node.js |
+| データベース | MySQL、MariaDB | D1、SQLite、libSQL、PostgreSQL |
+| 本文の保存 | HTML と、区切りのコメント | Portable Text（JSON） |
+| 記事の種類 | `wp_posts` 1 つと `wp_postmeta` | コレクションごとのテーブル |
+| プラグイン | 本体と同じ権限で何でもできる | サンドボックスなら宣言した権限だけ。native なら何でもできる |
+| テーマ | PHP のテンプレートと `functions.php` | Astro のプロジェクト |
+| ログイン | パスワード | パスキー、OAuth、メールのリンク |
+| AI 向け | プラグインで足す | MCP サーバー、CLI、Agent Skills が入っている |
+
+## まだ WordPress を選ぶ場面
+
+EmDash は、WordPress の弱いところをよく考えて作られています。それでも、いま WordPress から乗り換えるべきかというと、そうでない場面も多いです。
+
+- **プラグインの数が違う**。WordPress.org のプラグインのディレクトリには、2026 年 10 月 17 日の時点で 71,902 個のプラグインがあります（[プラグインの API](https://api.wordpress.org/plugins/info/1.2/?action=query_plugins&request[per_page]=1) の件数）。EmDash のレジストリは 1.0 で始まったばかりで、いまは無料のプラグインだけです
+- **書く人がコードを触らずに済む**。WordPress は、テーマを管理画面で選んで、ブロックエディターで見た目まで作れます。EmDash のテーマは Astro のプロジェクトなので、見た目を変えるにはコードを書いて、ビルドして、デプロイし直す必要があります
+- **動的なブロックやショートコードに頼っているサイトは、移すと作り直しになる**。上で見たとおり、取り込めるのは静的な中身までです
+- **どこで動かすかで、守りの強さが変わる**。Cloudflare でサンドボックスを使うには Workers の有料プランが要り、Node.js では CPU 時間などの制限が効きません。native のプラグインには、サンドボックスがありません
+- **周りの道具が若い**。プラグインの雛形を作る `@emdash-cms/plugin-cli` は 0.13.4 で、作られる `package.json` は開発用の依存に `emdash` の `<1.0.0` を指定していました。本体は 1.0 を越えていますが、プラグインまわりの道具はまだ 0.x です
+
+逆に、これから新しく作るサイトで、記事を書くのも自分たちで、コードを触れる人もいるなら、EmDash は十分に候補になります。プラグインを入れるたびに作者を信用しなくて済むこと、記事が JSON で残ること、エージェントから安全に操作できることは、WordPress にはない利点です。
+
+## よく使うコマンド
+
+| コマンド | 説明 |
+| --- | --- |
+| `npm create emdash@latest <名前> -- --template node:blog` | Node.js 向けのブログのプロジェクトを作る |
+| `npm run dev` | 開発サーバーを起こす |
+| `npx emdash types` | コレクションから TypeScript の型を作る |
+| `npx emdash content list <コレクション>` | 記事の一覧を出す |
+| `npx emdash content get <コレクション> <スラッグ> --raw` | 記事を Portable Text のまま出す |
+| `npx emdash secrets generate` | 暗号化の鍵を作る |
+| `npx @emdash-cms/plugin-cli init <名前>` | サンドボックスのプラグインの雛形を作る |
+| `npm run build`（プラグインの中で） | プラグインをビルドする |
+
+## まとめ
+
+- EmDash は、Cloudflare が作っている、Astro の上の TypeScript の CMS。2026 年 9 月に 1.0 が出て、ライセンスは MIT
+- WordPress のプラグインは、有効にした時点でデータベースのパスワードも管理者のパスワードのハッシュも読め、設定ファイルにも書き込めた
+- EmDash のサンドボックスのプラグインは、宣言した権限とホストにしか届かない。素の `fetch()` も `process` も使えなかった
+- ただし、native のプラグインはサンドボックスに入らないので、素の `fetch()` も環境変数も使えた。Node.js でサンドボックスを使うには `sandboxRunner` の設定が要り、CPU 時間の制限は Cloudflare でしか効かない
+- WordPress の本文は HTML とコメント、EmDash の本文は Portable Text の JSON。コレクションごとに本物のテーブルができる
+- WXR で取り込むと、静的なブロックはきれいに移り、「最新の投稿」のような動的なブロックは空の HTML ブロックになった
+- ログインはパスキー。MCP サーバーが入っていて、スコープを絞ったトークンでエージェントに操作させられる
