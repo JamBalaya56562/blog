@@ -126,8 +126,9 @@ wordpress wordpress:latest Up 2 seconds
 
 Opening it in a browser would show the installer. wp-cli's `wp core install` does the same job here, with
 a throwaway admin password. `depends_on` only waits for the MySQL container to start, not for MySQL to
-accept connections, so running this straight after `docker compose up -d` fails with
-`Error establishing a database connection` (it did once while recording). Give MySQL a moment first.
+accept connections. If `wp core install` starts while MySQL is still initializing, it exits with
+`Error establishing a database connection`. That happened once while recording, when it ran straight after
+`docker compose up -d`; running the same command again a little later succeeded, as shown below.
 
 ```console
 ❯ docker compose run --rm cli wp core install --url=http://localhost:8080 --title="WordPress Demo" --admin_user=admin --admin_password=... --admin_email=admin@example.test --skip-email
