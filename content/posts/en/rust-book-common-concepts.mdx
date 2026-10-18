@@ -1,0 +1,1292 @@
+---
+title: "Learning Rust with the Book: Variables, Types, Functions and Control Flow"
+image: /thumbnails/rust-book-common-concepts.avif
+date: "2026-10-18"
+description: The second post in a series that works through The Rust Programming Language. It tries chapter 3's variables, data types, functions and control flow side by side with TypeScript, and breaks the code on purpose to see how integer overflow differs between debug and release, and what a trailing ; changes
+tags:
+  - rust
+  - typescript
+  - devtools
+---
+
+## About this post
+
+This is the second post in a series that works through
+[The Rust Programming Language](https://doc.rust-lang.org/book/) (the Book) hands-on. The
+[first post](/en/blog/rust-book-guessing-game) installed Rust with mise and built the guessing game from chapter 2.
+
+This time it is
+[chapter 3, "Common Programming Concepts"](https://doc.rust-lang.org/book/ch03-00-common-programming-concepts.html):
+variables, data types, functions, comments and control flow. Every language has them, but Rust has plenty of its own
+twists. As before, the post shows what running the Book's examples does and what the compiler says when the code is
+changed on purpose, compared along the way with TypeScript, which is what I write day to day.
+
+The setup is the same as last time: Rust 1.99.1 in PowerShell on Windows 11. Each section gets its own project
+from `cargo new`.
+
+```console
+❯ cargo new variables
+    Creating binary (application) `variables` package
+note: see more `Cargo.toml` keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+```
+
+## Variables and mutability (section 3.1)
+
+### No second assignment
+
+[Section 3.1](https://doc.rust-lang.org/book/ch03-01-variables-and-mutability.html) starts where the last post left
+off: variables cannot be changed by default. Assign to a `let` variable a second time:
+
+```rust title="src/main.rs"
+fn main() {
+    let x = 5;
+    println!("The value of x is: {x}");
+    x = 6;
+    println!("The value of x is: {x}");
+}
+```
+
+```console
+❯ cargo run
+   Compiling variables v0.1.0 (C:\Users\Jam\rust-demo\work\variables)
+error[E0384]: cannot assign twice to immutable variable `x`
+ --> src\main.rs:4:5
+  |
+2 |     let x = 5;
+  |         - first assignment to `x`
+3 |     println!("The value of x is: {x}");
+4 |     x = 6;
+  |     ^^^^^ cannot assign twice to immutable variable
+  |
+help: consider making this binding mutable
+  |
+2 |     let mut x = 5;
+  |         +++
+
+For more information about this error, try `rustc --explain E0384`.
+error: could not compile `variables` (bin "variables") due to 1 previous error
+```
+
+Last time it was `E0596`, "cannot borrow as mutable"; this time it is `E0384`, "cannot assign twice to immutable
+variable". The fix is `mut` in both cases, and the `+++` marks exactly where it goes.
+
+Side by side with TypeScript:
+
+| What you want | TypeScript | Rust |
+| --- | --- | --- |
+| A variable that never changes | `const x = 5` | `let x = 5` |
+| A variable that changes later | `let x = 5` | `let mut x = 5` |
+| A constant fixed at compile time | (no dedicated mechanism) | `const X: i32 = 5;` |
+
+The same word `let` means "can change" in TypeScript and "cannot change" in Rust, which is confusing at first.
+
+### Constants need a type
+
+Rust's `const` is a different thing from TypeScript's. Unlike `let`, it always takes a type. Leave it out:
+
+```rust title="src/main.rs"
+const MAX_POINTS = 100_000;
+
+fn main() {
+    println!("{MAX_POINTS}");
+}
+```
+
+```console
+❯ cargo build
+   Compiling variables v0.1.0 (C:\Users\Jam\rust-demo\work\variables)
+error: missing type for `const` item
+ --> src\main.rs:1:17
+  |
+1 | const MAX_POINTS = 100_000;
+  |                 ^ help: provide a type for the constant: `: i32`
+
+error: could not compile `variables` (bin "variables") due to 1 previous error
+```
+
+"Provide a type, for example `: i32`." The `_` in `100_000` is only a digit separator for readability; the value is
+100000.
+
+The other difference is that a constant's value has to be known at compile time. Try a value that is only known by
+running the program:
+
+```rust title="src/main.rs"
+fn main() {
+    let input = String::from("42");
+    const LIMIT: usize = input.len();
+    println!("{LIMIT}");
+}
+```
+
+```console
+❯ cargo build
+   Compiling variables v0.1.0 (C:\Users\Jam\rust-demo\work\variables)
+error[E0435]: attempt to use a non-constant value in a constant
+ --> src\main.rs:3:26
+  |
+3 |     const LIMIT: usize = input.len();
+  |                          ^^^^^ non-constant value
+  |
+help: consider using `let` instead of `const`
+  |
+3 -     const LIMIT: usize = input.len();
+3 +     let LIMIT: usize = input.len();
+  |
+
+warning: unused variable: `input`
+ --> src\main.rs:2:9
+  |
+2 |     let input = String::from("42");
+  |         ^^^^^ help: if this is intentional, prefix it with an underscore: `_input`
+  |
+  = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+For more information about this error, try `rustc --explain E0435`.
+warning: `variables` (bin "variables") generated 1 warning
+error: could not compile `variables` (bin "variables") due to 1 previous error; 1 warning emitted
+```
+
+"Attempt to use a non-constant value in a constant; how about `let`?" TypeScript's `const` takes any value,
+runtime ones included, so this is a big difference. It helps to think of a Rust `const` as a named value baked
+into the program.
+
+### Shadowing
+
+Rust lets you create a variable with the same name again and again with `let`. This is called shadowing.
+
+```rust title="src/main.rs"
+fn main() {
+    let x = 5;
+    let x = x + 1;
+    {
+        let x = x * 2;
+        println!("inner x: {x}");
+    }
+    println!("outer x: {x}");
+}
+```
+
+```console
+❯ cargo run
+   Compiling variables v0.1.0 (C:\Users\Jam\rust-demo\work\variables)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.72s
+     Running `target\debug\variables.exe`
+inner x: 12
+outer x: 6
+```
+
+`x` is created as 5, recreated as 6, and inside the `{}` it becomes 12. Leaving the `{}` drops the inner `x`, and the
+outer 6 is back. Nothing was overwritten with `mut`; a new variable was created under the same name.
+
+Two `let`s for the same name in one scope do not even run in JavaScript:
+
+```console
+❯ bun -e 'let x = 5; let x = 6;'
+1 | let x = 5; let x = 6;
+                   ^
+error: "x" has already been declared
+    at C:\Users\Jam\rust-demo\work\[eval]:1:16
+
+1 | let x = 5; let x = 6;
+        ^
+note: "x" was originally declared here
+   at C:\Users\Jam\rust-demo\work\[eval]:1:5
+
+Bun v1.4.2 (Windows x64)
+```
+
+Where shadowing shines is changing the type. Replace a string of spaces with how many there are:
+
+```rust title="src/main.rs"
+fn main() {
+    let spaces = "   ";
+    let spaces = spaces.len();
+    println!("{spaces}");
+}
+```
+
+```console
+❯ cargo run
+   Compiling variables v0.1.0 (C:\Users\Jam\rust-demo\work\variables)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.54s
+     Running `target\debug\variables.exe`
+3
+```
+
+Doing the same with `let mut` and an assignment is an error:
+
+```rust title="src/main.rs"
+fn main() {
+    let mut spaces = "   ";
+    spaces = spaces.len();
+    println!("{spaces}");
+}
+```
+
+```console
+❯ cargo build
+   Compiling variables v0.1.0 (C:\Users\Jam\rust-demo\work\variables)
+error[E0308]: mismatched types
+ --> src\main.rs:3:14
+  |
+2 |     let mut spaces = "   ";
+  |                      ----- expected due to this value
+3 |     spaces = spaces.len();
+  |              ^^^^^^^^^^^^ expected `&str`, found `usize`
+
+For more information about this error, try `rustc --explain E0308`.
+error: could not compile `variables` (bin "variables") due to 1 previous error
+```
+
+`mut` means "the value can change", not "the type can change". `spaces` got its type, a string (`&str`), from its first
+value, so a number (`usize`) cannot go in. Last time's guessing game recreated `guess` with
+`let guess: u32 = guess.trim().parse()...`; that was shadowing too, and it spares you names like `guess_str` and
+`guess_num`.
+
+## Data types (section 3.2)
+
+[Section 3.2](https://doc.rust-lang.org/book/ch03-02-data-types.html) is about types. Rust is statically typed:
+every variable's type has to be known at compile time. Most of the time it is inferred, but when it cannot be, the
+compiler asks for one. `parse()`, seen last time, is the example:
+
+```rust title="src/main.rs"
+fn main() {
+    let guess = "42".parse().expect("Not a number!");
+    println!("{guess}");
+}
+```
+
+```console
+❯ cargo build
+   Compiling data_types v0.1.0 (C:\Users\Jam\rust-demo\work\data_types)
+error[E0284]: type annotations needed
+ --> src\main.rs:2:9
+  |
+2 |     let guess = "42".parse().expect("Not a number!");
+  |         ^^^^^        ----- type must be known at this point
+  |
+  = note: cannot satisfy `<_ as FromStr>::Err == _`
+  = note: the type must also implement `FromStr`
+note: required by a bound in `core::str::<impl str>::parse`
+ --> /rustc/58cf8f9c35b355199727627d07ae34a4e2846d67/library\core\src\str\mod.rs:2782:4
+help: consider giving `guess` an explicit type
+  |
+2 |     let guess: /* Type */ = "42".parse().expect("Not a number!");
+  |              ++++++++++++
+
+For more information about this error, try `rustc --explain E0284`.
+error: could not compile `data_types` (bin "data_types") due to 1 previous error
+```
+
+It cannot tell what type `"42"` should become, so it asks for a type on `guess`. The error code differs from last
+time's `E0282`, but the message is the same.
+
+### Integer types
+
+JavaScript basically has a single kind of number, `number`. Rust has many integer types, split by size and sign.
+
+| Size | Signed | Unsigned |
+| --- | --- | --- |
+| 8 bits | `i8` | `u8` |
+| 16 bits | `i16` | `u16` |
+| 32 bits | `i32` | `u32` |
+| 64 bits | `i64` | `u64` |
+| 128 bits | `i128` | `u128` |
+| Machine-dependent | `isize` | `usize` |
+
+`i` is signed (negatives allowed) and `u` is unsigned (zero and up). An integer written without a type is an
+`i32`. `usize` is the type for array indices and lengths; it is what `spaces.len()` returned above.
+
+### Integer overflow
+
+![With default build settings, runtime u8 overflow panics in debug and wraps to zero in release. Overflow known at compile time is an error](/rust/integer-overflow.avif)
+
+Each type has a fixed range, so the natural question is what happens beyond it. A `u8` holds 0 to 255. First, the
+straightforward `255 + 1`:
+
+```rust title="src/main.rs"
+fn main() {
+    let x: u8 = 255 + 1;
+    println!("{x}");
+}
+```
+
+```console
+❯ cargo build
+   Compiling data_types v0.1.0 (C:\Users\Jam\rust-demo\work\data_types)
+error: this arithmetic operation will overflow
+ --> src\main.rs:2:17
+  |
+2 |     let x: u8 = 255 + 1;
+  |                 ^^^^^^^ attempt to compute `u8::MAX + 1_u8`, which would overflow
+  |
+  = note: `#[deny(arithmetic_overflow)]` on by default
+
+error: could not compile `data_types` (bin "data_types") due to 1 previous error
+```
+
+The value is known at compile time, so the compiler catches it. What about a value only known at run time? Parse
+the string `"255"` into a number, then add 1:
+
+```rust title="src/main.rs"
+fn main() {
+    let x: u8 = "255".parse().expect("Not a number!");
+    let y = x + 1;
+    println!("255 + 1 = {y}");
+}
+```
+
+Debug builds (`cargo run`) and release builds (`cargo run --release`) give different results.
+
+```console
+❯ cargo run
+   Compiling data_types v0.1.0 (C:\Users\Jam\rust-demo\work\data_types)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.00s
+     Running `target\debug\data_types.exe`
+
+thread 'main' (7680) panicked at src\main.rs:3:13:
+attempt to add with overflow
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+error: process didn't exit successfully: `target\debug\data_types.exe` (exit code: 101)
+❯ cargo run --release
+   Compiling data_types v0.1.0 (C:\Users\Jam\rust-demo\work\data_types)
+    Finished `release` profile [optimized] target(s) in 0.94s
+     Running `target\release\data_types.exe`
+255 + 1 = 0
+```
+
+The debug build panics (stops with an error) with "attempt to add with overflow"; the release build wraps to 0.
+According to the Book, release builds leave out the overflow checks and wrap values past the maximum around to the
+minimum, and relying on that wrapping is considered an error. In JavaScript it is simply 256:
+
+```console
+❯ bun -e 'console.log(255 + 1)'
+256
+```
+
+To say explicitly whether you want wrapping or an error, the standard library has methods for it. Here are all four
+families the Book lists:
+
+```rust title="src/main.rs"
+fn main() {
+    let x: u8 = "255".parse().expect("Not a number!");
+    println!("wrapping_add: {}", x.wrapping_add(1));
+    println!("checked_add: {:?}", x.checked_add(1));
+    println!("saturating_add: {}", x.saturating_add(1));
+    println!("overflowing_add: {:?}", x.overflowing_add(1));
+}
+```
+
+```console
+❯ cargo run
+   Compiling data_types v0.1.0 (C:\Users\Jam\rust-demo\work\data_types)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.23s
+     Running `target\debug\data_types.exe`
+wrapping_add: 0
+checked_add: None
+saturating_add: 255
+overflowing_add: (0, true)
+```
+
+- `wrapping_add`: wraps in debug and release alike
+- `checked_add`: returns `None` (no value) on overflow
+- `saturating_add`: stops at the maximum (255 here)
+- `overflowing_add`: returns the wrapped value paired with whether it overflowed
+
+`{:?}` prints values such as `None` or a pair in their debug form.
+
+### Division truncates
+
+Dividing two integers drops the fractional part.
+
+```rust title="src/main.rs"
+fn main() {
+    println!("5 / 2 = {}", 5 / 2);
+    println!("-5 / 2 = {}", -5 / 2);
+    println!("5 % 2 = {}", 5 % 2);
+    println!("5.0 / 2.0 = {}", 5.0 / 2.0);
+}
+```
+
+```console
+❯ cargo run
+   Compiling data_types v0.1.0 (C:\Users\Jam\rust-demo\work\data_types)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.97s
+     Running `target\debug\data_types.exe`
+5 / 2 = 2
+-5 / 2 = -2
+5 % 2 = 1
+5.0 / 2.0 = 2.5
+```
+
+`-5 / 2` is -2, not -3, so it truncates toward zero (the Book says the same). To divide with decimals, divide two
+floating-point numbers (`f64`) such as `5.0 / 2.0`. In JavaScript division never truncates, so matching
+Rust takes `Math.trunc`:
+
+```console
+❯ bun -e 'console.log(5 / 2, -5 / 2, Math.trunc(-5 / 2))'
+2.5 -2.5 -2
+```
+
+Integers and floats cannot be mixed in a division:
+
+```rust title="src/main.rs"
+fn main() {
+    let half = 5 / 2.0;
+    println!("{half}");
+}
+```
+
+```console
+❯ cargo build
+   Compiling data_types v0.1.0 (C:\Users\Jam\rust-demo\work\data_types)
+error[E0277]: cannot divide `{integer}` by `{float}`
+ --> src\main.rs:2:18
+  |
+2 |     let half = 5 / 2.0;
+  |                  ^ no implementation for `{integer} / {float}`
+  |
+  = help: the trait `Div<{float}>` is not implemented for `{integer}`
+  = help: the following other types implement trait `Div<Rhs>`:
+            `&f128` implements `Div<f128>`
+            `&f128` implements `Div`
+            `&f16` implements `Div<f16>`
+            `&f16` implements `Div`
+            `&f32` implements `Div<f32>`
+            `&f32` implements `Div`
+            `&f64` implements `Div<f64>`
+            `&f64` implements `Div`
+          and 62 others
+
+For more information about this error, try `rustc --explain E0277`.
+error: could not compile `data_types` (bin "data_types") due to 1 previous error
+```
+
+"No implementation for integer divided by float." Rust never converts number types on its own, so write `5.0` or convert
+explicitly with `as f64`. The error mentions a trait called `Div`; traits are chapter 10's subject, so for now
+read it as "`/` is defined separately for each pair of types".
+
+### char is 4 bytes
+
+The character type `char` is written in single quotes, like `'z'` (strings take double quotes). It holds one
+Unicode scalar value, so an emoji such as 😻 fits in a single `char` (emoji built from several scalar values,
+such as flags or skin tones, do not).
+
+```rust title="src/main.rs"
+fn main() {
+    let c = 'z';
+    let cat = '😻';
+    println!("{c} {cat}");
+    println!("char: {} bytes", size_of::<char>());
+    println!("\"😻\" as a string: {} bytes, {} char", "😻".len(), "😻".chars().count());
+}
+```
+
+```console
+❯ cargo run
+   Compiling data_types v0.1.0 (C:\Users\Jam\rust-demo\work\data_types)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.05s
+     Running `target\debug\data_types.exe`
+z 😻
+char: 4 bytes
+"😻" as a string: 4 bytes, 1 char
+```
+
+A `char` is 4 bytes. A string's `len()` counts bytes, not characters, so `"😻"` is 4; `chars().count()` counts
+characters. JavaScript's `length` counts UTF-16 units, so the same emoji is 2:
+
+```console
+❯ bun -e 'console.log("😻".length)'
+2
+```
+
+### Tuples
+
+A tuple groups values of different types. It resembles TypeScript's tuple types such as `[number, number, number]`,
+but in Rust both the type and the value are written with `()`.
+
+```rust title="src/main.rs"
+fn main() {
+    let tup: (i32, f64, u8) = (500, 6.4, 1);
+    let (x, y, z) = tup;
+    println!("x = {x}, y = {y}, z = {z}");
+    println!("tup.0 = {}", tup.0);
+}
+```
+
+```console
+❯ cargo run
+   Compiling data_types v0.1.0 (C:\Users\Jam\rust-demo\work\data_types)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 5.93s
+     Running `target\debug\data_types.exe`
+x = 500, y = 6.4, z = 1
+tup.0 = 500
+```
+
+`let (x, y, z) = tup;` is destructuring, the counterpart of JavaScript's `const [x, y, z] = tup`. Elements are read
+with a `.` and their position, as in `tup.0`. Adding a `tup.3` that does not exist stops the build:
+
+```rust title="src/main.rs"
+fn main() {
+    let tup: (i32, f64, u8) = (500, 6.4, 1);
+    let (x, y, z) = tup;
+    println!("x = {x}, y = {y}, z = {z}");
+    println!("tup.0 = {}", tup.0);
+    println!("{}", tup.3);
+}
+```
+
+```console
+❯ cargo build
+   Compiling data_types v0.1.0 (C:\Users\Jam\rust-demo\work\data_types)
+error[E0609]: no field `3` on type `(i32, f64, u8)`
+ --> src\main.rs:6:24
+  |
+6 |     println!("{}", tup.3);
+  |                        ^ unknown field
+  |
+  = note: available fields are: `0`, `1`, `2`
+
+For more information about this error, try `rustc --explain E0609`.
+error: could not compile `data_types` (bin "data_types") due to 1 previous error
+```
+
+The empty tuple `()` is called the unit and means "no value". It comes back in the functions section.
+
+### Arrays have a fixed length
+
+A Rust array holds elements of one type and has a fixed length. Its type is written like `[i32; 5]` (five
+`i32`s). Assign an array of a different length:
+
+```rust title="src/main.rs"
+fn main() {
+    let a: [i32; 5] = [1, 2, 3];
+    println!("{a:?}");
+}
+```
+
+```console
+❯ cargo build
+   Compiling data_types v0.1.0 (C:\Users\Jam\rust-demo\work\data_types)
+error[E0308]: mismatched types
+ --> src\main.rs:2:23
+  |
+2 |     let a: [i32; 5] = [1, 2, 3];
+  |            --------   ^^^^^^^^^ expected an array with a size of 5, found one with a size of 3
+  |            |
+  |            expected due to this
+  |
+help: consider specifying the actual array length
+  |
+2 -     let a: [i32; 5] = [1, 2, 3];
+2 +     let a: [i32; 3] = [1, 2, 3];
+  |
+
+For more information about this error, try `rustc --explain E0308`.
+error: could not compile `data_types` (bin "data_types") due to 1 previous error
+```
+
+The length is part of the type, so a three-element array cannot be an `[i32; 5]`. The growable kind, like
+JavaScript arrays, is called a vector (`Vec`) in Rust and arrives in chapter 8.
+
+Next, reading past the end. First with the index written directly as `10`:
+
+```rust title="src/main.rs"
+fn main() {
+    let a = [1, 2, 3, 4, 5];
+    println!("{}", a[10]);
+}
+```
+
+```console
+❯ cargo build
+   Compiling data_types v0.1.0 (C:\Users\Jam\rust-demo\work\data_types)
+error: this operation will panic at runtime
+ --> src\main.rs:3:20
+  |
+3 |     println!("{}", a[10]);
+  |                    ^^^^^ index out of bounds: the length is 5 but the index is 10
+  |
+  = note: `#[deny(unconditional_panic)]` on by default
+
+error: could not compile `data_types` (bin "data_types") due to 1 previous error
+```
+
+As with overflow, what is known at compile time is stopped by the compiler. As the Book does, read the index from
+standard input so it is unknown until the program runs:
+
+```rust title="src/main.rs"
+use std::io;
+
+fn main() {
+    let a = [1, 2, 3, 4, 5];
+
+    let mut index = String::new();
+    io::stdin()
+        .read_line(&mut index)
+        .expect("Failed to read line");
+    let index: usize = index.trim().parse().expect("Index entered was not a number");
+
+    let element = a[index];
+    println!("The value of the element at index {index} is: {element}");
+}
+```
+
+```console
+❯ "2" | cargo run
+   Compiling data_types v0.1.0 (C:\Users\Jam\rust-demo\work\data_types)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.30s
+     Running `target\debug\data_types.exe`
+The value of the element at index 2 is: 3
+❯ "10" | cargo run
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.07s
+     Running `target\debug\data_types.exe`
+
+thread 'main' (13380) panicked at src\main.rs:12:19:
+index out of bounds: the len is 5 but the index is 10
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+error: process didn't exit successfully: `target\debug\data_types.exe` (exit code: 101)
+```
+
+`2` reads the third element, and `10` panics with "the len is 5 but the index is 10". JavaScript does not raise an
+error for reading past the end; it returns `undefined`:
+
+```console
+❯ bun -e 'console.log([1, 2, 3, 4, 5][10])'
+undefined
+```
+
+Rust's view is that stopping on the spot makes the cause easier to find than carrying an `undefined` along until
+something else breaks much later. Unlike the overflow check, the bounds check stays in release builds:
+
+```console
+❯ "10" | cargo run --release
+   Compiling data_types v0.1.0 (C:\Users\Jam\rust-demo\work\data_types)
+    Finished `release` profile [optimized] target(s) in 1.99s
+     Running `target\release\data_types.exe`
+
+thread 'main' (24396) panicked at src\main.rs:12:19:
+index out of bounds: the len is 5 but the index is 10
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+error: process didn't exit successfully: `target\release\data_types.exe` (exit code: 101)
+```
+
+## Functions (section 3.3)
+
+### Parameters need types
+
+[Section 3.3](https://doc.rust-lang.org/book/ch03-03-how-functions-work.html) covers functions. They are defined
+with `fn`, and Rust's convention is `snake_case` names (lowercase with `_`). Parameters always take a type. Leave it
+out:
+
+```rust title="src/main.rs"
+fn main() {
+    print_twice(5);
+}
+
+fn print_twice(x) {
+    println!("{x} {x}");
+}
+```
+
+```console
+❯ cargo build
+   Compiling functions v0.1.0 (C:\Users\Jam\rust-demo\work\functions)
+error: expected one of `:`, `@`, or `|`, found `)`
+ --> src\main.rs:5:17
+  |
+5 | fn print_twice(x) {
+  |                 ^ expected one of `:`, `@`, or `|`
+  |
+help: if this is a parameter name, give it a type
+  |
+5 | fn print_twice(x: TypeName) {
+  |                 ++++++++++
+help: if this is a type, explicitly ignore the parameter name
+  |
+5 | fn print_twice(_: x) {
+  |                ++
+
+error: could not compile `functions` (bin "functions") due to 1 previous error
+```
+
+It is treated as a syntax error, not a missing annotation. In TypeScript an untyped parameter becomes `any` and
+passes (unless `noImplicitAny` is on), but Rust does not infer the types of function parameters: a function's
+outward shape is always written out. Calling `print_twice` even though it is defined after `main` works, as with
+JavaScript function declarations.
+
+### Statements and expressions
+
+A key to reading Rust is the difference between **statements** and **expressions**.
+
+- Statement: does something and returns no value. `let y = 6;` is a statement
+- Expression: evaluates to a value. `5 + 6`, a function call and a `{}` block are all expressions
+
+`let` is a statement, so it has no value. Write it the way JavaScript's `x = y = 6` would work:
+
+```rust title="src/main.rs"
+fn main() {
+    let x = (let y = 6);
+}
+```
+
+```console
+❯ cargo build
+   Compiling functions v0.1.0 (C:\Users\Jam\rust-demo\work\functions)
+error: expected expression, found `let` statement
+ --> src\main.rs:2:14
+  |
+2 |     let x = (let y = 6);
+  |              ^^^
+  |
+  = note: only supported directly in conditions of `if` and `while` expressions
+
+warning: unnecessary parentheses around assigned value
+ --> src\main.rs:2:13
+  |
+2 |     let x = (let y = 6);
+  |             ^         ^
+  |
+  = note: `#[warn(unused_parens)]` (part of `#[warn(unused)]`) on by default
+help: remove these parentheses
+  |
+2 -     let x = (let y = 6);
+2 +     let x = let y = 6;
+  |
+
+warning: `functions` (bin "functions") generated 1 warning
+error: could not compile `functions` (bin "functions") due to 1 previous error; 1 warning emitted
+```
+
+"Expected expression, found `let` statement." The note adds that conditions of `if` and `while` are the exception
+(the `if let` form, which comes in chapter 6).
+
+A `{}` block, on the other hand, is an expression and has a value:
+
+```rust title="src/main.rs"
+fn main() {
+    let y = {
+        let x = 3;
+        x + 1
+    };
+    println!("The value of y is: {y}");
+}
+```
+
+```console
+❯ cargo run
+   Compiling functions v0.1.0 (C:\Users\Jam\rust-demo\work\functions)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.85s
+     Running `target\debug\functions.exe`
+The value of y is: 4
+```
+
+The point is that the last line, `x + 1`, has no `;`. An expression without a `;` at the end of a block becomes the
+value of the whole block.
+
+### Return values and the trailing semicolon
+
+![With x equal to 5, a block ending in x + 1 evaluates to 6, while x + 1 followed by a semicolon makes the block evaluate to unit. An i32 return type then produces a type error](/rust/trailing-semicolon.avif)
+
+Return values work the same way. The return type goes after `->`, and the last expression in the body is the
+return value. `return` is only for leaving early.
+
+```rust title="src/main.rs"
+fn main() {
+    let x = plus_one(5);
+    println!("The value of x is: {x}");
+}
+
+fn plus_one(x: i32) -> i32 {
+    x + 1
+}
+```
+
+```console
+❯ cargo run
+   Compiling functions v0.1.0 (C:\Users\Jam\rust-demo\work\functions)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.92s
+     Running `target\debug\functions.exe`
+The value of x is: 6
+```
+
+Put a `;` after `x + 1` and the expression turns into a statement, so nothing is returned:
+
+```rust title="src/main.rs"
+fn main() {
+    let x = plus_one(5);
+    println!("The value of x is: {x}");
+}
+
+fn plus_one(x: i32) -> i32 {
+    x + 1;
+}
+```
+
+```console
+❯ cargo build
+   Compiling functions v0.1.0 (C:\Users\Jam\rust-demo\work\functions)
+error[E0308]: mismatched types
+ --> src\main.rs:6:24
+  |
+6 | fn plus_one(x: i32) -> i32 {
+  |    --------            ^^^ expected `i32`, found `()`
+  |    |
+  |    implicitly returns `()` as its body has no tail or `return` expression
+7 |     x + 1;
+  |          - help: remove this semicolon to return this value
+
+For more information about this error, try `rustc --explain E0308`.
+error: could not compile `functions` (bin "functions") due to 1 previous error
+```
+
+"Expected `i32`, found `()`; it implicitly returns `()` as its body has no tail or `return` expression." `()` is
+the unit from the tuples section, "no value". The help even points at the `;` to remove.
+
+That settles the question from last time. Last time, removing the trailing `;` from Hello, World!'s
+`println!("Hello, world!");` still compiled and ran. When `main` declares no return type, its return type is `()`.
+Put a `5` at the end of `main` to see:
+
+```rust title="src/main.rs"
+fn main() {
+    5
+}
+```
+
+```console
+❯ cargo build
+   Compiling functions v0.1.0 (C:\Users\Jam\rust-demo\work\functions)
+error[E0308]: mismatched types
+ --> src\main.rs:2:5
+  |
+1 | fn main() {
+  |          - expected `()` because of default return type
+2 |     5
+  |     ^ expected `()`, found integer
+
+For more information about this error, try `rustc --explain E0308`.
+error: could not compile `functions` (bin "functions") due to 1 previous error
+```
+
+"Expected `()` because of default return type." `println!` only prints, and as a value it is `()`. So with the
+`;` removed and `println!(...)` as the last expression, `main` still returned `()`, the types matched, and it
+compiled.
+
+## Comments (section 3.4)
+
+[Section 3.4](https://doc.rust-lang.org/book/ch03-04-comments.html) is a short one on comments. A comment runs from
+`//` to the end of the line, as in JavaScript, and the Book says they usually go on their own line above the code
+they describe. Documentation comments starting with `///` also exist; chapter 14 covers them.
+
+## Control flow (section 3.5)
+
+### if conditions must be bool
+
+[Section 3.5](https://doc.rust-lang.org/book/ch03-05-control-flow.html) covers `if` and loops. `if` looks almost
+like JavaScript's, except that the condition needs no `()`. The real difference is that the condition must be a
+`bool`.
+
+```rust title="src/main.rs"
+fn main() {
+    let number = 3;
+
+    if number {
+        println!("number was three");
+    }
+}
+```
+
+```console
+❯ cargo build
+   Compiling branches v0.1.0 (C:\Users\Jam\rust-demo\work\branches)
+error[E0308]: mismatched types
+ --> src\main.rs:4:8
+  |
+4 |     if number {
+  |        ^^^^^^ expected `bool`, found integer
+
+For more information about this error, try `rustc --explain E0308`.
+error: could not compile `branches` (bin "branches") due to 1 previous error
+```
+
+JavaScript treats 0, the empty string, `null`, `undefined` and a few others as false and the rest as true
+(truthy and falsy). Rust has no such
+rule, so you write an expression that is a `bool`, such as `number != 0`. The kind of bug where `if (count)` misses
+the zero case cannot happen.
+
+### if is an expression
+
+`if` is an expression too, so it has a value. JavaScript's ternary `condition ? 5 : 6` looks like this in Rust:
+
+```rust title="src/main.rs"
+fn main() {
+    let condition = true;
+    let number = if condition { 5 } else { 6 };
+    println!("The value of number is: {number}");
+}
+```
+
+```console
+❯ cargo run
+   Compiling branches v0.1.0 (C:\Users\Jam\rust-demo\work\branches)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.30s
+     Running `target\debug\branches.exe`
+The value of number is: 5
+```
+
+Rust has no ternary operator; `if` already is a value, so it does not need one. Both branches must have the same
+type, though. Make the `else` branch a string:
+
+```rust title="src/main.rs"
+fn main() {
+    let condition = true;
+    let number = if condition { 5 } else { "six" };
+    println!("The value of number is: {number}");
+}
+```
+
+```console
+❯ cargo build
+   Compiling branches v0.1.0 (C:\Users\Jam\rust-demo\work\branches)
+error[E0308]: `if` and `else` have incompatible types
+ --> src\main.rs:3:44
+  |
+3 |     let number = if condition { 5 } else { "six" };
+  |                                 -          ^^^^^ expected integer, found `&str`
+  |                                 |
+  |                                 expected because of this
+
+For more information about this error, try `rustc --explain E0308`.
+error: could not compile `branches` (bin "branches") due to 1 previous error
+```
+
+In TypeScript the variable `number` would get a union type like `5 | "six"` and pass, but a Rust variable has
+exactly one type.
+
+I also tried dropping the `else`:
+
+```rust title="src/main.rs"
+fn main() {
+    let condition = true;
+    let number = if condition { 5 };
+    println!("The value of number is: {number}");
+}
+```
+
+```console
+❯ cargo build
+   Compiling branches v0.1.0 (C:\Users\Jam\rust-demo\work\branches)
+error[E0317]: `if` may be missing an `else` clause
+ --> src\main.rs:3:18
+  |
+3 |     let number = if condition { 5 };
+  |                  ^^^^^^^^^^^^^^^-^^
+  |                  |              |
+  |                  |              found here
+  |                  expected integer, found `()`
+  |
+  = note: `if` expressions without `else` evaluate to `()`
+  = help: consider adding an `else` block that evaluates to the expected type
+
+For more information about this error, try `rustc --explain E0317`.
+error: could not compile `branches` (bin "branches") due to 1 previous error
+```
+
+An `if` without `else` has nothing to return when the condition is false, so its value is `()`. The unit again.
+The compiler asks for a value for the false case.
+
+### loop can return a value
+
+Rust has three loops: `loop`, `while` and `for`. `loop` repeats until a `break`. It is JavaScript's
+`while (true)`, except that `break` can carry a value and make the whole loop a value. With the Book's example:
+
+```rust title="src/main.rs"
+fn main() {
+    let mut counter = 0;
+
+    let result = loop {
+        counter += 1;
+
+        if counter == 10 {
+            break counter * 2;
+        }
+    };
+
+    println!("The result is {result}");
+}
+```
+
+```console
+❯ cargo run
+   Compiling loops v0.1.0 (C:\Users\Jam\rust-demo\work\loops)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.40s
+     Running `target\debug\loops.exe`
+The result is 20
+```
+
+When `counter` reaches 10, `break counter * 2` leaves with 20. Trying the same with `while` is an error:
+
+```rust title="src/main.rs"
+fn main() {
+    let mut n = 0;
+    let result = while n < 3 {
+        n += 1;
+        break n;
+    };
+    println!("{result:?}");
+}
+```
+
+```console
+❯ cargo build
+   Compiling loops v0.1.0 (C:\Users\Jam\rust-demo\work\loops)
+error[E0571]: `break` with value from a `while` loop
+ --> src\main.rs:5:9
+  |
+3 |     let result = while n < 3 {
+  |                  ----------- you can't `break` with a value in a `while` loop
+4 |         n += 1;
+5 |         break n;
+  |         ^^^^^^^ can only break with a value inside `loop` or breakable block
+  |
+help: use `break` on its own without a value inside this `while` loop
+  |
+5 -         break n;
+5 +         break;
+  |
+
+For more information about this error, try `rustc --explain E0571`.
+error: could not compile `loops` (bin "loops") due to 1 previous error
+```
+
+A `while` loop can also end because its condition turns false without any `break`, and then there is no value to
+return. So a `break` with a value only works in `loop` (and labeled blocks); it is the same reasoning as an `if`
+without `else`.
+
+### Loop labels
+
+In nested loops, `break` and `continue` apply to the innermost one. To target an outer loop, give it a label such as
+`'outer:`. JavaScript has labels too; the only difference is the leading `'`.
+
+```rust title="src/main.rs"
+fn main() {
+    'outer: for i in 1..=3 {
+        for j in 1..=3 {
+            if j == 2 {
+                continue 'outer;
+            }
+            if i == 3 {
+                break 'outer;
+            }
+            println!("i = {i}, j = {j}");
+        }
+    }
+    println!("done");
+}
+```
+
+```console
+❯ cargo run
+   Compiling loops v0.1.0 (C:\Users\Jam\rust-demo\work\loops)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.31s
+     Running `target\debug\loops.exe`
+i = 1, j = 1
+i = 2, j = 1
+done
+```
+
+When `j` reaches 2, `continue 'outer` moves on to the next `i`, so only `j = 1` is printed. When `i` reaches 3,
+`break 'outer` leaves both loops.
+
+### while and for
+
+`while` repeats while its condition is true, as in JavaScript. For walking through an array, though, `for` is
+safer. Here both walk the same array, followed by a countdown over a reversed range (`1..4`):
+
+```rust title="src/main.rs"
+fn main() {
+    let a = [10, 20, 30];
+
+    let mut index = 0;
+    while index < a.len() {
+        println!("while: {}", a[index]);
+        index += 1;
+    }
+
+    for element in a {
+        println!("for: {element}");
+    }
+
+    for number in (1..4).rev() {
+        println!("{number}!");
+    }
+    println!("LIFTOFF!!!");
+}
+```
+
+```console
+❯ cargo run
+   Compiling loops v0.1.0 (C:\Users\Jam\rust-demo\work\loops)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.34s
+     Running `target\debug\loops.exe`
+while: 10
+while: 20
+while: 30
+for: 10
+for: 20
+for: 30
+3!
+2!
+1!
+LIFTOFF!!!
+```
+
+Get the `index < a.len()` condition wrong in the `while` version and you hit the out-of-bounds panic from earlier.
+`for element in a` is JavaScript's `for (const element of a)`, and since there is no index to manage, that risk
+goes away. `1..4` is the range from 1 up to but not including 4, and `.rev()` reverses it. With `=`, as in `1..=3`,
+the end is included (the label example used it).
+
+## End-of-chapter exercise: Fibonacci numbers
+
+Chapter 3 ends with three exercises: converting temperatures, generating the nth Fibonacci number, and printing the
+lyrics of "The Twelve Days of Christmas". Here I solve the Fibonacci one, since it doubles as a real overflow
+example.
+
+```rust title="src/main.rs"
+fn fib(n: u32) -> u32 {
+    if n == 0 {
+        return 0;
+    }
+    let mut prev = 0;
+    let mut curr = 1;
+    for _ in 1..n {
+        let next = prev + curr;
+        prev = curr;
+        curr = next;
+    }
+    curr
+}
+
+fn main() {
+    for n in [1, 2, 10, 47, 48] {
+        println!("fib({n}) = {}", fib(n));
+    }
+}
+```
+
+It uses both an early `return 0;` and a final expression, `curr`. The `_` in `for _ in` names a value that is not
+used. Run it:
+
+```console
+❯ cargo run
+   Compiling fibonacci v0.1.0 (C:\Users\Jam\rust-demo\work\fibonacci)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 5.13s
+     Running `target\debug\fibonacci.exe`
+fib(1) = 1
+fib(2) = 1
+fib(10) = 55
+fib(47) = 2971215073
+
+thread 'main' (4824) panicked at src\main.rs:8:20:
+attempt to add with overflow
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+error: process didn't exit successfully: `target\debug\fibonacci.exe` (exit code: 101)
+```
+
+The 47th number, 2971215073, still fits in a `u32` (maximum 4294967295), but the addition for the 48th panics. And
+in release?
+
+```console
+❯ cargo run --release
+   Compiling fibonacci v0.1.0 (C:\Users\Jam\rust-demo\work\fibonacci)
+    Finished `release` profile [optimized] target(s) in 1.29s
+     Running `target\release\fibonacci.exe`
+fib(1) = 1
+fib(2) = 1
+fib(10) = 55
+fib(47) = 2971215073
+fib(48) = 512559680
+```
+
+No panic: it prints `fib(48) = 512559680`, an incorrect answer, as if nothing happened. It is smaller than the 47th, so
+it is plainly wrong. Without a run in debug, a value like this goes straight out the door.
+
+Switch to `u64` to see how far it goes. The return type and the types of `prev` and `curr` change.
+
+```rust title="src/main.rs"
+fn fib(n: u32) -> u64 {
+    if n == 0 {
+        return 0;
+    }
+    let mut prev: u64 = 0;
+    let mut curr: u64 = 1;
+    for _ in 1..n {
+        let next = prev + curr;
+        prev = curr;
+        curr = next;
+    }
+    curr
+}
+
+fn main() {
+    for n in [48, 93, 94] {
+        println!("fib({n}) = {}", fib(n));
+    }
+}
+```
+
+```console
+❯ cargo run
+   Compiling fibonacci v0.1.0 (C:\Users\Jam\rust-demo\work\fibonacci)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.37s
+     Running `target\debug\fibonacci.exe`
+fib(48) = 4807526976
+fib(93) = 12200160415121876738
+
+thread 'main' (24936) panicked at src\main.rs:8:20:
+attempt to add with overflow
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+error: process didn't exit successfully: `target\debug\fibonacci.exe` (exit code: 101)
+```
+
+`u64` holds up to the 93rd number and panics on the 94th. The correct `fib(48)` is 4807526976, and release's
+512559680 is that minus 2 to the 32nd power (4294967296), so the numbers confirm the wraparound.
+
+JavaScript's `number` cannot represent every integer exactly beyond 2 to the 53rd, so getting `fib(93)` right takes a
+`BigInt`.
+
+```console
+❯ bun -e 'console.log(Number.MAX_SAFE_INTEGER, 12200160415121876738, 12200160415121876738n)'
+9007199254740991 12200160415121877000 12200160415121876738n
+```
+
+Without the `n`, the number was rounded to end in `7000`. In Rust, choosing the type is where you decide how large
+the numbers can get.
+
+## Commands at a glance
+
+| Command | What it does |
+| --- | --- |
+| `cargo new <name>` | Create a new project |
+| `cargo run` | Run a debug build (overflow is checked) |
+| `cargo run --release` | Run a release build (overflow wraps) |
+| `cargo build` | Build only, to see the errors |
+| `rustc --explain <error code>` | Read the long explanation of an error |
+
+## Summary
+
+- `let` cannot change and `let mut` can; the same word `let` means the opposite in TypeScript
+- `const` requires a type and only takes values known at compile time
+- Shadowing recreates a variable under the same name, and unlike `mut` it can change the type
+- Integer types are split by size and sign. Overflow panics in debug and wraps in release; use `checked_add` and
+  friends to make the intent explicit
+- Integer division truncates toward zero, and integers and floats do not mix
+- A `char` is 4 bytes, and a string's `len()` counts bytes
+- An array's length is part of its type, and reading past the end panics
+- `let` is a statement, while blocks and `if` are expressions. A final expression without `;` is the value; add the
+  `;` and it becomes `()`
+- `if` conditions must be `bool`, and `if` used as an expression replaces the ternary operator
+- `loop` can return a value through `break`, labels target outer loops, and `for` is the way to walk an array
+
+Next time is chapter 4 of the Book: ownership. It is the most distinctive part of Rust and has no counterpart in
+TypeScript at all, so expect a lot of errors.
