@@ -1,0 +1,1209 @@
+---
+title: Rust を Book で学ぶ：変数、型、関数、制御フロー
+image: /thumbnails/rust-book-common-concepts.avif
+date: "2026-10-18"
+description: Rust の公式の入門書 The Rust Programming Language を進めるシリーズの 2 本目。3 章の変数、データ型、関数、制御フローを、TypeScript と比べながら試す。整数のオーバーフローが debug と release でどう違うか、最後の ; で何が変わるかを、わざと壊して確かめる
+tags:
+  - rust
+  - typescript
+  - devtools
+---
+
+## この記事について
+
+[The Rust Programming Language](https://doc.rust-lang.org/book/)（the Book）を、手を動かして進めるシリーズの 2 本目です。[1 本目](/ja/blog/rust-book-guessing-game)では、mise で Rust を入れて、2 章の数当てゲームまで作りました。
+
+今回は [3 章「よく使うプログラミングの概念」](https://doc.rust-lang.org/book/ch03-00-common-programming-concepts.html)です。変数、データ型、関数、コメント、制御フローと、どの言語にもある話ですが、Rust ならではのところがたくさんあります。前回と同じく、Book のとおりに動かした結果と、わざと書き換えたときのコンパイラのエラーを載せます。普段 TypeScript を書いている目線で、違うところを比べていきます。
+
+試した環境は前回と同じで、Rust 1.99.1、Windows 11 の PowerShell です。節ごとに `cargo new` でプロジェクトを作っています。
+
+```console
+❯ cargo new variables
+    Creating binary (application) `variables` package
+note: see more `Cargo.toml` keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+```
+
+## 変数と可変性（3.1 節）
+
+### 2 回目の代入はできない
+
+[3.1 節](https://doc.rust-lang.org/book/ch03-01-variables-and-mutability.html)は、前回も出てきた「変数は既定で変更できない」の話から始まります。`let` で作った変数に、もう一度代入してみます。
+
+```rust title="src/main.rs"
+fn main() {
+    let x = 5;
+    println!("The value of x is: {x}");
+    x = 6;
+    println!("The value of x is: {x}");
+}
+```
+
+```console
+❯ cargo run
+   Compiling variables v0.1.0 (C:\Users\Jam\rust-demo\work\variables)
+error[E0384]: cannot assign twice to immutable variable `x`
+ --> src\main.rs:4:5
+  |
+2 |     let x = 5;
+  |         - first assignment to `x`
+3 |     println!("The value of x is: {x}");
+4 |     x = 6;
+  |     ^^^^^ cannot assign twice to immutable variable
+  |
+help: consider making this binding mutable
+  |
+2 |     let mut x = 5;
+  |         +++
+
+For more information about this error, try `rustc --explain E0384`.
+error: could not compile `variables` (bin "variables") due to 1 previous error
+```
+
+前回の `E0596` は「変更できる形で借りられない」でしたが、今回は `E0384`「変更できない変数に 2 回代入した」です。どちらも直し方は `mut` を付けることで、コンパイラは `+++` で付ける位置まで示してくれます。
+
+TypeScript と並べると、こうなります。
+
+| やりたいこと | TypeScript | Rust |
+| --- | --- | --- |
+| 後から変えない変数 | `const x = 5` | `let x = 5` |
+| 後から変える変数 | `let x = 5` | `let mut x = 5` |
+| コンパイル時に決まる定数 | （専用の仕組みは無い） | `const X: i32 = 5` |
+
+同じ `let` でも、TypeScript では「変えられる」、Rust では「変えられない」なので、最初は混乱します。
+
+### 定数には型が要る
+
+Rust の `const` は、TypeScript の `const` とは別物です。`let` と違って、型を必ず書きます。書かないとどうなるか試します。
+
+```rust title="src/main.rs"
+const MAX_POINTS = 100_000;
+
+fn main() {
+    println!("{MAX_POINTS}");
+}
+```
+
+```console
+❯ cargo build
+   Compiling variables v0.1.0 (C:\Users\Jam\rust-demo\work\variables)
+error: missing type for `const` item
+ --> src\main.rs:1:17
+  |
+1 | const MAX_POINTS = 100_000;
+  |                 ^ help: provide a type for the constant: `: i32`
+
+error: could not compile `variables` (bin "variables") due to 1 previous error
+```
+
+「型を書け、たとえば `: i32`」と言われました。`100_000` の `_` は、桁を読みやすくするための区切りで、値は 100000 です。
+
+もう 1 つの違いは、定数の値はコンパイルのときに決まっていないといけないことです。実行してみないと分からない値を入れてみます。
+
+```rust title="src/main.rs"
+fn main() {
+    let input = String::from("42");
+    const LIMIT: usize = input.len();
+    println!("{LIMIT}");
+}
+```
+
+```console
+❯ cargo build
+   Compiling variables v0.1.0 (C:\Users\Jam\rust-demo\work\variables)
+error[E0435]: attempt to use a non-constant value in a constant
+ --> src\main.rs:3:26
+  |
+3 |     const LIMIT: usize = input.len();
+  |                          ^^^^^ non-constant value
+  |
+help: consider using `let` instead of `const`
+  |
+3 -     const LIMIT: usize = input.len();
+3 +     let LIMIT: usize = input.len();
+  |
+
+warning: unused variable: `input`
+ --> src\main.rs:2:9
+  |
+2 |     let input = String::from("42");
+  |         ^^^^^ help: if this is intentional, prefix it with an underscore: `_input`
+  |
+  = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+For more information about this error, try `rustc --explain E0435`.
+warning: `variables` (bin "variables") generated 1 warning
+error: could not compile `variables` (bin "variables") due to 1 previous error; 1 warning emitted
+```
+
+「定数の中で、定数でない値を使おうとした。`let` にしたらどうか」というエラーです。TypeScript の `const` は、実行時の値でも何でも入れられるので、ここが大きく違います。Rust の `const` は、プログラムに埋め込まれる「名前の付いた値」だと思うと分かりやすいです。
+
+### シャドーイング
+
+Rust では、同じ名前の変数を `let` で何度でも作り直せます。これをシャドーイング（影で隠す）と呼びます。
+
+```rust title="src/main.rs"
+fn main() {
+    let x = 5;
+    let x = x + 1;
+    {
+        let x = x * 2;
+        println!("inner x: {x}");
+    }
+    println!("outer x: {x}");
+}
+```
+
+```console
+❯ cargo run
+   Compiling variables v0.1.0 (C:\Users\Jam\rust-demo\work\variables)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.72s
+     Running `target\debug\variables.exe`
+inner x: 12
+outer x: 6
+```
+
+`x` は 5 で作られ、6 に作り直されて、`{}` の中では 12 になります。`{}` を抜けると中の `x` は消えて、外の 6 に戻りました。`mut` で値を書き換えたのではなく、新しい変数を同じ名前で作っています。
+
+JavaScript で同じスコープに `let` を 2 回書くと、そもそも実行できません。
+
+```console
+❯ bun -e 'let x = 5; let x = 6;'
+1 | let x = 5; let x = 6;
+                   ^
+error: "x" has already been declared
+    at C:\Users\Jam\rust-demo\work\[eval]:1:16
+
+1 | let x = 5; let x = 6;
+        ^
+note: "x" was originally declared here
+   at C:\Users\Jam\rust-demo\work\[eval]:1:5
+
+Bun v1.4.2 (Windows x64)
+```
+
+シャドーイングが便利なのは、型を変えられるところです。文字列の空白を、その個数に置き換えてみます。
+
+```rust title="src/main.rs"
+fn main() {
+    let spaces = "   ";
+    let spaces = spaces.len();
+    println!("{spaces}");
+}
+```
+
+```console
+❯ cargo run
+   Compiling variables v0.1.0 (C:\Users\Jam\rust-demo\work\variables)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.54s
+     Running `target\debug\variables.exe`
+3
+```
+
+`let mut` にして、代入で同じことをしようとするとエラーになります。
+
+```rust title="src/main.rs"
+fn main() {
+    let mut spaces = "   ";
+    spaces = spaces.len();
+    println!("{spaces}");
+}
+```
+
+```console
+❯ cargo build
+   Compiling variables v0.1.0 (C:\Users\Jam\rust-demo\work\variables)
+error[E0308]: mismatched types
+ --> src\main.rs:3:14
+  |
+2 |     let mut spaces = "   ";
+  |                      ----- expected due to this value
+3 |     spaces = spaces.len();
+  |              ^^^^^^^^^^^^ expected `&str`, found `usize`
+
+For more information about this error, try `rustc --explain E0308`.
+error: could not compile `variables` (bin "variables") due to 1 previous error
+```
+
+`mut` は「値を変えられる」であって、「型を変えられる」ではありません。`spaces` は最初の値で文字列（`&str`）と決まったので、数（`usize`）は入れられません。前回の数当てゲームで `let guess: u32 = guess.trim().parse()...` と同じ名前で作り直したのも、このシャドーイングです。`guess_str` と `guess_num` のように名前を分けなくて済みます。
+
+## データ型（3.2 節）
+
+[3.2 節](https://doc.rust-lang.org/book/ch03-02-data-types.html)は型の話です。Rust は静的な型の言語で、コンパイルのときにすべての変数の型が決まっていないといけません。ほとんどは推論してくれますが、推論できないときは型を書けと言われます。前回も見た `parse()` が、その例です。
+
+```rust title="src/main.rs"
+fn main() {
+    let guess = "42".parse().expect("Not a number!");
+    println!("{guess}");
+}
+```
+
+```console
+❯ cargo build
+   Compiling data_types v0.1.0 (C:\Users\Jam\rust-demo\work\data_types)
+error[E0284]: type annotations needed
+ --> src\main.rs:2:9
+  |
+2 |     let guess = "42".parse().expect("Not a number!");
+  |         ^^^^^        ----- type must be known at this point
+  |
+  = note: cannot satisfy `<_ as FromStr>::Err == _`
+  = note: the type must also implement `FromStr`
+note: required by a bound in `core::str::<impl str>::parse`
+ --> /rustc/58cf8f9c35b355199727627d07ae34a4e2846d67/library\core\src\str\mod.rs:2782:4
+help: consider giving `guess` an explicit type
+  |
+2 |     let guess: /* Type */ = "42".parse().expect("Not a number!");
+  |              ++++++++++++
+
+For more information about this error, try `rustc --explain E0284`.
+error: could not compile `data_types` (bin "data_types") due to 1 previous error
+```
+
+`"42"` を何の型に変えたいのか分からないので、`guess` に型を書け、と言われています。前回の `E0282` とは番号が違いますが、言っていることは同じです。
+
+### 整数の型
+
+JavaScript の数は、基本的に `number` の 1 種類だけです。Rust には、大きさと符号で分かれた整数の型がたくさんあります。
+
+| 大きさ | 符号あり | 符号なし |
+| --- | --- | --- |
+| 8 ビット | `i8` | `u8` |
+| 16 ビット | `i16` | `u16` |
+| 32 ビット | `i32` | `u32` |
+| 64 ビット | `i64` | `u64` |
+| 128 ビット | `i128` | `u128` |
+| マシンに合わせる | `isize` | `usize` |
+
+`i` が符号あり（マイナスも入る）、`u` が符号なし（0 以上だけ）です。型を書かずに整数を書くと `i32` になります。`usize` は、配列の添字や長さに使う型で、さっきの `spaces.len()` が返したのもこれです。
+
+### 整数のオーバーフロー
+
+![u8 の実行時オーバーフローは既定の debug ビルドでは panic し、release ビルドでは 0 に回り込む。コンパイル時に分かるオーバーフローはエラーになる](/rust/integer-overflow.avif)
+
+型ごとに入る範囲が決まっているので、範囲を超えたらどうなるかが気になります。`u8` は 0 から 255 までです。まずは素直に `255 + 1` と書いてみます。
+
+```rust title="src/main.rs"
+fn main() {
+    let x: u8 = 255 + 1;
+    println!("{x}");
+}
+```
+
+```console
+❯ cargo build
+   Compiling data_types v0.1.0 (C:\Users\Jam\rust-demo\work\data_types)
+error: this arithmetic operation will overflow
+ --> src\main.rs:2:17
+  |
+2 |     let x: u8 = 255 + 1;
+  |                 ^^^^^^^ attempt to compute `u8::MAX + 1_u8`, which would overflow
+  |
+  = note: `#[deny(arithmetic_overflow)]` on by default
+
+error: could not compile `data_types` (bin "data_types") due to 1 previous error
+```
+
+値がコンパイルのときに分かっているので、コンパイラが見つけて止めてくれました。では、実行してみないと分からない値ならどうでしょう。文字列 `"255"` を数に変えてから 1 を足します。
+
+```rust title="src/main.rs"
+fn main() {
+    let x: u8 = "255".parse().expect("Not a number!");
+    let y = x + 1;
+    println!("255 + 1 = {y}");
+}
+```
+
+debug ビルド（`cargo run`）と release ビルド（`cargo run --release`）で、結果が変わります。
+
+```console
+❯ cargo run
+   Compiling data_types v0.1.0 (C:\Users\Jam\rust-demo\work\data_types)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.00s
+     Running `target\debug\data_types.exe`
+
+thread 'main' (7680) panicked at src\main.rs:3:13:
+attempt to add with overflow
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+error: process didn't exit successfully: `target\debug\data_types.exe` (exit code: 101)
+❯ cargo run --release
+   Compiling data_types v0.1.0 (C:\Users\Jam\rust-demo\work\data_types)
+    Finished `release` profile [optimized] target(s) in 0.94s
+     Running `target\release\data_types.exe`
+255 + 1 = 0
+```
+
+debug では「足し算でオーバーフローした」で panic（プログラムがエラーで止まること）して、release では 0 に回り込みました。Book によると、release ではオーバーフローの検査を入れず、範囲を超えた値は一番小さい値に回り込みます。そのうえで、回り込みに頼るのは誤りだとしています。JavaScript なら、ふつうに 256 になるところです。
+
+```console
+❯ bun -e 'console.log(255 + 1)'
+256
+```
+
+回り込んでほしいのか、エラーにしたいのかをはっきり書きたいときは、標準ライブラリのメソッドを使います。Book が紹介している 4 種類を、全部試してみます。
+
+```rust title="src/main.rs"
+fn main() {
+    let x: u8 = "255".parse().expect("Not a number!");
+    println!("wrapping_add: {}", x.wrapping_add(1));
+    println!("checked_add: {:?}", x.checked_add(1));
+    println!("saturating_add: {}", x.saturating_add(1));
+    println!("overflowing_add: {:?}", x.overflowing_add(1));
+}
+```
+
+```console
+❯ cargo run
+   Compiling data_types v0.1.0 (C:\Users\Jam\rust-demo\work\data_types)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.23s
+     Running `target\debug\data_types.exe`
+wrapping_add: 0
+checked_add: None
+saturating_add: 255
+overflowing_add: (0, true)
+```
+
+- `wrapping_add`：debug でも release でも回り込む
+- `checked_add`：オーバーフローしたら `None`（値が無い）を返す
+- `saturating_add`：一番大きい値（ここでは 255）で止まる
+- `overflowing_add`：回り込んだ値と、オーバーフローしたかどうかを組で返す
+
+`{:?}` は、`None` や組のような値を、デバッグ用の形で表示する書き方です。
+
+### 割り算は切り捨て
+
+整数どうしの割り算は、小数点以下を切り捨てます。
+
+```rust title="src/main.rs"
+fn main() {
+    println!("5 / 2 = {}", 5 / 2);
+    println!("-5 / 2 = {}", -5 / 2);
+    println!("5 % 2 = {}", 5 % 2);
+    println!("5.0 / 2.0 = {}", 5.0 / 2.0);
+}
+```
+
+```console
+❯ cargo run
+   Compiling data_types v0.1.0 (C:\Users\Jam\rust-demo\work\data_types)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.97s
+     Running `target\debug\data_types.exe`
+5 / 2 = 2
+-5 / 2 = -2
+5 % 2 = 1
+5.0 / 2.0 = 2.5
+```
+
+`-5 / 2` が -3 ではなく -2 なので、0 に近いほうへの切り捨てです（Book にも「0 に向かって切り捨てる」とあります）。小数で割りたいなら `5.0 / 2.0` のように浮動小数点数（`f64`）どうしで割ります。JavaScript の割り算は切り捨てをしないので、Rust の動きに合わせるには `Math.trunc` が要ります。
+
+```console
+❯ bun -e 'console.log(5 / 2, -5 / 2, Math.trunc(-5 / 2))'
+2.5 -2.5 -2
+```
+
+整数と小数を混ぜて割ることはできません。
+
+```rust title="src/main.rs"
+fn main() {
+    let half = 5 / 2.0;
+    println!("{half}");
+}
+```
+
+```console
+❯ cargo build
+   Compiling data_types v0.1.0 (C:\Users\Jam\rust-demo\work\data_types)
+error[E0277]: cannot divide `{integer}` by `{float}`
+ --> src\main.rs:2:18
+  |
+2 |     let half = 5 / 2.0;
+  |                  ^ no implementation for `{integer} / {float}`
+  |
+  = help: the trait `Div<{float}>` is not implemented for `{integer}`
+  = help: the following other types implement trait `Div<Rhs>`:
+            `&f128` implements `Div<f128>`
+            `&f128` implements `Div`
+            `&f16` implements `Div<f16>`
+            `&f16` implements `Div`
+            `&f32` implements `Div<f32>`
+            `&f32` implements `Div`
+            `&f64` implements `Div<f64>`
+            `&f64` implements `Div`
+          and 62 others
+
+For more information about this error, try `rustc --explain E0277`.
+error: could not compile `data_types` (bin "data_types") due to 1 previous error
+```
+
+「整数を小数で割る方法は無い」と言われました。Rust は数の型を勝手に変換しないので、`5.0` と書くか、`as f64` で明示的に変換します。エラーに `Div` というトレイトが出てきますが、トレイトは 10 章の話なので、ここでは「`/` は型の組み合わせごとに用意されている」とだけ読んでおきます。
+
+### char は 4 バイト
+
+文字の型 `char` は、`'z'` のように一重引用符で書きます（文字列は二重引用符）。中身は Unicode のスカラー値 1 つなので、😻 のような絵文字も 1 つの `char` に入ります（肌の色付きや国旗のように、複数のスカラー値でできた絵文字は入りません）。
+
+```rust title="src/main.rs"
+fn main() {
+    let c = 'z';
+    let cat = '😻';
+    println!("{c} {cat}");
+    println!("char: {} bytes", size_of::<char>());
+    println!("\"😻\" as a string: {} bytes, {} char", "😻".len(), "😻".chars().count());
+}
+```
+
+```console
+❯ cargo run
+   Compiling data_types v0.1.0 (C:\Users\Jam\rust-demo\work\data_types)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.05s
+     Running `target\debug\data_types.exe`
+z 😻
+char: 4 bytes
+"😻" as a string: 4 bytes, 1 char
+```
+
+`char` は 4 バイトです。文字列の `len()` は文字数ではなくバイト数を返すので、`"😻"` は 4 になりました。文字数を数えるなら `chars().count()` です。JavaScript の `length` は UTF-16 の単位で数えるので、同じ絵文字が 2 になります。
+
+```console
+❯ bun -e 'console.log("😻".length)'
+2
+```
+
+### タプル
+
+タプルは、型の違う値をまとめたものです。TypeScript のタプル型 `[number, number, number]` と似ていますが、Rust では値も `()` で書きます。
+
+```rust title="src/main.rs"
+fn main() {
+    let tup: (i32, f64, u8) = (500, 6.4, 1);
+    let (x, y, z) = tup;
+    println!("x = {x}, y = {y}, z = {z}");
+    println!("tup.0 = {}", tup.0);
+}
+```
+
+```console
+❯ cargo run
+   Compiling data_types v0.1.0 (C:\Users\Jam\rust-demo\work\data_types)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 5.93s
+     Running `target\debug\data_types.exe`
+x = 500, y = 6.4, z = 1
+tup.0 = 500
+```
+
+`let (x, y, z) = tup;` は分割代入で、JavaScript の `const [x, y, z] = tup` にあたります。要素は `tup.0` のように、`.` と番号で取り出します。無い番号の `tup.3` を足すと、コンパイルが通りません。
+
+```rust title="src/main.rs"
+fn main() {
+    let tup: (i32, f64, u8) = (500, 6.4, 1);
+    let (x, y, z) = tup;
+    println!("x = {x}, y = {y}, z = {z}");
+    println!("tup.0 = {}", tup.0);
+    println!("{}", tup.3);
+}
+```
+
+```console
+❯ cargo build
+   Compiling data_types v0.1.0 (C:\Users\Jam\rust-demo\work\data_types)
+error[E0609]: no field `3` on type `(i32, f64, u8)`
+ --> src\main.rs:6:24
+  |
+6 |     println!("{}", tup.3);
+  |                        ^ unknown field
+  |
+  = note: available fields are: `0`, `1`, `2`
+
+For more information about this error, try `rustc --explain E0609`.
+error: could not compile `data_types` (bin "data_types") due to 1 previous error
+```
+
+何も無いタプル `()` は「ユニット」と呼ばれ、値が無いことを表します。このあと関数のところで、また出てきます。
+
+### 配列は長さが決まっている
+
+Rust の配列は、要素の型がすべて同じで、長さが決まっています。型は `[i32; 5]`（`i32` が 5 個）のように書きます。長さが違う配列を入れてみます。
+
+```rust title="src/main.rs"
+fn main() {
+    let a: [i32; 5] = [1, 2, 3];
+    println!("{a:?}");
+}
+```
+
+```console
+❯ cargo build
+   Compiling data_types v0.1.0 (C:\Users\Jam\rust-demo\work\data_types)
+error[E0308]: mismatched types
+ --> src\main.rs:2:23
+  |
+2 |     let a: [i32; 5] = [1, 2, 3];
+  |            --------   ^^^^^^^^^ expected an array with a size of 5, found one with a size of 3
+  |            |
+  |            expected due to this
+  |
+help: consider specifying the actual array length
+  |
+2 -     let a: [i32; 5] = [1, 2, 3];
+2 +     let a: [i32; 3] = [1, 2, 3];
+  |
+
+For more information about this error, try `rustc --explain E0308`.
+error: could not compile `data_types` (bin "data_types") due to 1 previous error
+```
+
+長さまで型の一部なので、長さ 3 の配列は `[i32; 5]` になれません。JavaScript の配列のように伸び縮みするものは、Rust ではベクタ（`Vec`）と呼ばれ、8 章で出てきます。
+
+範囲の外を読もうとするとどうなるかも試します。まずは、添字を `10` と直接書いた場合です。
+
+```rust title="src/main.rs"
+fn main() {
+    let a = [1, 2, 3, 4, 5];
+    println!("{}", a[10]);
+}
+```
+
+```console
+❯ cargo build
+   Compiling data_types v0.1.0 (C:\Users\Jam\rust-demo\work\data_types)
+error: this operation will panic at runtime
+ --> src\main.rs:3:20
+  |
+3 |     println!("{}", a[10]);
+  |                    ^^^^^ index out of bounds: the length is 5 but the index is 10
+  |
+  = note: `#[deny(unconditional_panic)]` on by default
+
+error: could not compile `data_types` (bin "data_types") due to 1 previous error
+```
+
+オーバーフローと同じく、コンパイルのときに分かるものは、コンパイラが止めてくれます。Book と同じように、添字を標準入力から読むようにして、実行するまで分からなくします。
+
+```rust title="src/main.rs"
+use std::io;
+
+fn main() {
+    let a = [1, 2, 3, 4, 5];
+
+    let mut index = String::new();
+    io::stdin()
+        .read_line(&mut index)
+        .expect("Failed to read line");
+    let index: usize = index.trim().parse().expect("Index entered was not a number");
+
+    let element = a[index];
+    println!("The value of the element at index {index} is: {element}");
+}
+```
+
+```console
+❯ "2" | cargo run
+   Compiling data_types v0.1.0 (C:\Users\Jam\rust-demo\work\data_types)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.30s
+     Running `target\debug\data_types.exe`
+The value of the element at index 2 is: 3
+❯ "10" | cargo run
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.07s
+     Running `target\debug\data_types.exe`
+
+thread 'main' (13380) panicked at src\main.rs:12:19:
+index out of bounds: the len is 5 but the index is 10
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+error: process didn't exit successfully: `target\debug\data_types.exe` (exit code: 101)
+```
+
+`2` なら 3 番目の要素が読めて、`10` では「長さは 5 なのに添字が 10」で panic しました。JavaScript では、範囲の外を読んでもエラーにならず、`undefined` が返ってきます。
+
+```console
+❯ bun -e 'console.log([1, 2, 3, 4, 5][10])'
+undefined
+```
+
+`undefined` のまま処理が進んで、ずっと後で別のエラーになるよりは、その場で止まるほうが原因を探しやすい、というのが Rust の考え方です。添字の検査は、オーバーフローと違って release でも外れません。
+
+```console
+❯ "10" | cargo run --release
+   Compiling data_types v0.1.0 (C:\Users\Jam\rust-demo\work\data_types)
+    Finished `release` profile [optimized] target(s) in 1.99s
+     Running `target\release\data_types.exe`
+
+thread 'main' (24396) panicked at src\main.rs:12:19:
+index out of bounds: the len is 5 but the index is 10
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+error: process didn't exit successfully: `target\release\data_types.exe` (exit code: 101)
+```
+
+## 関数（3.3 節）
+
+### 引数には型を書く
+
+[3.3 節](https://doc.rust-lang.org/book/ch03-03-how-functions-work.html)は関数です。`fn` で定義して、名前は `snake_case`（小文字と `_`）で書くのが Rust の慣習です。引数には、必ず型を書きます。省いてみます。
+
+```rust title="src/main.rs"
+fn main() {
+    print_twice(5);
+}
+
+fn print_twice(x) {
+    println!("{x} {x}");
+}
+```
+
+```console
+❯ cargo build
+   Compiling functions v0.1.0 (C:\Users\Jam\rust-demo\work\functions)
+error: expected one of `:`, `@`, or `|`, found `)`
+ --> src\main.rs:5:17
+  |
+5 | fn print_twice(x) {
+  |                 ^ expected one of `:`, `@`, or `|`
+  |
+help: if this is a parameter name, give it a type
+  |
+5 | fn print_twice(x: TypeName) {
+  |                 ++++++++++
+help: if this is a type, explicitly ignore the parameter name
+  |
+5 | fn print_twice(_: x) {
+  |                ++
+
+error: could not compile `functions` (bin "functions") due to 1 previous error
+```
+
+「型の注釈が無い」というエラーではなく、文法の誤りとして扱われました。TypeScript では、引数の型を省くと `any` になって（`noImplicitAny` が無ければ）通ってしまいますが、Rust の関数の引数では型の推論はしません。関数の外から見た形は、必ず書いておく決まりです。`print_twice` を `main` より後ろで定義しても呼べるところは、JavaScript の関数宣言と同じです。
+
+### 文と式
+
+Rust を読むうえで大事なのが、**文**（statement）と**式**（expression）の区別です。
+
+- 文：何かをするだけで、値を返さない。`let y = 6;` は文
+- 式：計算して値になる。`5 + 6` も、関数の呼び出しも、`{}` のブロックも式
+
+`let` は文なので、値になりません。JavaScript の `x = y = 6` のつもりで書いてみます。
+
+```rust title="src/main.rs"
+fn main() {
+    let x = (let y = 6);
+}
+```
+
+```console
+❯ cargo build
+   Compiling functions v0.1.0 (C:\Users\Jam\rust-demo\work\functions)
+error: expected expression, found `let` statement
+ --> src\main.rs:2:14
+  |
+2 |     let x = (let y = 6);
+  |              ^^^
+  |
+  = note: only supported directly in conditions of `if` and `while` expressions
+
+warning: unnecessary parentheses around assigned value
+ --> src\main.rs:2:13
+  |
+2 |     let x = (let y = 6);
+  |             ^         ^
+  |
+  = note: `#[warn(unused_parens)]` (part of `#[warn(unused)]`) on by default
+help: remove these parentheses
+  |
+2 -     let x = (let y = 6);
+2 +     let x = let y = 6;
+  |
+
+warning: `functions` (bin "functions") generated 1 warning
+error: could not compile `functions` (bin "functions") due to 1 previous error; 1 warning emitted
+```
+
+「式が来るはずなのに、`let` の文が来た」というエラーです。`if` と `while` の条件だけは例外だという注記も付いています（`if let` という書き方で、6 章で出てきます）。
+
+逆に、`{}` のブロックは式なので、値になります。
+
+```rust title="src/main.rs"
+fn main() {
+    let y = {
+        let x = 3;
+        x + 1
+    };
+    println!("The value of y is: {y}");
+}
+```
+
+```console
+❯ cargo run
+   Compiling functions v0.1.0 (C:\Users\Jam\rust-demo\work\functions)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.85s
+     Running `target\debug\functions.exe`
+The value of y is: 4
+```
+
+ブロックの最後の `x + 1` に `;` が付いていないところがポイントです。最後に `;` の無い式を置くと、それがブロック全体の値になります。
+
+### 戻り値と最後のセミコロン
+
+![x が 5 のとき、ブロックの最後が x + 1 なら値は 6、x + 1 にセミコロンを付けるとブロックの値はユニットになる。i32 を返す関数では型エラーになる](/rust/trailing-semicolon.avif)
+
+関数の戻り値も、同じ仕組みです。戻り値の型は `->` の後ろに書いて、本体の最後の式がそのまま戻り値になります。`return` は、途中で抜けたいときだけ使います。
+
+```rust title="src/main.rs"
+fn main() {
+    let x = plus_one(5);
+    println!("The value of x is: {x}");
+}
+
+fn plus_one(x: i32) -> i32 {
+    x + 1
+}
+```
+
+```console
+❯ cargo run
+   Compiling functions v0.1.0 (C:\Users\Jam\rust-demo\work\functions)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.92s
+     Running `target\debug\functions.exe`
+The value of x is: 6
+```
+
+ここで `x + 1` に `;` を付けると、式が文に変わって、値が返らなくなります。
+
+```rust title="src/main.rs"
+fn main() {
+    let x = plus_one(5);
+    println!("The value of x is: {x}");
+}
+
+fn plus_one(x: i32) -> i32 {
+    x + 1;
+}
+```
+
+```console
+❯ cargo build
+   Compiling functions v0.1.0 (C:\Users\Jam\rust-demo\work\functions)
+error[E0308]: mismatched types
+ --> src\main.rs:6:24
+  |
+6 | fn plus_one(x: i32) -> i32 {
+  |    --------            ^^^ expected `i32`, found `()`
+  |    |
+  |    implicitly returns `()` as its body has no tail or `return` expression
+7 |     x + 1;
+  |          - help: remove this semicolon to return this value
+
+For more information about this error, try `rustc --explain E0308`.
+error: could not compile `functions` (bin "functions") due to 1 previous error
+```
+
+「`i32` を返すはずなのに `()` が返っている。最後の式も `return` も無いので、暗黙に `()` を返している」と言われました。`()` は、さっきのタプルのところで見たユニット、つまり「値が無い」です。直し方として、消すべき `;` の位置まで示してくれます。
+
+これで、前回 `;` を消しても動いた理由を、エラーで確かめられます。前回、Hello, World! の `println!("Hello, world!");` の最後の `;` を消しても、問題なく動きました。`main` のように戻り値の型を書いていない関数は、戻り値の型が `()` になります。試しに、`main` の最後に `5` を置いてみます。
+
+```rust title="src/main.rs"
+fn main() {
+    5
+}
+```
+
+```console
+❯ cargo build
+   Compiling functions v0.1.0 (C:\Users\Jam\rust-demo\work\functions)
+error[E0308]: mismatched types
+ --> src\main.rs:2:5
+  |
+1 | fn main() {
+  |          - expected `()` because of default return type
+2 |     5
+  |     ^ expected `()`, found integer
+
+For more information about this error, try `rustc --explain E0308`.
+error: could not compile `functions` (bin "functions") due to 1 previous error
+```
+
+「戻り値の型を書いていないので、`()` を返すはずだ」と言われました。`println!` は表示するだけで、値としては `()` を返します。なので、`;` を消して `println!(...)` が最後の式になっても、`main` が `()` を返すことに変わりはなく、型が合って通ったわけです。
+
+## コメント（3.4 節）
+
+[3.4 節](https://doc.rust-lang.org/book/ch03-04-comments.html)はコメントで、短い節です。`//` から行の終わりまでがコメントで、JavaScript と同じです。Book では、コメントはコードの上の行に書くのが普通だとしています。`///` で始めるドキュメントコメントもありますが、これは 14 章で扱われます。
+
+## 制御フロー（3.5 節）
+
+### if の条件は bool だけ
+
+[3.5 節](https://doc.rust-lang.org/book/ch03-05-control-flow.html)は、`if` とループです。`if` の書き方は、条件に `()` が要らないこと以外は JavaScript とほぼ同じです。大きく違うのは、条件に `bool` しか書けないところです。
+
+```rust title="src/main.rs"
+fn main() {
+    let number = 3;
+
+    if number {
+        println!("number was three");
+    }
+}
+```
+
+```console
+❯ cargo build
+   Compiling branches v0.1.0 (C:\Users\Jam\rust-demo\work\branches)
+error[E0308]: mismatched types
+ --> src\main.rs:4:8
+  |
+4 |     if number {
+  |        ^^^^^^ expected `bool`, found integer
+
+For more information about this error, try `rustc --explain E0308`.
+error: could not compile `branches` (bin "branches") due to 1 previous error
+```
+
+JavaScript では、0、空文字列、`null`、`undefined` などが偽として扱われ、それ以外は真になります（truthy / falsy）。Rust にはこの仕組みが無く、`number != 0` のように、`bool` になる式を書く必要があります。`if (count)` と書いて 0 のときを取りこぼす、という種類のバグが起きません。
+
+### if は式
+
+`if` も式なので、値になります。JavaScript の三項演算子 `condition ? 5 : 6` は、Rust ではこう書きます。
+
+```rust title="src/main.rs"
+fn main() {
+    let condition = true;
+    let number = if condition { 5 } else { 6 };
+    println!("The value of number is: {number}");
+}
+```
+
+```console
+❯ cargo run
+   Compiling branches v0.1.0 (C:\Users\Jam\rust-demo\work\branches)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.30s
+     Running `target\debug\branches.exe`
+The value of number is: 5
+```
+
+Rust に三項演算子はありません。`if` がそのまま値になるので、要らないのです。ただし、どちらの分岐も同じ型でないといけません。`else` のほうを文字列にしてみます。
+
+```rust title="src/main.rs"
+fn main() {
+    let condition = true;
+    let number = if condition { 5 } else { "six" };
+    println!("The value of number is: {number}");
+}
+```
+
+```console
+❯ cargo build
+   Compiling branches v0.1.0 (C:\Users\Jam\rust-demo\work\branches)
+error[E0308]: `if` and `else` have incompatible types
+ --> src\main.rs:3:44
+  |
+3 |     let number = if condition { 5 } else { "six" };
+  |                                 -          ^^^^^ expected integer, found `&str`
+  |                                 |
+  |                                 expected because of this
+
+For more information about this error, try `rustc --explain E0308`.
+error: could not compile `branches` (bin "branches") due to 1 previous error
+```
+
+TypeScript なら変数 `number` の型は `5 | "six"` のような合併型になって通りますが、Rust の変数の型は 1 つに決まっていないといけません。
+
+`else` を消すとどうなるかも試しました。
+
+```rust title="src/main.rs"
+fn main() {
+    let condition = true;
+    let number = if condition { 5 };
+    println!("The value of number is: {number}");
+}
+```
+
+```console
+❯ cargo build
+   Compiling branches v0.1.0 (C:\Users\Jam\rust-demo\work\branches)
+error[E0317]: `if` may be missing an `else` clause
+ --> src\main.rs:3:18
+  |
+3 |     let number = if condition { 5 };
+  |                  ^^^^^^^^^^^^^^^-^^
+  |                  |              |
+  |                  |              found here
+  |                  expected integer, found `()`
+  |
+  = note: `if` expressions without `else` evaluate to `()`
+  = help: consider adding an `else` block that evaluates to the expected type
+
+For more information about this error, try `rustc --explain E0317`.
+error: could not compile `branches` (bin "branches") due to 1 previous error
+```
+
+`else` の無い `if` は、条件が偽のときに何も返せないので、値は `()` になります。ここでもユニットが出てきました。条件が偽のときの値を用意しろ、と言われています。
+
+### loop は値を返せる
+
+Rust のループは `loop`、`while`、`for` の 3 種類です。`loop` は、`break` するまでずっと繰り返します。JavaScript の `while (true)` にあたりますが、`break` に値を付けて、ループ全体を値にできます。Book と同じ例で試します。
+
+```rust title="src/main.rs"
+fn main() {
+    let mut counter = 0;
+
+    let result = loop {
+        counter += 1;
+
+        if counter == 10 {
+            break counter * 2;
+        }
+    };
+
+    println!("The result is {result}");
+}
+```
+
+```console
+❯ cargo run
+   Compiling loops v0.1.0 (C:\Users\Jam\rust-demo\work\loops)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.40s
+     Running `target\debug\loops.exe`
+The result is 20
+```
+
+`counter` が 10 になったところで、`break counter * 2` で 20 を返して抜けました。同じことを `while` でやろうとすると、エラーになります。
+
+```rust title="src/main.rs"
+fn main() {
+    let mut n = 0;
+    let result = while n < 3 {
+        n += 1;
+        break n;
+    };
+    println!("{result:?}");
+}
+```
+
+```console
+❯ cargo build
+   Compiling loops v0.1.0 (C:\Users\Jam\rust-demo\work\loops)
+error[E0571]: `break` with value from a `while` loop
+ --> src\main.rs:5:9
+  |
+3 |     let result = while n < 3 {
+  |                  ----------- you can't `break` with a value in a `while` loop
+4 |         n += 1;
+5 |         break n;
+  |         ^^^^^^^ can only break with a value inside `loop` or breakable block
+  |
+help: use `break` on its own without a value inside this `while` loop
+  |
+5 -         break n;
+5 +         break;
+  |
+
+For more information about this error, try `rustc --explain E0571`.
+error: could not compile `loops` (bin "loops") due to 1 previous error
+```
+
+`while` は、`break` しなくても条件が偽になって終わることがあります。そのときに返す値が無いので、値付きの `break` は `loop`（とラベル付きのブロック）でしか使えません。`else` の無い `if` と同じ理屈です。
+
+### ループのラベル
+
+ループが入れ子になっているとき、`break` や `continue` は一番内側のループに効きます。外側のループを指定したいときは、`'outer:` のようなラベルを付けます。JavaScript にもラベルはあり、違うのは `outer:` の前に `'` が付くところだけです。
+
+```rust title="src/main.rs"
+fn main() {
+    'outer: for i in 1..=3 {
+        for j in 1..=3 {
+            if j == 2 {
+                continue 'outer;
+            }
+            if i == 3 {
+                break 'outer;
+            }
+            println!("i = {i}, j = {j}");
+        }
+    }
+    println!("done");
+}
+```
+
+```console
+❯ cargo run
+   Compiling loops v0.1.0 (C:\Users\Jam\rust-demo\work\loops)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.31s
+     Running `target\debug\loops.exe`
+i = 1, j = 1
+i = 2, j = 1
+done
+```
+
+`j` が 2 になると `continue 'outer` で外側の次の `i` に進むので、`j = 1` しか表示されません。`i` が 3 になると `break 'outer` で両方のループを抜けます。
+
+### while と for
+
+`while` は、JavaScript と同じく条件が真のあいだ繰り返します。ただ、配列を順に処理するなら `for` のほうが安全です。両方で同じ配列を回して、ついでに範囲（`1..4`）を逆順にするカウントダウンも試します。
+
+```rust title="src/main.rs"
+fn main() {
+    let a = [10, 20, 30];
+
+    let mut index = 0;
+    while index < a.len() {
+        println!("while: {}", a[index]);
+        index += 1;
+    }
+
+    for element in a {
+        println!("for: {element}");
+    }
+
+    for number in (1..4).rev() {
+        println!("{number}!");
+    }
+    println!("LIFTOFF!!!");
+}
+```
+
+```console
+❯ cargo run
+   Compiling loops v0.1.0 (C:\Users\Jam\rust-demo\work\loops)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.34s
+     Running `target\debug\loops.exe`
+while: 10
+while: 20
+while: 30
+for: 10
+for: 20
+for: 30
+3!
+2!
+1!
+LIFTOFF!!!
+```
+
+`while` を使ったほうは、`index < a.len()` の条件を間違えると、さっきの範囲外の panic になります。`for element in a` は JavaScript の `for (const element of a)` にあたり、添字を自分で管理しないので、その心配がありません。`1..4` は 1 以上 4 未満の範囲で、`.rev()` で逆順になります。`1..=3` のように `=` を付けると、終わりの値も含みます（ラベルの例で使ったものです）。
+
+## 章末の練習問題：フィボナッチ数
+
+3 章の最後には、練習問題が 3 つあります。温度の変換、n 番目のフィボナッチ数、それに「クリスマスの 12 日」の歌詞の表示です。ここでは、オーバーフローの実例になるフィボナッチ数の問題を解いてみます。
+
+```rust title="src/main.rs"
+fn fib(n: u32) -> u32 {
+    if n == 0 {
+        return 0;
+    }
+    let mut prev = 0;
+    let mut curr = 1;
+    for _ in 1..n {
+        let next = prev + curr;
+        prev = curr;
+        curr = next;
+    }
+    curr
+}
+
+fn main() {
+    for n in [1, 2, 10, 47, 48] {
+        println!("fib({n}) = {}", fib(n));
+    }
+}
+```
+
+途中で抜ける `return 0;` と、最後の式 `curr` の両方を使っています。`for _ in` の `_` は、使わない値に付ける名前です。実行します。
+
+```console
+❯ cargo run
+   Compiling fibonacci v0.1.0 (C:\Users\Jam\rust-demo\work\fibonacci)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 5.13s
+     Running `target\debug\fibonacci.exe`
+fib(1) = 1
+fib(2) = 1
+fib(10) = 55
+fib(47) = 2971215073
+
+thread 'main' (4824) panicked at src\main.rs:8:20:
+attempt to add with overflow
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+error: process didn't exit successfully: `target\debug\fibonacci.exe` (exit code: 101)
+```
+
+47 番目の 2971215073 までは `u32`（最大 4294967295）に入りますが、48 番目の足し算で panic しました。release ではどうなるでしょうか。
+
+```console
+❯ cargo run --release
+   Compiling fibonacci v0.1.0 (C:\Users\Jam\rust-demo\work\fibonacci)
+    Finished `release` profile [optimized] target(s) in 1.29s
+     Running `target\release\fibonacci.exe`
+fib(1) = 1
+fib(2) = 1
+fib(10) = 55
+fib(47) = 2971215073
+fib(48) = 512559680
+```
+
+panic せずに、`fib(48) = 512559680` という間違った答えを、何事もなかったように出しました。47 番目より小さくなっているので、明らかにおかしい値です。debug で試しておかないと、こういう値がそのまま出ていきます。
+
+型を `u64` に変えて、どこまで行けるか確かめます。変えるのは、戻り値と `prev`、`curr` の型です。
+
+```rust title="src/main.rs"
+fn fib(n: u32) -> u64 {
+    if n == 0 {
+        return 0;
+    }
+    let mut prev: u64 = 0;
+    let mut curr: u64 = 1;
+    for _ in 1..n {
+        let next = prev + curr;
+        prev = curr;
+        curr = next;
+    }
+    curr
+}
+
+fn main() {
+    for n in [48, 93, 94] {
+        println!("fib({n}) = {}", fib(n));
+    }
+}
+```
+
+```console
+❯ cargo run
+   Compiling fibonacci v0.1.0 (C:\Users\Jam\rust-demo\work\fibonacci)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.37s
+     Running `target\debug\fibonacci.exe`
+fib(48) = 4807526976
+fib(93) = 12200160415121876738
+
+thread 'main' (24936) panicked at src\main.rs:8:20:
+attempt to add with overflow
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+error: process didn't exit successfully: `target\debug\fibonacci.exe` (exit code: 101)
+```
+
+`u64` では 93 番目まで入って、94 番目で panic しました。`fib(48)` の正しい値は 4807526976 で、`u32` の release ビルドが出した 512559680 は、ここから 2 の 32 乗（4294967296）を引いた値です。回り込みが起きていたことが、数字でも確かめられます。
+
+JavaScript の `number` は 2 の 53 乗を超えると、すべての整数を正確には表せなくなるので、`fib(93)` を正しく出すには `BigInt` が要ります。
+
+```console
+❯ bun -e 'console.log(Number.MAX_SAFE_INTEGER, 12200160415121876738, 12200160415121876738n)'
+9007199254740991 12200160415121877000 12200160415121876738n
+```
+
+`n` を付けない数は、末尾が `7000` に丸められてしまいました。Rust では、型を選ぶ時点で「どこまでの数を扱うか」を決めることになります。
+
+## よく使うコマンド
+
+| コマンド | 説明 |
+| --- | --- |
+| `cargo new <名前>` | 新しいプロジェクトを作る |
+| `cargo run` | debug ビルドで実行する（オーバーフローを検査する） |
+| `cargo run --release` | release ビルドで実行する（オーバーフローは回り込む） |
+| `cargo build` | ビルドだけして、エラーを確かめる |
+| `rustc --explain <エラー番号>` | エラーの詳しい説明を読む |
+
+## まとめ
+
+- `let` は変えられない、`let mut` は変えられる。同じ `let` でも、TypeScript とは「変えられる／変えられない」が逆
+- `const` は型が必須で、コンパイルのときに決まる値しか入らない
+- シャドーイングで、同じ名前の変数を作り直せる。`mut` と違って型も変えられる
+- 整数の型は大きさと符号で分かれている。オーバーフローは debug では panic、release では回り込む。はっきりさせたいなら `checked_add` などを使う
+- 整数の割り算は 0 に向かって切り捨て。整数と小数は混ぜられない
+- `char` は 4 バイト。文字列の `len()` はバイト数
+- 配列は長さまで型の一部。範囲の外を読むと panic する
+- `let` は文で、ブロックや `if` は式。最後の `;` の無い式が値になる。`;` を付けると `()` になる
+- `if` の条件は `bool` だけ。三項演算子のかわりに `if` を式として使う
+- `loop` は `break` で値を返せる。ラベルで外側のループを指定できる。配列を回すなら `for`
+
+次回は Book の 4 章、所有権です。Rust でいちばん特徴的なところで、TypeScript にはまったく無い考え方なので、エラーをたくさん見ることになりそうです。
