@@ -1,0 +1,776 @@
+---
+title: "Learning Rust with the Book: Ownership, References and Slices"
+image: /thumbnails/rust-book-ownership.avif
+date: "2026-10-18"
+description: The third post in a series that works through The Rust Programming Language. It tries chapter 4's ownership, references and borrowing, and slices, checking when values are dropped, what happens when a moved variable is used, and what the compiler says when the reference rules are broken, comparing them along the way with TypeScript
+tags:
+  - rust
+  - typescript
+  - devtools
+---
+
+## About this post
+
+This is the third post in a series that works through
+[The Rust Programming Language](https://doc.rust-lang.org/book/) (the Book) hands-on. The
+[second post](/en/blog/rust-book-common-concepts) tried chapter 3's variables, types, functions and control flow.
+
+This time it is
+[chapter 4, "Understanding Ownership"](https://doc.rust-lang.org/book/ch04-00-understanding-ownership.html).
+Ownership is how Rust handles memory safely without a garbage collector (GC), and it is the most distinctive part of
+the language. TypeScript (JavaScript) leaves memory to the GC, so nearly everything in this chapter is a new way of
+thinking, and there are plenty of compiler errors to go with it.
+
+The setup is the same as before: Rust 1.99.1 in PowerShell on Windows 11. Each section gets its own project from
+`cargo new`.
+
+## Ownership (section 4.1)
+
+### The stack and the heap
+
+[Section 4.1](https://doc.rust-lang.org/book/ch04-01-what-is-ownership.html) starts with where values live in
+memory.
+
+- **Stack**: values of a known, fixed size are pushed on and popped off the top. It is fast. Values such as `i32`
+  and `bool` live here
+- **Heap**: for values whose size is only known at run time. Allocating means finding free space, which is slower
+  than using the stack, and the space has to be cleaned up later
+
+In JavaScript, cleaning up the heap is the GC's job. In C, you call `free` yourself. Rust does neither: the
+compiler tracks who owns each value and inserts the cleanup at the point where the owner goes away. The rules for
+that are ownership. The Book lists three:
+
+1. Each value in Rust has an owner
+2. There can only be one owner at a time
+3. When the owner goes out of scope, the value is dropped
+
+### String and literals
+
+The Book's example of a type that uses the heap is `String`. The string literals used so far, such as `"hello"`,
+are baked into the program and cannot change. Try adding text to a literal:
+
+```rust title="src/main.rs"
+fn main() {
+    let s = "hello";
+    s.push_str(", world!");
+    println!("{s}");
+}
+```
+
+```console
+❯ cargo build
+   Compiling ownership v0.1.0 (C:\Users\Jam\rust-demo\work\ownership)
+error[E0599]: no method named `push_str` found for reference `&str` in the current scope
+ --> src\main.rs:3:7
+  |
+3 |     s.push_str(", world!");
+  |       ^^^^^^^^ method not found in `&str`
+
+For more information about this error, try `rustc --explain E0599`.
+error: could not compile `ownership` (bin "ownership") due to 1 previous error
+```
+
+A literal's type is `&str`, which has no `push_str` method. A `String` made with `String::from` keeps its contents
+on the heap and can grow:
+
+```rust title="src/main.rs"
+fn main() {
+    let mut s = String::from("hello");
+    s.push_str(", world!");
+    println!("{s}");
+}
+```
+
+```console
+❯ cargo run
+   Compiling ownership v0.1.0 (C:\Users\Jam\rust-demo\work\ownership)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.78s
+     Running `target\debug\ownership.exe`
+hello, world!
+```
+
+What the `&` in `&str` means becomes clear in the references section.
+
+### Watching values get dropped
+
+Rule 3, "dropped when it goes out of scope", is invisible, which makes it hard to get a feel for. So here is a small
+type that prints a line when it is dropped. The `impl Drop for Noisy` part is "what runs on drop"; chapter 15 covers
+how to write it. For now, read it as "a type that prints `drop: name` when it is dropped".
+
+```rust title="src/main.rs"
+struct Noisy(&'static str);
+
+impl Drop for Noisy {
+    fn drop(&mut self) {
+        println!("drop: {}", self.0);
+    }
+}
+
+fn main() {
+    let _a = Noisy("a");
+    {
+        let _b = Noisy("b");
+        println!("end of inner scope");
+    }
+    let mut c = Noisy("c1");
+    println!("c is {}", c.0);
+    c = Noisy("c2");
+    println!("end of main ({})", c.0);
+}
+```
+
+```console
+❯ cargo run
+   Compiling ownership v0.1.0 (C:\Users\Jam\rust-demo\work\ownership)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.51s
+     Running `target\debug\ownership.exe`
+end of inner scope
+drop: b
+c is c1
+drop: c1
+end of main (c2)
+drop: c2
+drop: a
+```
+
+Three things show up:
+
+- `b` was dropped right as the inner `{}` ended
+- The moment `c2` was assigned to `c`, the old `c1` was dropped, because it no longer had an owner
+- At the end of `main`, `c2` and then `a` were dropped, the reverse of the order they were created in
+
+In JavaScript the GC decides when an object is cleaned up, so the code does not tell you. In Rust, the code decides
+on which line a value is thrown away.
+
+### Moves: one owner at a time
+
+Rule 2, "one owner at a time", comes into play when assigning one variable to another. Put a `String` into another
+variable, then use the original:
+
+```rust title="src/main.rs"
+fn main() {
+    let s1 = String::from("hello");
+    let s2 = s1;
+    println!("{s1}, world!");
+    println!("{s2}");
+}
+```
+
+```console
+❯ cargo build
+   Compiling ownership v0.1.0 (C:\Users\Jam\rust-demo\work\ownership)
+error[E0382]: borrow of moved value: `s1`
+ --> src\main.rs:4:16
+  |
+2 |     let s1 = String::from("hello");
+  |         -- move occurs because `s1` has type `String`, which does not implement the `Copy` trait
+3 |     let s2 = s1;
+  |              -- value moved here
+4 |     println!("{s1}, world!");
+  |                ^^ value borrowed here after move
+  |
+help: consider cloning the value if the performance cost is acceptable
+  |
+3 |     let s2 = s1.clone();
+  |                ++++++++
+
+For more information about this error, try `rustc --explain E0382`.
+error: could not compile `ownership` (bin "ownership") due to 1 previous error
+```
+
+"The value was moved by `let s2 = s1;`, then `s1` was used." A `String` itself consists of three parts: a pointer to the
+contents on the heap, a length and a capacity. `let s2 = s1;` copies only those three, not the heap contents. If
+`s1` and `s2` both stayed owners, both would clean up the same heap memory when they went out of scope (the Book
+calls this a double free). So Rust makes `s1` unusable at the assignment. That is a move.
+
+Assignment in JavaScript does not copy an object's contents either; it copies a reference to the same object. The
+difference is that the original variable stays usable:
+
+```console
+❯ bun -e 'const a = { name: "hello" }; const b = a; b.name = "changed"; console.log(a.name)'
+changed
+```
+
+`a` changed even though only `b` was modified, because both variables point at the same object. That is normal in
+JavaScript, and the GC cleans up once nothing points at the object, so nothing breaks. The price is a whole class of
+bugs where something changes behind your back. Rust prevents both the double free and this kind of bug
+by allowing only one owner.
+
+### clone and Copy
+
+![Moving a String invalidates the original binding without copying the heap data. clone creates separate heap data so both bindings remain usable](/rust/move-and-clone.avif)
+
+To copy the contents too, call `clone`, as the error's `help` said. An integer runs alongside for comparison:
+
+```rust title="src/main.rs"
+fn main() {
+    let s1 = String::from("hello");
+    let s2 = s1.clone();
+    println!("s1 = {s1}, s2 = {s2}");
+
+    let x = 5;
+    let y = x;
+    println!("x = {x}, y = {y}");
+}
+```
+
+```console
+❯ cargo run
+   Compiling ownership v0.1.0 (C:\Users\Jam\rust-demo\work\ownership)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.54s
+     Running `target\debug\ownership.exe`
+s1 = hello, s2 = hello
+x = 5, y = 5
+```
+
+`clone` builds a fresh copy of the heap contents, so `s1` stays usable. According to the Book, Rust never makes deep
+copies of your data on its own. Copying costs time, so seeing `clone` in code tells you "this might be expensive".
+
+The integer `x` was still usable after `let y = x;` without any `clone`. Types that live entirely on the stack, such
+as integers, are copied on assignment. Such types implement the `Copy` trait, which is what the earlier error's
+"`String` does not implement the `Copy` trait" was about. Integers, floating-point numbers, `bool`, `char`, and
+tuples made only of `Copy` types are among the `Copy` types.
+
+### Passing to a function moves too
+
+Passing a value to a function works like assignment. Pass a `String` and an integer to functions, then use the
+originals:
+
+```rust title="src/main.rs"
+fn main() {
+    let s = String::from("hello");
+    takes_ownership(s);
+    println!("{s}");
+
+    let x = 5;
+    makes_copy(x);
+    println!("{x}");
+}
+
+fn takes_ownership(some_string: String) {
+    println!("{some_string}");
+}
+
+fn makes_copy(some_integer: i32) {
+    println!("{some_integer}");
+}
+```
+
+```console
+❯ cargo build
+   Compiling ownership v0.1.0 (C:\Users\Jam\rust-demo\work\ownership)
+error[E0382]: borrow of moved value: `s`
+  --> src\main.rs:4:16
+   |
+ 2 |     let s = String::from("hello");
+   |         - move occurs because `s` has type `String`, which does not implement the `Copy` trait
+ 3 |     takes_ownership(s);
+   |                     - value moved here
+ 4 |     println!("{s}");
+   |                ^ value borrowed here after move
+   |
+note: consider changing this parameter type in function `takes_ownership` to borrow instead if owning the value isn't necessary
+  --> src\main.rs:11:33
+   |
+11 | fn takes_ownership(some_string: String) {
+   |    ---------------              ^^^^^^ this parameter takes ownership of the value
+   |    |
+   |    in this function
+help: consider cloning the value if the performance cost is acceptable
+   |
+ 3 |     takes_ownership(s.clone());
+   |                      ++++++++
+
+For more information about this error, try `rustc --explain E0382`.
+error: could not compile `ownership` (bin "ownership") due to 1 previous error
+```
+
+`s` moved into `takes_ownership`, so it is unusable afterwards. The error is only about `s`; the `Copy` integer `x`
+raises no error when used after being passed. The `note` also suggests making the parameter borrow if owning the value
+isn't necessary. Borrowing like that is what the next section's references do.
+
+Without references or `clone`, the only way to keep using `s` is to have the function hand it back:
+
+```rust title="src/main.rs"
+fn main() {
+    let s1 = String::from("hello");
+    let (s2, len) = calculate_length(s1);
+    println!("The length of '{s2}' is {len}.");
+}
+
+fn calculate_length(s: String) -> (String, usize) {
+    let length = s.len();
+    (s, length)
+}
+```
+
+```console
+❯ cargo run
+   Compiling ownership v0.1.0 (C:\Users\Jam\rust-demo\work\ownership)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.87s
+     Running `target\debug\ownership.exe`
+The length of 'hello' is 5.
+```
+
+All we want is the length, yet the `String` goes in and comes back in a tuple. It works, but doing this every time
+is tedious.
+
+## References and borrowing (section 4.2)
+
+### Borrowing with &
+
+The references of [section 4.2](https://doc.rust-lang.org/book/ch04-02-references-and-borrowing.html) let you use
+a value without changing its owner. Make the parameter a `&String` and pass `&s1`:
+
+```rust title="src/main.rs"
+fn main() {
+    let s1 = String::from("hello");
+    let len = calculate_length(&s1);
+    println!("The length of '{s1}' is {len}.");
+}
+
+fn calculate_length(s: &String) -> usize {
+    s.len()
+}
+```
+
+```console
+❯ cargo run
+   Compiling references v0.1.0 (C:\Users\Jam\rust-demo\work\references)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.88s
+     Running `target\debug\references.exe`
+The length of 'hello' is 5.
+```
+
+`&s1` is "a reference to `s1`", and `s1` stays the owner. When the function ends, only the reference goes away; the
+`String` is not dropped. Creating a reference is called **borrowing** in Rust.
+
+### Borrowed values cannot be changed
+
+What happens if you add text to a borrowed `String`?
+
+```rust title="src/main.rs"
+fn main() {
+    let s = String::from("hello");
+    change(&s);
+}
+
+fn change(some_string: &String) {
+    some_string.push_str(", world");
+}
+```
+
+```console
+❯ cargo build
+   Compiling references v0.1.0 (C:\Users\Jam\rust-demo\work\references)
+error[E0596]: cannot borrow `*some_string` as mutable, as it is behind a `&` reference
+ --> src\main.rs:7:5
+  |
+7 |     some_string.push_str(", world");
+  |     ^^^^^^^^^^^ `some_string` is a `&` reference, so it cannot be borrowed as mutable
+  |
+help: consider changing this to be a mutable reference
+  |
+6 | fn change(some_string: &mut String) {
+  |                         +++
+
+For more information about this error, try `rustc --explain E0596`.
+error: could not compile `references` (bin "references") due to 1 previous error
+```
+
+The `E0596` from the first post's guessing game is back. Just as variables cannot change by default, neither can
+references. Follow the `help` and use `&mut`, with `let mut s` and `&mut s` on the calling side:
+
+```rust title="src/main.rs"
+fn main() {
+    let mut s = String::from("hello");
+    change(&mut s);
+    println!("{s}");
+}
+
+fn change(some_string: &mut String) {
+    some_string.push_str(", world");
+}
+```
+
+```console
+❯ cargo run
+   Compiling references v0.1.0 (C:\Users\Jam\rust-demo\work\references)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.81s
+     Running `target\debug\references.exe`
+hello, world
+```
+
+In JavaScript, an object or array passed to a function can always be changed inside it:
+
+```console
+❯ bun -e 'const add = (xs) => { xs.push(4) }; const list = [1, 2, 3]; add(list); console.log(list)'
+[ 1, 2, 3, 4 ]
+```
+
+The call `add(list)` alone does not tell you whether `list` changes. In Rust, a function that changes it has to be
+called with `&mut list`, so the calling code shows it.
+
+### Only one &mut at a time
+
+![The same value allows any number of & references or one &mut. & and &mut borrows cannot overlap, and each borrow lasts until the reference's last use](/rust/borrowing-rules.avif)
+
+`&mut` comes with a strong restriction. Create two `&mut` references to the same value at once:
+
+```rust title="src/main.rs"
+fn main() {
+    let mut s = String::from("hello");
+
+    let r1 = &mut s;
+    let r2 = &mut s;
+
+    println!("{r1}, {r2}");
+}
+```
+
+```console
+❯ cargo build
+   Compiling references v0.1.0 (C:\Users\Jam\rust-demo\work\references)
+error[E0499]: cannot borrow `s` as mutable more than once at a time
+ --> src\main.rs:5:14
+  |
+4 |     let r1 = &mut s;
+  |              ------ first mutable borrow occurs here
+5 |     let r2 = &mut s;
+  |              ^^^^^^ second mutable borrow occurs here
+6 |
+7 |     println!("{r1}, {r2}");
+  |                -- first borrow later used here
+
+For more information about this error, try `rustc --explain E0499`.
+error: could not compile `references` (bin "references") due to 1 previous error
+```
+
+"Cannot borrow `s` as mutable more than once at a time." Mixing `&` and `&mut` gets a different error:
+
+```rust title="src/main.rs"
+fn main() {
+    let mut s = String::from("hello");
+
+    let r1 = &s;
+    let r2 = &s;
+    let r3 = &mut s;
+
+    println!("{r1}, {r2}, and {r3}");
+}
+```
+
+```console
+❯ cargo build
+   Compiling references v0.1.0 (C:\Users\Jam\rust-demo\work\references)
+error[E0502]: cannot borrow `s` as mutable because it is also borrowed as immutable
+ --> src\main.rs:6:14
+  |
+4 |     let r1 = &s;
+  |              -- immutable borrow occurs here
+5 |     let r2 = &s;
+6 |     let r3 = &mut s;
+  |              ^^^^^^ mutable borrow occurs here
+7 |
+8 |     println!("{r1}, {r2}, and {r3}");
+  |                -- immutable borrow later used here
+
+For more information about this error, try `rustc --explain E0502`.
+error: could not compile `references` (bin "references") due to 1 previous error
+```
+
+The two `&` references (`r1` and `r2`) were fine; the error is on the `&mut` one, `r3`. The Book sums up the rules
+of references in two points:
+
+1. At any given time, you can have either one `&mut` reference or any number of `&` references
+2. References must always be valid
+
+The first rule keeps anyone from changing a value while someone else is reading or changing it. The Book describes a
+**data race** as two or more pointers accessing the same data at the same time, at least one of them writing, with
+nothing synchronizing the access, and says Rust refuses to compile code with data races.
+
+"At the same time", though, means until a reference's last use, not until the end of the block. Create the `&mut`
+after `r1` and `r2` have been printed, and it compiles:
+
+```rust title="src/main.rs"
+fn main() {
+    let mut s = String::from("hello");
+
+    let r1 = &s;
+    let r2 = &s;
+    println!("{r1} and {r2}");
+
+    let r3 = &mut s;
+    r3.push_str(", world");
+    println!("{r3}");
+}
+```
+
+```console
+❯ cargo run
+   Compiling references v0.1.0 (C:\Users\Jam\rust-demo\work\references)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.69s
+     Running `target\debug\references.exe`
+hello and hello
+hello, world
+```
+
+Both errors above had a `later used here` line (`first borrow` in `E0499`, `immutable borrow` in `E0502`): the
+borrow was used later, so it counted as simultaneous.
+
+### No dangling references
+
+Now the second rule, "always valid". Return a reference to a `String` created inside the function:
+
+```rust title="src/main.rs"
+fn main() {
+    let reference_to_nothing = dangle();
+}
+
+fn dangle() -> &String {
+    let s = String::from("hello");
+    &s
+}
+```
+
+```console
+❯ cargo build
+   Compiling references v0.1.0 (C:\Users\Jam\rust-demo\work\references)
+error[E0106]: missing lifetime specifier
+ --> src\main.rs:5:16
+  |
+5 | fn dangle() -> &String {
+  |                ^ expected named lifetime parameter
+  |
+  = help: this function's return type contains a borrowed value, but there is no value for it to be borrowed from
+help: consider using the `'static` lifetime, but this is uncommon unless you're returning a borrowed value from a `const` or a `static`
+  |
+5 | fn dangle() -> &'static String {
+  |                 +++++++
+help: instead, you are more likely to want to return an owned value
+  |
+5 - fn dangle() -> &String {
+5 + fn dangle() -> String {
+  |
+
+For more information about this error, try `rustc --explain E0106`.
+error: could not compile `references` (bin "references") due to 1 previous error
+```
+
+`s` is dropped at the end of `dangle`, so a reference to it would point at nothing. C lets you return a dangling
+pointer like that; Rust does not compile it. The "lifetime" in the error is chapter 10's subject. Here, follow the
+last `help`, "you are more likely to want to return an owned value":
+
+```rust title="src/main.rs"
+fn main() {
+    let s = no_dangle();
+    println!("{s}");
+}
+
+fn no_dangle() -> String {
+    let s = String::from("hello");
+    s
+}
+```
+
+```console
+❯ cargo run
+   Compiling references v0.1.0 (C:\Users\Jam\rust-demo\work\references)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.51s
+     Running `target\debug\references.exe`
+hello
+```
+
+Returning the `String` itself moves ownership to the caller's `s`, so it is not dropped.
+
+## Slices (section 4.3)
+
+### A returned index goes stale
+
+[Section 4.3](https://doc.rust-lang.org/book/ch04-03-slices.html) builds a `first_word` function that finds the
+first word in a string. Before introducing slices, the Book writes a version that returns the position where
+the word ends (an index). With that version, empty the string after getting the position:
+
+```rust title="src/main.rs"
+fn first_word(s: &String) -> usize {
+    let bytes = s.as_bytes();
+    for (i, &item) in bytes.iter().enumerate() {
+        if item == b' ' {
+            return i;
+        }
+    }
+    s.len()
+}
+
+fn main() {
+    let mut s = String::from("hello world");
+    let word = first_word(&s);
+    s.clear();
+    println!("word ends at {word}, but s is now {:?}", s);
+}
+```
+
+```console
+❯ cargo run
+   Compiling slices v0.1.0 (C:\Users\Jam\rust-demo\work\slices)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.86s
+     Running `target\debug\slices.exe`
+word ends at 5, but s is now ""
+```
+
+It compiles, `word` is still 5, and `s` is empty. Use `word` to take the word out of `s` and there is nothing left.
+An index is just a number, so it has no way of knowing that the string changed.
+
+### With a slice, the compiler stops it
+
+![The slice &s[0..5] borrows the first five bytes of hello world without copying. String slice ranges use byte offsets rather than character counts](/rust/string-slice.avif)
+
+A slice is a reference to part of a string, written with a range such as `&s[0..5]`. Make `first_word` return a
+slice (`&str`) instead of an index and do the same thing:
+
+```rust title="src/main.rs"
+fn first_word(s: &str) -> &str {
+    let bytes = s.as_bytes();
+    for (i, &item) in bytes.iter().enumerate() {
+        if item == b' ' {
+            return &s[0..i];
+        }
+    }
+    &s[..]
+}
+
+fn main() {
+    let mut s = String::from("hello world");
+    let word = first_word(&s);
+    s.clear();
+    println!("the first word is: {word}");
+}
+```
+
+```console
+❯ cargo build
+   Compiling slices v0.1.0 (C:\Users\Jam\rust-demo\work\slices)
+error[E0502]: cannot borrow `s` as mutable because it is also borrowed as immutable
+  --> src\main.rs:14:5
+   |
+13 |     let word = first_word(&s);
+   |                           -- immutable borrow occurs here
+14 |     s.clear();
+   |     ^^^^^^^^^ mutable borrow occurs here
+15 |     println!("the first word is: {word}");
+   |                                   ---- immutable borrow later used here
+
+For more information about this error, try `rustc --explain E0502`.
+error: could not compile `slices` (bin "slices") due to 1 previous error
+```
+
+It is the `E0502` from the references section. `word` is a reference borrowing `s`, so `clear`, which changes `s`,
+has to wait until `word` is no longer used. A problem the index version only showed at run time (and not even as an
+error) is now caught at compile time.
+
+### A &str parameter takes anything
+
+The slice version of `first_word` takes `&str`, not `&String`. That way it accepts a reference to a `String`, a
+slice of part of a `String`, or a string literal. The literal type `&str` from the beginning turns out to be "a
+slice pointing at a string baked into the program". Array slices work the same way:
+
+```rust title="src/main.rs"
+fn first_word(s: &str) -> &str {
+    let bytes = s.as_bytes();
+    for (i, &item) in bytes.iter().enumerate() {
+        if item == b' ' {
+            return &s[0..i];
+        }
+    }
+    &s[..]
+}
+
+fn main() {
+    let my_string = String::from("hello world");
+    println!("{}", first_word(&my_string));
+    println!("{}", first_word(&my_string[6..]));
+    println!("{}", first_word("literal words"));
+
+    let a = [1, 2, 3, 4, 5];
+    let slice = &a[1..3];
+    println!("{slice:?}");
+}
+```
+
+```console
+❯ cargo run
+   Compiling slices v0.1.0 (C:\Users\Jam\rust-demo\work\slices)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.59s
+     Running `target\debug\slices.exe`
+hello
+world
+literal
+[2, 3]
+```
+
+`&my_string[6..]` runs from byte 6 to the end (`world`), and `&a[1..3]` holds the elements at indices 1 and 2.
+
+### Slicing Japanese text can panic
+
+String slice ranges are byte positions, not character counts. As the second post showed, a string's `len()` counts
+bytes. The Japanese characters used here are 3 bytes each in UTF-8, so try cutting in the middle of one:
+
+```rust title="src/main.rs"
+fn main() {
+    let s = String::from("こんにちは");
+    println!("{} bytes", s.len());
+    println!("{}", &s[0..3]);
+    println!("{}", &s[0..1]);
+}
+```
+
+```console
+❯ cargo run
+   Compiling slices v0.1.0 (C:\Users\Jam\rust-demo\work\slices)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.62s
+     Running `target\debug\slices.exe`
+15 bytes
+こ
+
+thread 'main' (17480) panicked at src\main.rs:5:22:
+end byte index 1 is not a char boundary; it is inside 'こ' (bytes 0..3 of string)
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+error: process didn't exit successfully: `target\debug\slices.exe` (exit code: 101)
+```
+
+Five characters are 15 bytes, `[0..3]` gives "こ", and `[0..1]` panics because the end position 1 is not a char
+boundary but inside 'こ' (bytes 0..3). Rather than create a broken string cut mid-character, it stops. JavaScript's
+`slice` counts UTF-16 code units, so the equivalent call returns one character:
+
+```console
+❯ bun -e 'console.log("こんにちは".slice(0, 1))'
+こ
+```
+
+For Japanese text, working character by character with `chars()` is safer than counting byte positions yourself.
+Strings come back in chapter 8.
+
+## Commands at a glance
+
+| Command | What it does |
+| --- | --- |
+| `cargo new <name>` | Create a new project |
+| `cargo build` | Build and check for ownership and borrowing errors |
+| `cargo run` | Build and run |
+| `rustc --explain <error code>` | Read the long explanation of an error (`E0382`, `E0499`, `E0502` and so on) |
+
+## Summary
+
+- Every value has one owner and is dropped when the owner goes out of scope; the code decides on which line
+- Assigning a `String` or passing it to a function is a move, and the original variable becomes unusable
+  (`E0382`). `clone` copies the contents too
+- `Copy` types such as integers are copied on assignment, so the original stays usable
+- Borrowing with `&` uses a value without changing its owner. To change the value, use `&mut`, written on the calling
+  side too
+- At any time you can have one `&mut` or any number of `&` (`E0499`, `E0502`), and "at the same time" means until
+  a reference's last use
+- A reference to a value created inside a function cannot be returned (`E0106`); return the value itself
+- A slice is a reference to part of a value. Unlike with an index, the compiler catches the original changing under
+  it. String ranges are byte positions, and cutting mid-character panics
+
+Next time covers chapters 5 and 6 of the Book: structs, enums and `match`.
