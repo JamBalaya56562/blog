@@ -46,6 +46,11 @@
       }
     }
   },
+  "markdown": {
+    "formatter": {
+      "enabled": false
+    }
+  },
   "overrides": [
     {
       "assist": {

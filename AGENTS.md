@@ -189,8 +189,9 @@ mise e2e
 | `mise e2e` | Build, bring the database up, then run the E2E tests |
 
 `mise lint` is what CI runs, so prefer it over `bun lint:fix` before pushing:
-Biome does not see markdown or `.tf` files, and `lint:emphasis` reports rather
-than repairs.
+Biome leaves markdown formatting to rumdl (`markdown.formatter` is off in
+`biome.json`, since the two disagree about blank lines before lists), it does
+not see `.tf` files, and `lint:emphasis` reports rather than repairs.
 
 Other tasks worth knowing (`mise tasks` lists them all): `mise db:scan` dumps
 every page view row as JSON, `mise thumbnail <png> <slug>` encodes a post

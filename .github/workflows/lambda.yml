@@ -41,44 +41,44 @@ jobs:
       cancel-in-progress: false
 
     steps:
-    - name: 🪪 Configure AWS credentials
-      uses: aws-actions/configure-aws-credentials@v6
-      with:
-        role-to-assume: ${{ vars.AWS_ROLE_ARN }}
-        aws-region: ${{ env.AWS_REGION }}
+      - name: 🪪 Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
 
-    - name: 🌳 Login to Amazon ECR
-      id: login-ecr
-      uses: aws-actions/amazon-ecr-login@v2
+      - name: 🌳 Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
 
-    - name: 🛠️ Set up Docker Buildx
-      uses: docker/setup-buildx-action@v4
+      - name: 🛠️ Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
 
-    - name: 🚀 Build and Push
-      uses: docker/build-push-action@v7
-      with:
-        cache-from: type=gha
-        cache-to: type=gha,mode=max
-        no-cache: ${{ inputs.no-cache == true }}
-        platforms: linux/arm64
-        provenance: false
-        push: true
-        tags: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }}
-        build-args: |
-          GITHUB_REPO=${{ github.event.repository.name }}
+      - name: 🚀 Build and Push
+        uses: docker/build-push-action@v7
+        with:
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          no-cache: ${{ inputs.no-cache == true }}
+          platforms: linux/arm64
+          provenance: false
+          push: true
+          tags: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }}
+          build-args: |
+            GITHUB_REPO=${{ github.event.repository.name }}
 
-    - name: 🥩 Deploy Lambda function with container image
-      uses: aws-actions/aws-lambda-deploy@d496277188b89f0be02d7a2216fc912c0427702a
-      with:
-        function-name: ${{ env.LAMBDA_FUNCTION_NAME }}
-        package-type: Image
-        image-uri: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }}
-        architectures: arm64
+      - name: 🥩 Deploy Lambda function with container image
+        uses: aws-actions/aws-lambda-deploy@d496277188b89f0be02d7a2216fc912c0427702a
+        with:
+          function-name: ${{ env.LAMBDA_FUNCTION_NAME }}
+          package-type: Image
+          image-uri: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }}
+          architectures: arm64
 
-    - name: ⏳ Wait for the new code to serve
-      run: aws lambda wait function-updated-v2 --function-name "$LAMBDA_FUNCTION_NAME"
+      - name: ⏳ Wait for the new code to serve
+        run: aws lambda wait function-updated-v2 --function-name "$LAMBDA_FUNCTION_NAME"
 
-    - name: 🧹 Clear the CDN cache
-      run: aws cloudfront create-invalidation --distribution-id "$DISTRIBUTION_ID" --paths "/*"
-      env:
-        DISTRIBUTION_ID: ${{ vars.CLOUDFRONT_DISTRIBUTION_ID }}
+      - name: 🧹 Clear the CDN cache
+        run: aws cloudfront create-invalidation --distribution-id "$DISTRIBUTION_ID" --paths "/*"
+        env:
+          DISTRIBUTION_ID: ${{ vars.CLOUDFRONT_DISTRIBUTION_ID }}

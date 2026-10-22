@@ -1,24 +1,25 @@
 🍱asset:
-- changed-files:
-  - any-glob-to-any-file: ['**/*.avif', '**/*.ico', '**/*.png', '**/*.svg']
+  - changed-files:
+      - any-glob-to-any-file: ["**/*.avif", "**/*.ico", "**/*.png", "**/*.svg"]
 ♻️ci:
-- changed-files:
-  - any-glob-to-any-file: '.github/**/*.yml'
+  - changed-files:
+      - any-glob-to-any-file: ".github/**/*.yml"
 ⚙️config:
-- changed-files:
-  - any-glob-to-any-file: '*config.*'
+  - changed-files:
+      - any-glob-to-any-file: "*config.*"
 docker:
-- changed-files:
-  - any-glob-to-any-file: ['.dockerignore', 'Dockerfile']
+  - changed-files:
+      - any-glob-to-any-file: [".dockerignore", "Dockerfile"]
 🪸git:
-- changed-files:
-  - any-glob-to-any-file: ['.gitattributes', '.gitignore']
+  - changed-files:
+      - any-glob-to-any-file: [".gitattributes", ".gitignore"]
 🏗️infrastructure:
-- changed-files:
-  - any-glob-to-any-file: 'infra/**'
+  - changed-files:
+      - any-glob-to-any-file: "infra/**"
 🧰tooling:
-- changed-files:
-  - any-glob-to-any-file: ['**/*.toml', '.devcontainer/*', '.editorconfig', 'biome.json']
+  - changed-files:
+      - any-glob-to-any-file:
+          ["**/*.toml", ".devcontainer/*", ".editorconfig", "biome.json"]
 🆚vscode:
-- changed-files:
-  - any-glob-to-any-file: '.vscode/*'
+  - changed-files:
+      - any-glob-to-any-file: ".vscode/*"

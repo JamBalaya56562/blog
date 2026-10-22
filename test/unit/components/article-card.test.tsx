@@ -41,9 +41,11 @@ mock.module("next/link", () => ({
   ),
 }))
 
-mock.module("@/components/home/tag-link", () => ({
-  TagLink: ({ tag }: { tag: string }) => <span>{tag}</span>,
-}))
+function TagLink({ tag }: Readonly<{ tag: string }>) {
+  return <span>{tag}</span>
+}
+
+mock.module("@/components/home/tag-link", () => ({ TagLink }))
 
 mock.module("@/lib/routes", () => ({
   getBlogPostPath: (locale: string, slug: string) => `/${locale}/blog/${slug}`,

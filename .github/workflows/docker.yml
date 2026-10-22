@@ -18,7 +18,7 @@ on:
         required: false
         type: boolean
       push:
-        description: 'Push docker image to registry'
+        description: "Push docker image to registry"
         required: false
         default: false
         type: boolean

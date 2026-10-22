@@ -16,7 +16,7 @@ import {
 const BATCH_GET_LIMIT = 100
 const MAX_BATCH_ATTEMPTS = 4
 
-function describe(e: unknown): string {
+function describeError(e: unknown): string {
   if (e instanceof AggregateError) {
     return `${e.name}: ${e.errors.map((inner) => inner?.message).join("; ")}`
   }
@@ -44,7 +44,7 @@ const lastReported = new Map<string, number>()
  * silenced by one from today.
  */
 function report(where: string, e: unknown, subject?: string): void {
-  const message = describe(e)
+  const message = describeError(e)
   const now = Date.now()
 
   // Forget the causes whose quiet time has run out, so the map holds what is
