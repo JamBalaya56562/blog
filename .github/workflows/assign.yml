@@ -23,14 +23,14 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: 🐛 Assign Issue
-      if: github.event_name == 'issues' && toJSON(github.event.issue.assignees) == '[]'
-      env:
+      - name: 🐛 Assign Issue
+        if: github.event_name == 'issues' && toJSON(github.event.issue.assignees) == '[]'
+        env:
           ISSUE_NUMBER: ${{ github.event.issue.number }}
-      run: gh issue edit $ISSUE_NUMBER --add-assignee JamBalaya56562 --repo $REPO
+        run: gh issue edit $ISSUE_NUMBER --add-assignee JamBalaya56562 --repo $REPO
 
-    - name: 🚀 Assign Pull Request
-      if: github.event_name == 'pull_request_target' && toJSON(github.event.pull_request.assignees) == '[]'
-      env:
+      - name: 🚀 Assign Pull Request
+        if: github.event_name == 'pull_request_target' && toJSON(github.event.pull_request.assignees) == '[]'
+        env:
           PR_NUMBER: ${{ github.event.pull_request.number }}
-      run: gh pr edit $PR_NUMBER --add-assignee JamBalaya56562 --repo $REPO
+        run: gh pr edit $PR_NUMBER --add-assignee JamBalaya56562 --repo $REPO

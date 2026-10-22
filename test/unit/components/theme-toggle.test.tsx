@@ -17,6 +17,10 @@ mock.module("next/navigation", () => ({
 
 const { ThemeToggle } = await import("@/components/theme-toggle")
 
+function Wrapper({ children }: Readonly<{ children: ReactNode }>) {
+  return <ThemeProvider>{children}</ThemeProvider>
+}
+
 let storage: Record<string, string> = {}
 
 let restore = () => {}
@@ -45,10 +49,6 @@ describe("ThemeToggle icon display", () => {
 
     const dictionary = getDictionary("en")
 
-    function Wrapper({ children }: Readonly<{ children: ReactNode }>) {
-      return <ThemeProvider>{children}</ThemeProvider>
-    }
-
     const { getByRole } = render(
       <Wrapper>
         <ThemeToggle dictionary={dictionary} />
@@ -68,10 +68,6 @@ describe("ThemeToggle icon display", () => {
     storage = { theme: "dark" }
 
     const dictionary = getDictionary("en")
-
-    function Wrapper({ children }: Readonly<{ children: ReactNode }>) {
-      return <ThemeProvider>{children}</ThemeProvider>
-    }
 
     const { getByRole } = render(
       <Wrapper>
@@ -105,10 +101,6 @@ describe("Feature: dark-mode-toggle, Property 4: localized aria-label correctnes
           theme === "dark"
             ? dictionary.theme.switchToLight
             : dictionary.theme.switchToDark
-
-        function Wrapper({ children }: Readonly<{ children: ReactNode }>) {
-          return <ThemeProvider>{children}</ThemeProvider>
-        }
 
         const { getByRole } = render(
           <Wrapper>
