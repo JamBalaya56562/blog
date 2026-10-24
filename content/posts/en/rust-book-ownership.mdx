@@ -1,7 +1,7 @@
 ---
 title: "Learning Rust with the Book: Ownership, References and Slices"
 image: /thumbnails/rust-book-ownership.avif
-date: "2026-10-18"
+date: "2026-10-25"
 description: The third post in a series that works through The Rust Programming Language. It tries chapter 4's ownership, references and borrowing, and slices, checking when values are dropped, what happens when a moved variable is used, and what the compiler says when the reference rules are broken, comparing them along the way with TypeScript
 tags:
   - rust
@@ -194,7 +194,8 @@ changed
 `a` changed even though only `b` was modified, because both variables point at the same object. That is normal in
 JavaScript, and the GC cleans up once nothing points at the object, so nothing breaks. The price is a whole class of
 bugs where something changes behind your back. Rust prevents both the double free and this kind of bug
-by allowing only one owner.
+by allowing only one owner. Shared mutation does exist, through interior mutability such as `Rc<RefCell<T>>`, but
+that is chapter 15, and only when you ask for it.
 
 ### clone and Copy
 
@@ -226,10 +227,11 @@ x = 5, y = 5
 `clone` builds a fresh copy of the heap contents, so `s1` stays usable. According to the Book, Rust never makes deep
 copies of your data on its own. Copying costs time, so seeing `clone` in code tells you "this might be expensive".
 
-The integer `x` was still usable after `let y = x;` without any `clone`. Types that live entirely on the stack, such
-as integers, are copied on assignment. Such types implement the `Copy` trait, which is what the earlier error's
-"`String` does not implement the `Copy` trait" was about. Integers, floating-point numbers, `bool`, `char`, and
-tuples made only of `Copy` types are among the `Copy` types.
+The integer `x` was still usable after `let y = x;` without any `clone`. Only types that implement the `Copy` trait
+are copied on assignment, which is what the earlier error's "`String` does not implement the `Copy` trait" was
+about. Integers, floating-point numbers, `bool`, `char`, and tuples made only of `Copy` types are among the `Copy`
+types. Living on the stack does not decide it: `Noisy` from earlier implements `Drop`, so it is not `Copy` and moves
+even though it fits on the stack.
 
 ### Passing to a function moves too
 
@@ -484,6 +486,9 @@ of references in two points:
 
 1. At any given time, you can have either one `&mut` reference or any number of `&` references
 2. References must always be valid
+
+"The same value" here means the same place. Separate fields of a struct, which chapter 5 covers, are separate
+places, so they can be borrowed with `&mut` at the same time.
 
 The first rule keeps anyone from changing a value while someone else is reading or changing it. The Book describes a
 **data race** as two or more pointers accessing the same data at the same time, at least one of them writing, with
