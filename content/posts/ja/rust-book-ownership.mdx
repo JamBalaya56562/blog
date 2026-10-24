@@ -1,0 +1,718 @@
+---
+title: Rust を Book で学ぶ：所有権、参照、スライス
+image: /thumbnails/rust-book-ownership.avif
+date: "2026-10-25"
+description: Rust の公式の入門書 The Rust Programming Language を進めるシリーズの 3 本目。4 章の所有権、参照と借用、スライスを試す。値がいつ捨てられるか、ムーブされた変数を使うとどうなるか、参照のルールを破るとコンパイラが何と言うかを、TypeScript と比べながら確かめる
+tags:
+  - rust
+  - typescript
+  - devtools
+---
+
+## この記事について
+
+[The Rust Programming Language](https://doc.rust-lang.org/book/)（the Book）を、手を動かして進めるシリーズの 3 本目です。[2 本目](/ja/blog/rust-book-common-concepts)では、3 章の変数、型、関数、制御フローを試しました。
+
+今回は [4 章「所有権を理解する」](https://doc.rust-lang.org/book/ch04-00-understanding-ownership.html)です。所有権は、Rust がガベージコレクター（GC）なしでメモリを安全に扱うための仕組みで、Rust でいちばん特徴的なところです。TypeScript（JavaScript）は GC がメモリを片付けてくれるので、この章の話はほとんど丸ごと新しい考え方になります。そのぶん、コンパイラのエラーもたくさん出てきます。
+
+試した環境はこれまでと同じで、Rust 1.99.1、Windows 11 の PowerShell です。節ごとに `cargo new` でプロジェクトを作っています。
+
+## 所有権（4.1 節）
+
+### スタックとヒープ
+
+[4.1 節](https://doc.rust-lang.org/book/ch04-01-what-is-ownership.html)は、メモリの置き場所の話から始まります。
+
+- **スタック**：大きさが決まっている値を、積んで、上から取り出す場所。速い。`i32` や `bool` のような値はここに置かれる
+- **ヒープ**：大きさが実行するまで分からない値を置く場所。空いている場所を探して確保するので、スタックより遅い。あとで片付ける必要がある
+
+JavaScript では、ヒープを片付けるのは GC の仕事です。C では、自分で `free` を呼びます。Rust はどちらでもなく、「誰がその値の持ち主か」をコンパイラが追いかけて、持ち主がいなくなった時点で片付けるコードを入れます。その規則が所有権です。Book が挙げている規則は 3 つです。
+
+1. Rust の値には、それぞれ持ち主（owner）がいる
+2. 持ち主は、同時に 1 人だけ
+3. 持ち主がスコープを抜けると、値は捨てられる（drop される）
+
+### String とリテラル
+
+ヒープを使う型の例として、Book は `String` を使います。これまで使ってきた `"hello"` のような文字列リテラルは、プログラムに埋め込まれていて変更できません。リテラルに文字を足してみます。
+
+```rust title="src/main.rs"
+fn main() {
+    let s = "hello";
+    s.push_str(", world!");
+    println!("{s}");
+}
+```
+
+```console
+❯ cargo build
+   Compiling ownership v0.1.0 (C:\Users\Jam\rust-demo\work\ownership)
+error[E0599]: no method named `push_str` found for reference `&str` in the current scope
+ --> src\main.rs:3:7
+  |
+3 |     s.push_str(", world!");
+  |       ^^^^^^^^ method not found in `&str`
+
+For more information about this error, try `rustc --explain E0599`.
+error: could not compile `ownership` (bin "ownership") due to 1 previous error
+```
+
+リテラルの型は `&str` で、`push_str` というメソッドがありません。`String::from` で `String` を作ると、中身はヒープに置かれ、伸ばせるようになります。
+
+```rust title="src/main.rs"
+fn main() {
+    let mut s = String::from("hello");
+    s.push_str(", world!");
+    println!("{s}");
+}
+```
+
+```console
+❯ cargo run
+   Compiling ownership v0.1.0 (C:\Users\Jam\rust-demo\work\ownership)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.78s
+     Running `target\debug\ownership.exe`
+hello, world!
+```
+
+`&str` の `&` が何なのかは、このあとの参照のところで分かります。
+
+### drop される瞬間を見る
+
+規則 3 の「スコープを抜けると捨てられる」は、目に見えないので実感しにくいところです。そこで、捨てられるときに文字を表示する小さな型を作って確かめます。`impl Drop for Noisy` の部分が「捨てられるときに呼ばれる処理」で、書き方の詳しい話は 15 章に出てきます。ここでは「drop されると `drop: 名前` と表示される型」とだけ思ってください。
+
+```rust title="src/main.rs"
+struct Noisy(&'static str);
+
+impl Drop for Noisy {
+    fn drop(&mut self) {
+        println!("drop: {}", self.0);
+    }
+}
+
+fn main() {
+    let _a = Noisy("a");
+    {
+        let _b = Noisy("b");
+        println!("end of inner scope");
+    }
+    let mut c = Noisy("c1");
+    println!("c is {}", c.0);
+    c = Noisy("c2");
+    println!("end of main ({})", c.0);
+}
+```
+
+```console
+❯ cargo run
+   Compiling ownership v0.1.0 (C:\Users\Jam\rust-demo\work\ownership)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.51s
+     Running `target\debug\ownership.exe`
+end of inner scope
+drop: b
+c is c1
+drop: c1
+end of main (c2)
+drop: c2
+drop: a
+```
+
+読み取れることが 3 つあります。
+
+- `b` は、内側の `{}` を抜けたところで、すぐに drop された
+- `c` に `c2` を代入した瞬間に、それまでの `c1` が drop された。持ち主がいなくなったから
+- `main` の終わりでは、`c2`、`a` の順に drop された。作ったのと逆の順番です
+
+JavaScript では、オブジェクトがいつ片付けられるかは GC が決めるので、コードからは分かりません。Rust では、どの行で捨てられるかがコードから決まります。
+
+### ムーブ：持ち主は 1 人だけ
+
+規則 2 の「持ち主は同時に 1 人だけ」が効いてくるのが、変数から変数への代入です。`String` を別の変数に入れてから、元の変数を使ってみます。
+
+```rust title="src/main.rs"
+fn main() {
+    let s1 = String::from("hello");
+    let s2 = s1;
+    println!("{s1}, world!");
+    println!("{s2}");
+}
+```
+
+```console
+❯ cargo build
+   Compiling ownership v0.1.0 (C:\Users\Jam\rust-demo\work\ownership)
+error[E0382]: borrow of moved value: `s1`
+ --> src\main.rs:4:16
+  |
+2 |     let s1 = String::from("hello");
+  |         -- move occurs because `s1` has type `String`, which does not implement the `Copy` trait
+3 |     let s2 = s1;
+  |              -- value moved here
+4 |     println!("{s1}, world!");
+  |                ^^ value borrowed here after move
+  |
+help: consider cloning the value if the performance cost is acceptable
+  |
+3 |     let s2 = s1.clone();
+  |                ++++++++
+
+For more information about this error, try `rustc --explain E0382`.
+error: could not compile `ownership` (bin "ownership") due to 1 previous error
+```
+
+「`let s2 = s1;` で値がムーブ（move）された。その後で `s1` を使っている」というエラーです。`String` のうちスタックに置かれる部分は、ヒープの中身を指すポインター、長さ、容量の 3 つで、`let s2 = s1;` でコピーされるのはこの 3 つだけです。ヒープの中身はコピーされません。もし `s1` と `s2` の両方が持ち主のままだと、2 人ともスコープを抜けたときに同じヒープを 2 回片付けることになります（Book では「二重解放」として説明されています）。そこで Rust は、代入した時点で `s1` を使えなくします。これがムーブです。
+
+JavaScript の代入も、オブジェクトの中身はコピーせず、同じものを指す参照をコピーします。違うのは、元の変数も使えたままになることです。
+
+```console
+❯ bun -e 'const a = { name: "hello" }; const b = a; b.name = "changed"; console.log(a.name)'
+changed
+```
+
+`b` を書き換えたのに、`a` も変わりました。2 つの変数が同じオブジェクトを指しているからです。JavaScript ではこれが普通で、GC が「誰も指さなくなったら片付ける」ので困りません。そのかわり、知らないところで書き換えられる、という種類のバグの元になります。Rust では、持ち主を 1 人に絞ることで、二重解放と、知らないところでの書き換えの両方を防いでいます。共有したまま書き換えられる `Rc<RefCell<T>>` のような仕組み（内部可変性）もありますが、それは 15 章で、わざわざそう書いたときだけの話です。
+
+### clone と Copy
+
+![String のムーブでは元の変数が使えなくなり、ヒープの中身はコピーされない。clone ではヒープの中身も別に作られ、両方の変数を使える](/rust/move-and-clone.avif)
+
+中身ごとコピーしたいときは、エラーの `help` が言うとおり `clone` を呼びます。整数のほうも並べて試します。
+
+```rust title="src/main.rs"
+fn main() {
+    let s1 = String::from("hello");
+    let s2 = s1.clone();
+    println!("s1 = {s1}, s2 = {s2}");
+
+    let x = 5;
+    let y = x;
+    println!("x = {x}, y = {y}");
+}
+```
+
+```console
+❯ cargo run
+   Compiling ownership v0.1.0 (C:\Users\Jam\rust-demo\work\ownership)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.54s
+     Running `target\debug\ownership.exe`
+s1 = hello, s2 = hello
+x = 5, y = 5
+```
+
+`clone` は、ヒープの中身まで新しく作ってコピーするので、`s1` も使えたままです。Book によると、Rust が勝手に中身まで深くコピーすることはありません。そのぶん時間がかかるので、コードの中に `clone` と書いてあると「ここは重いかもしれない」と分かるようになっています。
+
+整数の `x` は、`clone` なしでも `let y = x;` の後に使えました。代入でコピーされるのは、`Copy` トレイトを実装した型だけです。さっきのエラーの「`String` は `Copy` トレイトを実装していない」は、この話です。整数、浮動小数点数、`bool`、`char`、それに `Copy` な型だけでできたタプルなどが `Copy` です。スタックだけで済むかどうかでは決まらず、最初の `Noisy` のように `Drop` を実装した型は、スタックだけで済んでも `Copy` にならず、ムーブされます。
+
+### 関数に渡すとムーブされる
+
+関数に値を渡すのも、代入と同じ扱いです。`String` と整数を関数に渡してから、元の変数を使ってみます。
+
+```rust title="src/main.rs"
+fn main() {
+    let s = String::from("hello");
+    takes_ownership(s);
+    println!("{s}");
+
+    let x = 5;
+    makes_copy(x);
+    println!("{x}");
+}
+
+fn takes_ownership(some_string: String) {
+    println!("{some_string}");
+}
+
+fn makes_copy(some_integer: i32) {
+    println!("{some_integer}");
+}
+```
+
+```console
+❯ cargo build
+   Compiling ownership v0.1.0 (C:\Users\Jam\rust-demo\work\ownership)
+error[E0382]: borrow of moved value: `s`
+  --> src\main.rs:4:16
+   |
+ 2 |     let s = String::from("hello");
+   |         - move occurs because `s` has type `String`, which does not implement the `Copy` trait
+ 3 |     takes_ownership(s);
+   |                     - value moved here
+ 4 |     println!("{s}");
+   |                ^ value borrowed here after move
+   |
+note: consider changing this parameter type in function `takes_ownership` to borrow instead if owning the value isn't necessary
+  --> src\main.rs:11:33
+   |
+11 | fn takes_ownership(some_string: String) {
+   |    ---------------              ^^^^^^ this parameter takes ownership of the value
+   |    |
+   |    in this function
+help: consider cloning the value if the performance cost is acceptable
+   |
+ 3 |     takes_ownership(s.clone());
+   |                      ++++++++
+
+For more information about this error, try `rustc --explain E0382`.
+error: could not compile `ownership` (bin "ownership") due to 1 previous error
+```
+
+`s` は `takes_ownership` にムーブされたので、その後は使えません。エラーは `s` についてだけで、`Copy` な `x` は、渡した後に使ってもエラーになっていません。`note` には「所有する必要がないなら、引数を借りる形に変えたらどうか」という提案も出ています。この「借りる」が、次の節の参照です。
+
+参照も `clone` も使わずに `s` を使い続けたいなら、関数から返してもらうしかありません。
+
+```rust title="src/main.rs"
+fn main() {
+    let s1 = String::from("hello");
+    let (s2, len) = calculate_length(s1);
+    println!("The length of '{s2}' is {len}.");
+}
+
+fn calculate_length(s: String) -> (String, usize) {
+    let length = s.len();
+    (s, length)
+}
+```
+
+```console
+❯ cargo run
+   Compiling ownership v0.1.0 (C:\Users\Jam\rust-demo\work\ownership)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.87s
+     Running `target\debug\ownership.exe`
+The length of 'hello' is 5.
+```
+
+長さを知りたいだけなのに、`String` を渡して、タプルで返してもらっています。動きますが、毎回これでは面倒です。
+
+## 参照と借用（4.2 節）
+
+### & で借りる
+
+[4.2 節](https://doc.rust-lang.org/book/ch04-02-references-and-borrowing.html)の参照を使うと、持ち主を変えずに値を使えます。引数の型を `&String` にして、呼ぶ側で `&s1` と渡します。
+
+```rust title="src/main.rs"
+fn main() {
+    let s1 = String::from("hello");
+    let len = calculate_length(&s1);
+    println!("The length of '{s1}' is {len}.");
+}
+
+fn calculate_length(s: &String) -> usize {
+    s.len()
+}
+```
+
+```console
+❯ cargo run
+   Compiling references v0.1.0 (C:\Users\Jam\rust-demo\work\references)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.88s
+     Running `target\debug\references.exe`
+The length of 'hello' is 5.
+```
+
+`&s1` は「`s1` を指す参照」で、持ち主は `s1` のままです。関数が終わっても、参照が消えるだけで `String` は drop されません。参照を作ることを、Rust では**借用**（borrowing）と呼びます。
+
+### 借りたものは書き換えられない
+
+借りた `String` に文字を足そうとすると、どうなるでしょうか。
+
+```rust title="src/main.rs"
+fn main() {
+    let s = String::from("hello");
+    change(&s);
+}
+
+fn change(some_string: &String) {
+    some_string.push_str(", world");
+}
+```
+
+```console
+❯ cargo build
+   Compiling references v0.1.0 (C:\Users\Jam\rust-demo\work\references)
+error[E0596]: cannot borrow `*some_string` as mutable, as it is behind a `&` reference
+ --> src\main.rs:7:5
+  |
+7 |     some_string.push_str(", world");
+  |     ^^^^^^^^^^^ `some_string` is a `&` reference, so it cannot be borrowed as mutable
+  |
+help: consider changing this to be a mutable reference
+  |
+6 | fn change(some_string: &mut String) {
+  |                         +++
+
+For more information about this error, try `rustc --explain E0596`.
+error: could not compile `references` (bin "references") due to 1 previous error
+```
+
+1 本目の数当てゲームで見た `E0596` が、また出てきました。変数が既定で変更できないのと同じで、参照も既定では書き換えられません。`help` のとおり `&mut` にして、呼ぶ側も `let mut s` と `&mut s` にします。
+
+```rust title="src/main.rs"
+fn main() {
+    let mut s = String::from("hello");
+    change(&mut s);
+    println!("{s}");
+}
+
+fn change(some_string: &mut String) {
+    some_string.push_str(", world");
+}
+```
+
+```console
+❯ cargo run
+   Compiling references v0.1.0 (C:\Users\Jam\rust-demo\work\references)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.81s
+     Running `target\debug\references.exe`
+hello, world
+```
+
+JavaScript では、関数に渡したオブジェクトや配列は、いつでも中で書き換えられます。
+
+```console
+❯ bun -e 'const add = (xs) => { xs.push(4) }; const list = [1, 2, 3]; add(list); console.log(list)'
+[ 1, 2, 3, 4 ]
+```
+
+`add(list)` という呼び出しだけでは、`list` が書き換わるかどうか分かりません。Rust では、書き換える関数には `&mut list` と書いて渡すしかないので、呼ぶ側のコードを見れば分かります。
+
+### &mut は同時に 1 つだけ
+
+![同じ値には & を複数持てるが、&mut は 1 つだけ。& と &mut の借用を重ねることはできず、借用の重なりは参照を最後に使う位置まで考える](/rust/borrowing-rules.avif)
+
+`&mut` には強い制限があります。同じ値への `&mut` を、2 つ同時に作ってみます。
+
+```rust title="src/main.rs"
+fn main() {
+    let mut s = String::from("hello");
+
+    let r1 = &mut s;
+    let r2 = &mut s;
+
+    println!("{r1}, {r2}");
+}
+```
+
+```console
+❯ cargo build
+   Compiling references v0.1.0 (C:\Users\Jam\rust-demo\work\references)
+error[E0499]: cannot borrow `s` as mutable more than once at a time
+ --> src\main.rs:5:14
+  |
+4 |     let r1 = &mut s;
+  |              ------ first mutable borrow occurs here
+5 |     let r2 = &mut s;
+  |              ^^^^^^ second mutable borrow occurs here
+6 |
+7 |     println!("{r1}, {r2}");
+  |                -- first borrow later used here
+
+For more information about this error, try `rustc --explain E0499`.
+error: could not compile `references` (bin "references") due to 1 previous error
+```
+
+「`s` を、同時に 2 回以上、書き換えられる形で借りることはできない」というエラーです。`&` と `&mut` を混ぜると、別のエラーで怒られます。
+
+```rust title="src/main.rs"
+fn main() {
+    let mut s = String::from("hello");
+
+    let r1 = &s;
+    let r2 = &s;
+    let r3 = &mut s;
+
+    println!("{r1}, {r2}, and {r3}");
+}
+```
+
+```console
+❯ cargo build
+   Compiling references v0.1.0 (C:\Users\Jam\rust-demo\work\references)
+error[E0502]: cannot borrow `s` as mutable because it is also borrowed as immutable
+ --> src\main.rs:6:14
+  |
+4 |     let r1 = &s;
+  |              -- immutable borrow occurs here
+5 |     let r2 = &s;
+6 |     let r3 = &mut s;
+  |              ^^^^^^ mutable borrow occurs here
+7 |
+8 |     println!("{r1}, {r2}, and {r3}");
+  |                -- immutable borrow later used here
+
+For more information about this error, try `rustc --explain E0502`.
+error: could not compile `references` (bin "references") due to 1 previous error
+```
+
+`&` は 2 つ（`r1` と `r2`）作れていて、エラーになったのは `&mut` の `r3` です。Book のまとめでは、参照の規則は次の 2 つです。
+
+1. ある時点で持てるのは、`&mut` を 1 つだけか、`&` をいくつでもか、のどちらか
+2. 参照は、常に有効でなければならない
+
+ここで言う「同じ値」は、同じ場所のことです。5 章で扱う構造体の別々のフィールドは別の場所なので、同時に `&mut` で借りられます。
+
+1 つ目の規則は、誰かが読んだり書き換えたりしている間に、ほかの誰かが書き換えないようにするためのものです。Book は、複数の場所から同時にアクセスし、そのうち少なくとも 1 つが書き込みで、同期の仕組みがない状態を**データ競合**と呼び、Rust はデータ競合のあるコードをコンパイルしない、と説明しています。
+
+ただし「同時に」は、ブロックの終わりまでではなく、参照を最後に使ったところまでです。`r1` と `r2` を表示し終えてから `&mut` を作ると、通ります。
+
+```rust title="src/main.rs"
+fn main() {
+    let mut s = String::from("hello");
+
+    let r1 = &s;
+    let r2 = &s;
+    println!("{r1} and {r2}");
+
+    let r3 = &mut s;
+    r3.push_str(", world");
+    println!("{r3}");
+}
+```
+
+```console
+❯ cargo run
+   Compiling references v0.1.0 (C:\Users\Jam\rust-demo\work\references)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.69s
+     Running `target\debug\references.exe`
+hello and hello
+hello, world
+```
+
+さっきの 2 つのエラーにも、`first borrow later used here` や `immutable borrow later used here`（借用が後で使われている）という行がありました。後で使っているから同時と見なされた、ということです。
+
+### ぶら下がり参照は作れない
+
+参照の規則の 2 つ目、「常に有効」も試します。関数の中で作った `String` の参照を返してみます。
+
+```rust title="src/main.rs"
+fn main() {
+    let reference_to_nothing = dangle();
+}
+
+fn dangle() -> &String {
+    let s = String::from("hello");
+    &s
+}
+```
+
+```console
+❯ cargo build
+   Compiling references v0.1.0 (C:\Users\Jam\rust-demo\work\references)
+error[E0106]: missing lifetime specifier
+ --> src\main.rs:5:16
+  |
+5 | fn dangle() -> &String {
+  |                ^ expected named lifetime parameter
+  |
+  = help: this function's return type contains a borrowed value, but there is no value for it to be borrowed from
+help: consider using the `'static` lifetime, but this is uncommon unless you're returning a borrowed value from a `const` or a `static`
+  |
+5 | fn dangle() -> &'static String {
+  |                 +++++++
+help: instead, you are more likely to want to return an owned value
+  |
+5 - fn dangle() -> &String {
+5 + fn dangle() -> String {
+  |
+
+For more information about this error, try `rustc --explain E0106`.
+error: could not compile `references` (bin "references") due to 1 previous error
+```
+
+`s` は `dangle` の終わりで drop されるので、その参照を返しても、指す先がもうありません。C ならこういうぶら下がったポインターを返せてしまいますが、Rust はコンパイルしません。エラーに出てくる「ライフタイム」は 10 章の話です。ここでは、最後の `help` の「参照ではなく、値そのものを返したいのでは」に従います。
+
+```rust title="src/main.rs"
+fn main() {
+    let s = no_dangle();
+    println!("{s}");
+}
+
+fn no_dangle() -> String {
+    let s = String::from("hello");
+    s
+}
+```
+
+```console
+❯ cargo run
+   Compiling references v0.1.0 (C:\Users\Jam\rust-demo\work\references)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.51s
+     Running `target\debug\references.exe`
+hello
+```
+
+`String` そのものを返すと、値が呼び出し側の `s` にムーブして持ち主が変わるので、drop されずに済みます。
+
+## スライス（4.3 節）
+
+### 添字を返すと、ずれる
+
+[4.3 節](https://doc.rust-lang.org/book/ch04-03-slices.html)は、文字列の最初の単語を取り出す関数 `first_word` を題材にしています。まだスライスを知らない前提で、Book は最初、単語の終わりの位置（添字）を返す版を作ります。この版で、位置を受け取った後に元の文字列を空にしてみます。
+
+```rust title="src/main.rs"
+fn first_word(s: &String) -> usize {
+    let bytes = s.as_bytes();
+    for (i, &item) in bytes.iter().enumerate() {
+        if item == b' ' {
+            return i;
+        }
+    }
+    s.len()
+}
+
+fn main() {
+    let mut s = String::from("hello world");
+    let word = first_word(&s);
+    s.clear();
+    println!("word ends at {word}, but s is now {:?}", s);
+}
+```
+
+```console
+❯ cargo run
+   Compiling slices v0.1.0 (C:\Users\Jam\rust-demo\work\slices)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.86s
+     Running `target\debug\slices.exe`
+word ends at 5, but s is now ""
+```
+
+コンパイルは通って、`word` は 5 のまま、`s` は空になりました。`word` を使って `s` から単語を取り出そうとすると、もう中身がありません。添字はただの数なので、元の文字列が変わったことを知りようがないのです。
+
+### スライスにすると、コンパイラが止める
+
+![hello world の先頭 5 バイトを指す &s[0..5]。スライスはコピーせず元のデータの一部を借り、範囲は文字数ではなくバイト位置で指定する](/rust/string-slice.avif)
+
+スライスは、文字列の一部を指す参照です。`&s[0..5]` のように、範囲で書きます。`first_word` が添字ではなくスライス（`&str`）を返すようにして、同じことをしてみます。
+
+```rust title="src/main.rs"
+fn first_word(s: &str) -> &str {
+    let bytes = s.as_bytes();
+    for (i, &item) in bytes.iter().enumerate() {
+        if item == b' ' {
+            return &s[0..i];
+        }
+    }
+    &s[..]
+}
+
+fn main() {
+    let mut s = String::from("hello world");
+    let word = first_word(&s);
+    s.clear();
+    println!("the first word is: {word}");
+}
+```
+
+```console
+❯ cargo build
+   Compiling slices v0.1.0 (C:\Users\Jam\rust-demo\work\slices)
+error[E0502]: cannot borrow `s` as mutable because it is also borrowed as immutable
+  --> src\main.rs:14:5
+   |
+13 |     let word = first_word(&s);
+   |                           -- immutable borrow occurs here
+14 |     s.clear();
+   |     ^^^^^^^^^ mutable borrow occurs here
+15 |     println!("the first word is: {word}");
+   |                                   ---- immutable borrow later used here
+
+For more information about this error, try `rustc --explain E0502`.
+error: could not compile `slices` (bin "slices") due to 1 previous error
+```
+
+さっきの参照の節で見た `E0502` です。`word` は `s` を借りている参照なので、`word` を使い終わるまで、`s` を書き換える `clear` はできません。添字の版では実行して初めて分かった（しかも、エラーにすらならなかった）問題が、コンパイルの時点で見つかりました。
+
+### &str を引数にすると、何でも受け取れる
+
+スライス版の `first_word` は、引数を `&String` ではなく `&str` にしています。こうすると、`String` の参照も、`String` の一部のスライスも、文字列リテラルも渡せます。最初に見たリテラルの型 `&str` は、「プログラムに埋め込まれた文字列を指すスライス」だったわけです。配列のスライスも、同じように作れます。
+
+```rust title="src/main.rs"
+fn first_word(s: &str) -> &str {
+    let bytes = s.as_bytes();
+    for (i, &item) in bytes.iter().enumerate() {
+        if item == b' ' {
+            return &s[0..i];
+        }
+    }
+    &s[..]
+}
+
+fn main() {
+    let my_string = String::from("hello world");
+    println!("{}", first_word(&my_string));
+    println!("{}", first_word(&my_string[6..]));
+    println!("{}", first_word("literal words"));
+
+    let a = [1, 2, 3, 4, 5];
+    let slice = &a[1..3];
+    println!("{slice:?}");
+}
+```
+
+```console
+❯ cargo run
+   Compiling slices v0.1.0 (C:\Users\Jam\rust-demo\work\slices)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.59s
+     Running `target\debug\slices.exe`
+hello
+world
+literal
+[2, 3]
+```
+
+`&my_string[6..]` は添字 6 のバイトから最後まで（`world`）、`&a[1..3]` は添字 1 と 2 の要素です。
+
+### 日本語を切ると panic する
+
+文字列のスライスの範囲は、文字の数ではなくバイトの位置です。2 本目で見たとおり、文字列の `len()` はバイト数でした。ここで使う日本語の文字は UTF-8 で 1 文字 3 バイトなので、文字の途中で切るとどうなるかを試します。
+
+```rust title="src/main.rs"
+fn main() {
+    let s = String::from("こんにちは");
+    println!("{} bytes", s.len());
+    println!("{}", &s[0..3]);
+    println!("{}", &s[0..1]);
+}
+```
+
+```console
+❯ cargo run
+   Compiling slices v0.1.0 (C:\Users\Jam\rust-demo\work\slices)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.62s
+     Running `target\debug\slices.exe`
+15 bytes
+こ
+
+thread 'main' (17480) panicked at src\main.rs:5:22:
+end byte index 1 is not a char boundary; it is inside 'こ' (bytes 0..3 of string)
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+error: process didn't exit successfully: `target\debug\slices.exe` (exit code: 101)
+```
+
+5 文字で 15 バイト、`[0..3]` で「こ」が取れて、`[0..1]` は「終わりの位置 1 は文字の境界ではない。『こ』（バイト 0..3）の内側だ」で panic しました。文字の途中で切った壊れた文字列を作るくらいなら、止める、ということです。JavaScript の `slice` は UTF-16 の単位で数えるので、同じ書き方で 1 文字取れます。
+
+```console
+❯ bun -e 'console.log("こんにちは".slice(0, 1))'
+こ
+```
+
+日本語を扱うときは、バイトの位置を自分で数えて切らずに、`chars()` で文字ごとに扱うほうが安全です。文字列の扱いは、8 章でもう一度出てきます。
+
+## よく使うコマンド
+
+| コマンド | 説明 |
+| --- | --- |
+| `cargo new <名前>` | 新しいプロジェクトを作る |
+| `cargo build` | ビルドして、所有権や借用のエラーを確かめる |
+| `cargo run` | ビルドして実行する |
+| `rustc --explain <エラー番号>` | エラーの詳しい説明を読む（`E0382`、`E0499`、`E0502` など） |
+
+## まとめ
+
+- 値には持ち主が 1 人いて、持ち主がスコープを抜けると drop される。どの行で捨てられるかが、コードから決まる
+- `String` の代入や関数への受け渡しはムーブで、元の変数は使えなくなる（`E0382`）。中身ごとコピーするなら `clone`
+- 整数のような `Copy` な型は、代入するとコピーされるので、元の変数も使える
+- `&` で借りると、持ち主を変えずに使える。書き換えるなら `&mut` で、呼ぶ側にも `&mut` と書く
+- ある時点で持てるのは、`&mut` を 1 つか、`&` をいくつでも（`E0499`、`E0502`）。「同時」は参照を最後に使ったところまで
+- 関数の中の値を指す参照は返せない（`E0106`）。値そのものを返す
+- スライスは一部を指す参照。添字と違って、元の値が変わる問題をコンパイラが見つけてくれる。文字列の範囲はバイトの位置で、文字の途中で切ると panic する
+
+次回は Book の 5 章と 6 章で、構造体、列挙型、`match` を見ていきます。
