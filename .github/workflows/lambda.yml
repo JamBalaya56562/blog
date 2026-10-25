@@ -47,6 +47,10 @@ jobs:
           role-to-assume: ${{ vars.AWS_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
 
+      - name: 🗺️ Save the sitemap before deploying
+        run: curl -fsS "https://kokohore56562wanwan.site/sitemap.xml?fresh=$(date +%s)" -o "$RUNNER_TEMP/sitemap-before.xml"
+        continue-on-error: true
+
       - name: 🌳 Login to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
@@ -82,3 +86,17 @@ jobs:
         run: aws cloudfront create-invalidation --distribution-id "$DISTRIBUTION_ID" --paths "/*"
         env:
           DISTRIBUTION_ID: ${{ vars.CLOUDFRONT_DISTRIBUTION_ID }}
+
+      - name: 📥 Checkout
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: 🐣 Setup mise
+        uses: jdx/mise-action@v5.2.1
+        with:
+          install_args: bun
+
+      - name: 📣 Tell IndexNow what changed
+        run: mise run indexnow "$RUNNER_TEMP/sitemap-before.xml"
+        continue-on-error: true
