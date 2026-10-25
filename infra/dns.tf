@@ -73,3 +73,11 @@ resource "aws_route53_record" "dmarc" {
   ttl     = 300
   records = ["v=DMARC1; p=none;"]
 }
+
+resource "aws_route53_record" "bing_verification" {
+  zone_id = aws_route53_zone.blog.zone_id
+  name    = "5ab3d39023ca8fa1795d95814847f1ee.${var.domain_name}"
+  type    = "CNAME"
+  ttl     = 300
+  records = ["verify.bing.com"]
+}
