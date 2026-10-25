@@ -3,6 +3,7 @@ import fc from "fast-check"
 import {
   changedUrls,
   INDEXNOW_KEY,
+  isCompleteSitemap,
   parseSitemap,
   submission,
 } from "@/lib/indexnow"
@@ -49,6 +50,41 @@ describe("parseSitemap", () => {
     expect([...parseSitemap(xml).keys()]).toEqual([
       "https://kokohore56562wanwan.site/en",
     ])
+  })
+})
+
+describe("isCompleteSitemap", () => {
+  const nonEmpty = entries.filter((list) => list.length > 0)
+
+  test("accepts any sitemap with at least one URL", () => {
+    fc.assert(
+      fc.property(nonEmpty, (list) => {
+        expect(isCompleteSitemap(sitemap(list))).toBe(true)
+      }),
+    )
+  })
+
+  test("rejects a download cut off anywhere before the closing tag", () => {
+    fc.assert(
+      fc.property(
+        nonEmpty.chain((list) => {
+          const xml = sitemap(list)
+          return fc.tuple(
+            fc.constant(xml),
+            fc.integer({ max: xml.lastIndexOf("</urlset>"), min: 0 }),
+          )
+        }),
+        ([xml, cut]) => {
+          expect(isCompleteSitemap(xml.slice(0, cut))).toBe(false)
+        },
+      ),
+    )
+  })
+
+  test("rejects an empty file, an empty sitemap and an HTML page", () => {
+    expect(isCompleteSitemap("")).toBe(false)
+    expect(isCompleteSitemap(sitemap([]))).toBe(false)
+    expect(isCompleteSitemap("<!DOCTYPE html><html></html>")).toBe(false)
   })
 })
 

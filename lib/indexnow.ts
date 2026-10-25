@@ -25,6 +25,15 @@ export function parseSitemap(xml: string): Map<string, string | undefined> {
 }
 
 /**
+ * Whether a saved sitemap can serve as the "before" side of a diff. An error
+ * page or a cut-off download would otherwise read as a sitemap that lacked
+ * most URLs, and every one of them would be submitted again as new.
+ */
+export function isCompleteSitemap(xml: string): boolean {
+  return xml.trimEnd().endsWith("</urlset>") && parseSitemap(xml).size > 0
+}
+
+/**
  * The URLs worth telling search engines about after a deploy: those that are
  * new, and those whose `<lastmod>` moved. Removed URLs are left out, since
  * crawlers find those through the 404 on their own.

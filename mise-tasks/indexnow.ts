@@ -10,7 +10,12 @@
  * its cache on the whole query string, so that reaches the function itself
  * rather than a copy cached before the deploy.
  */
-import { changedUrls, INDEXNOW_ENDPOINT, submission } from "@/lib/indexnow"
+import {
+  changedUrls,
+  INDEXNOW_ENDPOINT,
+  isCompleteSitemap,
+  submission,
+} from "@/lib/indexnow"
 import { SITE_URL } from "@/lib/site"
 
 const args = process.argv.slice(2)
@@ -22,6 +27,12 @@ if (!beforePath) {
 }
 
 const before = await Bun.file(beforePath).text()
+if (!isCompleteSitemap(before)) {
+  console.error(
+    `${beforePath} is not a complete sitemap; submitting nothing rather than every URL.`,
+  )
+  process.exit(1)
+}
 const response = await fetch(
   new URL(`/sitemap.xml?fresh=${Date.now()}`, SITE_URL),
 )
