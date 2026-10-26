@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 # check=error=true
-FROM oven/bun:1.4.3 AS builder
+FROM oven/bun:1.4.4 AS builder
 WORKDIR /usr/src/app
 RUN --mount=type=bind,source=package.json,target=package.json \
   --mount=type=bind,source=bun.lock,target=bun.lock \
