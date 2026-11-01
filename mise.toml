@@ -39,6 +39,8 @@ lychee --no-progress --scheme https --scheme http --scheme file \
   --root-dir '{{config_root}}/content/posts' \
   --remap '^file://{{config_root}}/content/posts/(en|ja)/blog/([^/#?]+) file://{{config_root}}/content/posts/$1/$2.mdx' \
   --exclude '\.(svg|avif|png|jpe?g|webp)$' \
+  --exclude-loopback \
+  --accept '100..=103,200..=299,429' \
   content/posts
 '''
 
