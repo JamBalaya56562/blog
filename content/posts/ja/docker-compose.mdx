@@ -343,59 +343,19 @@ emdash-emdash-1   emdash-emdash        "docker-entrypoint.s…"   emdash    30 s
 
 `db` が先に、`emdash` が後に起きています。`depends_on` の順番です。`db` の `PORTS` は `5432/tcp` だけで、`->` がありません。ホストには公開されていないということです。
 
-2 つとも `Up` です。ところが、ページを開くと `500` が返ってきます。ここから 2 つの罠を踏みました。
-
-### pg が見つからない
-
-```console
-❯ docker compose logs emdash
-...
-emdash-1  | 22:48:15 [ERROR] Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'pg' imported from /app/dist/server/chunks/dialect_CjqOFQB3.mjs
-```
-
-`pg` は、Node から PostgreSQL に繋ぐためのパッケージです。EmDash の依存には入っているので、イメージの中にあるはずです。`docker exec` の Compose 版である `docker compose exec` で、コンテナの中を見ます。コンテナ名ではなく、サービス名で指定します。まず `node_modules` の直下を一覧して `pg` を探すと、こうでした。
-
-```text
-@astrojs @emdash-cms astro emdash kysely react react-dom
-ls: cannot access 'node_modules/pg': No such file or directory
-```
-
-直下には無く、pnpm の置き場所である `node_modules/.pnpm/node_modules/` の奥にはあります。そして直下の `kysely` は、その奥へのリンクでした。
-
-```console
-❯ docker compose exec emdash sh -c 'ls -d node_modules/.pnpm/node_modules/pg node_modules/.pnpm/node_modules/kysely; readlink node_modules/kysely'
-node_modules/.pnpm/node_modules/kysely
-node_modules/.pnpm/node_modules/pg
-/app/node_modules/.pnpm/node_modules/kysely
-```
-
-Node はビルド済みのサーバーから `pg` を名前で探すので、`node_modules` の直下に無いと見つけられません。前回読んだ `Dockerfile` の実行用ステージには、同じ理由で `kysely` だけをリンクする行がすでにあり、`pg` はそこから漏れていました。SQLite のままなら `pg` を使わないので、誰も気付かなかったわけです。
-
-直し方は、その行に `pg` も足すことです。
-
-```diff title="Dockerfile"
- RUN mkdir -p data uploads \
--    && ln -s /app/node_modules/.pnpm/node_modules/kysely /app/node_modules/kysely
-+    && ln -s /app/node_modules/.pnpm/node_modules/kysely /app/node_modules/kysely \
-+    && ln -s /app/node_modules/.pnpm/node_modules/pg /app/node_modules/pg
-```
-
-この修正は [PR #3406](https://github.com/emdash-cms/emdash/pull/3406) として送ってあります。レビューで、libSQL 用のドライバーも同じ理由で見つからないと指摘されたので、PR ではそちらのリンクも足しています。
-
-> [!NOTE]
-> 先に `docker compose exec emdash ln -s ...` でコンテナの中に直接リンクを作って試しましたが、次に `compose.yaml` を変えて `up -d` したとき、コンテナが作り直されてリンクは消えました。コンテナの中で直したものは、書き込み層と一緒に消えます。第 1 回でやったことの、そのままの再現です。直すならイメージ（`Dockerfile`）です。
+2 つとも `Up` です。ところが、ページを開くと `500` が返ってきます。
 
 ### DATABASE_URL が読まれない
 
-`pg` が見つかると、今度はこうなりました。
+ログを見ると、こう出ていました。
 
 ```console
 ❯ docker compose logs emdash
 ...
-emdash-1  | 22:49:26 [ERROR] Error: connect ECONNREFUSED 127.0.0.1:5432
+emdash-1  | EmDash middleware error: Error: connect ECONNREFUSED 127.0.0.1:5432
 ```
 
-`127.0.0.1` は、コンテナ自身です。`DATABASE_URL` に `db` と書いたのに、そこを見ていません。環境変数はちゃんと入っています（パスワードは `sed` で伏せています）。
+`127.0.0.1` は、コンテナ自身です。`DATABASE_URL` に `db` と書いたのに、そこを見ていません。`docker exec` の Compose 版である `docker compose exec` で、コンテナの中を見ます。コンテナ名ではなく、サービス名で指定します。環境変数はちゃんと入っています（パスワードは `sed` で伏せています）。
 
 ```console
 ❯ docker compose exec emdash sh -c 'printenv DATABASE_URL | sed "s#//emdash:[^@]*@#//emdash:***@#"'
@@ -415,7 +375,7 @@ postgres://emdash:***@db:5432/emdash
 
 `"config": {}` です。`astro.config.mjs` の `process.env.DATABASE_URL` は、コンテナを起こしたときではなく、**イメージをビルドしたときに**評価されて、その結果がサーバーに焼き込まれます。ビルド中の `DATABASE_URL` は空なので、焼き込まれた設定も空です。コンテナに何を渡しても読まれません。
 
-設定が空のとき、`pg` は `PGHOST`、`PGUSER`、`PGPASSWORD`、`PGDATABASE` という環境変数を見に行きます（PostgreSQL のクライアントに共通の決まりです）。こちらは実行時に読まれるので、`compose.yaml` の環境変数をそちらに書き換えれば、ビルドし直さずに済みます。
+設定が空のとき、Node から PostgreSQL に繋ぐためのパッケージである `pg` は、`PGHOST`、`PGUSER`、`PGPASSWORD`、`PGDATABASE` という環境変数を見に行きます（PostgreSQL のクライアントに共通の決まりです）。こちらは実行時に読まれるので、`compose.yaml` の環境変数をそちらに書き換えれば、ビルドし直さずに済みます。
 
 ```diff title="compose.yaml"
      environment:
@@ -427,19 +387,13 @@ postgres://emdash:***@db:5432/emdash
 +      PGDATABASE: emdash
 ```
 
-`Dockerfile` を直したので、`--build` でイメージを作り直して起こします。`compose.yaml` の環境変数も変わっているので、`emdash` は作り直し（`Recreate`）になります。
+`up -d` し直すと、環境変数の変わった `emdash` だけが作り直し（`Recreate`）になります。`db` は動いたままで、ビルドも走りません。
 
 ```console
-❯ docker compose up -d --build
-...
-#30 [stage-3 4/4] RUN mkdir -p data uploads     && ln -s /app/node_modules/.pnpm/node_modules/kysely /app/node_modules/kysely     && ln -s /app/node_modules/.pnpm/node_modules/pg /app/node_modules/pg
-#30 DONE 1.3s
-...
- Image emdash-emdash Built
+❯ docker compose up -d
+ Container emdash-db-1 Running
  Container emdash-emdash-1 Recreate
  Container emdash-emdash-1 Recreated
- Container emdash-db-1 Starting
- Container emdash-db-1 Started
  Container emdash-emdash-1 Starting
  Container emdash-emdash-1 Started
 ```
@@ -855,8 +809,8 @@ EmDash の場合、止まって困るのは書きかけのリクエストくら�
 [第 1 回](/ja/blog/getting-started-with-docker#git-bash-がパスを書き換える)で書いた罠を、`docker compose exec` でも踏みました。
 
 ```console
-❯ docker compose exec emdash ln -s /app/node_modules/.pnpm/node_modules/pg /app/node_modules/pg
-ln: failed to create symbolic link 'C:/Program Files/Git/app/node_modules/pg': No such file or directory
+❯ docker compose exec emdash ls /app/uploads
+ls: cannot access 'C:/Program Files/Git/app/uploads': No such file or directory
 ```
 
 `docker compose` になっても、引数を書き換えているのは Git Bash なので、同じく `MSYS_NO_PATHCONV=1` で止まります。
@@ -887,4 +841,4 @@ ln: failed to create symbolic link 'C:/Program Files/Git/app/node_modules/pg': N
 - `restart` で起こし直すのはエンジンで、`depends_on` の順番は守られない
 - `astro.config.mjs` の `process.env` はビルドのときに焼き込まれる。コンテナに渡す環境変数が効くとは限らない
 
-前回と今回で、EmDash の公式の `Dockerfile` に 2 本の PR を送ることになりました。どれも、誰かが実際にその構成でビルドして動かすまで、表に出なかった壊れ方です。動かない公式の設定を見つけたら、ログを読んで、どのコンテナから何が見えていないのかを辿れば、たいてい直せます。
+公式のドキュメントのとおりに書いた設定でも、実際にその構成でビルドして動かすまで表に出ない壊れ方はあります。動かない公式の設定を見つけたら、ログを読んで、どのコンテナから何が見えていないのかを辿れば、たいてい直せます。

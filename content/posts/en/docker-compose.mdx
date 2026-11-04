@@ -396,72 +396,22 @@ time and took three and a half minutes again.
 `db` started first and `emdash` second: the `depends_on` order. The `PORTS` column for `db` is
 just `5432/tcp`, with no `->`: it is not published to the host.
 
-Both are `Up`. Yet every page returns `500`. Two traps followed.
-
-### pg cannot be found
-
-```console
-❯ docker compose logs emdash
-...
-emdash-1  | 22:48:15 [ERROR] Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'pg' imported from /app/dist/server/chunks/dialect_CjqOFQB3.mjs
-```
-
-`pg` is the package Node uses to talk to PostgreSQL. It is among EmDash's dependencies, so it
-ought to be in the image. `docker compose exec` is the Compose version of `docker exec`, and
-takes a service name rather than a container name. Listing the top of `node_modules` inside the
-container and looking for `pg` gave this.
-
-```text
-@astrojs @emdash-cms astro emdash kysely react react-dom
-ls: cannot access 'node_modules/pg': No such file or directory
-```
-
-It is not at the top, but it is further down, in pnpm's own store under
-`node_modules/.pnpm/node_modules/`. And the `kysely` at the top is a link into that store.
-
-```console
-❯ docker compose exec emdash sh -c 'ls -d node_modules/.pnpm/node_modules/pg node_modules/.pnpm/node_modules/kysely; readlink node_modules/kysely'
-node_modules/.pnpm/node_modules/kysely
-node_modules/.pnpm/node_modules/pg
-/app/node_modules/.pnpm/node_modules/kysely
-```
-
-The built server asks Node for `pg` by name, and Node only finds it at the top of
-`node_modules`. The runtime stage of the `Dockerfile` read last time already has a line linking
-`kysely` for the same reason; `pg` was left out. On SQLite nothing uses `pg`, which is why
-nobody noticed.
-
-The fix is to link `pg` in the same line.
-
-```diff title="Dockerfile"
- RUN mkdir -p data uploads \
--    && ln -s /app/node_modules/.pnpm/node_modules/kysely /app/node_modules/kysely
-+    && ln -s /app/node_modules/.pnpm/node_modules/kysely /app/node_modules/kysely \
-+    && ln -s /app/node_modules/.pnpm/node_modules/pg /app/node_modules/pg
-```
-
-This went upstream as [PR #3406](https://github.com/emdash-cms/emdash/pull/3406). Review pointed
-out that the libSQL driver cannot be found for the same reason, so the PR links that one too.
-
-> [!NOTE]
-> Before touching the `Dockerfile` I tried making the link inside the running container with
-> `docker compose exec emdash ln -s ...`. The next `up -d` after a `compose.yaml` change recreated
-> the container, and the link was gone. Whatever you fix inside a container goes with its
-> writable layer, exactly as in the first post. The fix belongs in the image, that is, the
-> `Dockerfile`.
+Both are `Up`. Yet every page returns `500`.
 
 ### DATABASE_URL is not read
 
-With `pg` found, the next error was this.
+The log says this.
 
 ```console
 ❯ docker compose logs emdash
 ...
-emdash-1  | 22:49:26 [ERROR] Error: connect ECONNREFUSED 127.0.0.1:5432
+emdash-1  | EmDash middleware error: Error: connect ECONNREFUSED 127.0.0.1:5432
 ```
 
 `127.0.0.1` is the container itself. `DATABASE_URL` says `db`, and that is not where it looked.
-The variable is set (the password masked with `sed`).
+`docker compose exec` is the Compose version of `docker exec`, and takes a service name rather
+than a container name. Looking inside the container, the variable is set (the password masked
+with `sed`).
 
 ```console
 ❯ docker compose exec emdash sh -c 'printenv DATABASE_URL | sed "s#//emdash:[^@]*@#//emdash:***@#"'
@@ -484,7 +434,8 @@ image is built**, not when the container starts, and the result is baked into th
 `DATABASE_URL` is empty during the build, so the baked configuration is empty too, and nothing
 passed to the container is ever read.
 
-With an empty configuration, `pg` falls back to the environment variables `PGHOST`, `PGUSER`,
+With an empty configuration, `pg`, the package Node uses to talk to PostgreSQL, falls back to the
+environment variables `PGHOST`, `PGUSER`,
 `PGPASSWORD` and `PGDATABASE` (a convention shared by PostgreSQL clients). Those are read at run
 time, so changing the environment in `compose.yaml` fixes it without a rebuild.
 
@@ -498,20 +449,14 @@ time, so changing the environment in `compose.yaml` fixes it without a rebuild.
 +      PGDATABASE: emdash
 ```
 
-The `Dockerfile` changed, so rebuild with `--build` and bring it up. The environment in
-`compose.yaml` changed as well, so `emdash` is recreated (`Recreate`).
+Running `up -d` again recreates only `emdash`, whose environment changed (`Recreate`). `db` keeps
+running, and nothing is built.
 
 ```console
-❯ docker compose up -d --build
-...
-#30 [stage-3 4/4] RUN mkdir -p data uploads     && ln -s /app/node_modules/.pnpm/node_modules/kysely /app/node_modules/kysely     && ln -s /app/node_modules/.pnpm/node_modules/pg /app/node_modules/pg
-#30 DONE 1.3s
-...
- Image emdash-emdash Built
+❯ docker compose up -d
+ Container emdash-db-1 Running
  Container emdash-emdash-1 Recreate
  Container emdash-emdash-1 Recreated
- Container emdash-db-1 Starting
- Container emdash-db-1 Started
  Container emdash-emdash-1 Starting
  Container emdash-emdash-1 Started
 ```
@@ -974,8 +919,8 @@ The trap from [the first post](/en/blog/getting-started-with-docker#git-bash-rew
 turned up under `docker compose exec` too.
 
 ```console
-❯ docker compose exec emdash ln -s /app/node_modules/.pnpm/node_modules/pg /app/node_modules/pg
-ln: failed to create symbolic link 'C:/Program Files/Git/app/node_modules/pg': No such file or directory
+❯ docker compose exec emdash ls /app/uploads
+ls: cannot access 'C:/Program Files/Git/app/uploads': No such file or directory
 ```
 
 It is still Git Bash rewriting the arguments, `docker compose` or not, so
@@ -1013,7 +958,7 @@ It is still Git Bash rewriting the arguments, `docker compose` or not, so
 - `process.env` in `astro.config.mjs` is baked in at build time. Environment variables handed to
   the container are not guaranteed to count
 
-Between the last post and this one, EmDash's official `Dockerfile` got two pull requests from me.
-Each was a breakage that only surfaced once someone actually built and ran that setup. When an
-official configuration does not work, read the logs and trace what a container cannot see; it can
+Even a configuration written exactly as the official docs show can hide a breakage that only
+surfaces once someone actually builds and runs that setup. When an official configuration does not
+work, read the logs and trace what a container cannot see; it can
 usually be fixed.
