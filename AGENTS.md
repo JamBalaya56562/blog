@@ -163,7 +163,11 @@ bun test:unit
 mise e2e
 ```
 
-- Test runner: Playwright
+- Test runner: Playwright, on Bun. It needs `bun --bun playwright test`: without
+  the flag it runs on Node.js whenever `node` is on `PATH`, and `bunx --bun` fails
+  on Windows because the workers start through `bunx`
+- The flag also reaches `webServer`, so the app under test runs on Bun, while
+  production runs on Node.js. A bug only Node.js shows will not surface in E2E
 - Test files are placed under `test/e2e/`
 - Target browsers: Chromium, Firefox, WebKit, Mobile Chrome, Mobile Safari
 - Playwright starts the production server itself (`bun start`, configured as

@@ -33,7 +33,7 @@
     "lint": "biome lint --write",
     "lint:fix": "biome check --write",
     "start": "next start",
-    "test:e2e": "playwright test",
+    "test:e2e": "bun --bun playwright test",
     "test:report": "playwright show-report",
     "test:unit": "bun test --isolate"
   },
