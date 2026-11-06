@@ -33,19 +33,19 @@
     "lint": "biome lint --write",
     "lint:fix": "biome check --write",
     "start": "next start",
-    "test:e2e": "playwright test",
+    "test:e2e": "bun --bun playwright test",
     "test:report": "playwright show-report",
     "test:unit": "bun test --isolate"
   },
   "dependencies": {
-    "@aws-sdk/client-dynamodb": "^3.1162.0",
-    "@aws-sdk/lib-dynamodb": "^3.1162.0",
+    "@aws-sdk/client-dynamodb": "^3.1163.0",
+    "@aws-sdk/lib-dynamodb": "^3.1163.0",
     "@shikijs/langs": "^4.6.0",
     "@shikijs/rehype": "^4.6.0",
     "@shikijs/themes": "^4.6.0",
     "@types/mdx": "^2.0.14",
-    "es-toolkit": "^1.53.1",
-    "lucide-react": "^1.69.0",
+    "es-toolkit": "^1.53.2",
+    "lucide-react": "^1.70.0",
     "next": "^16.4.5",
     "next-mdx-remote-client": "^2.1.12",
     "react": "^19.3.1",
@@ -55,10 +55,10 @@
     "yaml": "^2.9.1"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.6.5",
+    "@biomejs/biome": "^2.6.6",
     "@happy-dom/global-registrator": "^20.14.6",
     "@playwright/test": "next",
-    "@tailwindcss/postcss": "^4.3.4",
+    "@tailwindcss/postcss": "^4.3.5",
     "@testing-library/dom": "^10.4.2",
     "@testing-library/react": "^16.3.3",
     "@types/bun": "^1.4.4",
@@ -74,7 +74,7 @@
     "mdast-util-gfm": "^3.1.0",
     "micromark-extension-gfm": "^3.0.0",
     "postcss": "^8.5.32",
-    "tailwindcss": "^4.3.4",
+    "tailwindcss": "^4.3.5",
     "typescript": "^7.0.2",
     "unist-util-visit": "^5.2.0"
   }
