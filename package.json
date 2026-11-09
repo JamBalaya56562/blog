@@ -38,8 +38,8 @@
     "test:unit": "bun test --isolate"
   },
   "dependencies": {
-    "@aws-sdk/client-dynamodb": "^3.1163.0",
-    "@aws-sdk/lib-dynamodb": "^3.1163.0",
+    "@aws-sdk/client-dynamodb": "^3.1164.0",
+    "@aws-sdk/lib-dynamodb": "^3.1164.0",
     "@shikijs/langs": "^4.6.0",
     "@shikijs/rehype": "^4.6.0",
     "@shikijs/themes": "^4.6.0",
